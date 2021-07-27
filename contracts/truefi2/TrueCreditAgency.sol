@@ -53,6 +53,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
 
     mapping(ITrueFiPool2 => mapping(address => uint8)) public creditScore;
     mapping(ITrueFiPool2 => mapping(address => uint256)) public borrowed;
+    mapping(ITrueFiPool2 => mapping(address => uint256)) public totalPaidInterest;
 
     mapping(ITrueFiPool2 => bool) public isPoolAllowed;
     ITrueFiPool2[] public pools;
@@ -96,6 +97,10 @@ contract TrueCreditAgency is UpgradeableClaimable {
     event BorrowerAllowed(address indexed who, bool status);
 
     event PoolAllowed(ITrueFiPool2 pool, bool isAllowed);
+
+    event InterestPaid(ITrueFiPool2 pool, address borrower, uint256 amount);
+
+    event PrincipalRepaid(ITrueFiPool2 pool, address borrower, uint256 amount);
 
     event BorrowLimitConfigChanged(
         uint8 scoreFloor,
@@ -252,7 +257,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
         return saturatingSub(poolBorrowMax, totalBorrowed(borrower, poolDecimals));
     }
 
-    function interest(ITrueFiPool2 pool, address borrower) external view returns (uint256) {
+    function interest(ITrueFiPool2 pool, address borrower) public view returns (uint256) {
         CreditScoreBucket storage bucket = buckets[pool][creditScore[pool][borrower]];
         return _interest(pool, bucket, borrower);
     }
@@ -268,10 +273,27 @@ contract TrueCreditAgency is UpgradeableClaimable {
         pool.token().safeTransfer(msg.sender, amount);
     }
 
-    function repay(ITrueFiPool2 pool, uint256 amount) external {
-        pool.token().safeTransferFrom(msg.sender, address(this), amount);
-        pool.token().safeApprove(address(pool), amount);
-        pool.repay(amount);
+    function payInterest(ITrueFiPool2 pool) external {
+        repay(pool, interest(pool, msg.sender));
+    }
+
+    function repay(ITrueFiPool2 pool, uint256 amount) public {
+        uint256 currentDebt = borrowed[pool][msg.sender];
+        uint256 accruedInterest = interest(pool, msg.sender);
+        require(currentDebt.add(accruedInterest) >= amount, "TrueCreditAgency: Cannot repay over the debt");
+
+        if (amount < accruedInterest) {
+            _payInterestWithoutTransfer(pool, amount);
+        } else {
+            _payInterestWithoutTransfer(pool, accruedInterest);
+            _payPrincipalWithoutTransfer(pool, amount.sub(accruedInterest));
+        }
+
+        _repay(pool, amount);
+    }
+
+    function repayInFull(ITrueFiPool2 pool) external {
+        repay(pool, interest(pool, msg.sender).add(borrowed[pool][msg.sender]));
     }
 
     function poke(ITrueFiPool2 pool) public {
@@ -358,7 +380,32 @@ contract TrueCreditAgency is UpgradeableClaimable {
                 .mul(bucket.rate)
                 .div(10000)
                 .div(365 days)
+            ).sub(
+                totalPaidInterest[pool][borrower]
             );
+    }
+
+    function _payInterestWithoutTransfer(ITrueFiPool2 pool, uint256 amount) internal {
+        totalPaidInterest[pool][msg.sender] = totalPaidInterest[pool][msg.sender].add(amount);
+        emit InterestPaid(pool, msg.sender, amount);
+    }
+
+    function _payPrincipalWithoutTransfer(ITrueFiPool2 pool, uint256 amount) internal {
+        if (amount == 0) {
+            return;
+        }
+
+        uint8 oldScore = creditScore[pool][msg.sender];
+        uint8 newScore = creditOracle.getScore(msg.sender);
+        _rebucket(pool, msg.sender, oldScore, newScore, borrowed[pool][msg.sender].sub(amount));
+
+        emit PrincipalRepaid(pool, msg.sender, amount);
+    }
+
+    function _repay(ITrueFiPool2 pool, uint256 amount) internal {
+        pool.token().safeTransferFrom(msg.sender, address(this), amount);
+        pool.token().safeApprove(address(pool), amount);
+        pool.repay(amount);
     }
 
     function saturatingSub(uint256 a, uint256 b) internal pure returns (uint256) {

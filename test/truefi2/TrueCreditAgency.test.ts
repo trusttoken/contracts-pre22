@@ -239,7 +239,7 @@ describe('TrueCreditAgency', () => {
       await expectNotLongerThan(0)
     })
 
-    it('does not revert when whitelising whitelisted pool', async () => {
+    it('does not revert when whitelisting whitelisted pool', async () => {
       await expect(creditAgency.allowPool(tusdPool.address, true)).to.not.be.reverted
     })
 
@@ -469,17 +469,172 @@ describe('TrueCreditAgency', () => {
     )
   })
 
-  describe('Repaying', () => {
+  describe('payInterest', () => {
     beforeEach(async () => {
       await creditAgency.allowBorrower(borrower.address, true)
-    })
-
-    it('repays the funds to the pool', async () => {
+      await creditAgency.setRiskPremium(1000)
+      await creditOracle.setScore(owner.address, 255)
       await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
       await tusd.connect(borrower).approve(creditAgency.address, 1000)
-      await creditAgency.connect(borrower).repay(tusdPool.address, 1000)
-      expect(await tusd.balanceOf(borrower.address)).to.equal(0)
-      expect(await tusd.balanceOf(tusdPool.address)).to.equal(parseEth(1e7))
+      await timeTravel(YEAR)
+    })
+
+    it('pays interest to the pool', async () => {
+      await creditAgency.connect(borrower).payInterest(tusdPool.address)
+
+      expect(await tusd.balanceOf(borrower.address)).to.be.closeTo(BigNumber.from(900), 2)
+      expect(await tusd.balanceOf(tusdPool.address)).to.be.closeTo(parseEth(1e7).sub(900), 2)
+    })
+
+    it('increases totalPaidInterest', async () => {
+      await creditAgency.connect(borrower).payInterest(tusdPool.address)
+      expect(await creditAgency.totalPaidInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
+    })
+
+    it('pays close to nothing on second call', async () => {
+      await creditAgency.connect(borrower).payInterest(tusdPool.address)
+      expect(await creditAgency.totalPaidInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
+      await creditAgency.connect(borrower).payInterest(tusdPool.address)
+      expect(await creditAgency.totalPaidInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
+    })
+
+    it('emits event', async () => {
+      await expect(creditAgency.connect(borrower).payInterest(tusdPool.address))
+        .to.emit(creditAgency, 'InterestPaid')
+        .withArgs(tusdPool.address, borrower.address, 100)
+    })
+  })
+
+  describe('repay', () => {
+    beforeEach(async () => {
+      await creditAgency.allowBorrower(borrower.address, true)
+      await creditAgency.setRiskPremium(1000)
+      await creditOracle.setScore(owner.address, 255)
+      await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
+      await tusd.connect(borrower).approve(creditAgency.address, 1000)
+    })
+
+    it('cannot repay more than debt', async () => {
+      await expect(creditAgency.connect(borrower).repay(tusdPool.address, 2000))
+        .to.be.revertedWith('TrueCreditAgency: Cannot repay over the debt')
+    })
+
+    it('repays debt to the pool', async () => {
+      await creditAgency.connect(borrower).repay(tusdPool.address, 500)
+
+      expect(await tusd.balanceOf(borrower.address)).to.eq(500)
+      expect(await tusd.balanceOf(tusdPool.address)).to.eq(parseEth(1e7).sub(500))
+    })
+
+    it('repays partial interest to the pool', async () => {
+      await timeTravel(YEAR)
+      await creditAgency.connect(borrower).repay(tusdPool.address, 50)
+
+      expect(await tusd.balanceOf(borrower.address)).to.be.closeTo(BigNumber.from(950), 2)
+      expect(await tusd.balanceOf(tusdPool.address)).to.be.closeTo(parseEth(1e7).sub(950), 2)
+    })
+
+    it('reduces borrowed amount', async () => {
+      await timeTravel(YEAR)
+      await creditAgency.connect(borrower).repay(tusdPool.address, 500)
+      expect(await creditAgency.borrowed(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(600), 2)
+    })
+
+    it('updates totalPaidInterest on whole interest repayment', async () => {
+      await timeTravel(YEAR)
+      await creditAgency.connect(borrower).repay(tusdPool.address, 500)
+
+      expect(await creditAgency.totalPaidInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
+    })
+
+    it('updates totalPaidInterest on partial interest repayment', async () => {
+      await timeTravel(YEAR)
+      await creditAgency.connect(borrower).repay(tusdPool.address, 50)
+
+      expect(await creditAgency.totalPaidInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(50), 2)
+    })
+
+    it('partial interest repay does not trigger principal repayment', async () => {
+      await timeTravel(YEAR)
+      await creditAgency.connect(borrower).repay(tusdPool.address, 50)
+
+      expect(await creditAgency.borrowed(tusdPool.address, borrower.address)).to.eq(1000)
+    })
+
+    it('calls _rebucket', async () => {
+      const bucketBefore = await creditAgency.buckets(tusdPool.address, 255)
+      await creditAgency.connect(borrower).repay(tusdPool.address, 500)
+      const bucketAfter = await creditAgency.buckets(tusdPool.address, 255)
+
+      expect(bucketBefore.borrowersCount).to.eq(bucketAfter.borrowersCount)
+      expect(bucketBefore.timestamp).to.be.lt(bucketAfter.timestamp)
+      expect(bucketBefore.rate).to.eq(bucketAfter.rate)
+      expect(bucketBefore.cumulativeInterestPerShare).to.be.lt(bucketAfter.cumulativeInterestPerShare)
+      expect(bucketBefore.totalBorrowed).to.eq(bucketAfter.totalBorrowed.add(500))
+    })
+
+    it('emits PrincipalRepaid event', async () => {
+      await timeTravel(YEAR)
+      await expect(creditAgency.connect(borrower).repay(tusdPool.address, 500))
+        .to.emit(creditAgency, 'PrincipalRepaid')
+        .withArgs(tusdPool.address, borrower.address, 400)
+    })
+
+    it('emits InterestPaid event', async () => {
+      await timeTravel(YEAR)
+      await expect(creditAgency.connect(borrower).repay(tusdPool.address, 500))
+        .to.emit(creditAgency, 'InterestPaid')
+        .withArgs(tusdPool.address, borrower.address, 100)
+    })
+  })
+
+  describe('repayInFull', () => {
+    beforeEach(async () => {
+      await creditAgency.allowBorrower(borrower.address, true)
+      await creditAgency.setRiskPremium(1000)
+      await creditOracle.setScore(owner.address, 255)
+      await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
+      await tusd.mint(borrower.address, 200)
+      await tusd.connect(borrower).approve(creditAgency.address, 1200)
+    })
+
+    it('repays debt to the pool', async () => {
+      await creditAgency.connect(borrower).repayInFull(tusdPool.address)
+
+      expect(await tusd.balanceOf(borrower.address)).to.be.closeTo(BigNumber.from(200), 2)
+      expect(await tusd.balanceOf(tusdPool.address)).to.be.closeTo(parseEth(1e7), 2)
+    })
+
+    it('repays debt in full', async () => {
+      await timeTravel(YEAR)
+      await creditAgency.connect(borrower).repayInFull(tusdPool.address)
+      expect(await creditAgency.borrowed(tusdPool.address, borrower.address)).to.eq(0)
+    })
+
+    it('calls payInterest', async () => {
+      await timeTravel(YEAR)
+      await creditAgency.connect(borrower).repayInFull(tusdPool.address)
+
+      expect(await creditAgency.totalPaidInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
+    })
+
+    it('calls _rebucket', async () => {
+      const bucketBefore = await creditAgency.buckets(tusdPool.address, 255)
+      await creditAgency.connect(borrower).repayInFull(tusdPool.address)
+      const bucketAfter = await creditAgency.buckets(tusdPool.address, 255)
+
+      expect(bucketBefore.borrowersCount).to.eq(bucketAfter.borrowersCount)
+      expect(bucketBefore.timestamp).to.be.lt(bucketAfter.timestamp)
+      expect(bucketBefore.rate).to.eq(bucketAfter.rate)
+      expect(bucketBefore.cumulativeInterestPerShare).to.be.lt(bucketAfter.cumulativeInterestPerShare)
+      expect(bucketBefore.totalBorrowed).to.eq(bucketAfter.totalBorrowed.add(1000))
+    })
+
+    it('emits event', async () => {
+      await timeTravel(YEAR)
+      await expect(creditAgency.connect(borrower).repayInFull(tusdPool.address))
+        .to.emit(creditAgency, 'PrincipalRepaid')
+        .withArgs(tusdPool.address, borrower.address, 1000)
     })
   })
 
