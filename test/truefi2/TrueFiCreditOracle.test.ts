@@ -69,7 +69,7 @@ describe('TrueFiCreditOracle', () => {
     const firstScore = 100
     const secondScore = 200
 
-    it('gets correct score after it changed', async () => {
+    it('gets correct score after it has changed', async () => {
       await oracle.connect(manager).setScore(firstAccount.address, firstScore)
       expect(await oracle.getScore(firstAccount.address)).to.equal(firstScore)
       await oracle.connect(manager).setScore(firstAccount.address, secondScore)
