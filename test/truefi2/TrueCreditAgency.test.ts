@@ -561,7 +561,7 @@ describe('TrueCreditAgency', () => {
 
     it('cannot repay more than debt', async () => {
       await expect(creditAgency.connect(borrower).repay(tusdPool.address, 2000))
-        .to.be.revertedWith('TrueCreditAgency: Cannot repay more than debt')
+        .to.be.revertedWith('TrueCreditAgency: Cannot repay over the debt')
     })
 
     it('repays debt to the pool', async () => {
@@ -571,20 +571,28 @@ describe('TrueCreditAgency', () => {
       expect(await tusd.balanceOf(tusdPool.address)).to.eq(parseEth(1e7).sub(500))
     })
 
+    it('repays partial interest to the pool', async () => {
+      await timeTravel(YEAR)
+      await creditAgency.connect(borrower).repay(tusdPool.address, 50)
+
+      expect(await tusd.balanceOf(borrower.address)).to.be.closeTo(BigNumber.from(950), 2)
+      expect(await tusd.balanceOf(tusdPool.address)).to.be.closeTo(parseEth(1e7).sub(950), 2)
+    })
+
     it('reduces borrowed amount', async () => {
       await timeTravel(YEAR)
       await creditAgency.connect(borrower).repay(tusdPool.address, 500)
       expect(await creditAgency.borrowed(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(600), 2)
     })
 
-    it('repays whole interest', async () => {
+    it('updates totalPaidInterest on whole interest repayment', async () => {
       await timeTravel(YEAR)
       await creditAgency.connect(borrower).repay(tusdPool.address, 500)
 
       expect(await creditAgency.totalPaidInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
     })
 
-    it('repays interest partially', async () => {
+    it('updates totalPaidInterest on partial interest repayment', async () => {
       await timeTravel(YEAR)
       await creditAgency.connect(borrower).repay(tusdPool.address, 50)
 
@@ -618,9 +626,9 @@ describe('TrueCreditAgency', () => {
       const bucketAfter = await creditAgency.buckets(tusdPool.address, 255)
 
       expect(bucketBefore.borrowersCount).to.eq(bucketAfter.borrowersCount)
-      expect(bucketBefore.timestamp).to.lt(bucketAfter.timestamp)
+      expect(bucketBefore.timestamp).to.be.lt(bucketAfter.timestamp)
       expect(bucketBefore.rate).to.eq(bucketAfter.rate)
-      expect(bucketBefore.cumulativeInterestPerShare).to.lt(bucketAfter.cumulativeInterestPerShare)
+      expect(bucketBefore.cumulativeInterestPerShare).to.be.lt(bucketAfter.cumulativeInterestPerShare)
       expect(bucketBefore.totalBorrowed).to.eq(bucketAfter.totalBorrowed.add(500))
     })
 
@@ -675,9 +683,9 @@ describe('TrueCreditAgency', () => {
       const bucketAfter = await creditAgency.buckets(tusdPool.address, 255)
 
       expect(bucketBefore.borrowersCount).to.eq(bucketAfter.borrowersCount)
-      expect(bucketBefore.timestamp).to.lt(bucketAfter.timestamp)
+      expect(bucketBefore.timestamp).to.be.lt(bucketAfter.timestamp)
       expect(bucketBefore.rate).to.eq(bucketAfter.rate)
-      expect(bucketBefore.cumulativeInterestPerShare).to.lt(bucketAfter.cumulativeInterestPerShare)
+      expect(bucketBefore.cumulativeInterestPerShare).to.be.lt(bucketAfter.cumulativeInterestPerShare)
       expect(bucketBefore.totalBorrowed).to.eq(bucketAfter.totalBorrowed.add(1000))
     })
 

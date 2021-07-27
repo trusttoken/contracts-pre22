@@ -289,32 +289,23 @@ contract TrueCreditAgency is UpgradeableClaimable {
     }
 
     function payInterest(ITrueFiPool2 pool) external {
-        uint256 accruedInterest = interest(pool, msg.sender);
-        nextInterestRepayTime[pool][msg.sender] = block.timestamp.add(interestRepaymentPeriod);
-        _payInterestWithoutTransfer(pool, accruedInterest);
-        _repay(pool, accruedInterest);
+        repay(pool, interest(pool, msg.sender));
     }
 
     function repay(ITrueFiPool2 pool, uint256 amount) public {
         uint256 currentDebt = borrowed[pool][msg.sender];
         uint256 accruedInterest = interest(pool, msg.sender);
+        require(currentDebt.add(accruedInterest) >= amount, "TrueCreditAgency: Cannot repay over the debt");
+
         if (amount < accruedInterest) {
             _payInterestWithoutTransfer(pool, amount);
-            return;
+        } else {
+            nextInterestRepayTime[pool][msg.sender] = block.timestamp.add(interestRepaymentPeriod);
+            _payInterestWithoutTransfer(pool, accruedInterest);
+            _payPrincipalWithoutTransfer(pool, amount.sub(accruedInterest));
         }
 
-        nextInterestRepayTime[pool][msg.sender] = block.timestamp.add(interestRepaymentPeriod);
-        _payInterestWithoutTransfer(pool, accruedInterest);
-
-        uint256 repaidPrincipal = amount.sub(accruedInterest);
-        require(currentDebt.add(accruedInterest) >= amount, "TrueCreditAgency: Cannot repay more than debt");
-
-        uint8 oldScore = creditScore[pool][msg.sender];
-        uint8 newScore = creditOracle.getScore(msg.sender);
-        _rebucket(pool, msg.sender, oldScore, newScore, borrowed[pool][msg.sender].sub(repaidPrincipal));
-
         _repay(pool, amount);
-        emit PrincipalRepaid(pool, msg.sender, repaidPrincipal);
     }
 
     function repayInFull(ITrueFiPool2 pool) external {
@@ -413,6 +404,18 @@ contract TrueCreditAgency is UpgradeableClaimable {
     function _payInterestWithoutTransfer(ITrueFiPool2 pool, uint256 amount) internal {
         totalPaidInterest[pool][msg.sender] = totalPaidInterest[pool][msg.sender].add(amount);
         emit InterestPaid(pool, msg.sender, amount);
+    }
+
+    function _payPrincipalWithoutTransfer(ITrueFiPool2 pool, uint256 amount) internal {
+        if (amount == 0) {
+            return;
+        }
+
+        uint8 oldScore = creditScore[pool][msg.sender];
+        uint8 newScore = creditOracle.getScore(msg.sender);
+        _rebucket(pool, msg.sender, oldScore, newScore, borrowed[pool][msg.sender].sub(amount));
+
+        emit PrincipalRepaid(pool, msg.sender, amount);
     }
 
     function _repay(ITrueFiPool2 pool, uint256 amount) internal {
