@@ -54,15 +54,12 @@ contract TrueCreditAgency is UpgradeableClaimable {
     mapping(ITrueFiPool2 => mapping(address => uint8)) public creditScore;
     mapping(ITrueFiPool2 => mapping(address => uint256)) public borrowed;
     mapping(ITrueFiPool2 => mapping(address => uint256)) public totalPaidInterest;
-    mapping(ITrueFiPool2 => mapping(address => uint256)) public nextFullRepayTime;
     mapping(ITrueFiPool2 => mapping(address => uint256)) public nextInterestRepayTime;
 
     mapping(ITrueFiPool2 => bool) public isPoolAllowed;
     ITrueFiPool2[] public pools;
 
-    mapping(address => bool) public isBorrowerAllowed;
-
-    uint256 public fullRepaymentPeriod;
+    mapping(address => uint256) public borrowerAllowedUntilTime;
 
     uint256 public interestRepaymentPeriod;
 
@@ -100,7 +97,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
 
     event UtilizationAdjustmentPowerChanged(uint256 newValue);
 
-    event BorrowerAllowed(address indexed who, bool status);
+    event BorrowerAllowed(address indexed who, uint256 timePeriod);
 
     event PoolAllowed(ITrueFiPool2 pool, bool isAllowed);
 
@@ -109,8 +106,6 @@ contract TrueCreditAgency is UpgradeableClaimable {
     event InterestPaid(ITrueFiPool2 pool, address borrower, uint256 amount);
 
     event PrincipalRepaid(ITrueFiPool2 pool, address borrower, uint256 amount);
-
-    event FullRepaymentPeriodChanged(uint256 newTerm);
 
     event BorrowLimitConfigChanged(
         uint8 scoreFloor,
@@ -127,23 +122,17 @@ contract TrueCreditAgency is UpgradeableClaimable {
         borrowLimitConfig = BorrowLimitConfig(40, 7500, 1500, 1500);
         utilizationAdjustmentCoefficient = 50;
         utilizationAdjustmentPower = 2;
-        fullRepaymentPeriod = 365 days;
         interestRepaymentPeriod = 31 days;
     }
 
     modifier onlyAllowedBorrowers() {
-        require(isBorrowerAllowed[msg.sender], "TrueCreditAgency: Sender is not allowed to borrow");
+        require(borrowerAllowedUntilTime[msg.sender] >= block.timestamp, "TrueCreditAgency: Sender is not allowed to borrow");
         _;
     }
 
     function setRiskPremium(uint256 newRate) external onlyOwner {
         riskPremium = newRate;
         emit RiskPremiumChanged(newRate);
-    }
-
-    function setFullRepaymentPeriod(uint256 newTerm) external onlyOwner {
-        fullRepaymentPeriod = newTerm;
-        emit FullRepaymentPeriodChanged(newTerm);
     }
 
     function setInterestRepaymentPeriod(uint256 newPeriod) external onlyOwner {
@@ -176,9 +165,9 @@ contract TrueCreditAgency is UpgradeableClaimable {
         emit UtilizationAdjustmentPowerChanged(newValue);
     }
 
-    function allowBorrower(address who, bool status) external onlyOwner {
-        isBorrowerAllowed[who] = status;
-        emit BorrowerAllowed(who, status);
+    function allowBorrower(address who, uint256 timePeriod) external onlyOwner {
+        borrowerAllowedUntilTime[who] = block.timestamp.add(timePeriod);
+        emit BorrowerAllowed(who, timePeriod);
     }
 
     function allowPool(ITrueFiPool2 pool, bool isAllowed) external onlyOwner {
@@ -298,10 +287,6 @@ contract TrueCreditAgency is UpgradeableClaimable {
 
         if (currentDebt == 0) {
             nextInterestRepayTime[pool][msg.sender] = block.timestamp.add(interestRepaymentPeriod);
-        }
-
-        if (borrowed[pool][msg.sender] == 0) {
-            nextFullRepayTime[pool][msg.sender] = block.timestamp.add(fullRepaymentPeriod);
         }
 
         _rebucket(pool, msg.sender, oldScore, newScore, currentDebt.add(amount));
