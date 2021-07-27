@@ -54,11 +54,14 @@ contract TrueCreditAgency is UpgradeableClaimable {
     mapping(ITrueFiPool2 => mapping(address => uint8)) public creditScore;
     mapping(ITrueFiPool2 => mapping(address => uint256)) public borrowed;
     mapping(ITrueFiPool2 => mapping(address => uint256)) public totalPaidInterest;
+    mapping(ITrueFiPool2 => mapping(address => uint256)) public nextInterestRepayTime;
 
     mapping(ITrueFiPool2 => bool) public isPoolAllowed;
     ITrueFiPool2[] public pools;
 
     mapping(address => bool) public isBorrowerAllowed;
+
+    uint256 public interestRepaymentPeriod;
 
     // basis precision: 10000 = 100%
     uint256 public riskPremium;
@@ -98,6 +101,8 @@ contract TrueCreditAgency is UpgradeableClaimable {
 
     event PoolAllowed(ITrueFiPool2 pool, bool isAllowed);
 
+    event InterestRepaymentPeriodChanged(uint256 newPeriod);
+
     event InterestPaid(ITrueFiPool2 pool, address borrower, uint256 amount);
 
     event PrincipalRepaid(ITrueFiPool2 pool, address borrower, uint256 amount);
@@ -117,6 +122,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
         borrowLimitConfig = BorrowLimitConfig(40, 7500, 1500, 1500);
         utilizationAdjustmentCoefficient = 50;
         utilizationAdjustmentPower = 2;
+        interestRepaymentPeriod = 31 days;
     }
 
     modifier onlyAllowedBorrowers() {
@@ -127,6 +133,11 @@ contract TrueCreditAgency is UpgradeableClaimable {
     function setRiskPremium(uint256 newRate) external onlyOwner {
         riskPremium = newRate;
         emit RiskPremiumChanged(newRate);
+    }
+
+    function setInterestRepaymentPeriod(uint256 newPeriod) external onlyOwner {
+        interestRepaymentPeriod = newPeriod;
+        emit InterestRepaymentPeriodChanged(newPeriod);
     }
 
     function setBorrowLimitConfig(
@@ -272,8 +283,13 @@ contract TrueCreditAgency is UpgradeableClaimable {
         require(isPoolAllowed[pool], "TrueCreditAgency: The pool is not whitelisted for borrowing");
         (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, msg.sender);
         require(amount <= borrowLimit(pool, msg.sender), "TrueCreditAgency: Borrow amount cannot exceed borrow limit");
+        uint256 currentDebt = borrowed[pool][msg.sender];
 
-        _rebucket(pool, msg.sender, oldScore, newScore, borrowed[pool][msg.sender].add(amount));
+        if (currentDebt == 0) {
+            nextInterestRepayTime[pool][msg.sender] = block.timestamp.add(interestRepaymentPeriod);
+        }
+
+        _rebucket(pool, msg.sender, oldScore, newScore, currentDebt.add(amount));
 
         pool.borrow(amount);
         pool.token().safeTransfer(msg.sender, amount);
@@ -291,6 +307,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
         if (amount < accruedInterest) {
             _payInterestWithoutTransfer(pool, amount);
         } else {
+            nextInterestRepayTime[pool][msg.sender] = block.timestamp.add(interestRepaymentPeriod);
             _payInterestWithoutTransfer(pool, accruedInterest);
             _payPrincipalWithoutTransfer(pool, amount.sub(accruedInterest));
         }
