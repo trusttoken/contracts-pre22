@@ -177,13 +177,19 @@ contract TrueCreditAgency is UpgradeableClaimable {
     }
 
     function updateCreditScore(ITrueFiPool2 pool, address borrower) external {
-        uint8 oldScore = creditScore[pool][borrower];
-        uint8 newScore = creditOracle.getScore(borrower);
+        (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, borrower);
         if (oldScore == newScore) {
             return;
         }
 
         _rebucket(pool, borrower, oldScore, newScore, borrowed[pool][borrower]);
+    }
+
+    function _updateCreditScore(ITrueFiPool2 pool, address borrower) internal returns (uint8, uint8) {
+        uint8 oldScore = creditScore[pool][borrower];
+        uint8 newScore = creditOracle.getScore(borrower);
+        creditScore[pool][borrower] = newScore;
+        return (oldScore, newScore);
     }
 
     function creditScoreAdjustmentRate(ITrueFiPool2 pool, address borrower) public view returns (uint256) {
@@ -264,8 +270,8 @@ contract TrueCreditAgency is UpgradeableClaimable {
 
     function borrow(ITrueFiPool2 pool, uint256 amount) external onlyAllowedBorrowers {
         require(isPoolAllowed[pool], "TrueCreditAgency: The pool is not whitelisted for borrowing");
-        uint8 oldScore = creditScore[pool][msg.sender];
-        uint8 newScore = creditOracle.getScore(msg.sender);
+        (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, msg.sender);
+        require(amount <= borrowLimit(pool, msg.sender), "TrueCreditAgency: Borrow amount cannot exceed borrow limit");
 
         _rebucket(pool, msg.sender, oldScore, newScore, borrowed[pool][msg.sender].add(amount));
 
@@ -325,7 +331,6 @@ contract TrueCreditAgency is UpgradeableClaimable {
     ) internal {
         uint256 totalBorrowerInterest = oldScore > 0 ? _takeOutOfBucket(pool, buckets[pool][oldScore], oldScore, borrower) : 0;
         borrowed[pool][borrower] = updatedBorrowAmount;
-        creditScore[pool][borrower] = newScore;
         CreditScoreBucket storage bucket = buckets[pool][newScore];
         _putIntoBucket(pool, bucket, newScore, borrower);
         poke(pool);

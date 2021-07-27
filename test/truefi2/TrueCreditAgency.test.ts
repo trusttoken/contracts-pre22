@@ -67,6 +67,8 @@ describe('TrueCreditAgency', () => {
     await creditAgency.allowPool(tusdPool.address, true)
 
     await creditOracle.setScore(borrower.address, 255)
+    await creditOracle.setMaxBorrowerLimit(owner.address, parseEth(100_000_000))
+    await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
   })
 
   describe('initializer', () => {
@@ -256,11 +258,11 @@ describe('TrueCreditAgency', () => {
     beforeEach(async () => {
       pool1 = await deployMockContract(owner, TrueFiPool2Json.abi)
       pool2 = await deployMockContract(owner, TrueFiPool2Json.abi)
-      await pool1.mock.poolValue.returns(parseEth(10))
+      await pool1.mock.poolValue.returns(parseEth(10_000))
       await pool1.mock.decimals.returns(18)
       await pool1.mock.borrow.returns()
       await pool1.mock.token.returns(tusd.address)
-      await pool2.mock.poolValue.returns(parseUSDC(30))
+      await pool2.mock.poolValue.returns(parseUSDC(30_000))
       await pool2.mock.decimals.returns(6)
       await pool2.mock.borrow.returns()
       await pool2.mock.token.returns(tusd.address)
@@ -270,7 +272,7 @@ describe('TrueCreditAgency', () => {
 
     it('totalTVL returns sum of poolValues of all pools with 18 decimals precision', async () => {
       const tusdPoolValue = await tusdPool.poolValue()
-      expect(await creditAgency.totalTVL(18)).to.equal(tusdPoolValue.add(parseEth(40)))
+      expect(await creditAgency.totalTVL(18)).to.equal(tusdPoolValue.add(parseEth(40_000)))
     })
 
     it('totalBorrowed returns total borrowed amount across all pools with 18 decimals precision', async () => {
@@ -320,7 +322,6 @@ describe('TrueCreditAgency', () => {
       await creditAgency.allowPool(pool1.address, true)
       await creditAgency.allowPool(pool2.address, true)
       await creditOracle.setScore(borrower.address, 191) // adjustment = 0.8051
-      await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
       await creditAgency.allowBorrower(borrower.address, true)
       await tusd.mint(creditAgency.address, parseEth(1000))
     })
@@ -383,6 +384,21 @@ describe('TrueCreditAgency', () => {
       await creditAgency.allowPool(tusdPool.address, false)
       await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000))
         .to.be.revertedWith('TrueCreditAgency: The pool is not whitelisted for borrowing')
+    })
+
+    it('cannot borrow over the borrow limit', async () => {
+      await creditAgency.allowBorrower(borrower.address, true)
+      await creditOracle.setScore(borrower.address, 191)
+      await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100))
+
+      expect(await creditAgency.borrowLimit(tusdPool.address, borrower.address)).to.eq(parseEth(80.51))
+      await expect(creditAgency.connect(borrower).borrow(tusdPool.address, parseEth(80.51).add(1)))
+        .to.be.revertedWith('TrueCreditAgency: Borrow amount cannot exceed borrow limit')
+
+      await creditAgency.connect(borrower).borrow(tusdPool.address, parseEth(75))
+
+      await expect(creditAgency.connect(borrower).borrow(tusdPool.address, parseEth(5.51).add(1)))
+        .to.be.revertedWith('TrueCreditAgency: Borrow amount cannot exceed borrow limit')
     })
 
     it('correctly handles the case when credit score is changing', async () => {
