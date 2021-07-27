@@ -37,6 +37,8 @@ describe('TrueCreditAgency', () => {
   let creditOracle: TrueFiCreditOracle
   let timeTravel: (time: number) => void
 
+  const MONTH = DAY * 31
+
   beforeEachWithFixture(async (wallets, _provider) => {
     [owner, borrower] = wallets
     timeTravel = (time: number) => _timeTravel(_provider, time)
@@ -67,6 +69,8 @@ describe('TrueCreditAgency', () => {
     await creditAgency.allowPool(tusdPool.address, true)
 
     await creditOracle.setScore(borrower.address, 255)
+    await creditOracle.setMaxBorrowerLimit(owner.address, parseEth(100_000_000))
+    await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
   })
 
   describe('initializer', () => {
@@ -76,6 +80,10 @@ describe('TrueCreditAgency', () => {
 
     it('sets fullRepaymentPeriod', async () => {
       expect(await creditAgency.fullRepaymentPeriod()).to.equal(YEAR)
+    })
+    
+    it('sets interestRepaymentPeriod', async () => {
+      expect(await creditAgency.interestRepaymentPeriod()).to.equal(MONTH)
     })
 
     it('sets riskPremium', async () => {
@@ -130,6 +138,23 @@ describe('TrueCreditAgency', () => {
     it('emits event', async () => {
       await expect(creditAgency.setFullRepaymentPeriod(DAY))
         .to.emit(creditAgency, 'FullRepaymentPeriodChanged')
+    })
+  })
+
+  describe('setInterestRepaymentPeriod', () => {
+    it('only owner can set repayment period', async () => {
+      await expect(creditAgency.connect(borrower).setInterestRepaymentPeriod(0))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('period is properly set', async () => {
+      await creditAgency.setInterestRepaymentPeriod(DAY)
+      expect(await creditAgency.interestRepaymentPeriod()).to.equal(DAY)
+    })
+
+    it('emits a proper event', async () => {
+      await expect(creditAgency.setInterestRepaymentPeriod(DAY))
+        .to.emit(creditAgency, 'InterestRepaymentPeriodChanged')
         .withArgs(DAY)
     })
   })
@@ -278,11 +303,11 @@ describe('TrueCreditAgency', () => {
     beforeEach(async () => {
       pool1 = await deployMockContract(owner, TrueFiPool2Json.abi)
       pool2 = await deployMockContract(owner, TrueFiPool2Json.abi)
-      await pool1.mock.poolValue.returns(parseEth(10))
+      await pool1.mock.poolValue.returns(parseEth(10_000))
       await pool1.mock.decimals.returns(18)
       await pool1.mock.borrow.returns()
       await pool1.mock.token.returns(tusd.address)
-      await pool2.mock.poolValue.returns(parseUSDC(30))
+      await pool2.mock.poolValue.returns(parseUSDC(30_000))
       await pool2.mock.decimals.returns(6)
       await pool2.mock.borrow.returns()
       await pool2.mock.token.returns(tusd.address)
@@ -292,7 +317,7 @@ describe('TrueCreditAgency', () => {
 
     it('totalTVL returns sum of poolValues of all pools with 18 decimals precision', async () => {
       const tusdPoolValue = await tusdPool.poolValue()
-      expect(await creditAgency.totalTVL(18)).to.equal(tusdPoolValue.add(parseEth(40)))
+      expect(await creditAgency.totalTVL(18)).to.equal(tusdPoolValue.add(parseEth(40_000)))
     })
 
     it('totalBorrowed returns total borrowed amount across all pools with 18 decimals precision', async () => {
@@ -342,7 +367,6 @@ describe('TrueCreditAgency', () => {
       await creditAgency.allowPool(pool1.address, true)
       await creditAgency.allowPool(pool2.address, true)
       await creditOracle.setScore(borrower.address, 191) // adjustment = 0.8051
-      await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
       await creditAgency.allowBorrower(borrower.address, true)
       await tusd.mint(creditAgency.address, parseEth(1000))
     })
@@ -411,6 +435,36 @@ describe('TrueCreditAgency', () => {
       const tx = await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
       const timestamp = BigNumber.from((await provider.getBlock(tx.blockNumber)).timestamp)
       expect(await creditAgency.nextFullRepayTime(tusdPool.address, borrower.address)).to.eq(timestamp.add(YEAR))
+    })
+    
+    it('updates nextInterestRepayTime', async () => {
+      expect(await creditAgency.nextInterestRepayTime(tusdPool.address, borrower.address)).to.eq(0)
+      const tx = await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
+      const timestamp = BigNumber.from((await provider.getBlock(tx.blockNumber)).timestamp)
+      expect(await creditAgency.nextInterestRepayTime(tusdPool.address, borrower.address)).to.eq(timestamp.add(MONTH))
+    })
+
+    it('does not update nextInterestRepayTime on debt increase', async () => {
+      const tx = await creditAgency.connect(borrower).borrow(tusdPool.address, 500)
+      const timestamp = BigNumber.from((await provider.getBlock(tx.blockNumber)).timestamp)
+      expect(await creditAgency.nextInterestRepayTime(tusdPool.address, borrower.address)).to.eq(timestamp.add(MONTH))
+      await creditAgency.connect(borrower).borrow(tusdPool.address, 500)
+      expect(await creditAgency.nextInterestRepayTime(tusdPool.address, borrower.address)).to.eq(timestamp.add(MONTH))
+    })
+
+    it('cannot borrow over the borrow limit', async () => {
+      await creditAgency.allowBorrower(borrower.address, true)
+      await creditOracle.setScore(borrower.address, 191)
+      await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100))
+
+      expect(await creditAgency.borrowLimit(tusdPool.address, borrower.address)).to.eq(parseEth(80.51))
+      await expect(creditAgency.connect(borrower).borrow(tusdPool.address, parseEth(80.51).add(1)))
+        .to.be.revertedWith('TrueCreditAgency: Borrow amount cannot exceed borrow limit')
+
+      await creditAgency.connect(borrower).borrow(tusdPool.address, parseEth(75))
+
+      await expect(creditAgency.connect(borrower).borrow(tusdPool.address, parseEth(5.51).add(1)))
+        .to.be.revertedWith('TrueCreditAgency: Borrow amount cannot exceed borrow limit')
     })
 
     it('correctly handles the case when credit score is changing', async () => {
@@ -526,6 +580,12 @@ describe('TrueCreditAgency', () => {
       expect(await creditAgency.totalPaidInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
     })
 
+    it('updates nextInterestRepayTime', async () => {
+      const tx = await creditAgency.connect(borrower).payInterest(tusdPool.address)
+      const timestamp = BigNumber.from((await provider.getBlock(tx.blockNumber)).timestamp)
+      expect(await creditAgency.nextInterestRepayTime(tusdPool.address, borrower.address)).to.eq(timestamp.add(MONTH))
+    })
+
     it('emits event', async () => {
       await expect(creditAgency.connect(borrower).payInterest(tusdPool.address))
         .to.emit(creditAgency, 'InterestPaid')
@@ -544,7 +604,7 @@ describe('TrueCreditAgency', () => {
 
     it('cannot repay more than debt', async () => {
       await expect(creditAgency.connect(borrower).repay(tusdPool.address, 2000))
-        .to.be.revertedWith('TrueCreditAgency: Cannot repay more than debt')
+        .to.be.revertedWith('TrueCreditAgency: Cannot repay over the debt')
     })
 
     it('repays debt to the pool', async () => {
@@ -554,20 +614,28 @@ describe('TrueCreditAgency', () => {
       expect(await tusd.balanceOf(tusdPool.address)).to.eq(parseEth(1e7).sub(500))
     })
 
+    it('repays partial interest to the pool', async () => {
+      await timeTravel(YEAR)
+      await creditAgency.connect(borrower).repay(tusdPool.address, 50)
+
+      expect(await tusd.balanceOf(borrower.address)).to.be.closeTo(BigNumber.from(950), 2)
+      expect(await tusd.balanceOf(tusdPool.address)).to.be.closeTo(parseEth(1e7).sub(950), 2)
+    })
+
     it('reduces borrowed amount', async () => {
       await timeTravel(YEAR)
       await creditAgency.connect(borrower).repay(tusdPool.address, 500)
       expect(await creditAgency.borrowed(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(600), 2)
     })
 
-    it('repays whole interest', async () => {
+    it('updates totalPaidInterest on whole interest repayment', async () => {
       await timeTravel(YEAR)
       await creditAgency.connect(borrower).repay(tusdPool.address, 500)
 
       expect(await creditAgency.totalPaidInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
     })
 
-    it('repays interest partially', async () => {
+    it('updates totalPaidInterest on partial interest repayment', async () => {
       await timeTravel(YEAR)
       await creditAgency.connect(borrower).repay(tusdPool.address, 50)
 
@@ -581,15 +649,29 @@ describe('TrueCreditAgency', () => {
       expect(await creditAgency.borrowed(tusdPool.address, borrower.address)).to.eq(1000)
     })
 
+    it('updates nextInterestRepayTime when interest repaid', async () => {
+      await timeTravel(YEAR)
+      const tx = await creditAgency.connect(borrower).repay(tusdPool.address, 500)
+      const timestamp = BigNumber.from((await provider.getBlock(tx.blockNumber)).timestamp)
+      expect(await creditAgency.nextInterestRepayTime(tusdPool.address, borrower.address)).to.eq(timestamp.add(MONTH))
+    })
+
+    it('does not update nextInterestRepayTime when interest repaid partially', async () => {
+      const prevNextInterestRepayTime = await creditAgency.nextInterestRepayTime(tusdPool.address, borrower.address)
+      await timeTravel(YEAR)
+      await creditAgency.connect(borrower).repay(tusdPool.address, 50)
+      expect(await creditAgency.nextInterestRepayTime(tusdPool.address, borrower.address)).to.eq(prevNextInterestRepayTime)
+    })
+
     it('calls _rebucket', async () => {
       const bucketBefore = await creditAgency.buckets(tusdPool.address, 255)
       await creditAgency.connect(borrower).repay(tusdPool.address, 500)
       const bucketAfter = await creditAgency.buckets(tusdPool.address, 255)
 
       expect(bucketBefore.borrowersCount).to.eq(bucketAfter.borrowersCount)
-      expect(bucketBefore.timestamp).to.lt(bucketAfter.timestamp)
+      expect(bucketBefore.timestamp).to.be.lt(bucketAfter.timestamp)
       expect(bucketBefore.rate).to.eq(bucketAfter.rate)
-      expect(bucketBefore.cumulativeInterestPerShare).to.lt(bucketAfter.cumulativeInterestPerShare)
+      expect(bucketBefore.cumulativeInterestPerShare).to.be.lt(bucketAfter.cumulativeInterestPerShare)
       expect(bucketBefore.totalBorrowed).to.eq(bucketAfter.totalBorrowed.add(500))
     })
 
@@ -644,10 +726,16 @@ describe('TrueCreditAgency', () => {
       const bucketAfter = await creditAgency.buckets(tusdPool.address, 255)
 
       expect(bucketBefore.borrowersCount).to.eq(bucketAfter.borrowersCount)
-      expect(bucketBefore.timestamp).to.lt(bucketAfter.timestamp)
+      expect(bucketBefore.timestamp).to.be.lt(bucketAfter.timestamp)
       expect(bucketBefore.rate).to.eq(bucketAfter.rate)
-      expect(bucketBefore.cumulativeInterestPerShare).to.lt(bucketAfter.cumulativeInterestPerShare)
+      expect(bucketBefore.cumulativeInterestPerShare).to.be.lt(bucketAfter.cumulativeInterestPerShare)
       expect(bucketBefore.totalBorrowed).to.eq(bucketAfter.totalBorrowed.add(1000))
+    })
+
+    it('updates nextInterestRepayTime', async () => {
+      const tx = await creditAgency.connect(borrower).repayInFull(tusdPool.address)
+      const timestamp = BigNumber.from((await provider.getBlock(tx.blockNumber)).timestamp)
+      expect(await creditAgency.nextInterestRepayTime(tusdPool.address, borrower.address)).to.eq(timestamp.add(MONTH))
     })
 
     it('emits event', async () => {
