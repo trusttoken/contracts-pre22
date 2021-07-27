@@ -41,7 +41,7 @@ describe('TrueFiCreditOracle', () => {
     })
   })
 
-  describe('set and get credit scores', () => {
+  describe('setScore', () => {
     const firstScore = 100
     const secondScore = 200
 
@@ -49,24 +49,31 @@ describe('TrueFiCreditOracle', () => {
       await oracle.connect(manager).setScore(firstAccount.address, firstScore)
     })
 
-    it('only manager can set scores', async () => {
+    it('reverts if caller is not the manager', async () => {
       await expect(oracle.connect(owner).setScore(firstAccount.address, firstScore))
         .to.be.revertedWith('TrueFiCreditOracle: Caller is not the manager')
     })
 
-    it('score is set correctly for account', async () => {
+    it('sets correct score for the account', async () => {
       expect(await oracle.getScore(firstAccount.address)).to.equal(firstScore)
     })
 
-    it('change existing score', async () => {
+    it('emits event', async () => {
+      await expect(oracle.connect(manager).setScore(firstAccount.address, secondScore))
+        .to.emit(oracle, 'ScoreChanged')
+        .withArgs(firstAccount.address, secondScore)
+    })
+  })
+
+  describe('getScore', () => {
+    const firstScore = 100
+    const secondScore = 200
+
+    it('gets correct score after it changed', async () => {
+      await oracle.connect(manager).setScore(firstAccount.address, firstScore)
+      expect(await oracle.getScore(firstAccount.address)).to.equal(firstScore)
       await oracle.connect(manager).setScore(firstAccount.address, secondScore)
       expect(await oracle.getScore(firstAccount.address)).to.equal(secondScore)
-    })
-
-    it('emits event', async () => {
-      await expect(oracle.connect(manager).setScore(firstAccount.address, firstScore))
-        .to.emit(oracle, 'ScoreChanged')
-        .withArgs(firstAccount.address, firstScore)
     })
   })
 
