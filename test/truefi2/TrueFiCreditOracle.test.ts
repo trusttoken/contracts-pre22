@@ -41,7 +41,7 @@ describe('TrueFiCreditOracle', () => {
     })
   })
 
-  describe('set and get credit scores', () => {
+  describe('setScore', () => {
     const firstScore = 100
     const secondScore = 200
 
@@ -58,7 +58,20 @@ describe('TrueFiCreditOracle', () => {
       expect(await oracle.getScore(firstAccount.address)).to.equal(firstScore)
     })
 
-    it('change existing score', async () => {
+    it('emits event', async () => {
+      await expect(oracle.connect(manager).setScore(firstAccount.address, secondScore))
+        .to.emit(oracle, 'ScoreChanged')
+        .withArgs(firstAccount.address, secondScore)
+    })
+  })
+
+  describe('getScore', () => {
+    const firstScore = 100
+    const secondScore = 200
+
+    it('gets score correctly after it has changed', async () => {
+      await oracle.connect(manager).setScore(firstAccount.address, firstScore)
+      expect(await oracle.getScore(firstAccount.address)).to.equal(firstScore)
       await oracle.connect(manager).setScore(firstAccount.address, secondScore)
       expect(await oracle.getScore(firstAccount.address)).to.equal(secondScore)
     })
