@@ -30,6 +30,8 @@ contract TrueFiCreditOracle is ITrueFiCreditOracle, UpgradeableClaimable {
 
     event ManagerChanged(address newManager);
 
+    event ScoreChanged(address account, uint8 newScore);
+
     function initialize() public initializer {
         UpgradeableClaimable.initialize(msg.sender);
     }
@@ -53,6 +55,7 @@ contract TrueFiCreditOracle is ITrueFiCreditOracle, UpgradeableClaimable {
      */
     function setScore(address account, uint8 newScore) public onlyManager {
         score[account] = newScore;
+        emit ScoreChanged(account, newScore);
     }
 
     /**
