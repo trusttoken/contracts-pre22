@@ -281,10 +281,9 @@ contract TrueCreditAgency is UpgradeableClaimable {
 
     function borrow(ITrueFiPool2 pool, uint256 amount) external onlyAllowedBorrowers {
         require(isPoolAllowed[pool], "TrueCreditAgency: The pool is not whitelisted for borrowing");
-        require(amount <= borrowLimit(pool, msg.sender), "TrueCreditAgency: Borrow amount cannot exceed borrow limit");
-
-        uint256 currentDebt = borrowed[pool][msg.sender];
         (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, msg.sender);
+        require(amount <= borrowLimit(pool, msg.sender), "TrueCreditAgency: Borrow amount cannot exceed borrow limit");
+        uint256 currentDebt = borrowed[pool][msg.sender];
 
         if (currentDebt == 0) {
             nextInterestRepayTime[pool][msg.sender] = block.timestamp.add(interestRepaymentPeriod);
