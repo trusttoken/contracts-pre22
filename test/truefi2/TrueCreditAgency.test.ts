@@ -516,7 +516,7 @@ describe('TrueCreditAgency', () => {
 
     it('cannot repay more than debt', async () => {
       await expect(creditAgency.connect(borrower).repay(tusdPool.address, 2000))
-        .to.be.revertedWith('TrueCreditAgency: Cannot repay more than debt')
+        .to.be.revertedWith('TrueCreditAgency: Cannot repay over the debt')
     })
 
     it('repays debt to the pool', async () => {
