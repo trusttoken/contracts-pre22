@@ -8,16 +8,14 @@ contract AaveBaseRateOracle {
     using SafeMath for uint256;
 
     uint16 public constant BUFFER_SIZE = 365;
-    uint256 private constant BASIS_PRECISION = 10000;
 
     // A cyclic buffer structure for storing running total (cumulative sum)
     // values and their respective timestamps.
-    // latestIndex points to the previously inserted value.
+    // currIndex points to the previously inserted value.
     struct RunningTotalsBuffer {
         uint256[BUFFER_SIZE] runningTotals;
         uint256[BUFFER_SIZE] timestamps;
         uint16 currIndex;
-        uint256 lastValue;
     }
     RunningTotalsBuffer public totalsBuffer;
 
@@ -48,7 +46,6 @@ contract AaveBaseRateOracle {
         cooldownTime = _cooldownTime;
         asset = _asset;
 
-        totalsBuffer.lastValue = _getAaveVariableBorrowAPY();
         totalsBuffer.timestamps[0] = block.timestamp;
     }
 
@@ -78,8 +75,8 @@ contract AaveBaseRateOracle {
 
     /**
      * @dev Update the totalsBuffer:
-     * Gets current deposit apy from aave and writes down
-     * new total running value.
+     * Gets current variable borrow apy from aave
+     * and writes down new total running value.
      * If the buffer is filled overwrites the oldest value
      * with a new one and updates its timestamp.
      */
@@ -87,12 +84,10 @@ contract AaveBaseRateOracle {
         uint16 _currIndex = totalsBuffer.currIndex;
         uint16 nextIndex = (_currIndex + 1) % bufferSize();
         uint256 apy = _getAaveVariableBorrowAPY();
-        uint256 dt = block.timestamp.sub(totalsBuffer.timestamps[_currIndex]);
-        totalsBuffer.runningTotals[nextIndex] = totalsBuffer.runningTotals[_currIndex].add(
-            apy.add(totalsBuffer.lastValue).mul(dt).div(2)
-        );
-        totalsBuffer.timestamps[nextIndex] = block.timestamp;
-        totalsBuffer.lastValue = apy;
+        uint256 currTimestamp = block.timestamp;
+        uint256 dt = currTimestamp.sub(totalsBuffer.timestamps[_currIndex]);
+        totalsBuffer.runningTotals[nextIndex] = totalsBuffer.runningTotals[_currIndex].add(apy.mul(dt));
+        totalsBuffer.timestamps[nextIndex] = currTimestamp;
         totalsBuffer.currIndex = nextIndex;
     }
 
@@ -101,54 +96,50 @@ contract AaveBaseRateOracle {
      * the time-weighted average of the aave variable borrowing apys.
      * Essentially formula given below is used:
      *
-     *           (v + v_{n-1}) / 2 * (t - t_{n-1}) + sum_{i=1}^{n - 1} (v_i + v_{i-1}) / 2 * (t_i - t_{i-1})
-     * avgAPY = -------------------------------------------------------------------------------------------
-     *                                                  (t - t_0)
+     *           sum_{i=1}^{n} v_i * (t_i - t_{i-1})
+     * avgAPY = ------------------------------------
+     *                      t_n - t_0
      *
-     * where v_i, t_i are values of the prices and their respective timestamps
-     * stored in the historical buffer, v is a value of current price ant t is its timestamp.
-     * Index n-1 corresponds to the most recent values and index 0 to the oldest ones.
+     * where v_i, t_i are values of the apys and their respective timestamps.
+     * Index n corresponds to the most recent values and index 0 to the oldest ones.
      *
      * To avoid costly computations in a loop an optimization is used:
-     * Instead of directly storing apys we store calculated numerators from formula above.
+     * Instead of directly storing apys we store calculated numerators from the formula above.
      * This gives us most of the job done for every calculation.
      *
-     * @param numberOfUpdates How many elements of buffer should be involved in calculation.
+     * @param numberOfValues How many values of totalsBuffer should be involved in calculations.
      * @return Average apy.
      */
-    function calculateAverageAPY(uint16 numberOfUpdates) public view returns (uint256) {
-        require(numberOfUpdates <= bufferSize(), "AaveBaseRateOracle: Number of updates is limited by buffer size");
+    function calculateAverageAPY(uint16 numberOfValues) public view returns (uint256) {
+        require(numberOfValues > 1, "AaveBaseRateOracle: Number of values should be greater than 1");
+        require(numberOfValues <= bufferSize(), "AaveBaseRateOracle: Number of values is limited by buffer size");
 
         uint16 _currIndex = totalsBuffer.currIndex;
-        uint16 startIndex = (_currIndex + bufferSize() - numberOfUpdates + 1) % bufferSize();
-        if (totalsBuffer.timestamps[startIndex] == 0) {
-            startIndex = 0;
-        }
-        uint256 runningTotalForTimeToCover = totalsBuffer.runningTotals[_currIndex].sub(totalsBuffer.runningTotals[startIndex]);
-        uint256 curValue = _getAaveVariableBorrowAPY();
-        uint256 curTimestamp = block.timestamp;
-        uint256 dt = curTimestamp.sub(totalsBuffer.timestamps[_currIndex]);
-        runningTotalForTimeToCover = runningTotalForTimeToCover.add(curValue.add(totalsBuffer.lastValue).mul(dt).div(2));
-        uint256 totalTime = curTimestamp.sub(totalsBuffer.timestamps[startIndex]);
-        return runningTotalForTimeToCover.div(totalTime);
+        uint16 startIndex = (_currIndex + bufferSize() - numberOfValues + 1) % bufferSize();
+
+        require(totalsBuffer.timestamps[startIndex] > 0, "AaveBaseRateOracle: There are fewer values stored than required");
+
+        uint256 diff = totalsBuffer.runningTotals[_currIndex].sub(totalsBuffer.runningTotals[startIndex]);
+        uint256 dt = totalsBuffer.timestamps[_currIndex].sub(totalsBuffer.timestamps[startIndex]);
+        return diff.div(dt);
     }
 
     /**
-     * @dev apy based on data from last 7 days.
+     * @dev apy based on last 7 entries in totalsBuffer.
      */
     function getWeeklyAPY() public view returns (uint256) {
         return calculateAverageAPY(7);
     }
 
     /**
-     * @dev apy based on data from last 30 days.
+     * @dev apy based on last 30 entries in totalsBuffer.
      */
     function getMonthlyAPY() public view returns (uint256) {
         return calculateAverageAPY(30);
     }
 
     /**
-     * @dev apy based on data from last 365 days.
+     * @dev apy based on last 365 entries in totalsBuffer.
      */
     function getYearlyAPY() public view returns (uint256) {
         return calculateAverageAPY(365);
