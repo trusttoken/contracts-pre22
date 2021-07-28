@@ -7,16 +7,16 @@ import {IAaveLendingPool} from "./interface/IAave.sol";
 contract AaveBaseRateOracle {
     using SafeMath for uint256;
 
-    uint16 public constant MAX_BUFFER_SIZE = 365;
+    uint16 public constant BUFFER_SIZE = 365;
     uint256 private constant BASIS_PRECISION = 10000;
 
     // A cyclic buffer structure for storing running total (cumulative sum)
     // values and their respective timestamps.
     // latestIndex points to the previously inserted value.
     struct RunningTotalsBuffer {
-        uint256[MAX_BUFFER_SIZE] runningTotals;
-        uint256[MAX_BUFFER_SIZE] timestamps;
-        uint16 latestIndex;
+        uint256[BUFFER_SIZE] runningTotals;
+        uint256[BUFFER_SIZE] timestamps;
+        uint16 currIndex;
         uint256 lastValue;
     }
     RunningTotalsBuffer public totalsBuffer;
@@ -34,7 +34,7 @@ contract AaveBaseRateOracle {
      */
     modifier offCooldown() {
         // get the last timestamp written into the buffer
-        uint256 lastWritten = totalsBuffer.timestamps[totalsBuffer.latestIndex];
+        uint256 lastWritten = totalsBuffer.timestamps[totalsBuffer.currIndex];
         require(block.timestamp >= lastWritten.add(cooldownTime), "AaveBaseRateOracle: Buffer on cooldown");
         _;
     }
@@ -53,7 +53,7 @@ contract AaveBaseRateOracle {
     }
 
     function bufferSize() public virtual pure returns (uint16) {
-        return MAX_BUFFER_SIZE;
+        return BUFFER_SIZE;
     }
 
     /**
@@ -63,12 +63,12 @@ contract AaveBaseRateOracle {
         public
         view
         returns (
-            uint256[MAX_BUFFER_SIZE] memory,
-            uint256[MAX_BUFFER_SIZE] memory,
+            uint256[BUFFER_SIZE] memory,
+            uint256[BUFFER_SIZE] memory,
             uint16
         )
     {
-        return (totalsBuffer.runningTotals, totalsBuffer.timestamps, totalsBuffer.latestIndex);
+        return (totalsBuffer.runningTotals, totalsBuffer.timestamps, totalsBuffer.currIndex);
     }
 
     function getAaveVariableBorrowAPY(address _asset) public view returns (uint256) {
@@ -84,14 +84,16 @@ contract AaveBaseRateOracle {
      * with a new one and updates its timestamp.
      */
     function update() public offCooldown {
-        uint16 lidx = totalsBuffer.latestIndex;
-        uint16 nextIndex = (lidx + 1) % bufferSize();
+        uint16 _currIndex = totalsBuffer.currIndex;
+        uint16 nextIndex = (_currIndex + 1) % bufferSize();
         uint256 apy = getAaveVariableBorrowAPY(asset);
-        uint256 dt = block.timestamp.sub(totalsBuffer.timestamps[lidx]);
-        totalsBuffer.runningTotals[nextIndex] = totalsBuffer.runningTotals[lidx].add(apy.add(totalsBuffer.lastValue).mul(dt).div(2));
+        uint256 dt = block.timestamp.sub(totalsBuffer.timestamps[_currIndex]);
+        totalsBuffer.runningTotals[nextIndex] = totalsBuffer.runningTotals[_currIndex].add(
+            apy.add(totalsBuffer.lastValue).mul(dt).div(2)
+        );
         totalsBuffer.timestamps[nextIndex] = block.timestamp;
         totalsBuffer.lastValue = apy;
-        totalsBuffer.latestIndex = nextIndex;
+        totalsBuffer.currIndex = nextIndex;
     }
 
     /**
@@ -124,15 +126,15 @@ contract AaveBaseRateOracle {
         // estimate how much buffer we need to use
         uint16 bufferSizeNeeded = uint16(timeToCover.div(cooldownTime));
         require(bufferSizeNeeded <= bufferSize(), "AaveBaseRateOracle: Needed buffer size cannot exceed size limit");
-        uint16 lidx = totalsBuffer.latestIndex;
-        uint16 startIndex = (lidx + bufferSize() - bufferSizeNeeded + 1) % bufferSize();
+        uint16 _currIndex = totalsBuffer.currIndex;
+        uint16 startIndex = (_currIndex + bufferSize() - bufferSizeNeeded + 1) % bufferSize();
         if (totalsBuffer.timestamps[startIndex] == 0) {
             startIndex = 0;
         }
-        uint256 runningTotalForTimeToCover = totalsBuffer.runningTotals[lidx].sub(totalsBuffer.runningTotals[startIndex]);
+        uint256 runningTotalForTimeToCover = totalsBuffer.runningTotals[_currIndex].sub(totalsBuffer.runningTotals[startIndex]);
         uint256 curValue = getAaveVariableBorrowAPY(asset);
         uint256 curTimestamp = block.timestamp;
-        uint256 dt = curTimestamp.sub(totalsBuffer.timestamps[lidx]);
+        uint256 dt = curTimestamp.sub(totalsBuffer.timestamps[_currIndex]);
         runningTotalForTimeToCover = runningTotalForTimeToCover.add(curValue.add(totalsBuffer.lastValue).mul(dt).div(2));
         uint256 totalTime = curTimestamp.sub(totalsBuffer.timestamps[startIndex]);
         return runningTotalForTimeToCover.div(totalTime);

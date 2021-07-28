@@ -53,8 +53,8 @@ describe('AaveBaseRateOracle', () => {
   })
 
   const updateBufferRightAfterCooldown = async (oracle: AaveBaseRateOracle | MockAaveBaseRateOracle) => {
-    const [, timestamps, latestIndex] = await oracle.getTotalsBuffer()
-    const newestTimestamp = timestamps[latestIndex].toNumber()
+    const [, timestamps, currIndex] = await oracle.getTotalsBuffer()
+    const newestTimestamp = timestamps[currIndex].toNumber()
     await timeTravelTo(provider, newestTimestamp + COOLDOWN_TIME - 1)
     await oracle.update()
   }
@@ -83,20 +83,20 @@ describe('AaveBaseRateOracle', () => {
     })
 
     it('has expected initial insert index of 0', async () => {
-      const [, , latestIndex] = await aaveBaseRateOracle.getTotalsBuffer()
-      expect(latestIndex).to.eq(0)
+      const [, , currIndex] = await aaveBaseRateOracle.getTotalsBuffer()
+      expect(currIndex).to.eq(0)
     })
 
     it('insertIndex increments cyclically', async () => {
       await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(BN(1e27)))
       for (let i = 0; i < BUFFER_SIZE - 1; i++) {
         await updateBufferRightAfterCooldown(aaveBaseRateOracle)
-        const [, , latestIndex] = await aaveBaseRateOracle.getTotalsBuffer()
-        expect(latestIndex).to.eq(i + 1)
+        const [, , currIndex] = await aaveBaseRateOracle.getTotalsBuffer()
+        expect(currIndex).to.eq(i + 1)
       }
       await updateBufferRightAfterCooldown(aaveBaseRateOracle)
-      const [, , latestIndex] = await aaveBaseRateOracle.getTotalsBuffer()
-      expect(latestIndex).to.eq(0)
+      const [, , currIndex] = await aaveBaseRateOracle.getTotalsBuffer()
+      expect(currIndex).to.eq(0)
     })
 
     it('overwrites old values with new ones', async () => {
@@ -126,10 +126,10 @@ describe('AaveBaseRateOracle', () => {
       await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(BN(1e27)))
       await updateBufferRightAfterCooldown(aaveBaseRateOracle)
       const curTimestamp = await getCurrentTimestamp()
-      const [runningTotals, timestamps, latestIndex] = await aaveBaseRateOracle.getTotalsBuffer()
+      const [runningTotals, timestamps, currIndex] = await aaveBaseRateOracle.getTotalsBuffer()
       expect(runningTotals[1]).to.eq(86400_0000)
       expect(timestamps[1]).to.eq(curTimestamp)
-      expect(latestIndex).to.eq(1)
+      expect(currIndex).to.eq(1)
     })
   })
 
