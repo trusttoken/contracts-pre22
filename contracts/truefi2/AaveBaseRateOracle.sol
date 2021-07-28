@@ -48,7 +48,7 @@ contract AaveBaseRateOracle {
         cooldownTime = _cooldownTime;
         asset = _asset;
 
-        totalsBuffer.lastValue = getAaveVariableBorrowAPY(asset);
+        totalsBuffer.lastValue = getAaveVariableBorrowAPY();
         totalsBuffer.timestamps[0] = block.timestamp;
     }
 
@@ -71,8 +71,8 @@ contract AaveBaseRateOracle {
         return (totalsBuffer.runningTotals, totalsBuffer.timestamps, totalsBuffer.currIndex);
     }
 
-    function getAaveVariableBorrowAPY(address _asset) public view returns (uint256) {
-        (, , , , uint128 currentVariableBorrowRate, , , , , , , ) = aavePool.getReserveData(_asset);
+    function getAaveVariableBorrowAPY() internal view returns (uint256) {
+        (, , , , uint128 currentVariableBorrowRate, , , , , , , ) = aavePool.getReserveData(asset);
         return uint256(currentVariableBorrowRate).div(1e23);
     }
 
@@ -86,7 +86,7 @@ contract AaveBaseRateOracle {
     function update() public offCooldown {
         uint16 _currIndex = totalsBuffer.currIndex;
         uint16 nextIndex = (_currIndex + 1) % bufferSize();
-        uint256 apy = getAaveVariableBorrowAPY(asset);
+        uint256 apy = getAaveVariableBorrowAPY();
         uint256 dt = block.timestamp.sub(totalsBuffer.timestamps[_currIndex]);
         totalsBuffer.runningTotals[nextIndex] = totalsBuffer.runningTotals[_currIndex].add(
             apy.add(totalsBuffer.lastValue).mul(dt).div(2)
@@ -132,7 +132,7 @@ contract AaveBaseRateOracle {
             startIndex = 0;
         }
         uint256 runningTotalForTimeToCover = totalsBuffer.runningTotals[_currIndex].sub(totalsBuffer.runningTotals[startIndex]);
-        uint256 curValue = getAaveVariableBorrowAPY(asset);
+        uint256 curValue = getAaveVariableBorrowAPY();
         uint256 curTimestamp = block.timestamp;
         uint256 dt = curTimestamp.sub(totalsBuffer.timestamps[_currIndex]);
         runningTotalForTimeToCover = runningTotalForTimeToCover.add(curValue.add(totalsBuffer.lastValue).mul(dt).div(2));
