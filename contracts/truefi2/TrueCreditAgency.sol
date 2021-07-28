@@ -59,7 +59,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
     mapping(ITrueFiPool2 => bool) public isPoolAllowed;
     ITrueFiPool2[] public pools;
 
-    mapping(address => bool) public isBorrowerAllowed;
+    mapping(address => uint256) public borrowerAllowedUntilTime;
 
     uint256 public interestRepaymentPeriod;
 
@@ -97,7 +97,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
 
     event UtilizationAdjustmentPowerChanged(uint256 newValue);
 
-    event BorrowerAllowed(address indexed who, bool status);
+    event BorrowerAllowed(address indexed who, uint256 timePeriod);
 
     event PoolAllowed(ITrueFiPool2 pool, bool isAllowed);
 
@@ -126,7 +126,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
     }
 
     modifier onlyAllowedBorrowers() {
-        require(isBorrowerAllowed[msg.sender], "TrueCreditAgency: Sender is not allowed to borrow");
+        require(borrowerAllowedUntilTime[msg.sender] >= block.timestamp, "TrueCreditAgency: Sender is not allowed to borrow");
         _;
     }
 
@@ -165,9 +165,9 @@ contract TrueCreditAgency is UpgradeableClaimable {
         emit UtilizationAdjustmentPowerChanged(newValue);
     }
 
-    function allowBorrower(address who, bool status) external onlyOwner {
-        isBorrowerAllowed[who] = status;
-        emit BorrowerAllowed(who, status);
+    function allowBorrower(address who, uint256 timePeriod) external onlyOwner {
+        borrowerAllowedUntilTime[who] = block.timestamp.add(timePeriod);
+        emit BorrowerAllowed(who, timePeriod);
     }
 
     function allowPool(ITrueFiPool2 pool, bool isAllowed) external onlyOwner {
