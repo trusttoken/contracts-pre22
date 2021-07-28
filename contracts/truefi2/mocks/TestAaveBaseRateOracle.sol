@@ -14,4 +14,8 @@ contract TestAaveBaseRateOracle is AaveBaseRateOracle {
     function bufferSize() public override pure returns (uint16) {
         return 7;
     }
+
+    function getAaveVariableBorrowAPY() public view returns (uint256) {
+        return _getAaveVariableBorrowAPY();
+    }
 }
