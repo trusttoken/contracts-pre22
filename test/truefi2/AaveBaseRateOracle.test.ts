@@ -7,8 +7,8 @@ import { DAY, timeTravel, timeTravelTo } from 'utils'
 import {
   AaveBaseRateOracle,
   AaveBaseRateOracle__factory,
-  MockAaveBaseRateOracle,
-  MockAaveBaseRateOracle__factory,
+  TestAaveBaseRateOracle,
+  TestAaveBaseRateOracle__factory,
 } from 'contracts'
 import { IAaveLendingPoolJson } from 'build'
 import { AddressZero } from '@ethersproject/constants'
@@ -21,8 +21,8 @@ describe('AaveBaseRateOracle', () => {
   let provider: MockProvider
   let owner: Wallet
   let asset: Wallet
-  let aaveBaseRateOracle: MockAaveBaseRateOracle
-  let oracleShortCooldown: MockAaveBaseRateOracle
+  let aaveBaseRateOracle: TestAaveBaseRateOracle
+  let oracleShortCooldown: TestAaveBaseRateOracle
   let oracleLongBuffer: AaveBaseRateOracle
   let mockAaveLendingPool: MockContract
   let INITIAL_TIMESTAMP
@@ -43,16 +43,16 @@ describe('AaveBaseRateOracle', () => {
     await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(STARTING_RATE))
 
     await new AaveBaseRateOracle__factory(owner)
-    await new MockAaveBaseRateOracle__factory(owner)
-    aaveBaseRateOracle = await new MockAaveBaseRateOracle__factory(owner).deploy(mockAaveLendingPool.address, COOLDOWN_TIME, asset.address)
+    await new TestAaveBaseRateOracle__factory(owner)
+    aaveBaseRateOracle = await new TestAaveBaseRateOracle__factory(owner).deploy(mockAaveLendingPool.address, COOLDOWN_TIME, asset.address)
     INITIAL_TIMESTAMP = await getCurrentTimestamp()
 
     BUFFER_SIZE = await aaveBaseRateOracle.bufferSize()
-    oracleShortCooldown = await new MockAaveBaseRateOracle__factory(owner).deploy(mockAaveLendingPool.address, COOLDOWN_TIME / 2, asset.address)
+    oracleShortCooldown = await new TestAaveBaseRateOracle__factory(owner).deploy(mockAaveLendingPool.address, COOLDOWN_TIME / 2, asset.address)
     oracleLongBuffer = await new AaveBaseRateOracle__factory(owner).deploy(mockAaveLendingPool.address, COOLDOWN_TIME, asset.address)
   })
 
-  const updateBufferRightAfterCooldown = async (oracle: AaveBaseRateOracle | MockAaveBaseRateOracle) => {
+  const updateBufferRightAfterCooldown = async (oracle: AaveBaseRateOracle | TestAaveBaseRateOracle) => {
     const [, timestamps, currIndex] = await oracle.getTotalsBuffer()
     const newestTimestamp = timestamps[currIndex].toNumber()
     await timeTravelTo(provider, newestTimestamp + COOLDOWN_TIME - 1)
