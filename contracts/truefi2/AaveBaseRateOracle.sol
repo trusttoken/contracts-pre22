@@ -98,7 +98,7 @@ contract AaveBaseRateOracle {
 
     /**
      * @dev Average apy is calculated by taking
-     * the time-weighted average of the aave deposit apys.
+     * the time-weighted average of the aave variable borrowing apys.
      * Essentially formula given below is used:
      *
      *           (v + v_{n-1}) / 2 * (t - t_{n-1}) + sum_{i=1}^{n - 1} (v_i + v_{i-1}) / 2 * (t_i - t_{i-1})
@@ -110,24 +110,17 @@ contract AaveBaseRateOracle {
      * Index n-1 corresponds to the most recent values and index 0 to the oldest ones.
      *
      * To avoid costly computations in a loop an optimization is used:
-     * Instead of directly storing aave deposit apys we store calculated numerators from formula above.
+     * Instead of directly storing apys we store calculated numerators from formula above.
      * This gives us most of the job done for every calculation.
      *
-     * Notice that whether we are going to use the whole buffer or not
-     * depends on if it is filled up and the value of timeToCover parameter.
-     * @param timeToCover For how much time average should be calculated.
+     * @param numberOfUpdates How many elements of buffer should be involved in calculation.
      * @return Average apy.
      */
-    function calculateAverageAPY(uint256 timeToCover) public view returns (uint256) {
-        require(
-            1 days <= timeToCover && timeToCover <= 365 days,
-            "AaveBaseRateOracle: Expected amount of time in range 1 to 365 days"
-        );
-        // estimate how much buffer we need to use
-        uint16 bufferSizeNeeded = uint16(timeToCover.div(cooldownTime));
-        require(bufferSizeNeeded <= bufferSize(), "AaveBaseRateOracle: Needed buffer size cannot exceed size limit");
+    function calculateAverageAPY(uint16 numberOfUpdates) public view returns (uint256) {
+        require(numberOfUpdates <= bufferSize(), "AaveBaseRateOracle: Number of updates is limited by buffer size");
+
         uint16 _currIndex = totalsBuffer.currIndex;
-        uint16 startIndex = (_currIndex + bufferSize() - bufferSizeNeeded + 1) % bufferSize();
+        uint16 startIndex = (_currIndex + bufferSize() - numberOfUpdates + 1) % bufferSize();
         if (totalsBuffer.timestamps[startIndex] == 0) {
             startIndex = 0;
         }
@@ -144,20 +137,20 @@ contract AaveBaseRateOracle {
      * @dev apy based on data from last 7 days.
      */
     function getWeeklyAPY() public view returns (uint256) {
-        return calculateAverageAPY(7 days);
+        return calculateAverageAPY(7);
     }
 
     /**
      * @dev apy based on data from last 30 days.
      */
     function getMonthlyAPY() public view returns (uint256) {
-        return calculateAverageAPY(30 days);
+        return calculateAverageAPY(30);
     }
 
     /**
      * @dev apy based on data from last 365 days.
      */
     function getYearlyAPY() public view returns (uint256) {
-        return calculateAverageAPY(365 days);
+        return calculateAverageAPY(365);
     }
 }

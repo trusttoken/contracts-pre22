@@ -135,23 +135,16 @@ describe('AaveBaseRateOracle', () => {
 
   describe('calculateAverageRate', () => {
     describe('reverts if', () => {
-      it('provided timeToCover is either too small or too large', async () => {
-        await expect(aaveBaseRateOracle.calculateAverageAPY(DAY - 1))
-          .to.be.revertedWith('AaveBaseRateOracle: Expected amount of time in range 1 to 365 days')
-        await expect(aaveBaseRateOracle.calculateAverageAPY(365 * DAY + 1))
-          .to.be.revertedWith('AaveBaseRateOracle: Expected amount of time in range 1 to 365 days')
-      })
-
-      it('size of buffer does not match provided timeToCover', async () => {
-        const badTimeAmount = (BUFFER_SIZE + 1) * COOLDOWN_TIME / 2
-        await expect(oracleShortCooldown.calculateAverageAPY(badTimeAmount))
-          .to.be.revertedWith('AaveBaseRateOracle: Needed buffer size cannot exceed size limit')
+      it('numberOfUpdates is greater than buffer size', async () => {
+        const numberOfUpdates = BUFFER_SIZE + 1
+        await expect(oracleShortCooldown.calculateAverageAPY(numberOfUpdates))
+          .to.be.revertedWith('AaveBaseRateOracle: Number of updates is limited by buffer size')
       })
     })
 
     describe('calculates the rate correctly', () => {
       it('before any update call', async () => {
-        expect(await aaveBaseRateOracle.calculateAverageAPY(DAY)).to.eq(1_0000)
+        expect(await aaveBaseRateOracle.calculateAverageAPY(1)).to.eq(1_0000)
       })
 
       it('with partially overwritten buffer', async () => {
@@ -161,7 +154,7 @@ describe('AaveBaseRateOracle', () => {
         await updateBufferRightAfterCooldown(aaveBaseRateOracle)
         // Curve virtual prices: 1.0, 1.0, 2.0 probed with 1 day interval
         // Expected value is 2.5/2 = 1.25
-        expect(await aaveBaseRateOracle.calculateAverageAPY(3 * DAY)).to.eq(1_2500)
+        expect(await aaveBaseRateOracle.calculateAverageAPY(3)).to.eq(1_2500)
       })
 
       it('with overwritten buffer', async () => {
@@ -173,7 +166,7 @@ describe('AaveBaseRateOracle', () => {
         await updateBufferRightAfterCooldown(aaveBaseRateOracle)
         // Curve virtual prices: 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 3.0 probed with 1 day interval
         // Expected value is 12.5 / 6 = 2.08(3)
-        expect(await aaveBaseRateOracle.calculateAverageAPY(7 * DAY)).to.eq(Math.floor(12_5000 / 6))
+        expect(await aaveBaseRateOracle.calculateAverageAPY(7)).to.eq(Math.floor(12_5000 / 6))
       })
 
       it('when current price has non-zero time weight', async () => {
@@ -185,7 +178,7 @@ describe('AaveBaseRateOracle', () => {
         await timeTravel(provider, DAY / 2)
         // Curve virtual prices: 1.0, 2.0, 3.0 probed with 1 day interval
         // Expected value is (1.0 + 1.5 + 2.5 / 2) / 2.5 = 1.5
-        expect(await aaveBaseRateOracle.calculateAverageAPY(3 * DAY)).to.be.closeTo(BN(1_5000), 1)
+        expect(await aaveBaseRateOracle.calculateAverageAPY(3)).to.be.closeTo(BN(1_5000), 1)
       })
     })
 
@@ -206,7 +199,7 @@ describe('AaveBaseRateOracle', () => {
           // Aave variable borrow apys (percents): 1.0, 1.0, 1.0, 2.0, 3.0, 4.0 probed with 1 day interval
           // Expected avg apy is (1.0 * 3 + 1.5 + 2.5 + 3.5 + 4 / 2) / 6.5 = 1.(923076)
           // Expected weekly apy is 1.9230
-          expect(await aaveBaseRateOracle.calculateAverageAPY(7 * DAY)).to.eq(1_9230)
+          expect(await aaveBaseRateOracle.calculateAverageAPY(7)).to.eq(1_9230)
           expect(await aaveBaseRateOracle.getWeeklyAPY()).to.eq(1_9230)
         })
 
@@ -230,7 +223,7 @@ describe('AaveBaseRateOracle', () => {
           // Expected avg apy is (11.75 + 2.5 / 2) / 6.5 = 2.0
           // Expected weekly apy is 2.0
           expect(1).to.be.closeTo(0, 1)
-          expect(await aaveBaseRateOracle.calculateAverageAPY(7 * DAY)).to.be.closeTo(BigNumber.from(2_0000), 1)
+          expect(await aaveBaseRateOracle.calculateAverageAPY(7)).to.be.closeTo(BigNumber.from(2_0000), 1)
           expect(await aaveBaseRateOracle.getWeeklyAPY()).to.be.closeTo(BigNumber.from(2_0000), 1)
         })
 
@@ -240,7 +233,7 @@ describe('AaveBaseRateOracle', () => {
           // Aave variable borrow apys (percents): 1.0, 0.5 probed with 1 day interval
           // Expected avg apy is 0.75 / 1 = 0.75
           // Expected weekly apy is 0.75
-          expect(await aaveBaseRateOracle.calculateAverageAPY(2 * DAY)).to.eq(7500)
+          expect(await aaveBaseRateOracle.calculateAverageAPY(2)).to.eq(7500)
           expect(await aaveBaseRateOracle.getWeeklyAPY()).to.eq(7500)
         })
       })
