@@ -5,9 +5,7 @@ import {
   MockTrueCurrency,
   StkTruToken,
   TrueCreditAgency,
-  TrueCreditAgency__factory,
   TrueFiCreditOracle,
-  TrueFiCreditOracle__factory,
   TrueFiPool2,
   TrueRatingAgencyV2,
 } from 'contracts'
@@ -52,21 +50,16 @@ describe('TrueCreditAgency', () => {
       stkTru,
       rater,
       lender,
+      creditAgency,
+      creditOracle,
     } = await setupTruefi2(owner))
+
+    await tusdPool.setCreditAgency(creditAgency.address)
+    await creditAgency.allowPool(tusdPool.address, true)
 
     await tusd.mint(owner.address, parseEth(1e7))
     await tusd.approve(tusdPool.address, parseEth(1e7))
     await tusdPool.join(parseEth(1e7))
-
-    creditOracle = await new TrueFiCreditOracle__factory(owner).deploy()
-    await creditOracle.initialize()
-    await creditOracle.setManager(owner.address)
-
-    creditAgency = await new TrueCreditAgency__factory(owner).deploy()
-    await creditAgency.initialize(creditOracle.address, 100)
-
-    await tusdPool.setCreditAgency(creditAgency.address)
-    await creditAgency.allowPool(tusdPool.address, true)
 
     await creditOracle.setScore(borrower.address, 255)
     await creditOracle.setMaxBorrowerLimit(owner.address, parseEth(100_000_000))
