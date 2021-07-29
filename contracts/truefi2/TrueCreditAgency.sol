@@ -416,9 +416,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
         if (amount == 0) {
             return;
         }
-
-        uint8 oldScore = creditScore[pool][msg.sender];
-        uint8 newScore = creditOracle.getScore(msg.sender);
+        (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, msg.sender);
         _rebucket(pool, msg.sender, oldScore, newScore, borrowed[pool][msg.sender].sub(amount));
 
         emit PrincipalRepaid(pool, msg.sender, amount);
