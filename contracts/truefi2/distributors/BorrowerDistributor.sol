@@ -55,6 +55,8 @@ contract BorrowerDistributor is UpgradeableClaimable {
         ITrueLender2 _lender,
         uint256 _rewardRate
     ) external initializer {
+        UpgradeableClaimable.initialize(msg.sender);
+
         rewardCurrency = _rewardCurrency;
         lender = _lender;
         rewardRate = _rewardRate;
