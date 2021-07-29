@@ -225,6 +225,10 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
         loansValueCache = 0;
     }
 
+    function updateNameAndSymbolToLegacy() public {
+        updateNameAndSymbol("Legacy TrueFi TrueUSD", "Legacy tfTUSD");
+    }
+
     /// @dev support borrow function from pool V2
     function borrow(uint256 amount) external {
         borrow(amount, 0);
