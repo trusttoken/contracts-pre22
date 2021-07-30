@@ -290,13 +290,13 @@ describe('TrueCreditAgency', () => {
       expect(await creditAgency.totalBorrowed(borrower.address, 18)).to.equal(parseEth(600))
     })
 
-    // Uncomment after creditValue is included in poolValue
-    // it('totalTVL remains unchanged after borrowing', async () => {
-    //   expect(await creditAgency.totalTVL(18)).to.equal(parseEth(3e7))
-    //   await creditAgency.allowBorrower(borrower.address, YEAR)
-    //   await creditAgency.connect(borrower).borrow(tusdPool.address, parseEth(100))
-    //   expect(await creditAgency.totalTVL(18)).to.equal(parseEth(3e7))
-    // })
+    // Run when totalTVL includes credit value
+    xit('totalTVL remains unchanged after borrowing', async () => {
+      expect(await creditAgency.totalTVL(18)).to.equal(parseEth(3e7))
+      await creditAgency.allowBorrower(borrower.address, YEAR)
+      await creditAgency.connect(borrower).borrow(tusdPool.address, parseEth(100))
+      expect(await creditAgency.totalTVL(18)).to.equal(parseEth(3e7))
+    })
   })
 
   describe('borrowLimitAdjustment', () => {
