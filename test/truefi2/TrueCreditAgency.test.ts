@@ -5,11 +5,10 @@ import {
   MockTrueCurrency,
   StkTruToken,
   TrueCreditAgency,
-  TrueCreditAgency__factory,
   TrueFiCreditOracle,
-  TrueFiCreditOracle__factory,
   TrueFiPool2,
   TrueRatingAgencyV2,
+  MockUsdc,
 } from 'contracts'
 import {
   beforeEachWithFixture,
@@ -29,6 +28,8 @@ describe('TrueCreditAgency', () => {
   let creditAgency: TrueCreditAgency
   let tusd: MockTrueCurrency
   let tusdPool: TrueFiPool2
+  let usdc: MockUsdc
+  let usdcPool: TrueFiPool2
   let tru: MockTrueCurrency
   let stkTru: StkTruToken
   let loanFactory: LoanFactory2
@@ -47,26 +48,23 @@ describe('TrueCreditAgency', () => {
     ;({
       standardToken: tusd,
       standardPool: tusdPool,
+      feeToken: usdc,
+      feePool: usdcPool,
       loanFactory,
       tru,
       stkTru,
       rater,
       lender,
+      creditAgency,
+      creditOracle,
     } = await setupTruefi2(owner))
+
+    await tusdPool.setCreditAgency(creditAgency.address)
+    await creditAgency.allowPool(tusdPool.address, true)
 
     await tusd.mint(owner.address, parseEth(1e7))
     await tusd.approve(tusdPool.address, parseEth(1e7))
     await tusdPool.join(parseEth(1e7))
-
-    creditOracle = await new TrueFiCreditOracle__factory(owner).deploy()
-    await creditOracle.initialize()
-    await creditOracle.setManager(owner.address)
-
-    creditAgency = await new TrueCreditAgency__factory(owner).deploy()
-    await creditAgency.initialize(creditOracle.address, 100)
-
-    await tusdPool.setCreditAgency(creditAgency.address)
-    await creditAgency.allowPool(tusdPool.address, true)
 
     await creditOracle.setScore(borrower.address, 255)
     await creditOracle.setMaxBorrowerLimit(owner.address, parseEth(100_000_000))
@@ -272,36 +270,32 @@ describe('TrueCreditAgency', () => {
   })
 
   describe('totalTVL & totalBorrowed', () => {
-    let pool1: MockContract
-    let pool2: MockContract
-
     beforeEach(async () => {
-      pool1 = await deployMockContract(owner, TrueFiPool2Json.abi)
-      pool2 = await deployMockContract(owner, TrueFiPool2Json.abi)
-      await pool1.mock.poolValue.returns(parseEth(10_000))
-      await pool1.mock.decimals.returns(18)
-      await pool1.mock.borrow.returns()
-      await pool1.mock.token.returns(tusd.address)
-      await pool2.mock.poolValue.returns(parseUSDC(30_000))
-      await pool2.mock.decimals.returns(6)
-      await pool2.mock.borrow.returns()
-      await pool2.mock.token.returns(tusd.address)
-      await creditAgency.allowPool(pool1.address, true)
-      await creditAgency.allowPool(pool2.address, true)
+      await usdcPool.setCreditAgency(creditAgency.address)
+      await creditAgency.allowPool(usdcPool.address, true)
+
+      await usdc.mint(owner.address, parseUSDC(2e7))
+      await usdc.approve(usdcPool.address, parseUSDC(2e7))
+      await usdcPool.join(parseUSDC(2e7))
     })
 
     it('totalTVL returns sum of poolValues of all pools with 18 decimals precision', async () => {
-      const tusdPoolValue = await tusdPool.poolValue()
-      expect(await creditAgency.totalTVL(18)).to.equal(tusdPoolValue.add(parseEth(40_000)))
+      expect(await creditAgency.totalTVL(18)).to.equal(parseEth(3e7))
     })
 
     it('totalBorrowed returns total borrowed amount across all pools with 18 decimals precision', async () => {
       await creditAgency.allowBorrower(borrower.address, YEAR)
       await creditAgency.connect(borrower).borrow(tusdPool.address, parseEth(100))
-      await tusd.mint(creditAgency.address, parseEth(1000000))
-      await creditAgency.connect(borrower).borrow(pool1.address, parseEth(300))
-      await creditAgency.connect(borrower).borrow(pool2.address, parseUSDC(500))
-      expect(await creditAgency.totalBorrowed(borrower.address, 18)).to.equal(parseEth(900))
+      await creditAgency.connect(borrower).borrow(usdcPool.address, parseUSDC(500))
+      expect(await creditAgency.totalBorrowed(borrower.address, 18)).to.equal(parseEth(600))
+    })
+
+    // Run when totalTVL includes credit value
+    xit('totalTVL remains unchanged after borrowing', async () => {
+      expect(await creditAgency.totalTVL(18)).to.equal(parseEth(3e7))
+      await creditAgency.allowBorrower(borrower.address, YEAR)
+      await creditAgency.connect(borrower).borrow(tusdPool.address, parseEth(100))
+      expect(await creditAgency.totalTVL(18)).to.equal(parseEth(3e7))
     })
   })
 
