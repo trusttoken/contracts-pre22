@@ -319,16 +319,23 @@ describe('SAFU', () => {
     })
 
     describe('Reverts if', () => {
+      it('caller is not loan pool', async () => {
+        await expect(safu.connect(voter).reclaim(loan.address, 100))
+          .to.be.revertedWith('SAFU: caller is not the loan\'s pool')
+      })
+
       it('loan was not fully redeemed by safu', async () => {
-        await expect(safu.reclaim(loan.address, 0))
+        await expect(pool.reclaimDeficit(loan.address))
           .to.be.revertedWith('SAFU: Loan has to be fully redeemed by SAFU')
       })
 
       it('caller does not have deficit tokens', async () => {
         await token.mint(loan.address, defaultAmount)
         await safu.redeem(loan.address)
-        await expect(safu.reclaim(loan.address, 100))
-          .to.be.revertedWith('SAFU: Sender does not have deficiency tokens to be reclaimed')
+        // Reclaim twice. The second time should fail because the pool has no deficiency tokens.
+        await pool.reclaimDeficit(loan.address)
+        await expect(pool.reclaimDeficit(loan.address))
+          .to.be.revertedWith('SAFU: Pool does not have deficiency tokens to be reclaimed')
       })
     })
 
@@ -381,6 +388,12 @@ describe('SAFU', () => {
       await safu.liquidate(loan.address)
       await expect(safu.connect(borrower).redeem(loan.address))
         .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('reverts if loan is not created by factory', async () => {
+      const strangerLoan = await new LoanToken2__factory(owner).deploy(pool.address, owner.address, owner.address, owner.address, owner.address, 1000, 1, 1)
+      await expect(safu.redeem(strangerLoan.address))
+        .to.be.revertedWith('SAFU: Unknown loan')
     })
 
     it('burns loan tokens', async () => {

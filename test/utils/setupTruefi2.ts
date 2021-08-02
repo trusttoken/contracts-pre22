@@ -11,6 +11,8 @@ import {
   TrueLender2__factory,
   TrueRatingAgencyV2__factory,
   MockUsdc__factory,
+  TrueCreditAgency__factory,
+  TrueFiCreditOracle__factory,
 } from 'contracts'
 import { Wallet } from 'ethers'
 import { parseTRU } from '.'
@@ -24,6 +26,7 @@ export const setupTruefi2 = async (owner: Wallet, customDeployed?: any) => {
   const rater = await deployContract(TrueRatingAgencyV2__factory)
   const lender = customDeployed?.lender ? customDeployed.lender : await deployContract(TrueLender2__factory)
   const safu = await deployContract(Safu__factory)
+  const creditAgency = await deployContract(TrueCreditAgency__factory)
 
   const poolFactory = await deployContract(PoolFactory__factory)
   const poolImplementation = await deployContract(TrueFiPool2__factory)
@@ -36,6 +39,7 @@ export const setupTruefi2 = async (owner: Wallet, customDeployed?: any) => {
 
   const feeTokenOracle = await deployContract(MockTrueFiPoolOracle__factory, feeToken.address)
   const standardTokenOracle = await deployContract(MockTrueFiPoolOracle__factory, standardToken.address)
+  const creditOracle = await deployContract(TrueFiCreditOracle__factory)
   const linearDistributor = await deployContract(LinearTrueDistributor__factory)
   const arbitraryDistributor = await deployContract(ArbitraryDistributor__factory)
 
@@ -47,6 +51,7 @@ export const setupTruefi2 = async (owner: Wallet, customDeployed?: any) => {
   await lender.initialize(stkTru.address, poolFactory.address, rater.address, customDeployed?.oneInch ? customDeployed.oneInch.address : AddressZero)
   await safu.initialize(loanFactory.address, liquidator.address, customDeployed?.oneInch ? customDeployed.oneInch.address : AddressZero)
   await poolFactory.initialize(implementationReference.address, lender.address, safu.address)
+  await creditAgency.initialize(creditOracle.address, 100)
 
   await poolFactory.allowToken(feeToken.address, true)
   await poolFactory.createPool(feeToken.address)
@@ -60,6 +65,9 @@ export const setupTruefi2 = async (owner: Wallet, customDeployed?: any) => {
 
   await liquidator.setTokenApproval(feeToken.address, true)
   await liquidator.setTokenApproval(standardToken.address, true)
+
+  await creditOracle.initialize()
+  await creditOracle.setManager(owner.address)
 
   await lender.setFee(0)
   await rater.allowChangingAllowances(owner.address, true)
@@ -86,5 +94,7 @@ export const setupTruefi2 = async (owner: Wallet, customDeployed?: any) => {
     feePool,
     standardPool,
     safu,
+    creditAgency,
+    creditOracle,
   }
 }
