@@ -81,7 +81,7 @@ contract SAFU is ISAFU, UpgradeableClaimable {
      * If SAFU does not have enough funds, deficit is saved to be redeemed later
      * @param loan Loan to be liquidated
      */
-    function liquidate(ILoanToken2 loan) external {
+    function liquidate(ILoanToken2 loan) external override {
         require(loanFactory.isLoanToken(address(loan)), "SAFU: Unknown loan");
         require(loan.status() == ILoanToken2.Status.Defaulted, "SAFU: Loan is not defaulted");
 
@@ -109,7 +109,7 @@ contract SAFU is ISAFU, UpgradeableClaimable {
      * @dev Returns SAFU's balance of a specific token
      * @param token A token which balance is to be returned
      */
-    function tokenBalance(IERC20 token) public view returns (uint256) {
+    function tokenBalance(IERC20 token) public override view returns (uint256) {
         return token.balanceOf(address(this));
     }
 
