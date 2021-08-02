@@ -225,6 +225,10 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
         loansValueCache = 0;
     }
 
+    function updateNameAndSymbolToLegacy() public {
+        updateNameAndSymbol("Legacy TrueFi TrueUSD", "Legacy tfTUSD");
+    }
+
     /// @dev support borrow function from pool V2
     function borrow(uint256 amount) external {
         borrow(amount, 0);
@@ -481,7 +485,6 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
         require(amount <= balanceOf(msg.sender), "TrueFiPool: Insufficient funds");
 
         uint256 amountToWithdraw = poolValue().mul(amount).div(totalSupply());
-        amountToWithdraw = amountToWithdraw.mul(liquidExitPenalty(amountToWithdraw)).div(10000);
         require(amountToWithdraw <= liquidValue(), "TrueFiPool: Not enough liquidity in pool");
 
         // burn tokens sent
@@ -495,44 +498,6 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
         require(token.transfer(msg.sender, amountToWithdraw));
 
         emit Exited(msg.sender, amountToWithdraw);
-    }
-
-    /**
-     * @dev Penalty (in % * 100) applied if liquid exit is performed with this amount
-     * returns 10000 if no penalty
-     */
-    function liquidExitPenalty(uint256 amount) public view returns (uint256) {
-        uint256 lv = liquidValue();
-        uint256 pv = poolValue();
-        if (amount == pv) {
-            return 10000;
-        }
-        uint256 liquidRatioBefore = lv.mul(10000).div(pv);
-        uint256 liquidRatioAfter = lv.sub(amount).mul(10000).div(pv.sub(amount));
-        return uint256(10000).sub(averageExitPenalty(liquidRatioAfter, liquidRatioBefore));
-    }
-
-    /**
-     * @dev Calculates integral of 5/(x+50)dx times 10000
-     */
-    function integrateAtPoint(uint256 x) public pure returns (uint256) {
-        return uint256(ABDKMath64x64.ln(ABDKMath64x64.fromUInt(x.add(50)))).mul(50000).div(2**64);
-    }
-
-    /**
-     * @dev Calculates average penalty on interval [from; to]
-     * @return average exit penalty
-     */
-    function averageExitPenalty(uint256 from, uint256 to) public pure returns (uint256) {
-        require(from <= to, "TrueFiPool: To precedes from");
-        if (from == 10000) {
-            // When all liquid, don't penalize
-            return 0;
-        }
-        if (from == to) {
-            return uint256(50000).div(from.add(50));
-        }
-        return integrateAtPoint(to).sub(integrateAtPoint(from)).div(to.sub(from));
     }
 
     /**
