@@ -888,4 +888,52 @@ describe('TrueCreditAgency', () => {
       expect(await creditAgency.interest(tusdPool.address, owner.address)).to.be.closeTo(BigNumber.from(600), 2)
     })
   })
+
+  describe('poolCreditValue', () => {
+    beforeEach(async () => {
+      await creditAgency.allowBorrower(borrower.address, YEAR * 10)
+      await creditAgency.allowBorrower(owner.address, YEAR * 10)
+      await creditAgency.setRiskPremium(1000)
+      await creditOracle.setScore(borrower.address, 255)
+    })
+
+    it('one line opened', async () => {
+      await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
+      expect(await creditAgency.poolCreditValue(tusdPool.address)).to.be.closeTo(BigNumber.from(1000), 2)
+
+      await timeTravel(YEAR)
+      expect(await creditAgency.poolCreditValue(tusdPool.address)).to.be.closeTo(BigNumber.from(1100), 2)
+    })
+
+    it('two lines, same credit score', async () => {
+      await creditOracle.setScore(owner.address, 255)
+      await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
+      await creditAgency.connect(owner).borrow(tusdPool.address, 500)
+
+      expect(await creditAgency.poolCreditValue(tusdPool.address)).to.be.closeTo(BigNumber.from(1500), 2)
+
+      await timeTravel(YEAR)
+      expect(await creditAgency.poolCreditValue(tusdPool.address)).to.be.closeTo(BigNumber.from(1650), 2)
+    })
+
+    it('two lines, different credit score', async () => {
+      await creditOracle.setScore(owner.address, 254)
+      await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
+      await creditAgency.connect(owner).borrow(tusdPool.address, 500)
+
+      expect(await creditAgency.poolCreditValue(tusdPool.address)).to.be.closeTo(BigNumber.from(1500), 2)
+
+      await timeTravel(YEAR)
+      expect(await creditAgency.poolCreditValue(tusdPool.address)).to.be.closeTo(BigNumber.from(1650), 2)
+    })
+
+    it('gets reduced after repaying principal', async () => {
+      await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
+      expect(await creditAgency.poolCreditValue(tusdPool.address)).to.be.closeTo(BigNumber.from(1000), 2)
+
+      await tusd.connect(borrower).approve(creditAgency.address, 500)
+      await creditAgency.connect(borrower).repay(tusdPool.address, 500)
+      expect(await creditAgency.poolCreditValue(tusdPool.address)).to.be.closeTo(BigNumber.from(500), 2)
+    })
+  })
 })

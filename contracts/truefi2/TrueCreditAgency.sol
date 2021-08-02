@@ -346,6 +346,29 @@ contract TrueCreditAgency is UpgradeableClaimable {
         }
     }
 
+    function poolCreditValue(ITrueFiPool2 pool) external view returns (uint256) {
+        uint256 bitMap = usedBucketsBitmap;
+        CreditScoreBucket[256] storage creditScoreBuckets = buckets[pool];
+        uint256 timeNow = block.timestamp;
+        uint256 value;
+
+        for (uint16 i = 0; i <= MAX_CREDIT_SCORE; (i++, bitMap >>= 1)) {
+            if (bitMap & 1 == 0) {
+                continue;
+            }
+
+            CreditScoreBucket storage bucket = creditScoreBuckets[i];
+
+            value = value.add(bucket.totalBorrowed).add(
+                bucket
+                    .totalBucketInterest
+                    .add(bucket.rate.mul(1e23).mul(bucket.totalBorrowed).mul(timeNow.sub(bucket.timestamp)).div(365 days).div(10000))
+                    .div(1e23)
+            );
+        }
+        return value;
+    }
+
     function _rebucket(
         ITrueFiPool2 pool,
         address borrower,
