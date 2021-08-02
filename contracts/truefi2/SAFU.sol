@@ -135,12 +135,12 @@ contract SAFU is ISAFU, UpgradeableClaimable {
         require(msg.sender == poolAddress, "SAFU: caller is not the loan's pool");
         require(tokenBalance(loan) == 0, "SAFU: Loan has to be fully redeemed by SAFU");
         IDeficiencyToken dToken = deficiencyToken[loan];
-        require(dToken.balanceOf(msg.sender) > 0, "SAFU: Sender does not have deficiency tokens to be reclaimed");
+        require(dToken.balanceOf(poolAddress) > 0, "SAFU: Pool does not have deficiency tokens to be reclaimed");
 
         poolDeficit[poolAddress] = poolDeficit[poolAddress].sub(amount);
-        dToken.safeTransferFrom(msg.sender, address(this), amount);
+        dToken.safeTransferFrom(poolAddress, address(this), amount);
         dToken.burn(amount);
-        loan.token().safeTransfer(msg.sender, amount);
+        loan.token().safeTransfer(poolAddress, amount);
 
         emit Reclaimed(loan, amount);
     }
