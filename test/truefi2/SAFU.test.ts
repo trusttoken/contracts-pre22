@@ -335,10 +335,10 @@ describe('SAFU', () => {
           .to.be.revertedWith('SAFU: Loan has to be fully redeemed by SAFU')
       })
 
-      it('loan does not have deficiency tokens', async () => {
+      it('loan does not have an associated deficiency token', async () => {
         const noSAFULoan = await createLoan(loanFactory, borrower, pool, parseUSDC(1000), YEAR, 1000)
-        await expect(safu.reclaim(noSAFULoan.address, 0))
-          .to.be.revertedWith('SAFU: No deficiency token found for loan')
+        await expect(pool.reclaimDeficit(noSAFULoan.address))
+          .to.be.revertedWith('TrueFiPool2: No deficiency token found for loan')
       })
 
       it('caller does not have deficit tokens', async () => {
