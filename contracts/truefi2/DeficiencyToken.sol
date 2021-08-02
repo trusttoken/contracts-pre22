@@ -30,8 +30,8 @@ contract DeficiencyToken is IDeficiencyToken, ERC20 {
         _mint(address(_loan.pool()), _amount);
     }
 
-    function burn(uint256 amount) external override {
-        _burn(msg.sender, amount);
+    function burnFrom(address account, uint256 amount) external override {
+        _burn(account, amount);
     }
 
     function version() external override pure returns (uint8) {
