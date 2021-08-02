@@ -335,7 +335,7 @@ describe('SAFU', () => {
         // Reclaim twice. The second time should fail because the pool has no deficiency tokens.
         await pool.reclaimDeficit(loan.address)
         await expect(pool.reclaimDeficit(loan.address))
-          .to.be.revertedWith('SAFU: Sender does not have deficiency tokens to be reclaimed')
+          .to.be.revertedWith('SAFU: Pool does not have deficiency tokens to be reclaimed')
       })
     })
 
