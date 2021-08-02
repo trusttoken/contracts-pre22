@@ -118,6 +118,7 @@ contract SAFU is ISAFU, UpgradeableClaimable {
      * @param loan Loan token to be redeemed
      */
     function redeem(ILoanToken2 loan) public onlyOwner {
+        require(loanFactory.isLoanToken(address(loan)), "SAFU: Unknown loan");
         uint256 amountToBurn = tokenBalance(loan);
         uint256 balanceBeforeRedeem = tokenBalance(loan.token());
         loan.redeem(amountToBurn);

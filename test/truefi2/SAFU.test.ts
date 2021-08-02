@@ -383,6 +383,12 @@ describe('SAFU', () => {
         .to.be.revertedWith('Ownable: caller is not the owner')
     })
 
+    it('reverts if loan is not created by factory', async () => {
+      const strangerLoan = await new LoanToken2__factory(owner).deploy(pool.address, owner.address, owner.address, owner.address, owner.address, 1000, 1, 1)
+      await expect(safu.redeem(strangerLoan.address))
+        .to.be.revertedWith('SAFU: Unknown loan')
+    })
+
     it('burns loan tokens', async () => {
       await safu.liquidate(loan.address)
       await expect(() => safu.redeem(loan.address)).changeTokenBalance(loan, safu, parseUSDC(1100).mul(-1))
