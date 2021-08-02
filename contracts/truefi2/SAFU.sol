@@ -131,14 +131,16 @@ contract SAFU is ISAFU, UpgradeableClaimable {
      * @param amount Amount of deficiency tokens to be reclaimed
      */
     function reclaim(ILoanToken2 loan, uint256 amount) external override {
+        address poolAddress = address(loan.pool());
+        require(msg.sender == poolAddress, "SAFU: caller is not the loan's pool");
         require(tokenBalance(loan) == 0, "SAFU: Loan has to be fully redeemed by SAFU");
         IDeficiencyToken dToken = deficiencyToken[loan];
-        require(dToken.balanceOf(msg.sender) > 0, "SAFU: Sender does not have deficiency tokens to be reclaimed");
+        require(dToken.balanceOf(poolAddress) > 0, "SAFU: Pool does not have deficiency tokens to be reclaimed");
 
-        poolDeficit[address(loan.pool())] = poolDeficit[address(loan.pool())].sub(amount);
-        dToken.safeTransferFrom(msg.sender, address(this), amount);
+        poolDeficit[poolAddress] = poolDeficit[poolAddress].sub(amount);
+        dToken.safeTransferFrom(poolAddress, address(this), amount);
         dToken.burn(amount);
-        loan.token().safeTransfer(msg.sender, amount);
+        loan.token().safeTransfer(poolAddress, amount);
 
         emit Reclaimed(loan, amount);
     }
