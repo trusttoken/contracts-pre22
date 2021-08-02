@@ -544,16 +544,16 @@ describe('TrueCreditAgency', () => {
       expect(await tusd.balanceOf(tusdPool.address)).to.be.closeTo(parseEth(1e7).sub(900), 2)
     })
 
-    it('increases totalPaidInterest', async () => {
+    it('increases borrowerTotalPaidInterest', async () => {
       await creditAgency.connect(borrower).payInterest(tusdPool.address)
-      expect(await creditAgency.totalPaidInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
+      expect(await creditAgency.borrowerTotalPaidInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
     })
 
     it('pays close to nothing on second call', async () => {
       await creditAgency.connect(borrower).payInterest(tusdPool.address)
-      expect(await creditAgency.totalPaidInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
+      expect(await creditAgency.borrowerTotalPaidInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
       await creditAgency.connect(borrower).payInterest(tusdPool.address)
-      expect(await creditAgency.totalPaidInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
+      expect(await creditAgency.borrowerTotalPaidInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
     })
 
     it('updates nextInterestRepayTime', async () => {
@@ -604,18 +604,18 @@ describe('TrueCreditAgency', () => {
       expect(await creditAgency.borrowed(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(600), 2)
     })
 
-    it('updates totalPaidInterest on whole interest repayment', async () => {
+    it('updates borrowerTotalPaidInterest on whole interest repayment', async () => {
       await timeTravel(YEAR)
       await creditAgency.connect(borrower).repay(tusdPool.address, 500)
 
-      expect(await creditAgency.totalPaidInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
+      expect(await creditAgency.borrowerTotalPaidInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
     })
 
-    it('updates totalPaidInterest on partial interest repayment', async () => {
+    it('updates borrowerTotalPaidInterest on partial interest repayment', async () => {
       await timeTravel(YEAR)
       await creditAgency.connect(borrower).repay(tusdPool.address, 50)
 
-      expect(await creditAgency.totalPaidInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(50), 2)
+      expect(await creditAgency.borrowerTotalPaidInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(50), 2)
     })
 
     it('partial interest repay does not trigger principal repayment', async () => {
@@ -693,7 +693,7 @@ describe('TrueCreditAgency', () => {
       await timeTravel(YEAR)
       await creditAgency.connect(borrower).repayInFull(tusdPool.address)
 
-      expect(await creditAgency.totalPaidInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
+      expect(await creditAgency.borrowerTotalPaidInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
     })
 
     it('calls _rebucket', async () => {
