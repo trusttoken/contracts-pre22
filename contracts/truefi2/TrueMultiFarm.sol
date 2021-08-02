@@ -102,7 +102,7 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
     /**
      * @dev How much is staked by staker on token farm
      */
-    function staked(IERC20 token, address staker) public view returns (uint256) {
+    function staked(IERC20 token, address staker) external view returns (uint256) {
         return stakes[token].staked[staker];
     }
 
@@ -178,7 +178,7 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
      * @param tokens Token addresses
      * @param updatedShares share of the i-th token in the multifarm
      */
-    function setShares(IERC20[] calldata tokens, uint256[] calldata updatedShares) public onlyOwner {
+    function setShares(IERC20[] calldata tokens, uint256[] calldata updatedShares) external onlyOwner {
         require(tokens.length == updatedShares.length, "TrueMultiFarm: Array lengths mismatch");
         distribute();
         for (uint256 i = 0; i < tokens.length; i++) {
