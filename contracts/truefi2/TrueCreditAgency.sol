@@ -6,6 +6,7 @@ import {ERC20, IERC20, SafeMath} from "../common/UpgradeableERC20.sol";
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
+import {ITrueCreditAgency} from "./interface/ITrueCreditAgency.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
 import {TrueFiFixed64x64} from "./libraries/TrueFiFixed64x64.sol";
 
@@ -13,7 +14,7 @@ interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
     function decimals() external view returns (uint8);
 }
 
-contract TrueCreditAgency is UpgradeableClaimable {
+contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     using SafeERC20 for ERC20;
     using SafeMath for uint256;
     using TrueFiFixed64x64 for int128;
@@ -346,7 +347,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
         }
     }
 
-    function poolCreditValue(ITrueFiPool2 pool) external view returns (uint256) {
+    function poolCreditValue(ITrueFiPool2 pool) external override view returns (uint256) {
         uint256 bitMap = usedBucketsBitmap;
         CreditScoreBucket[256] storage creditScoreBuckets = buckets[pool];
         uint256 timeNow = block.timestamp;
