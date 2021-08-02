@@ -31,6 +31,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
         uint16 borrowersCount;
         uint128 timestamp;
         uint256 rate;
+        uint256 totalBucketInterest;
         uint256 cumulativeInterestPerShare; // How much interest was gathered by 1 wei times 10^27
         uint256 totalBorrowed;
         mapping(address => SavedInterest) savedInterest;
@@ -308,6 +309,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
         if (amount < accruedInterest) {
             _payInterestWithoutTransfer(pool, amount);
         } else {
+            poke(pool);
             nextInterestRepayTime[pool][msg.sender] = block.timestamp.add(interestRepaymentPeriod);
             _payInterestWithoutTransfer(pool, accruedInterest);
             _payPrincipalWithoutTransfer(pool, amount.sub(accruedInterest));
@@ -331,6 +333,10 @@ contract TrueCreditAgency is UpgradeableClaimable {
             }
 
             CreditScoreBucket storage bucket = creditScoreBuckets[i];
+
+            bucket.totalBucketInterest = bucket.totalBucketInterest.add(
+                bucket.rate.mul(1e23).mul(bucket.totalBorrowed).mul(timeNow.sub(bucket.timestamp)).div(365 days).div(10000)
+            );
 
             bucket.cumulativeInterestPerShare = bucket.cumulativeInterestPerShare.add(
                 bucket.rate.mul(1e23).mul(timeNow.sub(bucket.timestamp)).div(365 days)

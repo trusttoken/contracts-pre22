@@ -13,7 +13,7 @@ import {
 } from 'contracts'
 import {
   beforeEachWithFixture,
-  createApprovedLoan, DAY, parseEth, parseUSDC, setupTruefi2,
+  createApprovedLoan, DAY, expectScaledCloseTo, parseEth, parseUSDC, setupTruefi2,
   timeTravel as _timeTravel,
   YEAR,
 } from 'utils'
@@ -38,6 +38,7 @@ describe('TrueCreditAgency', () => {
   let timeTravel: (time: number) => void
 
   const MONTH = DAY * 31
+  const PRECISION = BigNumber.from(10).pow(23)
 
   beforeEachWithFixture(async (wallets, _provider) => {
     [owner, borrower] = wallets
@@ -636,6 +637,14 @@ describe('TrueCreditAgency', () => {
       await creditAgency.connect(borrower).repay(tusdPool.address, 50)
 
       expect(await creditAgency.borrowerTotalPaidInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(50), 2)
+    })
+
+    it('updates totalBucketInterest', async () => {
+      await timeTravel(YEAR)
+      await creditAgency.connect(borrower).repay(tusdPool.address, 200)
+      const bucketAfter = await creditAgency.buckets(tusdPool.address, 255)
+
+      expectScaledCloseTo(bucketAfter.totalBucketInterest, BigNumber.from(100).mul(PRECISION))
     })
 
     it('partial interest repay does not trigger principal repayment', async () => {
