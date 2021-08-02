@@ -89,6 +89,7 @@ contract LinearTrueDistributor is ITrueDistributor, Ownable {
      * @param newFarm New farm for distribution
      */
     function setFarm(address newFarm) external onlyOwner {
+        require(newFarm != address(0), "Farm address can't be the zero address");
         distribute();
         farm = newFarm;
         emit FarmChanged(newFarm);
