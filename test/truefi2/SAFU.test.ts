@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import { beforeEachWithFixture, createApprovedLoan, DAY, parseTRU, parseUSDC, setupTruefi2, timeTravel as _timeTravel } from 'utils'
-import { Wallet } from 'ethers'
+import { utils, Wallet } from 'ethers'
 import { AddressZero } from '@ethersproject/constants'
 
 import {
@@ -9,6 +9,8 @@ import {
   LoanFactory2,
   LoanToken2,
   LoanToken2__factory,
+  Mock1InchV3,
+  Mock1InchV3__factory,
   MockTrueCurrency,
   MockUsdc,
   Safu,
@@ -17,6 +19,10 @@ import {
   TrueLender2,
   TrueRatingAgencyV2,
 } from 'contracts'
+
+import {
+  Mock1InchV3Json,
+} from 'build'
 
 describe('SAFU', () => {
   let owner: Wallet, borrower: Wallet, voter: Wallet
@@ -27,6 +33,7 @@ describe('SAFU', () => {
   let loanFactory: LoanFactory2
   let pool: TrueFiPool2
   let lender: TrueLender2
+  let oneInch: Mock1InchV3
   let rater: TrueRatingAgencyV2
   let liquidator: Liquidator2
   let tru: MockTrueCurrency
@@ -43,7 +50,8 @@ describe('SAFU', () => {
     [owner, borrower, voter] = _wallets
     timeTravel = (time: number) => _timeTravel(_provider, time)
 
-    ;({ safu, feeToken: token, feePool: pool, lender, loanFactory, tru, stkTru, rater, liquidator } = await setupTruefi2(owner))
+    oneInch = await new Mock1InchV3__factory(owner).deploy()
+    ;({ safu, feeToken: token, feePool: pool, lender, loanFactory, tru, stkTru, rater, liquidator } = await setupTruefi2(owner, {oneInch: oneInch}))
 
     loan = await createApprovedLoan(rater, tru, stkTru, loanFactory, borrower, pool, parseUSDC(1000), YEAR, 1000, voter, _provider)
 
@@ -404,6 +412,31 @@ describe('SAFU', () => {
       await expect(safu.redeem(loan.address))
         .to.emit(safu, 'Redeemed')
         .withArgs(loan.address, loanTokensToBurn, currencyTokensToRedeem)
+    })
+  })
+
+  describe('swap', () => {
+    const encodeData = (fromToken: string, toToken: string, sender: string, receiver: string, amount: BigNumberish, flags = 0) => {
+      const iface = new utils.Interface(Mock1InchV3Json.abi)
+      return iface.encodeFunctionData('swap', [AddressZero, {
+        srcToken: fromToken,
+        dstToken: toToken,
+        srcReceiver: sender,
+        dstReceiver: receiver,
+        amount: amount,
+        minReturnAmount: 0,
+        flags: flags,
+        permit: '0x',
+      }, '0x'])
+    }
+
+    it('emits a proper event', async () => {
+      await tru.mint(safu.address, parseTRU(5))
+      await oneInch.setOutputAmount(parseUSDC(10))
+      const data = encodeData(tru.address, token.address, safu.address, safu.address, parseTRU(5))
+      await expect(safu.swap(data, 0))
+        .to.emit(safu, 'Swapped')
+        .withArgs(parseTRU(5), tru.address, parseUSDC(10), token.address)
     })
   })
 })
