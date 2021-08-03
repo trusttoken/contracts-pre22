@@ -31,6 +31,7 @@ contract DeficiencyToken is IDeficiencyToken, ERC20 {
     }
 
     function burnFrom(address account, uint256 amount) external override {
+        _approve(account, _msgSender(), allowance(account, _msgSender()).sub(amount));
         _burn(account, amount);
     }
 
