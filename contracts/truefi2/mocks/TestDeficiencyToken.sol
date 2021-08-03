@@ -9,8 +9,7 @@ import {ILoanToken2} from "../interface/ILoanToken2.sol";
  * @dev Helper contract to test the burning feature of DeficiencyToken
  */
 contract TestDeficiencyToken is DeficiencyToken {
-
-    constructor(ILoanToken2 _loan, uint256 _amount) DeficiencyToken(_loan, _amount) public {}
+    constructor(ILoanToken2 _loan, uint256 _amount) public DeficiencyToken(_loan, _amount) {}
 
     function mint(address account, uint256 amount) external {
         _mint(account, amount);
