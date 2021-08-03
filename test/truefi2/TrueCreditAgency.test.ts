@@ -128,7 +128,7 @@ describe('TrueCreditAgency', () => {
       await usdcPool.join(parseEth(1e7))
       await creditAgency.allowPool(usdcPool.address, true)
       await usdcPool.setCreditAgency(creditAgency.address)
-      
+
       await creditOracle.setScore(owner.address, 150)
       await creditAgency.allowBorrower(borrower.address, YEAR * 10)
       await creditAgency.allowBorrower(owner.address, YEAR * 10)
@@ -885,7 +885,7 @@ describe('TrueCreditAgency', () => {
       expect(await creditAgency.interest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(2300), 2)
       expect(await creditAgency.interest(tusdPool.address, owner.address)).to.be.closeTo(BigNumber.from(600), 2)
     })
-    
+
     it('after principal repayment', async () => {
       await setupBorrower(borrower, 255, 1000)
       await setupBorrower(borrower2, 154, 1000)
@@ -903,7 +903,7 @@ describe('TrueCreditAgency', () => {
       await tusd.connect(borrower2).approve(creditAgency.address, 1000)
       await creditAgency.connect(borrower2).repay(tusdPool.address, 665)
       expect(await creditAgency.borrowed(tusdPool.address, borrower2.address)).to.eq(500)
-      
+
       await timeTravel(YEAR)
 
       expect(await creditAgency.interest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(200), 2)
