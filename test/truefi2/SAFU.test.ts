@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { beforeEachWithFixture, createApprovedLoan, DAY, parseTRU, parseUSDC, setupTruefi2, timeTravel as _timeTravel } from 'utils'
+import { beforeEachWithFixture, createLoan, createApprovedLoan, DAY, parseTRU, parseUSDC, setupTruefi2, timeTravel as _timeTravel } from 'utils'
 import { Wallet } from 'ethers'
 import { AddressZero } from '@ethersproject/constants'
 
@@ -319,6 +319,12 @@ describe('SAFU', () => {
     })
 
     describe('Reverts if', () => {
+      it('loan is not created by factory', async () => {
+        const strangerLoan = await new LoanToken2__factory(owner).deploy(pool.address, owner.address, owner.address, owner.address, owner.address, 1000, 1, 1)
+        await expect(safu.reclaim(strangerLoan.address, 0))
+          .to.be.revertedWith('SAFU: Unknown loan')
+      })
+
       it('caller is not loan pool', async () => {
         await expect(safu.connect(voter).reclaim(loan.address, 100))
           .to.be.revertedWith('SAFU: caller is not the loan\'s pool')
@@ -327,6 +333,12 @@ describe('SAFU', () => {
       it('loan was not fully redeemed by safu', async () => {
         await expect(pool.reclaimDeficit(loan.address))
           .to.be.revertedWith('SAFU: Loan has to be fully redeemed by SAFU')
+      })
+
+      it('loan does not have an associated deficiency token', async () => {
+        const noSAFULoan = await createLoan(loanFactory, borrower, pool, parseUSDC(1000), YEAR, 1000)
+        await expect(pool.reclaimDeficit(noSAFULoan.address))
+          .to.be.revertedWith('TrueFiPool2: No deficiency token found for loan')
       })
 
       it('caller does not have deficit tokens', async () => {
