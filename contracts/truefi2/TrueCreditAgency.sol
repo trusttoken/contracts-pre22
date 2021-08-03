@@ -132,6 +132,9 @@ contract TrueCreditAgency is UpgradeableClaimable {
 
     function setRiskPremium(uint256 newRate) external onlyOwner {
         riskPremium = newRate;
+        for (uint256 i = 0; i < pools.length; i++) {
+            poke(pools[i]);
+        }
         emit RiskPremiumChanged(newRate);
     }
 
@@ -366,7 +369,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
             usedBucketsBitmap &= ~(uint256(1) << bucketNumber);
         }
         bucket.totalBorrowed = bucket.totalBorrowed.sub(borrowed[pool][borrower]);
-        totalBorrowerInterest = _interest(pool, bucket, borrower);
+        totalBorrowerInterest = _interest(pool, bucket, borrower).add(totalPaidInterest[pool][borrower]);
         delete bucket.savedInterest[borrower];
     }
 
