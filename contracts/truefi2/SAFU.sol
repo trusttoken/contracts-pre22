@@ -64,6 +64,11 @@ contract SAFU is ISAFU, UpgradeableClaimable {
      */
     event Reclaimed(ILoanToken2 loan, uint256 reclaimed);
 
+    /**
+     * @dev Emitted when SAFU swaps assets
+     */
+    event Swapped(uint256 amount, address srcToken, uint256 returnAmount, address dstToken);
+
     function initialize(
         ILoanFactory2 _loanFactory,
         ILiquidator2 _liquidator,
@@ -151,9 +156,11 @@ contract SAFU is ISAFU, UpgradeableClaimable {
     /**
      * @dev Swap any asset owned by SAFU to any other asset, using 1inch protocol
      */
-    function swap(bytes calldata data, uint256 minReturnAmount) public onlyOwner {
+    function swap(bytes calldata data, uint256 minReturnAmount) external onlyOwner {
         (I1Inch3.SwapDescription memory swapResult, uint256 returnAmount) = _1Inch.exchange(data);
         require(swapResult.dstReceiver == address(this), "SAFU: Receiver is not SAFU");
         require(returnAmount >= minReturnAmount, "SAFU: Not enough tokens returned from swap");
+
+        emit Swapped(swapResult.amount, swapResult.srcToken, returnAmount, swapResult.dstToken);
     }
 }
