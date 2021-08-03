@@ -34,7 +34,7 @@ contract DeficiencyToken is IDeficiencyToken, ERC20 {
         _approve(
             account,
             _msgSender(),
-            allowance(account, _msgSender()).sub(amount, "DeficiencyToken: burn amount exceeds allowance")
+            allowance(account, _msgSender()).sub(amount, "DeficiencyToken: Burn amount exceeds allowance")
         );
         _burn(account, amount);
     }
