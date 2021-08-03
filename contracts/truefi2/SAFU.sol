@@ -118,6 +118,7 @@ contract SAFU is ISAFU, UpgradeableClaimable {
      * @param loan Loan token to be redeemed
      */
     function redeem(ILoanToken2 loan) public onlyOwner {
+        require(loanFactory.isLoanToken(address(loan)), "SAFU: Unknown loan");
         uint256 amountToBurn = tokenBalance(loan);
         uint256 balanceBeforeRedeem = tokenBalance(loan.token());
         loan.redeem(amountToBurn);
@@ -131,13 +132,17 @@ contract SAFU is ISAFU, UpgradeableClaimable {
      * @param amount Amount of deficiency tokens to be reclaimed
      */
     function reclaim(ILoanToken2 loan, uint256 amount) external override {
+        require(loanFactory.isLoanToken(address(loan)), "SAFU: Unknown loan");
+        address poolAddress = address(loan.pool());
+        require(msg.sender == poolAddress, "SAFU: caller is not the loan's pool");
         require(tokenBalance(loan) == 0, "SAFU: Loan has to be fully redeemed by SAFU");
         IDeficiencyToken dToken = deficiencyToken[loan];
-        require(dToken.balanceOf(msg.sender) > 0, "SAFU: Sender does not have deficiency tokens to be reclaimed");
+        require(address(dToken) != address(0), "SAFU: No deficiency token found for loan");
+        require(dToken.balanceOf(poolAddress) > 0, "SAFU: Pool does not have deficiency tokens to be reclaimed");
 
-        poolDeficit[address(loan.pool())] = poolDeficit[address(loan.pool())].sub(amount);
+        poolDeficit[poolAddress] = poolDeficit[poolAddress].sub(amount);
         dToken.burnFrom(msg.sender, amount);
-        loan.token().safeTransfer(msg.sender, amount);
+        loan.token().safeTransfer(poolAddress, amount);
 
         emit Reclaimed(loan, amount);
     }
