@@ -51,13 +51,13 @@ describe('DeficiencyToken', () => {
     it('reverts excessive burn from allowed account', async () => {
       await deficiency.mint(owner.address, parseEth(3))
       await deficiency.connect(owner).approve(friend.address, parseEth(2))
-      await expect(deficiency.connect(friend).burnFrom(owner.address, parseEth(2).add(1))).to.be.revertedWith('revert SafeMath: subtraction overflow')
+      await expect(deficiency.connect(friend).burnFrom(owner.address, parseEth(2).add(1))).to.be.revertedWith('DeficiencyToken: burn amount exceeds allowance')
     })
 
     it('reverts burn from unrelated account', async () => {
       await deficiency.mint(owner.address, parseEth(3))
       await deficiency.connect(owner).approve(friend.address, parseEth(2))
-      await expect(deficiency.connect(stranger).burnFrom(owner.address, 1)).to.be.revertedWith('revert SafeMath: subtraction overflow')
+      await expect(deficiency.connect(stranger).burnFrom(owner.address, 1)).to.be.revertedWith('DeficiencyToken: burn amount exceeds allowance')
     })
   })
 })
