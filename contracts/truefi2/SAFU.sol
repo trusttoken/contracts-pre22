@@ -146,8 +146,7 @@ contract SAFU is ISAFU, UpgradeableClaimable {
         require(dToken.balanceOf(poolAddress) > 0, "SAFU: Pool does not have deficiency tokens to be reclaimed");
 
         poolDeficit[poolAddress] = poolDeficit[poolAddress].sub(amount);
-        dToken.safeTransferFrom(poolAddress, address(this), amount);
-        dToken.burn(amount);
+        dToken.burnFrom(msg.sender, amount);
         loan.token().safeTransfer(poolAddress, amount);
 
         emit Reclaimed(loan, amount);

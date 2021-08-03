@@ -7,7 +7,7 @@ import {ILoanToken2} from "./ILoanToken2.sol";
 interface IDeficiencyToken is IERC20 {
     function loan() external view returns (ILoanToken2);
 
-    function burn(uint256 amount) external;
+    function burnFrom(address account, uint256 amount) external;
 
     function version() external pure returns (uint8);
 }
