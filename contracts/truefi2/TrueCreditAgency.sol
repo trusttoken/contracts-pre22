@@ -87,6 +87,8 @@ contract TrueCreditAgency is UpgradeableClaimable {
 
     uint256 public utilizationAdjustmentPower;
 
+    uint256 public minCreditScore;
+
     // ======= STORAGE DECLARATION END ============
 
     event RiskPremiumChanged(uint256 newRate);
@@ -106,6 +108,8 @@ contract TrueCreditAgency is UpgradeableClaimable {
     event InterestPaid(ITrueFiPool2 pool, address borrower, uint256 amount);
 
     event PrincipalRepaid(ITrueFiPool2 pool, address borrower, uint256 amount);
+
+    event MinCreditScoreChanged(uint256 newValue);
 
     event BorrowLimitConfigChanged(
         uint8 scoreFloor,
@@ -163,6 +167,11 @@ contract TrueCreditAgency is UpgradeableClaimable {
     function setUtilizationAdjustmentPower(uint256 newValue) external onlyOwner {
         utilizationAdjustmentPower = newValue;
         emit UtilizationAdjustmentPowerChanged(newValue);
+    }
+
+    function setMinCreditScore(uint256 newValue) external onlyOwner {
+        minCreditScore = newValue;
+        emit MinCreditScoreChanged(newValue);
     }
 
     function allowBorrower(address who, uint256 timePeriod) external onlyOwner {
@@ -282,6 +291,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
     function borrow(ITrueFiPool2 pool, uint256 amount) external onlyAllowedBorrowers {
         require(isPoolAllowed[pool], "TrueCreditAgency: The pool is not whitelisted for borrowing");
         (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, msg.sender);
+        require(newScore >= minCreditScore, "TrueCreditAgency: Borrower has credit score below minimum");
         require(amount <= borrowLimit(pool, msg.sender), "TrueCreditAgency: Borrow amount cannot exceed borrow limit");
         uint256 currentDebt = borrowed[pool][msg.sender];
 
