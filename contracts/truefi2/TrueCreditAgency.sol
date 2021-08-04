@@ -353,7 +353,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         uint256 timeNow
     ) internal {
         bucket.totalBucketInterest = bucket.totalBucketInterest.add(
-            bucket.rate.mul(1e23).mul(bucket.totalBorrowed).mul(timeNow.sub(bucket.timestamp)).div(365 days).div(10000)
+            bucket.rate.mul(1e23).mul(bucket.totalBorrowed).mul(timeNow.sub(bucket.timestamp)).div(365 days)
         );
 
         bucket.cumulativeInterestPerShare = bucket.cumulativeInterestPerShare.add(
@@ -379,8 +379,8 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
             value = value.add(bucket.totalBorrowed).add(
                 bucket
                     .totalBucketInterest
-                    .add(bucket.rate.mul(1e23).mul(bucket.totalBorrowed).mul(timeNow.sub(bucket.timestamp)).div(365 days).div(10000))
-                    .div(1e23)
+                    .add(bucket.rate.mul(1e23).mul(bucket.totalBorrowed).mul(timeNow.sub(bucket.timestamp)).div(365 days))
+                    .div(1e27)
             );
         }
         return value;

@@ -40,7 +40,7 @@ describe('TrueCreditAgency', () => {
   let timeTravel: (time: number) => void
 
   const MONTH = DAY * 31
-  const PRECISION = BigNumber.from(10).pow(23)
+  const PRECISION = BigNumber.from(10).pow(27)
 
   async function setupBorrower (borrower: Wallet, score: number, amount: BigNumberish) {
     await creditAgency.allowBorrower(borrower.address, YEAR * 10)
