@@ -20,7 +20,6 @@ import { expect } from 'chai'
 import { AddressZero } from '@ethersproject/constants'
 import { deployMockContract, MockContract, MockProvider } from 'ethereum-waffle'
 import { TrueFiPool2Json } from 'build'
-import { beforeEach } from 'mocha'
 
 describe('TrueCreditAgency', () => {
   let provider: MockProvider
@@ -352,7 +351,7 @@ describe('TrueCreditAgency', () => {
     })
   })
 
-  describe.only('singleCreditValue', () => {
+  describe('singleCreditValue', () => {
     beforeEach(async () => {
       await creditAgency.allowBorrower(borrower.address, YEAR)
       await creditAgency.setRiskPremium(1000)
@@ -384,9 +383,10 @@ describe('TrueCreditAgency', () => {
 
     it('after credit score update', async () => {
       await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
+      await timeTravel(YEAR)
       await creditOracle.setScore(borrower.address, 150)
       await creditAgency.updateCreditScore(tusdPool.address, borrower.address)
-      expect(await creditAgency.singleCreditValue(tusdPool.address, borrower.address)).to.eq(1000)
+      expect(await creditAgency.singleCreditValue(tusdPool.address, borrower.address)).to.eq(1100)
     })
   })
 
