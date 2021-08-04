@@ -147,11 +147,14 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
      * @dev Claim TRU rewards
      */
     function claim(IERC20[] calldata tokens) external override {
+        uint256 length = tokens.length;
+        uint256 i;
+
         distribute();
-        for (uint256 i = 0; i < tokens.length; i++) {
+        for (i = 0; i < length; i++) {
             updateRewards(tokens[i]);
         }
-        for (uint256 i = 0; i < tokens.length; i++) {
+        for (i = 0; i < length; i++) {
             _claim(tokens[i]);
         }
     }
@@ -161,10 +164,14 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
      */
     function exit(IERC20[] calldata tokens) external override {
         distribute();
-        for (uint256 i = 0; i < tokens.length; i++) {
+
+        uint256 length = tokens.length;
+        uint256 i;
+
+        for (i = 0; i < length; i++) {
             updateRewards(tokens[i]);
         }
-        for (uint256 i = 0; i < tokens.length; i++) {
+        for (i = 0; i < length; i++) {
             _unstake(tokens[i], stakes[tokens[i]].staked[msg.sender]);
             _claim(tokens[i]);
         }
@@ -179,12 +186,17 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
      * @param updatedShares share of the i-th token in the multifarm
      */
     function setShares(IERC20[] calldata tokens, uint256[] calldata updatedShares) external onlyOwner {
-        require(tokens.length == updatedShares.length, "TrueMultiFarm: Array lengths mismatch");
+        uint256 length = tokens.length;
+
+        require(length == updatedShares.length, "TrueMultiFarm: Array lengths mismatch");
         distribute();
-        for (uint256 i = 0; i < tokens.length; i++) {
+
+        uint256 i;
+
+        for (i = 0; i < length; i++) {
             _updateClaimableRewardsForFarm(tokens[i]);
         }
-        for (uint256 i = 0; i < tokens.length; i++) {
+        for (i = 0; i < length; i++) {
             uint256 oldStaked = shares.staked[address(tokens[i])];
             shares.staked[address(tokens[i])] = updatedShares[i];
             shares.totalStaked = shares.totalStaked.sub(oldStaked).add(updatedShares[i]);
