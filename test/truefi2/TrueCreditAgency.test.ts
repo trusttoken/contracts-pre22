@@ -224,6 +224,24 @@ describe('TrueCreditAgency', () => {
     })
   })
 
+  describe('setMinCreditScore', () => {
+    it('reverts if not called by the owner', async () => {
+      await expect(creditAgency.connect(borrower).setMinCreditScore(1))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('changes minimal credit score', async () => {
+      await creditAgency.setMinCreditScore(1)
+      expect(await creditAgency.minCreditScore()).to.eq(1)
+    })
+
+    it('emits event', async () => {
+      await expect(creditAgency.setMinCreditScore(1))
+        .to.emit(creditAgency, 'MinCreditScoreChanged')
+        .withArgs(1)
+    })
+  })
+
   describe('Borrower allowance', () => {
     it('only owner can set allowance', async () => {
       await expect(creditAgency.connect(borrower).allowBorrower(borrower.address, YEAR))
@@ -426,6 +444,13 @@ describe('TrueCreditAgency', () => {
       await creditAgency.allowBorrower(borrower.address, 0)
       await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000))
         .to.be.revertedWith('TrueCreditAgency: Sender is not allowed to borrow')
+    })
+
+    it('fails if borrower has credit score below required', async () => {
+      await creditOracle.setScore(borrower.address, 191)
+      await creditAgency.setMinCreditScore(192)
+      await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000))
+        .to.be.revertedWith('TrueCreditAgency: Borrower has credit score below minimum')
     })
 
     it('fails if borrower tries to borrow after whitelist period', async () => {
