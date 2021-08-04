@@ -19,6 +19,8 @@ contract TrueCreditAgency is UpgradeableClaimable {
     using TrueFiFixed64x64 for int128;
     using TrueFiFixed64x64 for uint256;
 
+    enum Status {Ineligible, OnHold, Eligible}
+
     uint8 constant MAX_CREDIT_SCORE = 255;
     uint256 constant MAX_RATE_CAP = 50000;
 
@@ -63,6 +65,8 @@ contract TrueCreditAgency is UpgradeableClaimable {
 
     uint256 public interestRepaymentPeriod;
 
+    uint256 public gracePeriod;
+
     // basis precision: 10000 = 100%
     uint256 public riskPremium;
 
@@ -105,6 +109,8 @@ contract TrueCreditAgency is UpgradeableClaimable {
 
     event InterestRepaymentPeriodChanged(uint256 newPeriod);
 
+    event GracePeriodChanged(uint256 newGracePeriod);
+
     event InterestPaid(ITrueFiPool2 pool, address borrower, uint256 amount);
 
     event PrincipalRepaid(ITrueFiPool2 pool, address borrower, uint256 amount);
@@ -127,10 +133,16 @@ contract TrueCreditAgency is UpgradeableClaimable {
         utilizationAdjustmentCoefficient = 50;
         utilizationAdjustmentPower = 2;
         interestRepaymentPeriod = 31 days;
+        gracePeriod = 3 days;
     }
 
     modifier onlyAllowedBorrowers() {
         require(borrowerAllowedUntilTime[msg.sender] >= block.timestamp, "TrueCreditAgency: Sender is not allowed to borrow");
+        _;
+    }
+
+    modifier onlyEligible(ITrueFiPool2 pool) {
+        require(status(pool, msg.sender) == Status.Eligible, "TrueCreditAgency: Sender not eligible to borrow");
         _;
     }
 
@@ -145,6 +157,11 @@ contract TrueCreditAgency is UpgradeableClaimable {
     function setInterestRepaymentPeriod(uint256 newPeriod) external onlyOwner {
         interestRepaymentPeriod = newPeriod;
         emit InterestRepaymentPeriodChanged(newPeriod);
+    }
+
+    function setGracePeriod(uint256 newGracePeriod) external onlyOwner {
+        gracePeriod = newGracePeriod;
+        emit GracePeriodChanged(newGracePeriod);
     }
 
     function setBorrowLimitConfig(
@@ -291,7 +308,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
         return _interest(pool, bucket, borrower);
     }
 
-    function borrow(ITrueFiPool2 pool, uint256 amount) external onlyAllowedBorrowers {
+    function borrow(ITrueFiPool2 pool, uint256 amount) external onlyAllowedBorrowers onlyEligible(pool) {
         require(isPoolAllowed[pool], "TrueCreditAgency: The pool is not whitelisted for borrowing");
         (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, msg.sender);
         require(newScore >= minCreditScore, "TrueCreditAgency: Borrower has credit score below minimum");
@@ -354,6 +371,19 @@ contract TrueCreditAgency is UpgradeableClaimable {
 
     function singleCreditValue(ITrueFiPool2 pool, address borrower) external view returns (uint256) {
         return borrowed[pool][borrower].add(interest(pool, borrower));
+    }
+
+    function status(ITrueFiPool2 pool, address borrower) public view returns (Status) {
+        if (nextInterestRepayTime[pool][borrower] == 0) {
+            return Status.Eligible;
+        }
+        if (nextInterestRepayTime[pool][borrower].add(gracePeriod) < block.timestamp) {
+            return Status.Ineligible;
+        }
+        if (nextInterestRepayTime[pool][borrower] < block.timestamp) {
+            return Status.OnHold;
+        }
+        return Status.Eligible;
     }
 
     function _rebucket(
