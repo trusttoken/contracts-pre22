@@ -18,8 +18,7 @@ import {
 } from 'utils'
 import { expect } from 'chai'
 import { AddressZero } from '@ethersproject/constants'
-import { deployMockContract, MockContract, MockProvider } from 'ethereum-waffle'
-import { TrueFiPool2Json } from 'build'
+import { MockProvider } from 'ethereum-waffle'
 
 describe('TrueCreditAgency', () => {
   let provider: MockProvider
