@@ -360,6 +360,7 @@ describe('TrueCreditAgency', () => {
 
     it('cannot borrow more than 15% of a single pool in total', async () => {
       await pool2.mock.poolValue.returns(parseUSDC(3))
+      await pool2.mock.liquidRatio.returns(10000)
       await creditAgency.connect(borrower).borrow(pool2.address, parseUSDC(0.4))
       expect(await creditAgency.borrowLimit(pool2.address, borrower.address)).to.equal(parseUSDC(0.05))
       await creditAgency.connect(borrower).borrow(pool2.address, parseUSDC(0.05))
@@ -372,6 +373,7 @@ describe('TrueCreditAgency', () => {
 
     it('borrow limit is 0 if credit limit is above the borrowed amount', async () => {
       await pool2.mock.poolValue.returns(parseUSDC(3))
+      await pool2.mock.liquidRatio.returns(10000)
       await creditAgency.connect(borrower).borrow(pool2.address, parseUSDC(0.4))
       await pool2.mock.poolValue.returns(parseUSDC(2))
       expect(await creditAgency.borrowLimit(pool2.address, borrower.address)).to.equal(parseUSDC(0))
