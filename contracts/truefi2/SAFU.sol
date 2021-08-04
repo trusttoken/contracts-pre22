@@ -64,6 +64,11 @@ contract SAFU is ISAFU, UpgradeableClaimable {
      */
     event Reclaimed(ILoanToken2 loan, uint256 reclaimed);
 
+    /**
+     * @dev Emitted when SAFU swaps assets
+     */
+    event Swapped(uint256 amount, address srcToken, uint256 returnAmount, address dstToken);
+
     function initialize(
         ILoanFactory2 _loanFactory,
         ILiquidator2 _liquidator,
@@ -132,15 +137,16 @@ contract SAFU is ISAFU, UpgradeableClaimable {
      * @param amount Amount of deficiency tokens to be reclaimed
      */
     function reclaim(ILoanToken2 loan, uint256 amount) external override {
+        require(loanFactory.isLoanToken(address(loan)), "SAFU: Unknown loan");
         address poolAddress = address(loan.pool());
         require(msg.sender == poolAddress, "SAFU: caller is not the loan's pool");
         require(tokenBalance(loan) == 0, "SAFU: Loan has to be fully redeemed by SAFU");
         IDeficiencyToken dToken = deficiencyToken[loan];
+        require(address(dToken) != address(0), "SAFU: No deficiency token found for loan");
         require(dToken.balanceOf(poolAddress) > 0, "SAFU: Pool does not have deficiency tokens to be reclaimed");
 
         poolDeficit[poolAddress] = poolDeficit[poolAddress].sub(amount);
-        dToken.safeTransferFrom(poolAddress, address(this), amount);
-        dToken.burn(amount);
+        dToken.burnFrom(msg.sender, amount);
         loan.token().safeTransfer(poolAddress, amount);
 
         emit Reclaimed(loan, amount);
@@ -149,9 +155,11 @@ contract SAFU is ISAFU, UpgradeableClaimable {
     /**
      * @dev Swap any asset owned by SAFU to any other asset, using 1inch protocol
      */
-    function swap(bytes calldata data, uint256 minReturnAmount) public onlyOwner {
+    function swap(bytes calldata data, uint256 minReturnAmount) external onlyOwner {
         (I1Inch3.SwapDescription memory swapResult, uint256 returnAmount) = _1Inch.exchange(data);
         require(swapResult.dstReceiver == address(this), "SAFU: Receiver is not SAFU");
         require(returnAmount >= minReturnAmount, "SAFU: Not enough tokens returned from swap");
+
+        emit Swapped(swapResult.amount, swapResult.srcToken, returnAmount, swapResult.dstToken);
     }
 }

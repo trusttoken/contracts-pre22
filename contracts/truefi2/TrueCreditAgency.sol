@@ -135,6 +135,9 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
     function setRiskPremium(uint256 newRate) external onlyOwner {
         riskPremium = newRate;
+        for (uint256 i = 0; i < pools.length; i++) {
+            poke(pools[i]);
+        }
         emit RiskPremiumChanged(newRate);
     }
 
@@ -397,7 +400,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
             usedBucketsBitmap &= ~(uint256(1) << bucketNumber);
         }
         bucket.totalBorrowed = bucket.totalBorrowed.sub(borrowed[pool][borrower]);
-        totalBorrowerInterest = _interest(pool, bucket, borrower);
+        totalBorrowerInterest = _totalBorrowerInterest(pool, bucket, borrower);
         delete bucket.savedInterest[borrower];
     }
 
@@ -414,7 +417,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         bucket.totalBorrowed = bucket.totalBorrowed.add(borrowed[pool][borrower]);
     }
 
-    function _interest(
+    function _totalBorrowerInterest(
         ITrueFiPool2 pool,
         CreditScoreBucket storage bucket,
         address borrower
@@ -433,9 +436,15 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
                 .mul(bucket.rate)
                 .div(10000)
                 .div(365 days)
-            ).sub(
-                borrowerTotalPaidInterest[pool][borrower]
             );
+    }
+
+    function _interest(
+        ITrueFiPool2 pool,
+        CreditScoreBucket storage bucket,
+        address borrower
+    ) internal view returns (uint256) {
+        return _totalBorrowerInterest(pool, bucket, borrower).sub(borrowerTotalPaidInterest[pool][borrower]);
     }
 
     function _payInterestWithoutTransfer(ITrueFiPool2 pool, uint256 amount) internal {
