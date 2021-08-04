@@ -313,7 +313,6 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         if (amount < accruedInterest) {
             _payInterestWithoutTransfer(pool, amount);
         } else {
-            poke(pool);
             nextInterestRepayTime[pool][msg.sender] = block.timestamp.add(interestRepaymentPeriod);
             _payInterestWithoutTransfer(pool, accruedInterest);
             _payPrincipalWithoutTransfer(pool, amount.sub(accruedInterest));
@@ -337,17 +336,31 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
             }
 
             CreditScoreBucket storage bucket = creditScoreBuckets[i];
-
-            bucket.totalBucketInterest = bucket.totalBucketInterest.add(
-                bucket.rate.mul(1e23).mul(bucket.totalBorrowed).mul(timeNow.sub(bucket.timestamp)).div(365 days).div(10000)
-            );
-
-            bucket.cumulativeInterestPerShare = bucket.cumulativeInterestPerShare.add(
-                bucket.rate.mul(1e23).mul(timeNow.sub(bucket.timestamp)).div(365 days)
-            );
-            bucket.rate = _creditScoreAdjustmentRate(uint8(i)).add(riskPremium);
-            bucket.timestamp = uint128(timeNow);
+            _pokeSingleBucket(bucket, uint8(i), timeNow);
         }
+    }
+
+    function pokeSingleBucket(ITrueFiPool2 pool, uint8 bucketNumber) internal {
+        uint256 timeNow = block.timestamp;
+        CreditScoreBucket storage bucket = buckets[pool][bucketNumber];
+
+        _pokeSingleBucket(bucket, bucketNumber, timeNow);
+    }
+
+    function _pokeSingleBucket(
+        CreditScoreBucket storage bucket,
+        uint8 bucketNumber,
+        uint256 timeNow
+    ) internal {
+        bucket.totalBucketInterest = bucket.totalBucketInterest.add(
+            bucket.rate.mul(1e23).mul(bucket.totalBorrowed).mul(timeNow.sub(bucket.timestamp)).div(365 days).div(10000)
+        );
+
+        bucket.cumulativeInterestPerShare = bucket.cumulativeInterestPerShare.add(
+            bucket.rate.mul(1e23).mul(timeNow.sub(bucket.timestamp)).div(365 days)
+        );
+        bucket.rate = _creditScoreAdjustmentRate(bucketNumber).add(riskPremium);
+        bucket.timestamp = uint128(timeNow);
     }
 
     function poolCreditValue(ITrueFiPool2 pool) external override view returns (uint256) {
@@ -384,7 +397,6 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         borrowed[pool][borrower] = updatedBorrowAmount;
         CreditScoreBucket storage bucket = buckets[pool][newScore];
         _putIntoBucket(pool, bucket, newScore, borrower);
-        poke(pool);
         bucket.savedInterest[borrower] = SavedInterest(totalBorrowerInterest, bucket.cumulativeInterestPerShare);
     }
 
@@ -395,6 +407,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         address borrower
     ) internal returns (uint256 totalBorrowerInterest) {
         require(bucket.borrowersCount > 0, "TrueCreditAgency: bucket is empty");
+        pokeSingleBucket(pool, bucketNumber);
         bucket.borrowersCount -= 1;
         if (bucket.borrowersCount == 0) {
             usedBucketsBitmap &= ~(uint256(1) << bucketNumber);
@@ -415,6 +428,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
             usedBucketsBitmap |= uint256(1) << bucketNumber;
         }
         bucket.totalBorrowed = bucket.totalBorrowed.add(borrowed[pool][borrower]);
+        pokeSingleBucket(pool, bucketNumber);
     }
 
     function _totalBorrowerInterest(

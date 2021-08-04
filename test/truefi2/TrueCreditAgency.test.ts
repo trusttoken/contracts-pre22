@@ -923,7 +923,7 @@ describe('TrueCreditAgency', () => {
       expect(await creditAgency.interest(tusdPool.address, owner.address)).to.be.closeTo(BigNumber.from(600), 2)
     })
 
-    it('after principal repayment', async () => {
+    it('principal repayment after credit score change', async () => {
       await setupBorrower(borrower, 255, 1000)
       await setupBorrower(borrower2, 154, 1000)
       await setupBorrower(owner, 154, 1000)
@@ -946,6 +946,28 @@ describe('TrueCreditAgency', () => {
       expect(await creditAgency.interest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(200), 2)
       expect(await creditAgency.interest(tusdPool.address, owner.address)).to.be.closeTo(BigNumber.from(165 * 2), 2)
       expect(await creditAgency.interest(tusdPool.address, borrower2.address)).to.be.closeTo(BigNumber.from(50), 2)
+    })
+
+    it('principal repayment after credit score change into new bucket', async () => {
+      await setupBorrower(borrower, 255, 1000)
+      await setupBorrower(borrower2, 255, 1000)
+      await creditAgency.setRiskPremium(1000)
+
+      await timeTravel(YEAR)
+
+      expect(await creditAgency.interest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
+      expect(await creditAgency.interest(tusdPool.address, borrower2.address)).to.be.closeTo(BigNumber.from(100), 2)
+
+      await creditOracle.setScore(borrower2.address, 154)
+      await creditAgency.updateCreditScore(tusdPool.address, borrower2.address)
+      await tusd.connect(borrower2).approve(creditAgency.address, 1000)
+      await creditAgency.connect(borrower2).repay(tusdPool.address, 600)
+      expect(await creditAgency.borrowed(tusdPool.address, borrower2.address)).to.eq(500)
+
+      await timeTravel(YEAR)
+
+      expect(await creditAgency.interest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(200), 2)
+      expect(await creditAgency.interest(tusdPool.address, borrower2.address)).to.be.closeTo(BigNumber.from(82), 2)
     })
   })
 
