@@ -230,7 +230,7 @@ describe('TrueCreditAgency', () => {
         .to.be.revertedWith('Ownable: caller is not the owner')
     })
 
-    it('changes utilization adjustment power', async () => {
+    it('changes minimal credit score', async () => {
       await creditAgency.setMinCreditScore(1)
       expect(await creditAgency.minCreditScore()).to.eq(1)
     })
