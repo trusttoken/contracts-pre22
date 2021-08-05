@@ -8,10 +8,10 @@ import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 /**
  * @title TrueFiCreditOracle
  * @dev Contract which allows the storage of credit scores for TrueFi borrower accounts.
- * 
+ *
  * A borrower is "on hold" if they are temporarily not allowed to borrow
  * A borrower is "ineligible" if their line of credit is marked for default
- * 
+ *
  * Borrowers can only borrow if:
  *  - score was updated at least `threshold` seconds ago
  *  - borrower is not ineligible
@@ -37,7 +37,7 @@ contract TrueFiCreditOracle is ITrueFiCreditOracle, UpgradeableClaimable {
     address public manager;
 
     // @dev How frequently a score needs to be updated for an account to borrow
-    uint256 threshold;
+    uint256 public threshold;
 
     // store timestamp when borrower is last updated
     mapping(address => uint256) public lastUpdated;
@@ -117,7 +117,7 @@ contract TrueFiCreditOracle is ITrueFiCreditOracle, UpgradeableClaimable {
     /**
      * @dev Set new threshold for updating credit scores
      */
-    function setThreshold(uint256 newThreshold) public onlyOwner{
+    function setThreshold(uint256 newThreshold) public onlyOwner {
         threshold = newThreshold;
         emit ThresholdChanged(newThreshold);
     }
@@ -133,7 +133,7 @@ contract TrueFiCreditOracle is ITrueFiCreditOracle, UpgradeableClaimable {
     /**
      * @dev Set onHold status
      */
-    function setOnHoldStatus(address borrower, bool onHoldStatus) public onlyOwner {
+    function setOnHold(address borrower, bool onHoldStatus) public onlyOwner {
         onHold[borrower] = onHoldStatus;
         emit OnHoldStatusChanged(borrower, onHoldStatus);
     }
