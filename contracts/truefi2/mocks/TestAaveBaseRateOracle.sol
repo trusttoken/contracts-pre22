@@ -12,7 +12,7 @@ contract TestAaveBaseRateOracle is AaveBaseRateOracle {
     ) public AaveBaseRateOracle(_aavePool, _cooldownTime, _asset) {}
 
     function bufferSize() public override pure returns (uint16) {
-        return 7;
+        return 7 + 1;
     }
 
     function getAaveVariableBorrowAPY() public view returns (uint256) {

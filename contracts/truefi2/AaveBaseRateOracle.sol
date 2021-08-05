@@ -7,7 +7,7 @@ import {IAaveLendingPool} from "./interface/IAave.sol";
 contract AaveBaseRateOracle {
     using SafeMath for uint256;
 
-    uint16 public constant BUFFER_SIZE = 365;
+    uint16 public constant BUFFER_SIZE = 365 + 1;
 
     // A cyclic buffer structure for storing running total (cumulative sum)
     // values and their respective timestamps.
@@ -115,11 +115,11 @@ contract AaveBaseRateOracle {
      * @return Average apy.
      */
     function calculateAverageAPY(uint16 numberOfValues) public view returns (uint256) {
-        require(numberOfValues > 1, "AaveBaseRateOracle: Number of values should be greater than 1");
-        require(numberOfValues <= bufferSize(), "AaveBaseRateOracle: Number of values is limited by buffer size");
+        require(numberOfValues > 0, "AaveBaseRateOracle: Number of values should be greater than 0");
+        require(numberOfValues < bufferSize(), "AaveBaseRateOracle: Number of values should be less than buffer size");
 
         uint16 _currIndex = totalsBuffer.currIndex;
-        uint16 startIndex = (_currIndex + bufferSize() - numberOfValues + 1) % bufferSize();
+        uint16 startIndex = (_currIndex + bufferSize() - numberOfValues) % bufferSize();
 
         require(totalsBuffer.timestamps[startIndex] > 0, "AaveBaseRateOracle: There are fewer values stored than required");
 
