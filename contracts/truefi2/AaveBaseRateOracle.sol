@@ -84,10 +84,10 @@ contract AaveBaseRateOracle {
         uint16 _currIndex = totalsBuffer.currIndex;
         uint16 nextIndex = (_currIndex + 1) % bufferSize();
         uint256 apy = _getAaveVariableBorrowAPY();
-        uint256 currTimestamp = block.timestamp;
-        uint256 dt = currTimestamp.sub(totalsBuffer.timestamps[_currIndex]);
+        uint256 nextTimestamp = block.timestamp;
+        uint256 dt = nextTimestamp.sub(totalsBuffer.timestamps[_currIndex]);
         totalsBuffer.runningTotals[nextIndex] = totalsBuffer.runningTotals[_currIndex].add(apy.mul(dt));
-        totalsBuffer.timestamps[nextIndex] = currTimestamp;
+        totalsBuffer.timestamps[nextIndex] = nextTimestamp;
         totalsBuffer.currIndex = nextIndex;
     }
 
