@@ -112,6 +112,26 @@ describe('AaveBaseRateOracle', () => {
     })
   })
 
+  describe('isOffCooldown', () => {
+    beforeEach(async () => {
+      await timeTravelTo(provider, INITIAL_TIMESTAMP + COOLDOWN_TIME)
+    })
+
+    it('returns true if cooldown is off', async () => {
+      expect(await aaveBaseRateOracle.isOffCooldown()).to.be.true
+      await aaveBaseRateOracle.update()
+      await timeTravel(provider, COOLDOWN_TIME)
+      expect(await aaveBaseRateOracle.isOffCooldown()).to.be.true
+    })
+
+    it('returns false if cooldown is on', async () => {
+      await aaveBaseRateOracle.update()
+      expect(await aaveBaseRateOracle.isOffCooldown()).to.be.false
+      await timeTravel(provider, COOLDOWN_TIME - 1)
+      expect(await aaveBaseRateOracle.isOffCooldown()).to.be.false
+    })
+  })
+
   describe('update', () => {
     it('reverts if cooldown is on', async () => {
       await updateBufferRightAfterCooldown(aaveBaseRateOracle)

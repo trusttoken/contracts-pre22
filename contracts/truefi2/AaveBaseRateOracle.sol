@@ -31,9 +31,7 @@ contract AaveBaseRateOracle {
      * @dev Throws if cooldown is on when updating the totalsBuffer
      */
     modifier offCooldown() {
-        // get the last timestamp written into the buffer
-        uint256 lastWritten = totalsBuffer.timestamps[totalsBuffer.currIndex];
-        require(block.timestamp >= lastWritten.add(cooldownTime), "AaveBaseRateOracle: Buffer on cooldown");
+        require(isOffCooldown(), "AaveBaseRateOracle: Buffer on cooldown");
         _;
     }
 
@@ -51,6 +49,12 @@ contract AaveBaseRateOracle {
 
     function bufferSize() public virtual pure returns (uint16) {
         return BUFFER_SIZE;
+    }
+
+    function isOffCooldown() public view returns (bool) {
+        // get the last timestamp written into the buffer
+        uint256 lastWritten = totalsBuffer.timestamps[totalsBuffer.currIndex];
+        return block.timestamp >= lastWritten.add(cooldownTime);
     }
 
     /**
