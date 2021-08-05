@@ -141,11 +141,6 @@ contract TrueCreditAgency is UpgradeableClaimable {
         _;
     }
 
-    modifier onlyEligible(ITrueFiPool2 pool) {
-        require(status(pool, msg.sender) == Status.Eligible, "TrueCreditAgency: Sender not eligible to borrow");
-        _;
-    }
-
     function setRiskPremium(uint256 newRate) external onlyOwner {
         riskPremium = newRate;
         for (uint256 i = 0; i < pools.length; i++) {
@@ -308,8 +303,9 @@ contract TrueCreditAgency is UpgradeableClaimable {
         return _interest(pool, bucket, borrower);
     }
 
-    function borrow(ITrueFiPool2 pool, uint256 amount) external onlyAllowedBorrowers onlyEligible(pool) {
+    function borrow(ITrueFiPool2 pool, uint256 amount) external onlyAllowedBorrowers {
         require(isPoolAllowed[pool], "TrueCreditAgency: The pool is not whitelisted for borrowing");
+        require(status(pool, msg.sender) == Status.Eligible, "TrueCreditAgency: Sender not eligible to borrow");
         (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, msg.sender);
         require(newScore >= minCreditScore, "TrueCreditAgency: Borrower has credit score below minimum");
         require(amount <= borrowLimit(pool, msg.sender), "TrueCreditAgency: Borrow amount cannot exceed borrow limit");
