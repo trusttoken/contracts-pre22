@@ -583,7 +583,7 @@ describe('TrueCreditAgency', () => {
       await creditAgency.allowBorrower(borrower.address, YEAR)
     })
 
-    it('returns Eligible when account has not any missed payments', async () => {
+    it('returns Eligible when account has no missed payments', async () => {
       expect(await creditAgency.status(tusdPool.address, borrower.address)).to.equal(Status.Eligible)
       await creditAgency.connect(borrower).borrow(tusdPool.address, 100)
       expect(await creditAgency.status(tusdPool.address, borrower.address)).to.equal(Status.Eligible)
