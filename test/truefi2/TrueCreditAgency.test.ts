@@ -510,7 +510,7 @@ describe('TrueCreditAgency', () => {
         .to.be.revertedWith('TrueCreditAgency: Borrower has credit score below minimum')
     })
 
-    it('fails is borrower has missed the repay time', async () => {
+    it('fails if borrower has missed the repay time', async () => {
       await creditAgency.connect(borrower).borrow(tusdPool.address, 500)
       await timeTravel(DAY * 32)
       await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 500))
