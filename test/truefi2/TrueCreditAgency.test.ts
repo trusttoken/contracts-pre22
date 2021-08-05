@@ -1009,12 +1009,13 @@ describe('TrueCreditAgency', () => {
       expect(await creditAgency.poolCreditValue(tusdPool.address)).to.be.closeTo(BigNumber.from(1650), 2)
     })
 
-    it('gets reduced after repaying principal', async () => {
+    it('gets reduced after repayment', async () => {
       await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
-      expect(await creditAgency.poolCreditValue(tusdPool.address)).to.be.closeTo(BigNumber.from(1000), 2)
+      await timeTravel(YEAR)
+      expect(await creditAgency.poolCreditValue(tusdPool.address)).to.be.closeTo(BigNumber.from(1100), 2)
 
-      await tusd.connect(borrower).approve(creditAgency.address, 500)
-      await creditAgency.connect(borrower).repay(tusdPool.address, 500)
+      await tusd.connect(borrower).approve(creditAgency.address, 600)
+      await creditAgency.connect(borrower).repay(tusdPool.address, 600)
       expect(await creditAgency.poolCreditValue(tusdPool.address)).to.be.closeTo(BigNumber.from(500), 2)
     })
   })

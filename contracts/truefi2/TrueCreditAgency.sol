@@ -383,7 +383,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
                     .div(1e27)
             );
         }
-        return value;
+        return value.sub(poolTotalPaidInterest[pool]);
     }
 
     function _rebucket(
