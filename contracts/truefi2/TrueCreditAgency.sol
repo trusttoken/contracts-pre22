@@ -32,7 +32,6 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         uint16 borrowersCount;
         uint128 timestamp;
         uint256 rate;
-        uint256 totalBucketInterest;
         uint256 cumulativeInterestPerShare; // How much interest was gathered by 1 wei times 10^27
         uint256 totalBorrowed;
         mapping(address => SavedInterest) savedInterest;
@@ -57,6 +56,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     mapping(ITrueFiPool2 => mapping(address => uint256)) public borrowed;
     mapping(ITrueFiPool2 => mapping(address => uint256)) public borrowerTotalPaidInterest;
     mapping(ITrueFiPool2 => uint256) public poolTotalPaidInterest;
+    mapping(ITrueFiPool2 => uint256) public poolTotalInterest;
     mapping(ITrueFiPool2 => mapping(address => uint256)) public nextInterestRepayTime;
 
     mapping(ITrueFiPool2 => bool) public isPoolAllowed;
@@ -327,7 +327,6 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
     function poke(ITrueFiPool2 pool) public {
         uint256 bitMap = usedBucketsBitmap;
-        CreditScoreBucket[256] storage creditScoreBuckets = buckets[pool];
         uint256 timeNow = block.timestamp;
 
         for (uint16 i = 0; i <= MAX_CREDIT_SCORE; (i++, bitMap >>= 1)) {
@@ -335,24 +334,24 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
                 continue;
             }
 
-            CreditScoreBucket storage bucket = creditScoreBuckets[i];
-            _pokeSingleBucket(bucket, uint8(i), timeNow);
+            _pokeSingleBucket(pool, uint8(i), timeNow);
         }
     }
 
     function pokeSingleBucket(ITrueFiPool2 pool, uint8 bucketNumber) internal {
         uint256 timeNow = block.timestamp;
-        CreditScoreBucket storage bucket = buckets[pool][bucketNumber];
 
-        _pokeSingleBucket(bucket, bucketNumber, timeNow);
+        _pokeSingleBucket(pool, bucketNumber, timeNow);
     }
 
     function _pokeSingleBucket(
-        CreditScoreBucket storage bucket,
+        ITrueFiPool2 pool,
         uint8 bucketNumber,
         uint256 timeNow
     ) internal {
-        bucket.totalBucketInterest = bucket.totalBucketInterest.add(
+        CreditScoreBucket storage bucket = buckets[pool][bucketNumber];
+
+        poolTotalInterest[pool] = poolTotalInterest[pool].add(
             bucket.rate.mul(1e23).mul(bucket.totalBorrowed).mul(timeNow.sub(bucket.timestamp)).div(365 days)
         );
 
@@ -367,7 +366,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         uint256 bitMap = usedBucketsBitmap;
         CreditScoreBucket[256] storage creditScoreBuckets = buckets[pool];
         uint256 timeNow = block.timestamp;
-        uint256 value;
+        uint256 value = poolTotalInterest[pool].div(1e27);
 
         for (uint16 i = 0; i <= MAX_CREDIT_SCORE; (i++, bitMap >>= 1)) {
             if (bitMap & 1 == 0) {
@@ -377,10 +376,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
             CreditScoreBucket storage bucket = creditScoreBuckets[i];
 
             value = value.add(bucket.totalBorrowed).add(
-                bucket
-                    .totalBucketInterest
-                    .add(bucket.rate.mul(1e23).mul(bucket.totalBorrowed).mul(timeNow.sub(bucket.timestamp)).div(365 days))
-                    .div(1e27)
+                bucket.rate.mul(1e23).mul(bucket.totalBorrowed).mul(timeNow.sub(bucket.timestamp)).div(365 days).div(1e27)
             );
         }
         return value.sub(poolTotalPaidInterest[pool]);
@@ -423,12 +419,12 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         uint8 bucketNumber,
         address borrower
     ) internal {
+        pokeSingleBucket(pool, bucketNumber);
         bucket.borrowersCount = bucket.borrowersCount + 1;
         if (bucket.borrowersCount == 1) {
             usedBucketsBitmap |= uint256(1) << bucketNumber;
         }
         bucket.totalBorrowed = bucket.totalBorrowed.add(borrowed[pool][borrower]);
-        pokeSingleBucket(pool, bucketNumber);
     }
 
     function _totalBorrowerInterest(
