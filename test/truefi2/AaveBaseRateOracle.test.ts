@@ -15,8 +15,6 @@ import { AddressZero } from '@ethersproject/constants'
 
 use(solidity)
 
-const BN = (number: number) => (BigNumber.from(BigInt(number)))
-
 describe('AaveBaseRateOracle', () => {
   let provider: MockProvider
   let owner: Wallet
@@ -29,10 +27,9 @@ describe('AaveBaseRateOracle', () => {
   let BUFFER_SIZE
   const MAX_BUFFER_SIZE = 365 + 1
   const COOLDOWN_TIME = DAY
-  const STARTING_RATE = BN(1e27)
 
-  const mockReserveData = (number: number | BigNumber | BigInt) => {
-    return [0, 0, 0, 0, number, 0, 0, AddressZero, AddressZero, AddressZero, AddressZero, 0]
+  const mockReserveData = (number: number | BigNumber) => {
+    return [0, 0, 0, 0, BigNumber.from(10).pow(27).mul(number), 0, 0, AddressZero, AddressZero, AddressZero, AddressZero, 0]
   }
 
   beforeEachWithFixture(async (wallets, _provider) => {
@@ -40,7 +37,7 @@ describe('AaveBaseRateOracle', () => {
     provider = _provider
 
     mockAaveLendingPool = await deployMockContract(owner, IAaveLendingPoolJson.abi)
-    await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(STARTING_RATE))
+    await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(1))
 
     await new AaveBaseRateOracle__factory(owner)
     await new TestAaveBaseRateOracle__factory(owner)
@@ -88,7 +85,7 @@ describe('AaveBaseRateOracle', () => {
     })
 
     it('insertIndex increments cyclically', async () => {
-      await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(BN(1e27)))
+      await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(1))
       for (let i = 0; i < BUFFER_SIZE - 1; i++) {
         await updateBufferRightAfterCooldown(aaveBaseRateOracle)
         const [, , currIndex] = await aaveBaseRateOracle.getTotalsBuffer()
@@ -100,7 +97,7 @@ describe('AaveBaseRateOracle', () => {
     })
 
     it('overwrites old values with new ones', async () => {
-      await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(BN(1e27)))
+      await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(1))
       for (let i = 0; i < BUFFER_SIZE; i++) {
         await updateBufferRightAfterCooldown(aaveBaseRateOracle)
       }
@@ -143,7 +140,7 @@ describe('AaveBaseRateOracle', () => {
     })
 
     it('adds one rate to buffer', async () => {
-      await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(BN(1e27)))
+      await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(1))
       await updateBufferRightAfterCooldown(aaveBaseRateOracle)
       const curTimestamp = await getCurrentTimestamp()
       const [runningTotals, timestamps, currIndex] = await aaveBaseRateOracle.getTotalsBuffer()
@@ -177,9 +174,9 @@ describe('AaveBaseRateOracle', () => {
       })
 
       it('with partially overwritten buffer', async () => {
-        await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(BN(1e27)))
+        await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(1))
         await updateBufferRightAfterCooldown(aaveBaseRateOracle)
-        await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(BN(2e27)))
+        await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(2))
         await updateBufferRightAfterCooldown(aaveBaseRateOracle)
         // Aave variable borrow apys (percents): 1.0, 2.0 probed with 1 day interval
         // Expected value is 3/2 = 1.5
@@ -187,11 +184,11 @@ describe('AaveBaseRateOracle', () => {
       })
 
       it('with overwritten buffer', async () => {
-        await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(BN(2e27)))
+        await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(2))
         for (let i = 0; i < BUFFER_SIZE; i++) {
           await updateBufferRightAfterCooldown(aaveBaseRateOracle)
         }
-        await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(BN(3e27)))
+        await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(3))
         await updateBufferRightAfterCooldown(aaveBaseRateOracle)
         // Aave variable borrow apys (percents): 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 3.0 probed with 1 day interval
         // Expected value is 15 / 7 = 2.(142857)
@@ -199,59 +196,59 @@ describe('AaveBaseRateOracle', () => {
       })
 
       it('spot apy value has no impact on average apy', async () => {
-        await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(BN(1e27)))
+        await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(1))
         await updateBufferRightAfterCooldown(aaveBaseRateOracle)
-        await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(BN(2e27)))
+        await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(2))
         await updateBufferRightAfterCooldown(aaveBaseRateOracle)
-        await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(BN(3e27)))
+        await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(3))
         await updateBufferRightAfterCooldown(aaveBaseRateOracle)
         // Aave variable borrow apys (percents): 1.0, 2.0, 3.0 probed with 1 day interval
         // Expected value is (1.0 + 2.0 + 3.0) / 3 = 2.0
-        expect(await aaveBaseRateOracle.calculateAverageAPY(3)).to.be.closeTo(BN(2_0000), 1)
+        expect(await aaveBaseRateOracle.calculateAverageAPY(3)).to.eq(2_0000)
       })
     })
 
     describe('getWeeklyAPY', () => {
       describe('returns correct value if', () => {
         it('apy grows', async () => {
-          await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(BN(1e27)))
+          await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(1))
           await updateBufferRightAfterCooldown(aaveBaseRateOracle)
           await updateBufferRightAfterCooldown(aaveBaseRateOracle)
           await updateBufferRightAfterCooldown(aaveBaseRateOracle)
-          await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(BN(2e27)))
+          await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(2))
           await updateBufferRightAfterCooldown(aaveBaseRateOracle)
           await updateBufferRightAfterCooldown(aaveBaseRateOracle)
-          await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(BN(3e27)))
+          await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(3))
           await updateBufferRightAfterCooldown(aaveBaseRateOracle)
-          await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(BN(4e27)))
+          await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(4))
           await updateBufferRightAfterCooldown(aaveBaseRateOracle)
           // Aave variable borrow apys (percents): 1.0, 1.0, 1.0, 1.0, 2.0, 3.0, 4.0 probed with 1 day interval
           // Expected avg apy is (1.0 * 3 + 2.0 * 2 + 3.0 + 4.0) / 7 = 2.0
           // Expected weekly apy is 2.0
-          expect(await aaveBaseRateOracle.calculateAverageAPY(7)).to.be.closeTo(BN(2_0000), 1)
-          expect(await aaveBaseRateOracle.getWeeklyAPY()).to.be.closeTo(BN(2_0000), 1)
+          expect(await aaveBaseRateOracle.calculateAverageAPY(7)).to.eq(2_0000)
+          expect(await aaveBaseRateOracle.getWeeklyAPY()).to.eq(2_0000)
         })
 
         it('apy goes up and down', async () => {
-          await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(BN(2e27)))
+          await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(2))
           await updateBufferRightAfterCooldown(aaveBaseRateOracle)
-          await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(BN(1e27)))
+          await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(1))
           await updateBufferRightAfterCooldown(aaveBaseRateOracle)
-          await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(BN(1_5e26)))
+          await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(3))
           await updateBufferRightAfterCooldown(aaveBaseRateOracle)
-          await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(BN(2e27)))
+          await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(2))
           await updateBufferRightAfterCooldown(aaveBaseRateOracle)
-          await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(BN(3e27)))
+          await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(3))
           await updateBufferRightAfterCooldown(aaveBaseRateOracle)
-          await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(BN(2e27)))
+          await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(2))
           await updateBufferRightAfterCooldown(aaveBaseRateOracle)
-          await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(BN(2_5e26)))
+          await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(1))
           await updateBufferRightAfterCooldown(aaveBaseRateOracle)
-          // Aave variable borrow apys (percents): 2.0, 1.0, 1.5, 2.0, 3.0, 2.0, 2.5 probed with 1 day interval
+          // Aave variable borrow apys (percents): 2.0, 1.0, 3, 2.0, 3.0, 2.0, 1.0 probed with 1 day interval
           // Expected avg apy is 14 / 7 = 2.0
           // Expected weekly apy is 2.0
-          expect(await aaveBaseRateOracle.calculateAverageAPY(7)).to.be.closeTo(BigNumber.from(2_0000), 1)
-          expect(await aaveBaseRateOracle.getWeeklyAPY()).to.be.closeTo(BigNumber.from(2_0000), 1)
+          expect(await aaveBaseRateOracle.calculateAverageAPY(7)).to.eq(2_0000)
+          expect(await aaveBaseRateOracle.getWeeklyAPY()).to.eq(2_0000)
         })
       })
     })
@@ -262,13 +259,13 @@ describe('AaveBaseRateOracle', () => {
         await updateBufferRightAfterCooldown(oracleLongBuffer)
 
         for (let i = 0; i < 30; i++) {
-          await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(BN(1e27 + i * 1e26)))
+          await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(10 + i))
           await updateBufferRightAfterCooldown(oracleLongBuffer)
         }
-        // Aave variable borrow apys (percents): 1.0, 1.1, ..., 3.9 probed with 1 day interval
-        // Expected avg apy is 2.45
-        // Expected monthly apy is 2.45
-        expect(await oracleLongBuffer.getMonthlyAPY()).to.be.closeTo(BN(2_4500), 1)
+        // Aave variable borrow apys (percents): 10, 11, ..., 39 probed with 1 day interval
+        // Expected avg apy is 24.5
+        // Expected monthly apy is 24.5
+        expect(await oracleLongBuffer.getMonthlyAPY()).to.eq(24_5000)
       })
     })
 
@@ -278,13 +275,13 @@ describe('AaveBaseRateOracle', () => {
         await updateBufferRightAfterCooldown(oracleLongBuffer)
 
         for (let i = 0; i < 365; i++) {
-          await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(BN(1e27 + i * 1e26)))
+          await mockAaveLendingPool.mock.getReserveData.returns(...mockReserveData(10 + i))
           await updateBufferRightAfterCooldown(oracleLongBuffer)
         }
-        // Aave variable borrow apys (percents): 1, 1.1, ..., 37.4 probed with 1 day interval
-        // Expected avg apy is 19.2
-        // Expected yearly apy is 19.2
-        expect(await oracleLongBuffer.getYearlyAPY()).to.be.closeTo(BigNumber.from(19_2000), 1)
+        // Aave variable borrow apys (percents): 10, 11, ..., 374 probed with 1 day interval
+        // Expected avg apy is 192
+        // Expected yearly apy is 192
+        expect(await oracleLongBuffer.getYearlyAPY()).to.eq(192_0000)
       }).timeout(100_000)
     })
   })
