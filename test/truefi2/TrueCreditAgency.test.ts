@@ -351,6 +351,45 @@ describe('TrueCreditAgency', () => {
     })
   })
 
+  describe('singleCreditValue', () => {
+    beforeEach(async () => {
+      await creditAgency.allowBorrower(borrower.address, YEAR)
+      await creditAgency.setRiskPremium(1000)
+      await creditOracle.setScore(owner.address, 255)
+    })
+
+    it('0 if a credit does not exist', async () => {
+      expect(await creditAgency.singleCreditValue(tusdPool.address, borrower.address)).to.eq(0)
+    })
+
+    it('just principal debt', async () => {
+      await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
+      expect(await creditAgency.singleCreditValue(tusdPool.address, borrower.address)).to.eq(1000)
+    })
+
+    it('principal debt and interest', async () => {
+      await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
+      await timeTravel(YEAR)
+      expect(await creditAgency.singleCreditValue(tusdPool.address, borrower.address)).to.eq(1100)
+    })
+
+    it('after debt repayment', async () => {
+      await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
+      await timeTravel(YEAR)
+      await tusd.connect(borrower).approve(creditAgency.address, 600)
+      await creditAgency.connect(borrower).repay(tusdPool.address, 600)
+      expect(await creditAgency.singleCreditValue(tusdPool.address, borrower.address)).to.eq(500)
+    })
+
+    it('after credit score update', async () => {
+      await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
+      await timeTravel(YEAR)
+      await creditOracle.setScore(borrower.address, 150)
+      await creditAgency.updateCreditScore(tusdPool.address, borrower.address)
+      expect(await creditAgency.singleCreditValue(tusdPool.address, borrower.address)).to.eq(1100)
+    })
+  })
+
   describe('borrowLimitAdjustment', () => {
     [
       [255, 10000],

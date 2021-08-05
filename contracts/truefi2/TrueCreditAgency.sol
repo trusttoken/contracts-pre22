@@ -352,6 +352,10 @@ contract TrueCreditAgency is UpgradeableClaimable {
         }
     }
 
+    function singleCreditValue(ITrueFiPool2 pool, address borrower) external view returns (uint256) {
+        return borrowed[pool][borrower].add(interest(pool, borrower));
+    }
+
     function _rebucket(
         ITrueFiPool2 pool,
         address borrower,
