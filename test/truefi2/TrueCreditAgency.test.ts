@@ -451,6 +451,7 @@ describe('TrueCreditAgency', () => {
 
     it('cannot borrow more than 15% of a single pool in total', async () => {
       await pool2.mock.poolValue.returns(parseUSDC(3))
+      await pool2.mock.liquidRatio.returns(10000)
       await creditAgency.connect(borrower).borrow(pool2.address, parseUSDC(0.4))
       expect(await creditAgency.borrowLimit(pool2.address, borrower.address)).to.equal(parseUSDC(0.05))
       await creditAgency.connect(borrower).borrow(pool2.address, parseUSDC(0.05))
@@ -463,6 +464,7 @@ describe('TrueCreditAgency', () => {
 
     it('borrow limit is 0 if credit limit is above the borrowed amount', async () => {
       await pool2.mock.poolValue.returns(parseUSDC(3))
+      await pool2.mock.liquidRatio.returns(10000)
       await creditAgency.connect(borrower).borrow(pool2.address, parseUSDC(0.4))
       await pool2.mock.poolValue.returns(parseUSDC(2))
       expect(await creditAgency.borrowLimit(pool2.address, borrower.address)).to.equal(parseUSDC(0))
@@ -573,31 +575,31 @@ describe('TrueCreditAgency', () => {
     )
   })
 
-  describe('utilizationAdjustmentRate', () => {
-    const setUtilization = async (pool: TrueFiPool2, utilization: number) => {
-      if (utilization === 0) {
-        return
-      }
-      const utilizationAmount = (await pool.poolValue()).mul(utilization).div(100)
-      const loan = await createApprovedLoan(
-        rater, tru, stkTru,
-        loanFactory, borrower, tusdPool,
-        utilizationAmount, DAY, 1,
-        owner, provider,
-      )
-      await lender.connect(borrower).fund(loan.address)
+  const setUtilization = async (pool: TrueFiPool2, utilization: number) => {
+    if (utilization === 0) {
+      return
     }
+    const utilizationAmount = (await pool.poolValue()).mul(utilization).div(100)
+    const loan = await createApprovedLoan(
+      rater, tru, stkTru,
+      loanFactory, borrower, tusdPool,
+      utilizationAmount, DAY, 1,
+      owner, provider,
+    )
+    await lender.connect(borrower).fund(loan.address)
+  }
 
-    describe('setUtilization', () => {
-      [0, 20, 50, 80, 100].map((utilization) => {
-        it(`sets utilization to ${utilization} percent`, async () => {
-          await setUtilization(tusdPool, utilization)
-          expect(await tusdPool.utilization()).to.eq(utilization * 100)
-        })
+  describe('setUtilization', () => {
+    [0, 20, 50, 80, 100].map((utilization) => {
+      it(`sets utilization to ${utilization} percent`, async () => {
+        await setUtilization(tusdPool, utilization)
+        expect(await tusdPool.utilization()).to.eq(utilization * 100)
       })
     })
+  })
 
-    ;[
+  describe('utilizationAdjustmentRate', () => {
+    [
       [0, 0],
       [10, 11],
       [20, 28],
@@ -617,6 +619,26 @@ describe('TrueCreditAgency', () => {
         expect(await creditAgency.utilizationAdjustmentRate(tusdPool.address)).to.eq(adjustment)
       }),
     )
+  })
+
+  describe('currentRate', () => {
+    it('calculates rate correctly', async () => {
+      await creditAgency.setRiskPremium(100)
+      await creditOracle.setScore(borrower.address, 223)
+      await creditAgency.updateCreditScore(tusdPool.address, borrower.address)
+      await setUtilization(tusdPool, 50)
+      const expectedCurrentRate = 393 // 100 + 143 + 150
+      expect(await creditAgency.currentRate(tusdPool.address, borrower.address)).to.eq(expectedCurrentRate)
+    })
+
+    it('caps current rate if it exceeds max rate', async () => {
+      await creditAgency.setRiskPremium(22900)
+      await creditOracle.setScore(borrower.address, 31)
+      await creditAgency.updateCreditScore(tusdPool.address, borrower.address)
+      await setUtilization(tusdPool, 95)
+      const expectedCurrentRate = 50000 // min(22900 + 7225 + 19950 = 50075, 50000)
+      expect(await creditAgency.currentRate(tusdPool.address, borrower.address)).to.eq(expectedCurrentRate)
+    })
   })
 
   describe('payInterest', () => {
