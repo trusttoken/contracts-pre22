@@ -377,7 +377,7 @@ describe('TrueFiPool2', () => {
         expect(await tusdPool.poolValue()).to.be.closeTo(joinAmount, 2)
 
         await timeTravel(YEAR)
-        expect(await tusdPool.poolValue()).to.be.closeTo(joinAmount.add(BigNumber.from(100)), 2)
+        expect(await tusdPool.poolValue()).to.be.closeTo(joinAmount.add(100), 2)
       })
     })
   })
