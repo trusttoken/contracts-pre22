@@ -591,18 +591,12 @@ describe('TrueCreditAgency', () => {
       expect(await creditAgency.status(tusdPool.address, borrower.address)).to.equal(Status.Eligible)
     })
 
-    it('returns OnHold when account has freshly missed payment', async () => {
+    it('returns OnHold when account has a missed payment', async () => {
       await creditAgency.connect(borrower).borrow(tusdPool.address, 100)
       await timeTravel(DAY * 31 + 1)
       expect(await creditAgency.status(tusdPool.address, borrower.address)).to.equal(Status.OnHold)
-      await timeTravel(DAY * 2)
+      await timeTravel(YEAR)
       expect(await creditAgency.status(tusdPool.address, borrower.address)).to.equal(Status.OnHold)
-    })
-
-    it('returns Ineligible when account has old missed payment', async () => {
-      await creditAgency.connect(borrower).borrow(tusdPool.address, 100)
-      await timeTravel(DAY * 40)
-      expect(await creditAgency.status(tusdPool.address, borrower.address)).to.equal(Status.Ineligible)
     })
   })
 

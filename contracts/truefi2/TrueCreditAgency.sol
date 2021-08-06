@@ -373,9 +373,6 @@ contract TrueCreditAgency is UpgradeableClaimable {
         if (nextInterestRepayTime[pool][borrower] == 0) {
             return Status.Eligible;
         }
-        if (nextInterestRepayTime[pool][borrower].add(gracePeriod) < block.timestamp) {
-            return Status.Ineligible;
-        }
         if (nextInterestRepayTime[pool][borrower] < block.timestamp) {
             return Status.OnHold;
         }
