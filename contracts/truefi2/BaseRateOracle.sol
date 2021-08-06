@@ -4,14 +4,8 @@ pragma solidity 0.6.10;
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {IAaveLendingPool} from "./interface/IAaveLendingPool.sol";
 
-contract BaseRateOracle {
+contract BaseRateSpotOracle {
     using SafeMath for uint256;
-
-    uint256 private constant BASIS_PRECISION = 10000;
-
-    // According to compound doc
-    uint256 private constant BLOCKS_PER_DAY = 6570;
-    uint256 private constant DAYS_PER_YEAR = 365;
 
     address public asset;
 

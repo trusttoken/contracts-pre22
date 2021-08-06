@@ -3,16 +3,16 @@ import { deployMockContract, MockContract, solidity } from 'ethereum-waffle'
 import { BigNumber, Wallet } from 'ethers'
 import { setupDeploy } from 'scripts/utils'
 import { beforeEachWithFixture } from 'utils/beforeEachWithFixture'
-import { MockErc20Token, BaseRateOracle, MockErc20Token__factory, BaseRateOracle__factory } from 'contracts'
+import { MockErc20Token, BaseRateSpotOracle, MockErc20Token__factory, BaseRateSpotOracle__factory } from 'contracts'
 import { IAaveLendingPoolJson } from 'build'
 import { AddressZero } from '@ethersproject/constants'
 
 use(solidity)
 
-describe('BaseRateOracle', () => {
+describe('BaseRateSpotOracle', () => {
   let owner: Wallet
   let asset: MockErc20Token
-  let oracle: BaseRateOracle
+  let oracle: BaseRateSpotOracle
   let aaveLendingPool: MockContract
 
   const aaveLiquidityRate = BigNumber.from(10).pow(23).mul(300)
@@ -23,7 +23,7 @@ describe('BaseRateOracle', () => {
 
     asset = await deployContract(MockErc20Token__factory)
     aaveLendingPool = await deployMockContract(owner, IAaveLendingPoolJson.abi)
-    oracle = await deployContract(BaseRateOracle__factory, asset.address, aaveLendingPool.address, 1)
+    oracle = await deployContract(BaseRateSpotOracle__factory, asset.address, aaveLendingPool.address, 1)
 
     await aaveLendingPool.mock.getReserveData.returns(0, 0, 0, 0, aaveLiquidityRate, 0, 0, AddressZero, AddressZero, AddressZero, AddressZero, 0)
   })
