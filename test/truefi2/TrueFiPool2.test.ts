@@ -897,7 +897,7 @@ describe('TrueFiPool2', () => {
       expect('repay').to.be.calledOnContract(tusdPool)
     })
 
-    it('creditAgency can borrow funds', async () => {
+    it('creditAgency can repay funds', async () => {
       await tusdPool.setCreditAgency(borrower.address)
       await expect(tusdPool.connect(borrower).repay(0)).to.be.not.reverted
     })
