@@ -170,6 +170,24 @@ describe('TrueCreditAgency', () => {
     })
   })
 
+  describe('setGracePeriod', () => {
+    it('only owner can set grace period', async () => {
+      await expect(creditAgency.connect(borrower).setGracePeriod(DAY))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('period is properly set', async () => {
+      await creditAgency.setGracePeriod(DAY)
+      expect(await creditAgency.gracePeriod()).to.equal(DAY)
+    })
+
+    it('emits a proper event', async () => {
+      await expect(creditAgency.setGracePeriod(DAY))
+        .to.emit(creditAgency, 'GracePeriodChanged')
+        .withArgs(DAY)
+    })
+  })
+
   describe('setCreditAdjustmentCoefficient', () => {
     it('reverts if not called by the owner', async () => {
       await expect(creditAgency.connect(borrower).setCreditAdjustmentCoefficient(1))
@@ -494,6 +512,13 @@ describe('TrueCreditAgency', () => {
         .to.be.revertedWith('TrueCreditAgency: Borrower has credit score below minimum')
     })
 
+    it('fails if borrower has missed the repay time', async () => {
+      await creditAgency.connect(borrower).borrow(tusdPool.address, 500)
+      await timeTravel(DAY * 32)
+      await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 500))
+        .to.be.revertedWith('TrueCreditAgency: Sender not eligible to borrow')
+    })
+
     it('fails if borrower tries to borrow after whitelist period', async () => {
       await creditAgency.allowBorrower(borrower.address, YEAR)
       await timeTravel(YEAR)
@@ -550,6 +575,30 @@ describe('TrueCreditAgency', () => {
       expect((await creditAgency.buckets(tusdPool.address, 255)).borrowersCount).to.equal(0)
       expect((await creditAgency.buckets(tusdPool.address, 200)).totalBorrowed).to.equal(2000)
       expect((await creditAgency.buckets(tusdPool.address, 200)).borrowersCount).to.equal(1)
+    })
+  })
+
+  describe('Status', () => {
+    enum Status {Ineligible, OnHold, Eligible}
+
+    beforeEach(async () => {
+      await creditAgency.allowBorrower(borrower.address, YEAR)
+    })
+
+    it('returns Eligible when account has no missed payments', async () => {
+      expect(await creditAgency.status(tusdPool.address, borrower.address)).to.equal(Status.Eligible)
+      await creditAgency.connect(borrower).borrow(tusdPool.address, 100)
+      expect(await creditAgency.status(tusdPool.address, borrower.address)).to.equal(Status.Eligible)
+      await timeTravel(DAY * 29)
+      expect(await creditAgency.status(tusdPool.address, borrower.address)).to.equal(Status.Eligible)
+    })
+
+    it('returns OnHold when account has a missed payment', async () => {
+      await creditAgency.connect(borrower).borrow(tusdPool.address, 100)
+      await timeTravel(DAY * 31 + 1)
+      expect(await creditAgency.status(tusdPool.address, borrower.address)).to.equal(Status.OnHold)
+      await timeTravel(YEAR)
+      expect(await creditAgency.status(tusdPool.address, borrower.address)).to.equal(Status.OnHold)
     })
   })
 
@@ -901,6 +950,7 @@ describe('TrueCreditAgency', () => {
       await creditAgency.allowBorrower(owner.address, YEAR * 10)
       await creditAgency.setRiskPremium(1000)
       await creditOracle.setScore(owner.address, 255)
+      await creditAgency.setInterestRepaymentPeriod(YEAR * 10)
     })
 
     it('interest for single borrower and stable rate', async () => {
