@@ -692,7 +692,7 @@ describe('TrueRatingAgencyV2', () => {
         await rater.yes(loanToken.address)
         await timeTravel(7 * DAY + 1)
         await lender.fund(loanToken.address)
-        await timeTravel(yearInSeconds * 2 + dayInSeconds)
+        await timeTravel(yearInSeconds * 2 + 3 * dayInSeconds)
         await loanToken.enterDefault()
 
         await expectRoughTrustTokenBalanceChangeAfterClaim(parseTRU(1e5), owner)

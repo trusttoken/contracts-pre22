@@ -43,7 +43,7 @@ describe('Liquidator2', () => {
   let timeTravel: (time: number) => void
 
   const YEAR = DAY * 365
-  const defaultedLoanCloseTime = YEAR + DAY
+  const defaultedLoanCloseTime = YEAR + 3 * DAY
 
   const withdraw = async (wallet: Wallet, beneficiary = wallet.address) =>
     loan.connect(wallet).withdraw(beneficiary)
