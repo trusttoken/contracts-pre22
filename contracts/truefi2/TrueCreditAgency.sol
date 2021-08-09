@@ -24,6 +24,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
     uint8 constant MAX_CREDIT_SCORE = 255;
     uint256 constant MAX_RATE_CAP = 50000;
+    uint256 constant ADDITIONAL_PRECISION = 1e27;
 
     struct SavedInterest {
         uint256 total;
@@ -396,7 +397,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         );
 
         bucket.cumulativeInterestPerShare = bucket.cumulativeInterestPerShare.add(
-            bucket.rate.mul(1e23).mul(timeNow.sub(bucket.timestamp)).div(365 days)
+            bucket.rate.mul(ADDITIONAL_PRECISION.div(10000)).mul(timeNow.sub(bucket.timestamp)).div(365 days)
         );
         bucket.rate = _currentRate(partialRate, _creditScoreAdjustmentRate(bucketNumber));
         bucket.timestamp = uint128(timeNow);
@@ -493,7 +494,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
                 bucket.cumulativeInterestPerShare
                     .sub(bucket.savedInterest[borrower].perShare)
                     .mul(borrowedByBorrower)
-                    .div(1e27)
+                    .div(ADDITIONAL_PRECISION)
             ).add(
                 block.timestamp.sub(bucket.timestamp)
                 .mul(borrowedByBorrower)
