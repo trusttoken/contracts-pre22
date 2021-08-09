@@ -12,15 +12,11 @@ import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
  * A borrower is "on hold" if they are temporarily not allowed to borrow
  * A borrower is "ineligible" if their line of credit is marked for default
  *
- * Borrowers can only borrow if:
- *  - score was updated at least `threshold` seconds ago
- *  - borrower is not ineligible
- *  - borrower is not on hold
- *
  * Score manager can update scores, only owner can update ineligibility & onHold status
  */
 contract TrueFiCreditOracle is ITrueFiCreditOracle, UpgradeableClaimable {
     using SafeMath for uint256;
+
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
     // === STORAGE VARIABLES ARE DECLARED BELOW ==
@@ -36,17 +32,14 @@ contract TrueFiCreditOracle is ITrueFiCreditOracle, UpgradeableClaimable {
     // @dev Manager role authorized to set credit scores
     address public manager;
 
-    // @dev How frequently a score needs to be updated for an account to borrow
-    uint256 public threshold;
-
     // store timestamp when borrower is last updated
-    mapping(address => uint256) public lastUpdated;
+    mapping(address => uint256) public override lastUpdated;
 
     // @dev Track if borrower is ineligible for borrowing
-    mapping(address => bool) public ineligible;
+    mapping(address => bool) public override ineligible;
 
     // @dev Track if borrower is on hold from borrowing
-    mapping(address => bool) public onHold;
+    mapping(address => bool) public override onHold;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -54,16 +47,12 @@ contract TrueFiCreditOracle is ITrueFiCreditOracle, UpgradeableClaimable {
 
     event ScoreChanged(address indexed account, uint8 indexed newScore, uint256 indexed timestamp);
 
-    event ThresholdChanged(uint256 newThreshold);
-
     event IneligibleStatusChanged(address account, bool ineligibleStatus);
 
     event OnHoldStatusChanged(address account, bool onHoldStatus);
 
     function initialize() public initializer {
         UpgradeableClaimable.initialize(msg.sender);
-        threshold = 30 days;
-        emit ThresholdChanged(threshold);
     }
 
     // @dev only credit score manager
@@ -115,14 +104,6 @@ contract TrueFiCreditOracle is ITrueFiCreditOracle, UpgradeableClaimable {
     }
 
     /**
-     * @dev Set new threshold for updating credit scores
-     */
-    function setThreshold(uint256 newThreshold) public onlyOwner {
-        threshold = newThreshold;
-        emit ThresholdChanged(newThreshold);
-    }
-
-    /**
      * @dev Set ineligability
      */
     function setIneligible(address borrower, bool ineligibleStatus) public onlyOwner {
@@ -136,22 +117,5 @@ contract TrueFiCreditOracle is ITrueFiCreditOracle, UpgradeableClaimable {
     function setOnHold(address borrower, bool onHoldStatus) public onlyOwner {
         onHold[borrower] = onHoldStatus;
         emit OnHoldStatusChanged(borrower, onHoldStatus);
-    }
-
-    /**
-     * @dev check if borrower score has been updated recently enough
-     * @return Whether block timestamp is less than last update + threshold
-     */
-    function meetsTimeRequirement(address borrower) public view returns (bool) {
-        return block.timestamp <= threshold.add(lastUpdated[borrower]);
-    }
-
-    /**
-     * @dev can borrow if an address is not ineligable and not on hold
-     * and meets time requirements
-     * @return Whether borrower can borrow more funds
-     */
-    function canBorrow(address borrower) public view returns (bool) {
-        return !ineligible[borrower] && !onHold[borrower] && meetsTimeRequirement(borrower);
     }
 }

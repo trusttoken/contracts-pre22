@@ -28,7 +28,6 @@ describe('TrueFiCreditOracle', () => {
     oracle = await new TrueFiCreditOracle__factory(owner).deploy()
     await oracle.initialize()
     await oracle.setManager(manager.address)
-    await oracle.setThreshold(60 * 60 * 30) // 30 days
   })
 
   describe('setManager', () => {
@@ -98,6 +97,13 @@ describe('TrueFiCreditOracle', () => {
       await oracle.connect(manager).setScore(firstAccount.address, secondScore)
       expect(await oracle.getScore(firstAccount.address)).to.equal(secondScore)
     })
+
+    it('updates lastUpdated timestamp', async () => {
+      let tx = await (await oracle.connect(manager).setScore(firstAccount.address, firstScore)).wait()
+      expect(await oracle.lastUpdated(firstAccount.address)).to.equal((await provider.getBlock(tx.blockNumber)).timestamp)
+      tx = await (await oracle.connect(manager).setScore(firstAccount.address, firstScore)).wait()
+      expect(await oracle.lastUpdated(firstAccount.address)).to.equal((await provider.getBlock(tx.blockNumber)).timestamp)
+    })
   })
 
   describe('set and get max borrower limits', () => {
@@ -147,33 +153,6 @@ describe('TrueFiCreditOracle', () => {
     it('only owner can set onHold', async () => {
       await expect(oracle.connect(manager).setOnHold(firstAccount.address, false))
         .to.be.revertedWith('Ownable: caller is not the owner')
-    })
-
-    it('meets time requirement', async () => {
-      expect(await oracle.meetsTimeRequirement(firstAccount.address)).to.be.true
-      expect(await oracle.meetsTimeRequirement(secondAccount.address)).to.be.true
-    })
-
-    it('can borrow', async () => {
-      expect(await oracle.canBorrow(firstAccount.address)).to.be.false
-      expect(await oracle.canBorrow(secondAccount.address)).to.be.true
-    })
-
-    it('cannot borrow if ineligible', async () => {
-      await oracle.connect(owner).setIneligible(secondAccount.address, true)
-      expect(await oracle.canBorrow(secondAccount.address)).to.be.false
-    })
-
-    it('cannot borrow if on hold', async () => {
-      await oracle.connect(owner).setOnHold(secondAccount.address, true)
-      expect(await oracle.canBorrow(secondAccount.address)).to.be.false
-    })
-
-    it('cannot borrow if score has not been updated recently enough', async () => {
-      const threshold: number = (await oracle.threshold()).toNumber()
-      await timeTravel(provider, threshold + 1) // 1 second later
-      expect(await oracle.meetsTimeRequirement(secondAccount.address)).to.be.false
-      expect(await oracle.canBorrow(secondAccount.address)).to.be.false
     })
 
     it('setting ineligibility triggers event', async () => {
