@@ -2,6 +2,6 @@
 
 module.exports = {
   ...require('./.mocharc.integration.json'),
-  grep: /(1Inch|Curve)/i,
+  grep: /\[Skip CI]/i,
   invert: true
 }

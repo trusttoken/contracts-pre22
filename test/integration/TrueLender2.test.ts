@@ -85,7 +85,7 @@ describe('TrueLender2', () => {
     await loanFactory.initialize(poolFactory.address, lender.address, AddressZero)
   })
 
-  it('ensure max 1% swap fee slippage', async () => {
+  it('[Skip CI] ensure max 1% swap fee slippage', async () => {
     const tx = await loanFactory.createLoanToken(tusdLoanPool.address, parseEth(100000), 1000, DAY * 365)
     const creationEvent = (await tx.wait()).events[0]
     const { contractAddress } = creationEvent.args
