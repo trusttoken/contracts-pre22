@@ -4,7 +4,7 @@ pragma solidity 0.6.10;
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {IAaveLendingPool} from "./interface/IAaveLendingPool.sol";
 
-contract BaseRateSpotOracle {
+contract SpotBaseRateOracle {
     using SafeMath for uint256;
 
     address public asset;
