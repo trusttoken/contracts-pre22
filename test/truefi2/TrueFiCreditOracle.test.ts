@@ -1,15 +1,8 @@
 import { expect, use } from 'chai'
-import {
-  beforeEachWithFixture,
-  parseEth,
-  timeTravel,
-} from 'utils'
-import {
-  TrueFiCreditOracle__factory,
-  TrueFiCreditOracle,
-} from 'contracts'
-import { solidity, MockProvider } from 'ethereum-waffle'
-import { Wallet, ContractTransaction } from 'ethers'
+import { beforeEachWithFixture, parseEth } from 'utils'
+import { TrueFiCreditOracle, TrueFiCreditOracle__factory } from 'contracts'
+import { MockProvider, solidity } from 'ethereum-waffle'
+import { ContractTransaction, Wallet } from 'ethers'
 
 use(solidity)
 
