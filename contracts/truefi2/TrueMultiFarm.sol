@@ -102,7 +102,7 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
     /**
      * @dev How much is staked by staker on token farm
      */
-    function staked(IERC20 token, address staker) public view returns (uint256) {
+    function staked(IERC20 token, address staker) external view returns (uint256) {
         return stakes[token].staked[staker];
     }
 
@@ -147,11 +147,13 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
      * @dev Claim TRU rewards
      */
     function claim(IERC20[] calldata tokens) external override {
+        uint256 tokensLength = tokens.length;
+
         distribute();
-        for (uint256 i = 0; i < tokens.length; i++) {
+        for (uint256 i = 0; i < tokensLength; i++) {
             updateRewards(tokens[i]);
         }
-        for (uint256 i = 0; i < tokens.length; i++) {
+        for (uint256 i = 0; i < tokensLength; i++) {
             _claim(tokens[i]);
         }
     }
@@ -161,10 +163,13 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
      */
     function exit(IERC20[] calldata tokens) external override {
         distribute();
-        for (uint256 i = 0; i < tokens.length; i++) {
+
+        uint256 tokensLength = tokens.length;
+
+        for (uint256 i = 0; i < tokensLength; i++) {
             updateRewards(tokens[i]);
         }
-        for (uint256 i = 0; i < tokens.length; i++) {
+        for (uint256 i = 0; i < tokensLength; i++) {
             _unstake(tokens[i], stakes[tokens[i]].staked[msg.sender]);
             _claim(tokens[i]);
         }
@@ -178,13 +183,16 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
      * @param tokens Token addresses
      * @param updatedShares share of the i-th token in the multifarm
      */
-    function setShares(IERC20[] calldata tokens, uint256[] calldata updatedShares) public onlyOwner {
-        require(tokens.length == updatedShares.length, "TrueMultiFarm: Array lengths mismatch");
+    function setShares(IERC20[] calldata tokens, uint256[] calldata updatedShares) external onlyOwner {
+        uint256 tokensLength = tokens.length;
+
+        require(tokensLength == updatedShares.length, "TrueMultiFarm: Array lengths mismatch");
         distribute();
-        for (uint256 i = 0; i < tokens.length; i++) {
+
+        for (uint256 i = 0; i < tokensLength; i++) {
             _updateClaimableRewardsForFarm(tokens[i]);
         }
-        for (uint256 i = 0; i < tokens.length; i++) {
+        for (uint256 i = 0; i < tokensLength; i++) {
             uint256 oldStaked = shares.staked[address(tokens[i])];
             shares.staked[address(tokens[i])] = updatedShares[i];
             shares.totalStaked = shares.totalStaked.sub(oldStaked).add(updatedShares[i]);

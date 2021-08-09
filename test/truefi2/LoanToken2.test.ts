@@ -28,7 +28,7 @@ describe('LoanToken2', () => {
   const dayInSeconds = 60 * 60 * 24
   const yearInSeconds = dayInSeconds * 365
   const averageMonthInSeconds = yearInSeconds / 12
-  const defaultedLoanCloseTime = yearInSeconds + dayInSeconds
+  const defaultedLoanCloseTime = yearInSeconds + 3 * dayInSeconds
 
   const withdraw = async (wallet: Wallet, beneficiary = wallet.address) =>
     loanToken.connect(wallet).withdraw(beneficiary)

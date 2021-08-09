@@ -486,61 +486,6 @@ describe('TrueFiPool', () => {
     })
   })
 
-  describe('integrateAtPoint', () => {
-    const calcOffchain = (x: number) => Math.floor(Math.log(x + 50) * 50000)
-    it('calculates integral * 1e9', async () => {
-      for (let i = 0; i < 100; i++) {
-        expect(await pool.integrateAtPoint(i)).to.equal(calcOffchain(i))
-      }
-    })
-  })
-
-  describe('averageExitPenalty', () => {
-    const testPenalty = async (from: number, to: number, result: number) => expect(await pool.averageExitPenalty(from, to)).to.equal(result)
-
-    it('throws if from > to', async () => {
-      await expect(pool.averageExitPenalty(10, 9)).to.be.revertedWith('TrueFiPool: To precedes from')
-    })
-
-    it('correctly calculates penalty when from = to', async () => {
-      await testPenalty(0, 0, 1000)
-      await testPenalty(1, 1, 980)
-      await testPenalty(100, 100, 333)
-      await testPenalty(10000, 10000, 0)
-    })
-
-    it('correctly calculates penalty when from+1=to', async () => {
-      const testWithStep1 = async (from: number) => {
-        const penalty = await pool.averageExitPenalty(from, from + 1)
-        const expected = (await pool.averageExitPenalty(from, from)).add(await pool.averageExitPenalty(from + 1, from + 1)).div(2)
-        expect(penalty.sub(expected).abs()).to.be.lte(1)
-      }
-
-      await testWithStep1(0)
-      await testWithStep1(1)
-      await testWithStep1(2)
-      await testWithStep1(3)
-      await testWithStep1(5)
-      await testWithStep1(10)
-      await testWithStep1(42)
-      await testWithStep1(150)
-      await testWithStep1(1000)
-      await testWithStep1(10000 - 2)
-    })
-
-    it('correctly calculates penalty when from < to', async () => {
-      // Checked with Wolfram Alpha
-      await testPenalty(0, 12, 896)
-      await testPenalty(1, 100, 544)
-      await testPenalty(5, 10, 870)
-      await testPenalty(15, 55, 599)
-      await testPenalty(42, 420, 215)
-      await testPenalty(100, 1000, 108)
-      await testPenalty(9100, 10000, 5)
-      await testPenalty(1000, 10000, 12)
-    })
-  })
-
   describe('liquidExit', () => {
     const amount = parseEth(1e7)
     beforeEach(async () => {
@@ -564,16 +509,6 @@ describe('TrueFiPool', () => {
     it('all funds are liquid: transfers TUSD without penalty (half of stake)', async () => {
       await pool.liquidExit(amount.div(2))
       expect(await token.balanceOf(owner.address)).to.equal(amount.div(2))
-    })
-
-    it('after loan approved, applies a penalty', async () => {
-      const loan1 = await new LoanToken__factory(owner).deploy(token.address, borrower.address, lender.address, lender.address, amount.div(3), dayInSeconds * 365, 1000)
-      await mockRatingAgency.mock.getResults.returns(0, 0, parseTRU(15e6))
-      await lender.connect(borrower).fund(loan1.address)
-      expect(await pool.liquidExitPenalty(amount.div(2))).to.equal(9990)
-      await pool.liquidExit(amount.div(2), { gasLimit: 5000000 })
-      expectScaledCloseTo(await token.balanceOf(owner.address), (amount.div(2).mul(9990).div(10000)))
-      expect(await curveToken.allowance(pool.address, curvePool.address)).to.equal(0)
     })
 
     it('half funds are in curve: transfers TUSD without penalty and leaves curve with 0 allowance', async () => {
@@ -669,7 +604,7 @@ describe('TrueFiPool', () => {
     it('funds and liquidates loan', async () => {
       const { loan } = await fundLoan(loanFactory2, lender2)
       await loan.withdraw(owner.address)
-      await timeTravel(provider, DAY * 3)
+      await timeTravel(provider, DAY * 4)
       await loan.enterDefault()
       await liquidator2.setTokenApproval(token.address, true)
       await liquidator2.liquidate(loan.address)
@@ -727,9 +662,7 @@ describe('TrueFiPool', () => {
       await liquidate()
       const totalValue = await pool.poolValue()
       const totalSupply = await pool.totalSupply()
-      const penalty = await pool.liquidExitPenalty(totalSupply.div(2))
-      expect(penalty).to.equal(9996)
-      await expect(() => pool.liquidExit(totalSupply.div(2))).to.changeTokenBalance(token, owner, totalValue.div(2).mul(penalty).div(10000))
+      await expect(() => pool.liquidExit(totalSupply.div(2))).to.changeTokenBalance(token, owner, totalValue.div(2))
     })
   })
 })

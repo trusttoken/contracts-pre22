@@ -89,6 +89,7 @@ contract LinearTrueDistributor is ITrueDistributor, Ownable {
      * @param newFarm New farm for distribution
      */
     function setFarm(address newFarm) external onlyOwner {
+        require(newFarm != address(0), "LinearTrueDistributor: Farm address can't be the zero address");
         distribute();
         farm = newFarm;
         emit FarmChanged(newFarm);
@@ -136,7 +137,7 @@ contract LinearTrueDistributor is ITrueDistributor, Ownable {
      * Distributes remaining funds before withdrawing
      * Ends current distribution
      */
-    function empty() public override onlyOwner {
+    function empty() external override onlyOwner {
         distribute();
         distributed = 0;
         totalAmount = 0;
@@ -147,7 +148,7 @@ contract LinearTrueDistributor is ITrueDistributor, Ownable {
      * @dev Change amount of tokens distributed daily by changing total distributed amount
      * @param dailyDistribution New daily distribution
      */
-    function setDailyDistribution(uint256 dailyDistribution) public onlyOwner {
+    function setDailyDistribution(uint256 dailyDistribution) external onlyOwner {
         distribute();
         uint256 timeLeft = distributionStart.add(duration).sub(block.timestamp);
         if (timeLeft > duration) {
@@ -168,7 +169,7 @@ contract LinearTrueDistributor is ITrueDistributor, Ownable {
         uint256 _distributionStart,
         uint256 _duration,
         uint256 _dailyDistribution
-    ) public onlyOwner {
+    ) external onlyOwner {
         require(
             block.timestamp > distributionStart.add(duration),
             "LinearTrueDistributor: Cannot restart distribution before it's over"
