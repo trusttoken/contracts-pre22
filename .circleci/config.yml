@@ -106,7 +106,7 @@ jobs:
     steps:
       - attach_workspace:
           at: .
-      - run: yarn test:integration
+      - run: yarn test:integration --config .mocharc.integration-ci.js
 
 workflows:
   version: 2

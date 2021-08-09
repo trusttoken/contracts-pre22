@@ -34,7 +34,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     using SafeMath for uint256;
     using SafeERC20 for ERC20;
 
-    uint128 public constant LAST_MINUTE_PAYBACK_DURATION = 1 days;
+    uint128 public constant LAST_MINUTE_PAYBACK_DURATION = 3 days;
     uint256 private constant APY_PRECISION = 10000;
 
     address public admin;

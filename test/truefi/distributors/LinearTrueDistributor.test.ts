@@ -54,7 +54,7 @@ describe('LinearTrueDistributor', () => {
     })
 
     it('reverts if new address is zero', async () => {
-      await expect(distributor.setFarm(ZERO_ADDRESS)).to.be.revertedWith('Farm address can\'t be the zero address')
+      await expect(distributor.setFarm(ZERO_ADDRESS)).to.be.revertedWith('LinearTrueDistributor: Farm address can\'t be the zero address')
     })
 
     it('emits event when farm is set', async () => {

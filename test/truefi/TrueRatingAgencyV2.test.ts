@@ -687,7 +687,7 @@ describe('TrueRatingAgencyV2', () => {
 
         it('does not do anything when called multiple times', async () => {
           await loanToken.fund()
-          await timeTravel(yearInSeconds * 2 + dayInSeconds)
+          await timeTravel(yearInSeconds * 2 + 3 * dayInSeconds)
           await loanToken.enterDefault()
 
           await expectRoughTrustTokenBalanceChangeAfterClaim(parseTRU(1e5), owner)
@@ -872,7 +872,7 @@ describe('TrueRatingAgencyV2', () => {
 
         it('does not do anything when called multiple times', async () => {
           await loanToken2.fund()
-          await timeTravel(yearInSeconds * 2 + dayInSeconds)
+          await timeTravel(yearInSeconds * 2 + 3 * dayInSeconds)
           await loanToken2.enterDefault()
 
           await expectRoughTrustTokenBalanceChangeAfterClaim(parseTRU(1e5), owner)
@@ -1057,7 +1057,7 @@ describe('TrueRatingAgencyV2', () => {
 
         it('does not do anything when called multiple times', async () => {
           await loanToken2.fund()
-          await timeTravel(yearInSeconds * 2 + dayInSeconds)
+          await timeTravel(yearInSeconds * 2 + 3 * dayInSeconds)
           await loanToken2.enterDefault()
 
           await expectRoughTrustTokenBalanceChangeAfterClaim(parseTRU(1e5), owner)
