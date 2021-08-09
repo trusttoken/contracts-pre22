@@ -39,6 +39,7 @@ describe('TrueFiPool2', () => {
   let tru: MockTrueCurrency
   let stkTru: StkTruToken
   let tusdPool: TrueFiPool2
+  let usdcPool: TrueFiPool2
   let loanFactory: LoanFactory2
   let lender: TrueLender2
   let rater: TrueRatingAgencyV2
@@ -63,6 +64,7 @@ describe('TrueFiPool2', () => {
       rater,
       lender,
       standardPool: tusdPool,
+      feePool: usdcPool,
       loanFactory,
       safu,
       creditAgency,
@@ -1139,6 +1141,10 @@ describe('TrueFiPool2', () => {
           provider,
         )
         await lender.connect(borrower).fund(loanForPartOfPool.address)
+      })
+
+      it('returns 0 if poolValue is 0', async () => {
+        expect(await usdcPool.liquidRatio()).to.eq(0)
       })
 
       it('equals 1 - utilization', async () => {
