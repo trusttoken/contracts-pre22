@@ -12,7 +12,7 @@ import {
 } from 'contracts'
 import {
   beforeEachWithFixture,
-  createApprovedLoan, DAY, parseEth, parseUSDC, setupTruefi2,
+  createApprovedLoan, DAY, expectScaledCloseTo, parseEth, parseUSDC, setupTruefi2,
   timeTravel as _timeTravel,
   YEAR,
 } from 'utils'
@@ -40,6 +40,7 @@ describe('TrueCreditAgency', () => {
   let timeTravel: (time: number) => void
 
   const MONTH = DAY * 31
+  const PRECISION = BigNumber.from(10).pow(27)
 
   async function setupBorrower (borrower: Wallet, score: number, amount: BigNumberish) {
     await creditAgency.allowBorrower(borrower.address, YEAR * 10)
@@ -360,12 +361,19 @@ describe('TrueCreditAgency', () => {
       expect(await creditAgency.totalBorrowed(borrower.address, 18)).to.equal(parseEth(600))
     })
 
-    // Run when totalTVL includes credit value
-    xit('totalTVL remains unchanged after borrowing', async () => {
+    it('totalTVL remains unchanged after borrowing', async () => {
       expect(await creditAgency.totalTVL(18)).to.equal(parseEth(3e7))
       await creditAgency.allowBorrower(borrower.address, YEAR)
       await creditAgency.connect(borrower).borrow(tusdPool.address, parseEth(100))
       expect(await creditAgency.totalTVL(18)).to.equal(parseEth(3e7))
+    })
+
+    it('totalTVL scales with credit interest', async () => {
+      expect(await creditAgency.totalTVL(18)).to.equal(parseEth(3e7))
+      await creditAgency.allowBorrower(borrower.address, YEAR)
+      await creditAgency.connect(borrower).borrow(tusdPool.address, parseEth(100))
+      await timeTravel(YEAR)
+      expectScaledCloseTo(await creditAgency.totalTVL(18), parseEth(3e7).add(parseEth(1)))
     })
   })
 
@@ -694,7 +702,7 @@ describe('TrueCreditAgency', () => {
     beforeEach(async () => {
       await creditAgency.allowBorrower(borrower.address, YEAR)
       await creditAgency.setRiskPremium(1000)
-      await creditOracle.setScore(owner.address, 255)
+      await creditOracle.setScore(borrower.address, 255)
       await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
       await tusd.connect(borrower).approve(creditAgency.address, 1000)
       await timeTravel(YEAR)
@@ -707,22 +715,41 @@ describe('TrueCreditAgency', () => {
       expect(await tusd.balanceOf(tusdPool.address)).to.be.closeTo(parseEth(1e7).sub(900), 2)
     })
 
-    it('increases totalPaidInterest', async () => {
+    it('increases borrowerTotalPaidInterest', async () => {
       await creditAgency.connect(borrower).payInterest(tusdPool.address)
-      expect(await creditAgency.totalPaidInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
+      expect(await creditAgency.borrowerTotalPaidInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
     })
 
     it('pays close to nothing on second call', async () => {
       await creditAgency.connect(borrower).payInterest(tusdPool.address)
-      expect(await creditAgency.totalPaidInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
+      expect(await creditAgency.borrowerTotalPaidInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
       await creditAgency.connect(borrower).payInterest(tusdPool.address)
-      expect(await creditAgency.totalPaidInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
+      expect(await creditAgency.borrowerTotalPaidInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
     })
 
     it('updates nextInterestRepayTime', async () => {
       const tx = await creditAgency.connect(borrower).payInterest(tusdPool.address)
       const timestamp = BigNumber.from((await provider.getBlock(tx.blockNumber)).timestamp)
       expect(await creditAgency.nextInterestRepayTime(tusdPool.address, borrower.address)).to.eq(timestamp.add(MONTH))
+    })
+
+    it('updates poolTotalPaidInterest', async () => {
+      await creditAgency.connect(borrower).payInterest(tusdPool.address)
+      expect(await creditAgency.poolTotalPaidInterest(tusdPool.address)).to.be.closeTo(BigNumber.from(100), 2)
+    })
+
+    it('updates poolTotalPaidInterest with 2 separate LoC', async () => {
+      await creditAgency.allowBorrower(owner.address, YEAR)
+      await creditOracle.setScore(owner.address, 255)
+      await creditAgency.connect(owner).borrow(tusdPool.address, 1000)
+      await tusd.connect(owner).approve(creditAgency.address, 1000)
+      await timeTravel(YEAR)
+
+      await creditAgency.connect(borrower).payInterest(tusdPool.address)
+      expect(await creditAgency.poolTotalPaidInterest(tusdPool.address)).to.be.closeTo(BigNumber.from(200), 2)
+
+      await creditAgency.connect(owner).payInterest(tusdPool.address)
+      expect(await creditAgency.poolTotalPaidInterest(tusdPool.address)).to.be.closeTo(BigNumber.from(300), 2)
     })
 
     it('emits event', async () => {
@@ -767,18 +794,26 @@ describe('TrueCreditAgency', () => {
       expect(await creditAgency.borrowed(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(600), 2)
     })
 
-    it('updates totalPaidInterest on whole interest repayment', async () => {
+    it('updates borrowerTotalPaidInterest on whole interest repayment', async () => {
       await timeTravel(YEAR)
       await creditAgency.connect(borrower).repay(tusdPool.address, 500)
 
-      expect(await creditAgency.totalPaidInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
+      expect(await creditAgency.borrowerTotalPaidInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
+      expect(await creditAgency.poolTotalPaidInterest(tusdPool.address)).to.be.closeTo(BigNumber.from(100), 2)
     })
 
-    it('updates totalPaidInterest on partial interest repayment', async () => {
+    it('updates borrowerTotalPaidInterest on partial interest repayment', async () => {
       await timeTravel(YEAR)
       await creditAgency.connect(borrower).repay(tusdPool.address, 50)
 
-      expect(await creditAgency.totalPaidInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(50), 2)
+      expect(await creditAgency.borrowerTotalPaidInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(50), 2)
+    })
+
+    it('updates poolTotalInterest', async () => {
+      await timeTravel(YEAR)
+      await creditAgency.connect(borrower).repay(tusdPool.address, 200)
+
+      expectScaledCloseTo(await creditAgency.poolTotalInterest(tusdPool.address), BigNumber.from(100).mul(PRECISION))
     })
 
     it('partial interest repay does not trigger principal repayment', async () => {
@@ -856,7 +891,8 @@ describe('TrueCreditAgency', () => {
       await timeTravel(YEAR)
       await creditAgency.connect(borrower).repayInFull(tusdPool.address)
 
-      expect(await creditAgency.totalPaidInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
+      expect(await creditAgency.borrowerTotalPaidInterest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
+      expect(await creditAgency.poolTotalPaidInterest(tusdPool.address)).to.be.closeTo(BigNumber.from(100), 2)
     })
 
     it('calls _rebucket', async () => {
@@ -1022,7 +1058,7 @@ describe('TrueCreditAgency', () => {
       expect(await creditAgency.interest(tusdPool.address, owner.address)).to.be.closeTo(BigNumber.from(600), 2)
     })
 
-    it('after principal repayment', async () => {
+    it('principal repayment after credit score change', async () => {
       await setupBorrower(borrower, 255, 1000)
       await setupBorrower(borrower2, 154, 1000)
       await setupBorrower(owner, 154, 1000)
@@ -1045,6 +1081,99 @@ describe('TrueCreditAgency', () => {
       expect(await creditAgency.interest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(200), 2)
       expect(await creditAgency.interest(tusdPool.address, owner.address)).to.be.closeTo(BigNumber.from(165 * 2), 2)
       expect(await creditAgency.interest(tusdPool.address, borrower2.address)).to.be.closeTo(BigNumber.from(50), 2)
+    })
+
+    it('principal repayment after credit score change into new bucket', async () => {
+      await setupBorrower(borrower, 255, 1000)
+      await setupBorrower(borrower2, 255, 1000)
+      await creditAgency.setRiskPremium(1000)
+
+      await timeTravel(YEAR)
+
+      expect(await creditAgency.interest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
+      expect(await creditAgency.interest(tusdPool.address, borrower2.address)).to.be.closeTo(BigNumber.from(100), 2)
+
+      await creditOracle.setScore(borrower2.address, 154)
+      await creditAgency.updateCreditScore(tusdPool.address, borrower2.address)
+      await tusd.connect(borrower2).approve(creditAgency.address, 1000)
+      await creditAgency.connect(borrower2).repay(tusdPool.address, 600)
+      expect(await creditAgency.borrowed(tusdPool.address, borrower2.address)).to.eq(500)
+
+      await timeTravel(YEAR)
+
+      expect(await creditAgency.interest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(200), 2)
+      expect(await creditAgency.interest(tusdPool.address, borrower2.address)).to.be.closeTo(BigNumber.from(82), 2)
+    })
+  })
+
+  describe('poolCreditValue', () => {
+    beforeEach(async () => {
+      await creditAgency.allowBorrower(borrower.address, YEAR * 10)
+      await creditAgency.allowBorrower(owner.address, YEAR * 10)
+      await creditAgency.setRiskPremium(1000)
+      await creditOracle.setScore(borrower.address, 255)
+    })
+
+    it('one line opened', async () => {
+      await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
+      expect(await creditAgency.poolCreditValue(tusdPool.address)).to.be.closeTo(BigNumber.from(1000), 2)
+
+      await timeTravel(YEAR)
+      expect(await creditAgency.poolCreditValue(tusdPool.address)).to.be.closeTo(BigNumber.from(1100), 2)
+    })
+
+    it('two lines, same credit score', async () => {
+      await creditOracle.setScore(owner.address, 255)
+      await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
+      await creditAgency.connect(owner).borrow(tusdPool.address, 500)
+
+      expect(await creditAgency.poolCreditValue(tusdPool.address)).to.be.closeTo(BigNumber.from(1500), 2)
+
+      await timeTravel(YEAR)
+      expect(await creditAgency.poolCreditValue(tusdPool.address)).to.be.closeTo(BigNumber.from(1650), 2)
+    })
+
+    it('two lines, different credit score', async () => {
+      await creditOracle.setScore(owner.address, 254)
+      await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
+      await creditAgency.connect(owner).borrow(tusdPool.address, 500)
+
+      expect(await creditAgency.poolCreditValue(tusdPool.address)).to.be.closeTo(BigNumber.from(1500), 2)
+
+      await timeTravel(YEAR)
+      expect(await creditAgency.poolCreditValue(tusdPool.address)).to.be.closeTo(BigNumber.from(1650), 2)
+    })
+
+    it('gets reduced after repayment', async () => {
+      await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
+      await timeTravel(YEAR)
+      expect(await creditAgency.poolCreditValue(tusdPool.address)).to.be.closeTo(BigNumber.from(1100), 2)
+
+      await tusd.connect(borrower).approve(creditAgency.address, 600)
+      await creditAgency.connect(borrower).repay(tusdPool.address, 600)
+      expect(await creditAgency.poolCreditValue(tusdPool.address)).to.be.closeTo(BigNumber.from(500), 2)
+    })
+
+    it('complex 2 borrower scenario', async () => {
+      await tusd.approve(creditAgency.address, parseEth(1e7))
+      await creditOracle.setScore(owner.address, 200) // rate = 10% + 2,75% = 12,75%
+      await creditAgency.connect(borrower).borrow(tusdPool.address, 10000)
+      await creditAgency.connect(owner).borrow(tusdPool.address, 10000)
+      await timeTravel(YEAR)
+
+      expect(await creditAgency.poolCreditValue(tusdPool.address)).to.be.closeTo(BigNumber.from(22275), 2)
+
+      await creditAgency.connect(owner).payInterest(tusdPool.address)
+      expect(await creditAgency.poolCreditValue(tusdPool.address)).to.be.closeTo(BigNumber.from(21000), 2)
+
+      await timeTravel(YEAR)
+      expect(await creditAgency.poolCreditValue(tusdPool.address)).to.be.closeTo(BigNumber.from(23275), 2)
+
+      await creditOracle.setScore(owner.address, 255)
+      await creditAgency.updateCreditScore(tusdPool.address, owner.address)
+
+      await timeTravel(YEAR)
+      expect(await creditAgency.poolCreditValue(tusdPool.address)).to.be.closeTo(BigNumber.from(25275), 2)
     })
   })
 })

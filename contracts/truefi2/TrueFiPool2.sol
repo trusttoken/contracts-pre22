@@ -13,6 +13,7 @@ import {ITrueLender2, ILoanToken2} from "./interface/ITrueLender2.sol";
 import {IPauseableContract} from "../common/interface/IPauseableContract.sol";
 import {ISAFU} from "./interface/ISAFU.sol";
 import {IDeficiencyToken} from "./interface/IDeficiencyToken.sol";
+import {ITrueCreditAgency} from "./interface/ITrueCreditAgency.sol";
 
 import {ABDKMath64x64} from "../truefi/Log.sol";
 import {OneInchExchange} from "./libraries/OneInchExchange.sol";
@@ -89,7 +90,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
 
     ISAFU public safu;
 
-    address public creditAgency;
+    ITrueCreditAgency public creditAgency;
 
     // ======= STORAGE DECLARATION END ===========
 
@@ -234,7 +235,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      * @dev Emitted when Credit Agency address is changed
      * @param newCreditAgency New Credit Agency address
      */
-    event CreditAgencyChanged(address newCreditAgency);
+    event CreditAgencyChanged(ITrueCreditAgency newCreditAgency);
 
     /**
      * @dev only TrueLender of CreditAgency can perform borrowing or repaying
@@ -289,7 +290,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
         emit SafuChanged(_safu);
     }
 
-    function setCreditAgency(address _creditAgency) external onlyOwner {
+    function setCreditAgency(ITrueCreditAgency _creditAgency) external onlyOwner {
         creditAgency = _creditAgency;
         emit CreditAgencyChanged(_creditAgency);
     }
@@ -331,7 +332,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      */
     function poolValue() public override view returns (uint256) {
         // this assumes defaulted loans are worth their full value
-        return liquidValue().add(loansValue()).add(deficitValue());
+        return liquidValue().add(loansValue()).add(deficitValue()).add(creditValue());
     }
 
     /**
@@ -343,6 +344,17 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
             return 0;
         }
         return safu.poolDeficit(address(this));
+    }
+
+    /**
+     * @dev Return pool credit line value
+     * @return pool credit value
+     */
+    function creditValue() public view returns (uint256) {
+        if (address(creditAgency) == address(0)) {
+            return 0;
+        }
+        return creditAgency.poolCreditValue(ITrueFiPool2(this));
     }
 
     /**
@@ -643,7 +655,11 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      * @return Calculated ratio in basis points
      */
     function liquidRatio() public override view returns (uint256) {
-        return liquidValue().mul(BASIS_PRECISION).div(poolValue());
+        uint256 _poolValue = poolValue();
+        if (_poolValue == 0) {
+            return 0;
+        }
+        return liquidValue().mul(BASIS_PRECISION).div(_poolValue);
     }
 
     /**

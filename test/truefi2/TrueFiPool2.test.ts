@@ -15,13 +15,15 @@ import {
   Safu,
   DeficiencyToken__factory,
   DeficiencyToken,
+  TrueCreditAgency,
+  TrueFiCreditOracle,
 } from 'contracts'
 import { MockProvider, solidity } from 'ethereum-waffle'
 import { BigNumber, Wallet } from 'ethers'
 import { beforeEachWithFixture } from 'utils/beforeEachWithFixture'
 import { parseEth } from 'utils/parseEth'
 import { AddressZero } from '@ethersproject/constants'
-import { createApprovedLoan, DAY, expectCloseTo, expectScaledCloseTo, setupTruefi2, timeTravel as _timeTravel } from 'utils'
+import { createApprovedLoan, DAY, expectCloseTo, expectScaledCloseTo, setupTruefi2, timeTravel as _timeTravel, YEAR } from 'utils'
 import { Deployer, setupDeploy } from 'scripts/utils'
 import { beforeEach } from 'mocha'
 
@@ -31,11 +33,13 @@ describe('TrueFiPool2', () => {
   let provider: MockProvider
   let owner: Wallet
   let borrower: Wallet
-  let creditAgency: Wallet
+  let creditAgency: TrueCreditAgency
+  let creditOracle: TrueFiCreditOracle
   let tusd: MockTrueCurrency
   let tru: MockTrueCurrency
   let stkTru: StkTruToken
   let tusdPool: TrueFiPool2
+  let usdcPool: TrueFiPool2
   let loanFactory: LoanFactory2
   let lender: TrueLender2
   let rater: TrueRatingAgencyV2
@@ -49,7 +53,7 @@ describe('TrueFiPool2', () => {
   let timeTravel: (time: number) => void
 
   beforeEachWithFixture(async (wallets, _provider) => {
-    [owner, borrower, creditAgency] = wallets
+    [owner, borrower] = wallets
     deployContract = setupDeploy(owner)
     timeTravel = (time: number) => _timeTravel(_provider, time)
     provider = _provider
@@ -60,8 +64,11 @@ describe('TrueFiPool2', () => {
       rater,
       lender,
       standardPool: tusdPool,
+      feePool: usdcPool,
       loanFactory,
       safu,
+      creditAgency,
+      creditOracle,
     } = await setupTruefi2(owner))
 
     loan = await createApprovedLoan(rater, tru, stkTru, loanFactory, borrower, tusdPool, 500000, DAY, 1000, owner, provider)
@@ -71,6 +78,13 @@ describe('TrueFiPool2', () => {
     badPoolStrategy = await deployContract(BadStrategy__factory, tusd.address, tusdPool.address)
 
     await tusd.mint(owner.address, parseEth(1e7))
+
+    await tusdPool.setCreditAgency(creditAgency.address)
+    await creditAgency.allowPool(tusdPool.address, true)
+    await creditOracle.setScore(borrower.address, 255)
+    await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
+    await creditAgency.allowBorrower(borrower.address, YEAR * 10)
+    await creditAgency.setRiskPremium(1000)
   })
 
   const currencyBalanceOf = async (pool: TrueFiPool2) => (
@@ -181,6 +195,7 @@ describe('TrueFiPool2', () => {
     })
 
     it('properly changes Credit Agency address', async () => {
+      await tusdPool.setCreditAgency(AddressZero)
       expect(await tusdPool.creditAgency()).to.equal(AddressZero)
       await tusdPool.setCreditAgency(creditAgency.address)
       expect(await tusdPool.creditAgency()).to.equal(creditAgency.address)
@@ -241,6 +256,24 @@ describe('TrueFiPool2', () => {
       await tusdPool.switchStrategy(poolStrategy1.address)
       await tusdPool.flush(1000)
       expect(await tusdPool.strategyValue()).to.eq(1000)
+    })
+  })
+
+  describe('creditValue', () => {
+    it('returns 0 if no creditAgency address set', async () => {
+      await tusdPool.setCreditAgency(AddressZero)
+      expect(await tusdPool.creditValue()).to.eq(0)
+    })
+
+    it('returns correct credit value', async () => {
+      await tusd.approve(tusdPool.address, parseEth(1e7))
+      await tusdPool.join(parseEth(1e7))
+
+      await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
+      expect(await tusdPool.creditValue()).to.be.closeTo(BigNumber.from(1000), 2)
+
+      await timeTravel(YEAR)
+      expect(await tusdPool.creditValue()).to.be.closeTo(BigNumber.from(1100), 2)
     })
   })
 
@@ -339,6 +372,14 @@ describe('TrueFiPool2', () => {
 
         expect(await tusdPool.deficitValue()).to.eq(500136)
         expect(await expect(await tusdPool.poolValue()).to.equal(joinAmount.add(136)))
+      })
+
+      it('when pool has LoC opened', async () => {
+        await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
+        expect(await tusdPool.poolValue()).to.be.closeTo(joinAmount, 2)
+
+        await timeTravel(YEAR)
+        expect(await tusdPool.poolValue()).to.be.closeTo(joinAmount.add(100), 2)
       })
     })
   })
@@ -749,8 +790,8 @@ describe('TrueFiPool2', () => {
     })
 
     it('creditAgency can borrow funds', async () => {
-      await tusdPool.setCreditAgency(creditAgency.address)
-      await expect(tusdPool.connect(creditAgency).borrow(100)).to.be.not.reverted
+      await tusdPool.setCreditAgency(borrower.address)
+      await expect(tusdPool.connect(borrower).borrow(100)).to.be.not.reverted
     })
 
     it('in order to borrow from pool it has to have liquidity', async () => {
@@ -858,9 +899,9 @@ describe('TrueFiPool2', () => {
       expect('repay').to.be.calledOnContract(tusdPool)
     })
 
-    it('creditAgency can borrow funds', async () => {
-      await tusdPool.setCreditAgency(creditAgency.address)
-      await expect(tusdPool.connect(creditAgency).repay(0)).to.be.not.reverted
+    it('creditAgency can repay funds', async () => {
+      await tusdPool.setCreditAgency(borrower.address)
+      await expect(tusdPool.connect(borrower).repay(0)).to.be.not.reverted
     })
 
     it('emits event', async () => {
@@ -1100,6 +1141,10 @@ describe('TrueFiPool2', () => {
           provider,
         )
         await lender.connect(borrower).fund(loanForPartOfPool.address)
+      })
+
+      it('returns 0 if poolValue is 0', async () => {
+        expect(await usdcPool.liquidRatio()).to.eq(0)
       })
 
       it('equals 1 - utilization', async () => {

@@ -6,6 +6,7 @@ import {ERC20, IERC20, SafeMath} from "../common/UpgradeableERC20.sol";
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
+import {ITrueCreditAgency} from "./interface/ITrueCreditAgency.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
 import {TrueFiFixed64x64} from "./libraries/TrueFiFixed64x64.sol";
 
@@ -13,7 +14,7 @@ interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
     function decimals() external view returns (uint8);
 }
 
-contract TrueCreditAgency is UpgradeableClaimable {
+contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     using SafeERC20 for ERC20;
     using SafeMath for uint256;
     using TrueFiFixed64x64 for int128;
@@ -55,7 +56,9 @@ contract TrueCreditAgency is UpgradeableClaimable {
 
     mapping(ITrueFiPool2 => mapping(address => uint8)) public creditScore;
     mapping(ITrueFiPool2 => mapping(address => uint256)) public borrowed;
-    mapping(ITrueFiPool2 => mapping(address => uint256)) public totalPaidInterest;
+    mapping(ITrueFiPool2 => mapping(address => uint256)) public borrowerTotalPaidInterest;
+    mapping(ITrueFiPool2 => uint256) public poolTotalPaidInterest;
+    mapping(ITrueFiPool2 => uint256) public poolTotalInterest;
     mapping(ITrueFiPool2 => mapping(address => uint256)) public nextInterestRepayTime;
 
     mapping(ITrueFiPool2 => bool) public isPoolAllowed;
@@ -361,7 +364,6 @@ contract TrueCreditAgency is UpgradeableClaimable {
 
     function poke(ITrueFiPool2 pool) public {
         uint256 bitMap = usedBucketsBitmap;
-        CreditScoreBucket[256] storage creditScoreBuckets = buckets[pool];
         uint256 timeNow = block.timestamp;
         uint256 partialRate = riskPremium.add(utilizationAdjustmentRate(pool));
 
@@ -370,14 +372,54 @@ contract TrueCreditAgency is UpgradeableClaimable {
                 continue;
             }
 
+            _pokeSingleBucket(pool, uint8(i), timeNow, partialRate);
+        }
+    }
+
+    function pokeSingleBucket(ITrueFiPool2 pool, uint8 bucketNumber) internal {
+        uint256 timeNow = block.timestamp;
+        uint256 partialRate = riskPremium.add(utilizationAdjustmentRate(pool));
+
+        _pokeSingleBucket(pool, bucketNumber, timeNow, partialRate);
+    }
+
+    function _pokeSingleBucket(
+        ITrueFiPool2 pool,
+        uint8 bucketNumber,
+        uint256 timeNow,
+        uint256 partialRate
+    ) internal {
+        CreditScoreBucket storage bucket = buckets[pool][bucketNumber];
+
+        poolTotalInterest[pool] = poolTotalInterest[pool].add(
+            bucket.rate.mul(1e23).mul(bucket.totalBorrowed).mul(timeNow.sub(bucket.timestamp)).div(365 days)
+        );
+
+        bucket.cumulativeInterestPerShare = bucket.cumulativeInterestPerShare.add(
+            bucket.rate.mul(1e23).mul(timeNow.sub(bucket.timestamp)).div(365 days)
+        );
+        bucket.rate = _currentRate(partialRate, _creditScoreAdjustmentRate(bucketNumber));
+        bucket.timestamp = uint128(timeNow);
+    }
+
+    function poolCreditValue(ITrueFiPool2 pool) external override view returns (uint256) {
+        uint256 bitMap = usedBucketsBitmap;
+        CreditScoreBucket[256] storage creditScoreBuckets = buckets[pool];
+        uint256 timeNow = block.timestamp;
+        uint256 value = poolTotalInterest[pool].div(1e27);
+
+        for (uint16 i = 0; i <= MAX_CREDIT_SCORE; (i++, bitMap >>= 1)) {
+            if (bitMap & 1 == 0) {
+                continue;
+            }
+
             CreditScoreBucket storage bucket = creditScoreBuckets[i];
 
-            bucket.cumulativeInterestPerShare = bucket.cumulativeInterestPerShare.add(
-                bucket.rate.mul(1e23).mul(timeNow.sub(bucket.timestamp)).div(365 days)
+            value = value.add(bucket.totalBorrowed).add(
+                bucket.rate.mul(1e23).mul(bucket.totalBorrowed).mul(timeNow.sub(bucket.timestamp)).div(365 days).div(1e27)
             );
-            bucket.rate = _currentRate(partialRate, _creditScoreAdjustmentRate(uint8(i)));
-            bucket.timestamp = uint128(timeNow);
         }
+        return value.sub(poolTotalPaidInterest[pool]);
     }
 
     function singleCreditValue(ITrueFiPool2 pool, address borrower) external view returns (uint256) {
@@ -405,7 +447,6 @@ contract TrueCreditAgency is UpgradeableClaimable {
         borrowed[pool][borrower] = updatedBorrowAmount;
         CreditScoreBucket storage bucket = buckets[pool][newScore];
         _putIntoBucket(pool, bucket, newScore, borrower);
-        poke(pool);
         bucket.savedInterest[borrower] = SavedInterest(totalBorrowerInterest, bucket.cumulativeInterestPerShare);
     }
 
@@ -416,6 +457,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
         address borrower
     ) internal returns (uint256 totalBorrowerInterest) {
         require(bucket.borrowersCount > 0, "TrueCreditAgency: bucket is empty");
+        pokeSingleBucket(pool, bucketNumber);
         bucket.borrowersCount -= 1;
         if (bucket.borrowersCount == 0) {
             usedBucketsBitmap &= ~(uint256(1) << bucketNumber);
@@ -431,6 +473,7 @@ contract TrueCreditAgency is UpgradeableClaimable {
         uint8 bucketNumber,
         address borrower
     ) internal {
+        pokeSingleBucket(pool, bucketNumber);
         bucket.borrowersCount = bucket.borrowersCount + 1;
         if (bucket.borrowersCount == 1) {
             usedBucketsBitmap |= uint256(1) << bucketNumber;
@@ -465,11 +508,12 @@ contract TrueCreditAgency is UpgradeableClaimable {
         CreditScoreBucket storage bucket,
         address borrower
     ) internal view returns (uint256) {
-        return _totalBorrowerInterest(pool, bucket, borrower).sub(totalPaidInterest[pool][borrower]);
+        return _totalBorrowerInterest(pool, bucket, borrower).sub(borrowerTotalPaidInterest[pool][borrower]);
     }
 
     function _payInterestWithoutTransfer(ITrueFiPool2 pool, uint256 amount) internal {
-        totalPaidInterest[pool][msg.sender] = totalPaidInterest[pool][msg.sender].add(amount);
+        borrowerTotalPaidInterest[pool][msg.sender] = borrowerTotalPaidInterest[pool][msg.sender].add(amount);
+        poolTotalPaidInterest[pool] = poolTotalPaidInterest[pool].add(amount);
         emit InterestPaid(pool, msg.sender, amount);
     }
 
