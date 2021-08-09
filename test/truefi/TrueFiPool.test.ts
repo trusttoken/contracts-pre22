@@ -604,7 +604,7 @@ describe('TrueFiPool', () => {
     it('funds and liquidates loan', async () => {
       const { loan } = await fundLoan(loanFactory2, lender2)
       await loan.withdraw(owner.address)
-      await timeTravel(provider, DAY * 3)
+      await timeTravel(provider, DAY * 4)
       await loan.enterDefault()
       await liquidator2.setTokenApproval(token.address, true)
       await liquidator2.liquidate(loan.address)
