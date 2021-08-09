@@ -18,8 +18,7 @@ import {
 } from 'utils'
 import { expect } from 'chai'
 import { AddressZero } from '@ethersproject/constants'
-import { deployMockContract, MockContract, MockProvider } from 'ethereum-waffle'
-import { TrueFiPool2Json } from 'build'
+import { MockProvider } from 'ethereum-waffle'
 
 describe('TrueCreditAgency', () => {
   let provider: MockProvider
@@ -436,64 +435,49 @@ describe('TrueCreditAgency', () => {
   })
 
   describe('Borrow limit', () => {
-    let pool1: MockContract
-    let pool2: MockContract
-
     beforeEach(async () => {
-      pool1 = await deployMockContract(owner, TrueFiPool2Json.abi)
-      pool2 = await deployMockContract(owner, TrueFiPool2Json.abi)
-      await pool1.mock.poolValue.returns(parseEth(1000))
-      await pool1.mock.decimals.returns(18)
-      await pool1.mock.borrow.returns()
-      await pool1.mock.token.returns(tusd.address)
-      await pool2.mock.poolValue.returns(parseUSDC(10000))
-      await pool2.mock.decimals.returns(6)
-      await pool2.mock.borrow.returns()
-      await pool2.mock.token.returns(tusd.address)
-      await creditAgency.allowPool(pool1.address, true)
-      await creditAgency.allowPool(pool2.address, true)
       await creditOracle.setScore(borrower.address, 191) // adjustment = 0.8051
       await creditAgency.allowBorrower(borrower.address, YEAR)
-      await tusd.mint(creditAgency.address, parseEth(1000))
+
+      await usdcPool.setCreditAgency(creditAgency.address)
+      await creditAgency.allowPool(usdcPool.address, true)
+
+      await usdc.mint(owner.address, parseUSDC(2e7))
+      await usdc.approve(usdcPool.address, parseUSDC(2e7))
+      await usdcPool.join(parseUSDC(2e7))
     })
 
     it('borrow amount is limited by borrower limit', async () => {
       await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100))
       expect(await creditAgency.borrowLimit(tusdPool.address, borrower.address)).to.equal(parseEth(80.51))
-      expect(await creditAgency.borrowLimit(pool2.address, borrower.address)).to.equal(parseUSDC(80.51))
+      expect(await creditAgency.borrowLimit(usdcPool.address, borrower.address)).to.equal(parseUSDC(80.51))
     })
 
     it('borrow amount is limited by total TVL', async () => {
-      await pool1.mock.poolValue.returns(parseEth(1))
-      await pool2.mock.poolValue.returns(parseUSDC(3))
+      await usdcPool.exit(parseUSDC(19e6))
       const maxTVLLimit = (await creditAgency.totalTVL(18)).mul(15).div(100)
       expect(await creditAgency.borrowLimit(tusdPool.address, borrower.address)).to.equal(maxTVLLimit.mul(8051).div(10000))
     })
 
     it('borrow amount is limited by a single pool value', async () => {
-      await pool2.mock.poolValue.returns(parseUSDC(3))
-      expect(await creditAgency.borrowLimit(pool2.address, borrower.address)).to.equal(parseUSDC(3).mul(15).div(100))
+      expect(await creditAgency.borrowLimit(usdcPool.address, borrower.address)).to.equal(parseUSDC(2e7).mul(15).div(100))
     })
 
     it('cannot borrow more than 15% of a single pool in total', async () => {
-      await pool2.mock.poolValue.returns(parseUSDC(3))
-      await pool2.mock.liquidRatio.returns(10000)
-      await creditAgency.connect(borrower).borrow(pool2.address, parseUSDC(0.4))
-      expect(await creditAgency.borrowLimit(pool2.address, borrower.address)).to.equal(parseUSDC(0.05))
-      await creditAgency.connect(borrower).borrow(pool2.address, parseUSDC(0.05))
-      expect(await creditAgency.borrowLimit(pool2.address, borrower.address)).to.equal(0)
-      await pool2.mock.poolValue.returns(parseUSDC(4))
-      expect(await creditAgency.borrowLimit(pool2.address, borrower.address)).to.equal(parseUSDC(0.15))
-      await pool2.mock.poolValue.returns(parseUSDC(2))
-      expect(await creditAgency.borrowLimit(pool2.address, borrower.address)).to.equal(parseUSDC(0))
+      const oneUSDC = Number(parseUSDC(1))
+      expect(await creditAgency.borrowLimit(usdcPool.address, borrower.address)).to.be.closeTo(parseUSDC(3e6), oneUSDC)
+      await creditAgency.connect(borrower).borrow(usdcPool.address, parseUSDC(2e6))
+      expect(await creditAgency.borrowLimit(usdcPool.address, borrower.address)).to.be.closeTo(parseUSDC(1e6), oneUSDC)
+      await creditAgency.connect(borrower).borrow(usdcPool.address, parseUSDC(5e5))
+      expect(await creditAgency.borrowLimit(usdcPool.address, borrower.address)).to.be.closeTo(parseUSDC(5e5), oneUSDC)
+      await creditAgency.connect(borrower).borrow(usdcPool.address, parseUSDC(5e5))
+      expect(await creditAgency.borrowLimit(usdcPool.address, borrower.address)).to.be.closeTo(parseUSDC(0), oneUSDC)
     })
 
     it('borrow limit is 0 if credit limit is above the borrowed amount', async () => {
-      await pool2.mock.poolValue.returns(parseUSDC(3))
-      await pool2.mock.liquidRatio.returns(10000)
-      await creditAgency.connect(borrower).borrow(pool2.address, parseUSDC(0.4))
-      await pool2.mock.poolValue.returns(parseUSDC(2))
-      expect(await creditAgency.borrowLimit(pool2.address, borrower.address)).to.equal(parseUSDC(0))
+      await creditAgency.connect(borrower).borrow(usdcPool.address, parseUSDC(80))
+      await usdcPool.exit(parseUSDC(2e7).sub(parseUSDC(80)))
+      expect(await creditAgency.borrowLimit(usdcPool.address, borrower.address)).to.equal(parseUSDC(0))
     })
   })
 
