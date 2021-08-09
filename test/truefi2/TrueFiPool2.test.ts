@@ -270,10 +270,10 @@ describe('TrueFiPool2', () => {
       await tusdPool.join(parseEth(1e7))
 
       await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
-      expect(await creditAgency.poolCreditValue(tusdPool.address)).to.be.closeTo(BigNumber.from(1000), 2)
+      expect(await tusdPool.creditValue()).to.be.closeTo(BigNumber.from(1000), 2)
 
       await timeTravel(YEAR)
-      expect(await creditAgency.poolCreditValue(tusdPool.address)).to.be.closeTo(BigNumber.from(1100), 2)
+      expect(await tusdPool.creditValue()).to.be.closeTo(BigNumber.from(1100), 2)
     })
   })
 
