@@ -23,28 +23,20 @@ describe('SpotBaseRateOracle', () => {
 
     asset = await deployContract(MockErc20Token__factory)
     aaveLendingPool = await deployMockContract(owner, IAaveLendingPoolJson.abi)
-    oracle = await deployContract(SpotBaseRateOracle__factory, asset.address, aaveLendingPool.address, 1)
+    oracle = await deployContract(SpotBaseRateOracle__factory, aaveLendingPool.address)
 
     await aaveLendingPool.mock.getReserveData.returns(0, 0, 0, 0, aaveLiquidityRate, 0, 0, AddressZero, AddressZero, AddressZero, AddressZero, 0)
   })
 
   describe('constructor', () => {
-    it('sets asset', async () => {
-      expect(await oracle.asset()).to.eq(asset.address)
-    })
-
     it('sets aaveLendingPool', async () => {
       expect(await oracle.aaveLendingPool()).to.eq(aaveLendingPool.address)
-    })
-
-    it('sets aaveWeight', async () => {
-      expect(await oracle.aaveWeight()).to.eq(1)
     })
   })
 
   describe('getWeightedBaseRate', () => {
     it('gets correct base rate from one protocol', async () => {
-      expect(await oracle.getWeightedBaseRate()).to.eq(300)
+      expect(await oracle.getRate(asset.address)).to.eq(300)
     })
   })
 })
