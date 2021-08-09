@@ -42,7 +42,7 @@ describe('SAFU', () => {
   let timeTravel: (time: number) => void
 
   const YEAR = DAY * 365
-  const defaultedLoanCloseTime = YEAR + DAY
+  const defaultedLoanCloseTime = YEAR + 3 * DAY
 
   const defaultAmount = parseUSDC(1100)
 
