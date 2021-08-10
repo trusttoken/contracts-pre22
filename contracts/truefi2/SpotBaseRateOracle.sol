@@ -13,7 +13,7 @@ contract SpotBaseRateOracle {
         aaveLendingPool = _aaveLendingPool;
     }
 
-    function getRate(address asset) external view returns (uint256) {
+    function getRate(address asset) public view returns (uint256) {
         return _getAaveVariableBorrowAPY(asset);
     }
 
