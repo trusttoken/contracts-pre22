@@ -116,10 +116,16 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     event FeeChanged(uint256 newFee);
 
     /**
-     * @dev Emitted when loan fee pool is changed
+     * @dev Emitted when fee pool is changed
      * @param newFeePool New fee pool address
      */
     event FeePoolChanged(ITrueFiPool2 newFeePool);
+
+    /**
+     * @dev Emitted when credit oracle is changed
+     * @param newCreditOracle New credit oracle address
+     */
+    event CreditOracleChanged(ITrueFiCreditOracle newCreditOracle);
 
     /**
      * @dev Emitted when a loan is funded
@@ -171,6 +177,16 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         votingPeriod = 7 days;
         fee = 1000;
         maxLoans = 100;
+    }
+
+    /**
+     * @dev Set new credit oracle address.
+     * Only owner can change credit oracle
+     * @param _creditOracle new credit oracle
+     */
+    function setCreditOracle(ITrueFiCreditOracle _creditOracle) external onlyOwner {
+        creditOracle = _creditOracle;
+        emit CreditOracleChanged(_creditOracle);
     }
 
     /**

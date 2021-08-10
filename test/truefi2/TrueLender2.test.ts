@@ -20,6 +20,7 @@ import {
   MockTrueCurrency,
   MockUsdc,
   TrueFiCreditOracle,
+  TrueFiCreditOracle__factory,
 } from 'contracts'
 
 import {
@@ -156,7 +157,8 @@ describe('TrueLender2', () => {
       })
 
       it('must be called by owner', async () => {
-        await expect(lender.connect(borrower).setMinVotes(1234)).to.be.revertedWith('caller is not the owner')
+        await expect(lender.connect(borrower).setMinVotes(1234))
+          .to.be.revertedWith('Ownable: caller is not the owner')
       })
     })
 
@@ -177,7 +179,8 @@ describe('TrueLender2', () => {
       })
 
       it('must be called by owner', async () => {
-        await expect(lender.connect(borrower).setMinRatio(1234)).to.be.revertedWith('caller is not the owner')
+        await expect(lender.connect(borrower).setMinRatio(1234))
+          .to.be.revertedWith('Ownable: caller is not the owner')
       })
     })
 
@@ -198,7 +201,8 @@ describe('TrueLender2', () => {
       })
 
       it('must be called by owner', async () => {
-        await expect(lender.connect(borrower).setFee(1234)).to.be.revertedWith('caller is not the owner')
+        await expect(lender.connect(borrower).setFee(1234))
+          .to.be.revertedWith('Ownable: caller is not the owner')
       })
     })
 
@@ -219,7 +223,31 @@ describe('TrueLender2', () => {
       })
 
       it('must be called by owner', async () => {
-        await expect(lender.connect(borrower).setFeePool(pool2.address)).to.be.revertedWith('caller is not the owner')
+        await expect(lender.connect(borrower).setFeePool(pool2.address))
+          .to.be.revertedWith('Ownable: caller is not the owner')
+      })
+    })
+
+    describe('setCreditOracle', () => {
+      let newOracle: TrueFiCreditOracle
+
+      beforeEach(async () => {
+        newOracle = await deployContract(owner, TrueFiCreditOracle__factory)
+      })
+
+      it('changes creditOracle', async () => {
+        await lender.setCreditOracle(newOracle.address)
+        expect(await lender.creditOracle()).to.equal(newOracle.address)
+      })
+
+      it('emits CreditOracleChanged', async () => {
+        await expect(lender.setCreditOracle(newOracle.address))
+          .to.emit(lender, 'CreditOracleChanged').withArgs(newOracle.address)
+      })
+
+      it('must be called by owner', async () => {
+        await expect(lender.connect(borrower).setCreditOracle(newOracle.address))
+          .to.be.revertedWith('Ownable: caller is not the owner')
       })
     })
 
@@ -235,14 +263,15 @@ describe('TrueLender2', () => {
       })
 
       it('must be called by owner', async () => {
-        await expect(lender.connect(borrower).setVotingPeriod(DAY * 3)).to.be.revertedWith('caller is not the owner')
+        await expect(lender.connect(borrower).setVotingPeriod(DAY * 3))
+          .to.be.revertedWith('Ownable: caller is not the owner')
       })
     })
 
     describe('Setting loans limit', () => {
       it('reverts when performed by non-owner', async () => {
         await expect(lender.connect(borrower).setLoansLimit(0))
-          .to.be.revertedWith('caller is not the owner')
+          .to.be.revertedWith('Ownable: caller is not the owner')
       })
 
       it('changes loans limit', async () => {
