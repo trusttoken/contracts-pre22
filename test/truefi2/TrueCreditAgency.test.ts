@@ -1,18 +1,23 @@
 import { BigNumber, BigNumberish, Wallet } from 'ethers'
 import {
   LoanFactory2,
-  TrueLender2,
   MockTrueCurrency,
+  MockUsdc,
   StkTruToken,
   TrueCreditAgency,
   TrueFiCreditOracle,
   TrueFiPool2,
+  TrueLender2,
   TrueRatingAgencyV2,
-  MockUsdc,
 } from 'contracts'
 import {
   beforeEachWithFixture,
-  createApprovedLoan, DAY, expectScaledCloseTo, parseEth, parseUSDC, setupTruefi2,
+  createApprovedLoan,
+  DAY,
+  expectScaledCloseTo,
+  parseEth,
+  parseUSDC,
+  setupTruefi2,
   timeTravel as _timeTravel,
   YEAR,
 } from 'utils'
@@ -591,6 +596,14 @@ describe('TrueCreditAgency', () => {
       expect((await creditAgency.buckets(tusdPool.address, 255)).borrowersCount).to.equal(0)
       expect((await creditAgency.buckets(tusdPool.address, 200)).totalBorrowed).to.equal(2000)
       expect((await creditAgency.buckets(tusdPool.address, 200)).borrowersCount).to.equal(1)
+    })
+
+    it('should be possible to borrow over 1 month after full repayment', async () => {
+      await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
+      await tusd.connect(borrower).approve(creditAgency.address, 1200)
+      await creditAgency.connect(borrower).repayInFull(tusdPool.address)
+      await timeTravel(DAY * 60)
+      await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000)).to.be.not.reverted
     })
   })
 
