@@ -370,7 +370,9 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
             _payInterestWithoutTransfer(pool, accruedInterest);
             _payPrincipalWithoutTransfer(pool, amount.sub(accruedInterest));
         }
-
+        if (borrowed[pool][msg.sender] == 0) {
+            nextInterestRepayTime[pool][msg.sender] = 0;
+        }
         _repay(pool, amount);
     }
 
