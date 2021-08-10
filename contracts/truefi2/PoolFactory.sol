@@ -146,6 +146,21 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
     }
 
     /**
+     * @dev Deprecate a pool from token lookups without removing it from the factory.
+     * Calling this function allows owner to create a replacement pool for the same token.
+     */
+    function deprecatePool(ITrueFiPool2 legacyPool) external onlyOwner {
+        pool[address(legacyPool.token())] = address(0);
+    }
+
+    /**
+     * @dev Remove a pool from the factory regardless of deprecation status.
+     */
+    function removePool(ITrueFiPool2 legacyPool) external onlyOwner {
+        isPool[address(legacyPool)] = false;
+    }
+
+    /**
      * @dev Create a new pool behind proxy. Update new pool's implementation.
      * Transfer ownership of created pool to Factory owner.
      * @param token Address of token which the pool will correspond to.
