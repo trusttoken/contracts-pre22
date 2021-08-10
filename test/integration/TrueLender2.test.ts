@@ -61,7 +61,7 @@ describe('TrueLender2', () => {
     await mockRatingAgency.mock.getResults.returns(0, 0, parseTRU(50e6))
 
     lender = await deployContract(TrueLender2__factory)
-    await lender.initialize(stkTru.address, poolFactory.address, mockRatingAgency.address, INCH_ADDRESS)
+    await lender.initialize(stkTru.address, poolFactory.address, mockRatingAgency.address, INCH_ADDRESS, AddressZero)
 
     await poolFactory.initialize(implementationReference.address, lender.address, AddressZero)
 

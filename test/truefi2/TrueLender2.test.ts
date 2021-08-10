@@ -19,6 +19,8 @@ import {
   MockTrueFiPoolOracle,
   MockTrueCurrency,
   MockUsdc,
+  TrueFiCreditOracle,
+  TrueFiCreditOracle__factory,
 } from 'contracts'
 
 import {
@@ -46,6 +48,7 @@ describe('TrueLender2', () => {
 
   let rater: TrueRatingAgencyV2
   let lender: TestTrueLender
+  let creditOracle: TrueFiCreditOracle
 
   let counterfeitPool: TrueFiPool2
   let token1: MockErc20Token
@@ -69,7 +72,7 @@ describe('TrueLender2', () => {
     lender = await deployContract(owner, TestTrueLender__factory)
     oneInch = await new Mock1InchV3__factory(owner).deploy()
 
-    ;({ loanFactory, feePool, standardTokenOracle: poolOracle, rater, poolFactory, stkTru, tru, feeToken: usdc, lender } = await setupTruefi2(owner, { lender: lender, oneInch: oneInch }))
+    ;({ loanFactory, feePool, standardTokenOracle: poolOracle, rater, poolFactory, stkTru, tru, feeToken: usdc, lender, creditOracle } = await setupTruefi2(owner, { lender: lender, oneInch: oneInch }))
 
     token1 = await deployContract(owner, MockErc20Token__factory)
     token2 = await deployContract(owner, MockErc20Token__factory)
@@ -129,11 +132,18 @@ describe('TrueLender2', () => {
       expect(await lender.ratingAgency()).to.equal(rater.address)
     })
 
+    it('sets credit oracle address', async () => {
+      expect(await lender.creditOracle()).to.equal(creditOracle.address)
+    })
+
     it('default params', async () => {
       expect(await lender.minVotes()).to.equal(parseTRU(15e6))
       expect(await lender.minRatio()).to.equal(8000)
       expect(await lender.votingPeriod()).to.equal(DAY * 7)
       expect(await lender.maxLoans()).to.equal(100)
+      expect(await lender.maxLoanTerm()).to.equal(YEAR * 10)
+      expect(await lender.longTermLoanThreshold()).to.equal(YEAR * 10)
+      expect(await lender.longTermLoanScoreThreshold()).to.equal(200)
     })
   })
 
@@ -150,7 +160,8 @@ describe('TrueLender2', () => {
       })
 
       it('must be called by owner', async () => {
-        await expect(lender.connect(borrower).setMinVotes(1234)).to.be.revertedWith('caller is not the owner')
+        await expect(lender.connect(borrower).setMinVotes(1234))
+          .to.be.revertedWith('Ownable: caller is not the owner')
       })
     })
 
@@ -171,7 +182,59 @@ describe('TrueLender2', () => {
       })
 
       it('must be called by owner', async () => {
-        await expect(lender.connect(borrower).setMinRatio(1234)).to.be.revertedWith('caller is not the owner')
+        await expect(lender.connect(borrower).setMinRatio(1234))
+          .to.be.revertedWith('Ownable: caller is not the owner')
+      })
+    })
+
+    describe('setMaxLoanTerm', () => {
+      it('changes maxLoanTerm', async () => {
+        await lender.setMaxLoanTerm(DAY)
+        expect(await lender.maxLoanTerm()).to.equal(DAY)
+      })
+
+      it('emits MaxLoanTermChanged', async () => {
+        await expect(lender.setMaxLoanTerm(DAY))
+          .to.emit(lender, 'MaxLoanTermChanged').withArgs(DAY)
+      })
+
+      it('must be called by owner', async () => {
+        await expect(lender.connect(borrower).setMaxLoanTerm(DAY))
+          .to.be.revertedWith('Ownable: caller is not the owner')
+      })
+    })
+
+    describe('setLongTermLoanThreshold', () => {
+      it('changes longTermLoanThreshold', async () => {
+        await lender.setLongTermLoanThreshold(DAY)
+        expect(await lender.longTermLoanThreshold()).to.equal(DAY)
+      })
+
+      it('emits LongTermLoanThresholdChanged', async () => {
+        await expect(lender.setLongTermLoanThreshold(DAY))
+          .to.emit(lender, 'LongTermLoanThresholdChanged').withArgs(DAY)
+      })
+
+      it('must be called by owner', async () => {
+        await expect(lender.connect(borrower).setLongTermLoanThreshold(DAY))
+          .to.be.revertedWith('Ownable: caller is not the owner')
+      })
+    })
+
+    describe('setLongTermLoanScoreThreshold', () => {
+      it('changes longTermLoanScoreThreshold', async () => {
+        await lender.setLongTermLoanScoreThreshold(100)
+        expect(await lender.longTermLoanScoreThreshold()).to.equal(100)
+      })
+
+      it('emits LongTermLoanScoreThresholdChanged', async () => {
+        await expect(lender.setLongTermLoanScoreThreshold(100))
+          .to.emit(lender, 'LongTermLoanScoreThresholdChanged').withArgs(100)
+      })
+
+      it('must be called by owner', async () => {
+        await expect(lender.connect(borrower).setLongTermLoanScoreThreshold(100))
+          .to.be.revertedWith('Ownable: caller is not the owner')
       })
     })
 
@@ -192,7 +255,8 @@ describe('TrueLender2', () => {
       })
 
       it('must be called by owner', async () => {
-        await expect(lender.connect(borrower).setFee(1234)).to.be.revertedWith('caller is not the owner')
+        await expect(lender.connect(borrower).setFee(1234))
+          .to.be.revertedWith('Ownable: caller is not the owner')
       })
     })
 
@@ -213,7 +277,31 @@ describe('TrueLender2', () => {
       })
 
       it('must be called by owner', async () => {
-        await expect(lender.connect(borrower).setFeePool(pool2.address)).to.be.revertedWith('caller is not the owner')
+        await expect(lender.connect(borrower).setFeePool(pool2.address))
+          .to.be.revertedWith('Ownable: caller is not the owner')
+      })
+    })
+
+    describe('setCreditOracle', () => {
+      let newOracle: TrueFiCreditOracle
+
+      beforeEach(async () => {
+        newOracle = await deployContract(owner, TrueFiCreditOracle__factory)
+      })
+
+      it('changes creditOracle', async () => {
+        await lender.setCreditOracle(newOracle.address)
+        expect(await lender.creditOracle()).to.equal(newOracle.address)
+      })
+
+      it('emits CreditOracleChanged', async () => {
+        await expect(lender.setCreditOracle(newOracle.address))
+          .to.emit(lender, 'CreditOracleChanged').withArgs(newOracle.address)
+      })
+
+      it('must be called by owner', async () => {
+        await expect(lender.connect(borrower).setCreditOracle(newOracle.address))
+          .to.be.revertedWith('Ownable: caller is not the owner')
       })
     })
 
@@ -229,14 +317,15 @@ describe('TrueLender2', () => {
       })
 
       it('must be called by owner', async () => {
-        await expect(lender.connect(borrower).setVotingPeriod(DAY * 3)).to.be.revertedWith('caller is not the owner')
+        await expect(lender.connect(borrower).setVotingPeriod(DAY * 3))
+          .to.be.revertedWith('Ownable: caller is not the owner')
       })
     })
 
     describe('Setting loans limit', () => {
       it('reverts when performed by non-owner', async () => {
         await expect(lender.connect(borrower).setLoansLimit(0))
-          .to.be.revertedWith('caller is not the owner')
+          .to.be.revertedWith('Ownable: caller is not the owner')
       })
 
       it('changes loans limit', async () => {
@@ -310,11 +399,40 @@ describe('TrueLender2', () => {
         await expect(lender.connect(borrower).fund(loan1.address))
           .to.be.revertedWith('TrueLender: Loan risk is too high')
       })
+
+      it('loan term exceeds max term', async () => {
+        await rater.connect(borrower).submit(loan1.address)
+        await rater.yes(loan1.address)
+        await timeTravel(7 * DAY + 1)
+        await lender.setLongTermLoanThreshold(DAY * 365 - 1)
+        await lender.setMaxLoanTerm(DAY * 365 - 1)
+
+        await expect(lender.connect(borrower).fund(loan1.address))
+          .to.be.revertedWith('TrueLender: Loan\'s term is too long')
+      })
+
+      it('borrower has too low score for long term loan', async () => {
+        await rater.connect(borrower).submit(loan1.address)
+        await rater.yes(loan1.address)
+        await timeTravel(7 * DAY + 1)
+        await creditOracle.setScore(borrower.address, 199)
+        await lender.setLongTermLoanThreshold(DAY)
+
+        await expect(lender.connect(borrower).fund(loan1.address))
+          .to.be.revertedWith('TrueLender: Credit score is too low for loan\'s term')
+      })
     })
 
     describe('all requirements are met', () => {
       beforeEach(async () => {
         await approveLoanRating(loan1)
+      })
+
+      it('borrower is allowed to have a long term loan', async () => {
+        await creditOracle.setScore(borrower.address, 200)
+        await lender.setLongTermLoanThreshold(DAY)
+        await expect(lender.connect(borrower).fund(loan1.address))
+          .not.to.be.reverted
       })
 
       it('borrows tokens from pool', async () => {

@@ -15,7 +15,7 @@ import {
   TrueFiCreditOracle__factory,
 } from 'contracts'
 import { Wallet } from 'ethers'
-import { parseTRU } from '.'
+import { parseTRU, YEAR } from '.'
 
 export const setupTruefi2 = async (owner: Wallet, customDeployed?: any) => {
   const deployContract = setupDeploy(owner)
@@ -48,7 +48,7 @@ export const setupTruefi2 = async (owner: Wallet, customDeployed?: any) => {
   await loanFactory.initialize(poolFactory.address, lender.address, liquidator.address)
   await arbitraryDistributor.initialize(rater.address, tru.address, parseTRU(15e6))
   await rater.initialize(tru.address, stkTru.address, arbitraryDistributor.address, loanFactory.address)
-  await lender.initialize(stkTru.address, poolFactory.address, rater.address, customDeployed?.oneInch ? customDeployed.oneInch.address : AddressZero)
+  await lender.initialize(stkTru.address, poolFactory.address, rater.address, customDeployed?.oneInch ? customDeployed.oneInch.address : AddressZero, creditOracle.address)
   await safu.initialize(loanFactory.address, liquidator.address, customDeployed?.oneInch ? customDeployed.oneInch.address : AddressZero)
   await poolFactory.initialize(implementationReference.address, lender.address, safu.address)
   await creditAgency.initialize(creditOracle.address, 100)
@@ -70,6 +70,8 @@ export const setupTruefi2 = async (owner: Wallet, customDeployed?: any) => {
   await creditOracle.setManager(owner.address)
 
   await lender.setFee(0)
+  await lender.setMaxLoanTerm(YEAR * 10)
+  await lender.setLongTermLoanThreshold(YEAR * 10)
   await rater.allowChangingAllowances(owner.address, true)
 
   await tru.initialize()

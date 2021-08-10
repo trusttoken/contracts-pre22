@@ -17,6 +17,7 @@ import {ITrueFiPool2, ITrueFiPoolOracle, I1Inch3} from "./interface/ITrueFiPool2
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {ITrueRatingAgency} from "../truefi/interface/ITrueRatingAgency.sol";
 import {IERC20WithDecimals} from "./interface/IERC20WithDecimals.sol";
+import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
 
 /**
  * @title TrueLender v2.0
@@ -80,6 +81,14 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     // minimum prediction market voting period
     uint256 public votingPeriod;
 
+    ITrueFiCreditOracle public creditOracle;
+
+    uint256 public maxLoanTerm;
+
+    uint256 public longTermLoanThreshold;
+
+    uint8 public longTermLoanScoreThreshold;
+
     // ======= STORAGE DECLARATION END ============
 
     /**
@@ -101,6 +110,24 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     event MinRatioChanged(uint256 minRatio);
 
     /**
+     * @dev Emitted when max loan term changed
+     * @param maxLoanTerm New max loan term
+     */
+    event MaxLoanTermChanged(uint256 maxLoanTerm);
+
+    /**
+     * @dev Emitted when long term loan's minimal term changed
+     * @param longTermLoanThreshold New long term loan minimal term
+     */
+    event LongTermLoanThresholdChanged(uint256 longTermLoanThreshold);
+
+    /**
+     * @dev Emitted when minimal credit score threshold for long term loan changed
+     * @param longTermLoanScoreThreshold New minimal credit score threshold for long term loan
+     */
+    event LongTermLoanScoreThresholdChanged(uint256 longTermLoanScoreThreshold);
+
+    /**
      * @dev Emitted when the minimum voting period is changed
      * @param votingPeriod New voting period
      */
@@ -113,10 +140,16 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     event FeeChanged(uint256 newFee);
 
     /**
-     * @dev Emitted when loan fee pool is changed
+     * @dev Emitted when fee pool is changed
      * @param newFeePool New fee pool address
      */
     event FeePoolChanged(ITrueFiPool2 newFeePool);
+
+    /**
+     * @dev Emitted when credit oracle is changed
+     * @param newCreditOracle New credit oracle address
+     */
+    event CreditOracleChanged(ITrueFiCreditOracle newCreditOracle);
 
     /**
      * @dev Emitted when a loan is funded
@@ -151,7 +184,8 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         IStakingPool _stakingPool,
         IPoolFactory _factory,
         ITrueRatingAgency _ratingAgency,
-        I1Inch3 __1inch
+        I1Inch3 __1inch,
+        ITrueFiCreditOracle _creditOracle
     ) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
 
@@ -159,6 +193,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         factory = _factory;
         ratingAgency = _ratingAgency;
         _1inch = __1inch;
+        creditOracle = _creditOracle;
 
         swapFeeSlippage = 100; // 1%
         minVotes = 15 * (10**6) * (10**8);
@@ -166,6 +201,19 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         votingPeriod = 7 days;
         fee = 1000;
         maxLoans = 100;
+        maxLoanTerm = 180 days;
+        longTermLoanThreshold = 90 days;
+        longTermLoanScoreThreshold = 200;
+    }
+
+    /**
+     * @dev Set new credit oracle address.
+     * Only owner can change credit oracle
+     * @param _creditOracle new credit oracle
+     */
+    function setCreditOracle(ITrueFiCreditOracle _creditOracle) external onlyOwner {
+        creditOracle = _creditOracle;
+        emit CreditOracleChanged(_creditOracle);
     }
 
     /**
@@ -195,6 +243,33 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         require(newMinRatio <= BASIS_RATIO, "TrueLender: minRatio cannot be more than 100%");
         minRatio = newMinRatio;
         emit MinRatioChanged(newMinRatio);
+    }
+
+    /**
+     * @dev Set max loan term. Only owner can change parameters.
+     * @param _maxLoanTerm New maxLoanTerm
+     */
+    function setMaxLoanTerm(uint256 _maxLoanTerm) external onlyOwner {
+        maxLoanTerm = _maxLoanTerm;
+        emit MaxLoanTermChanged(_maxLoanTerm);
+    }
+
+    /**
+     * @dev Set minimal term of a long term loan. Only owner can change parameters.
+     * @param _longTermLoanThreshold New longTermLoanThreshold
+     */
+    function setLongTermLoanThreshold(uint256 _longTermLoanThreshold) external onlyOwner {
+        longTermLoanThreshold = _longTermLoanThreshold;
+        emit LongTermLoanThresholdChanged(_longTermLoanThreshold);
+    }
+
+    /**
+     * @dev Set long term loan credit score threshold. Only owner can change parameters.
+     * @param _longTermLoanScoreThreshold New longTermLoanScoreThreshold
+     */
+    function setLongTermLoanScoreThreshold(uint8 _longTermLoanScoreThreshold) external onlyOwner {
+        longTermLoanScoreThreshold = _longTermLoanScoreThreshold;
+        emit LongTermLoanScoreThresholdChanged(_longTermLoanScoreThreshold);
     }
 
     /**
@@ -257,7 +332,10 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
 
         uint256 amount = loanToken.amount();
         (uint256 start, uint256 no, uint256 yes) = ratingAgency.getResults(address(loanToken));
+        uint256 term = loanToken.term();
 
+        require(isTermBelowMax(term), "TrueLender: Loan's term is too long");
+        require(isCredibleForTerm(term), "TrueLender: Credit score is too low for loan's term");
         require(votingLastedLongEnough(start), "TrueLender: Voting time is below minimum");
         require(votesThresholdReached(yes.add(no)), "TrueLender: Not enough votes given for the loan");
         require(loanIsCredible(yes, no), "TrueLender: Loan risk is too high");
@@ -485,5 +563,16 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         uint256 denominator
     ) internal {
         loan.safeTransfer(recipient, numerator.mul(loan.balanceOf(address(this))).div(denominator));
+    }
+
+    function isCredibleForTerm(uint256 term) internal view returns (bool) {
+        if (term > longTermLoanThreshold) {
+            return creditOracle.getScore(msg.sender) >= longTermLoanScoreThreshold;
+        }
+        return true;
+    }
+
+    function isTermBelowMax(uint256 term) internal view returns (bool) {
+        return term <= maxLoanTerm;
     }
 }
