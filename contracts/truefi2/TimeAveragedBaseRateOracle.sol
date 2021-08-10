@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
+import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
+
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {SpotBaseRateOracle} from "./SpotBaseRateOracle.sol";
 
-contract TimeAveragedBaseRateOracle {
+contract TimeAveragedBaseRateOracle is UpgradeableClaimable {
     using SafeMath for uint256;
 
     uint16 public constant BUFFER_SIZE = 365 + 1;
@@ -35,11 +37,12 @@ contract TimeAveragedBaseRateOracle {
         _;
     }
 
-    constructor(
+    function initialize(
         SpotBaseRateOracle _spotOracle,
         address _asset,
         uint256 _cooldownTime
-    ) public {
+    ) external initializer {
+        UpgradeableClaimable.initialize(msg.sender);
         spotOracle = _spotOracle;
         asset = _asset;
         cooldownTime = _cooldownTime;

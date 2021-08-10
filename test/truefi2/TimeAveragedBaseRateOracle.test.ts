@@ -40,11 +40,14 @@ describe('TimeAveragedBaseRateOracle', () => {
     mockSpotOracle = await deployMockContract(owner, SpotBaseRateOracleJson.abi)
     await mockSpotOracle.mock.getRate.withArgs(asset.address).returns(100)
 
-    timeBaseRateOracle = await deployContract(TestTimeAveragedBaseRateOracle__factory, mockSpotOracle.address, asset.address, COOLDOWN_TIME)
-    INITIAL_TIMESTAMP = await getCurrentTimestamp()
+    timeBaseRateOracle = await new TestTimeAveragedBaseRateOracle__factory(owner).deploy()
+    await timeBaseRateOracle.initialize(mockSpotOracle.address, asset.address, COOLDOWN_TIME)
 
+    INITIAL_TIMESTAMP = await getCurrentTimestamp()
     BUFFER_SIZE = await timeBaseRateOracle.bufferSize()
-    oracleLongBuffer = await deployContract(TimeAveragedBaseRateOracle__factory, mockSpotOracle.address, asset.address, COOLDOWN_TIME)
+
+    oracleLongBuffer = await new TimeAveragedBaseRateOracle__factory(owner).deploy()
+    await oracleLongBuffer.initialize(mockSpotOracle.address, asset.address, COOLDOWN_TIME)
   })
 
   const updateBufferRightAfterCooldown = async (oracle: TimeAveragedBaseRateOracle | TestTimeAveragedBaseRateOracle) => {
