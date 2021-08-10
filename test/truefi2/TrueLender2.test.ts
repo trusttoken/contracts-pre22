@@ -19,6 +19,7 @@ import {
   MockTrueFiPoolOracle,
   MockTrueCurrency,
   MockUsdc,
+  TrueFiCreditOracle,
 } from 'contracts'
 
 import {
@@ -46,6 +47,7 @@ describe('TrueLender2', () => {
 
   let rater: TrueRatingAgencyV2
   let lender: TestTrueLender
+  let creditOracle: TrueFiCreditOracle
 
   let counterfeitPool: TrueFiPool2
   let token1: MockErc20Token
@@ -69,7 +71,7 @@ describe('TrueLender2', () => {
     lender = await deployContract(owner, TestTrueLender__factory)
     oneInch = await new Mock1InchV3__factory(owner).deploy()
 
-    ;({ loanFactory, feePool, standardTokenOracle: poolOracle, rater, poolFactory, stkTru, tru, feeToken: usdc, lender } = await setupTruefi2(owner, { lender: lender, oneInch: oneInch }))
+    ;({ loanFactory, feePool, standardTokenOracle: poolOracle, rater, poolFactory, stkTru, tru, feeToken: usdc, lender, creditOracle } = await setupTruefi2(owner, { lender: lender, oneInch: oneInch }))
 
     token1 = await deployContract(owner, MockErc20Token__factory)
     token2 = await deployContract(owner, MockErc20Token__factory)
@@ -127,6 +129,10 @@ describe('TrueLender2', () => {
 
     it('sets the rating agency address', async () => {
       expect(await lender.ratingAgency()).to.equal(rater.address)
+    })
+
+    it('sets credit oracle address', async () => {
+      expect(await lender.creditOracle()).to.equal(creditOracle.address)
     })
 
     it('default params', async () => {

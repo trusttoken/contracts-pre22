@@ -17,6 +17,7 @@ import {ITrueFiPool2, ITrueFiPoolOracle, I1Inch3} from "./interface/ITrueFiPool2
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {ITrueRatingAgency} from "../truefi/interface/ITrueRatingAgency.sol";
 import {IERC20WithDecimals} from "./interface/IERC20WithDecimals.sol";
+import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
 
 /**
  * @title TrueLender v2.0
@@ -79,6 +80,8 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
 
     // minimum prediction market voting period
     uint256 public votingPeriod;
+
+    ITrueFiCreditOracle public creditOracle;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -151,7 +154,8 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         IStakingPool _stakingPool,
         IPoolFactory _factory,
         ITrueRatingAgency _ratingAgency,
-        I1Inch3 __1inch
+        I1Inch3 __1inch,
+        ITrueFiCreditOracle _creditOracle
     ) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
 
@@ -159,6 +163,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         factory = _factory;
         ratingAgency = _ratingAgency;
         _1inch = __1inch;
+        creditOracle = _creditOracle;
 
         swapFeeSlippage = 100; // 1%
         minVotes = 15 * (10**6) * (10**8);
