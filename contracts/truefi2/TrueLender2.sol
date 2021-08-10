@@ -85,7 +85,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
 
     uint256 public maxLoanTerm;
 
-    uint256 public longLoanMinTerm;
+    uint256 public longTermLoanThreshold;
 
     uint8 public longTermLoanScoreThreshold;
 
@@ -117,9 +117,9 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
 
     /**
      * @dev Emitted long term loan minimal term changed
-     * @param longLoanMinTerm New long term loan minimal term
+     * @param longTermLoanThreshold New long term loan minimal term
      */
-    event LongLoanMinTermChanged(uint256 longLoanMinTerm);
+    event LongTermLoanThresholdChanged(uint256 longTermLoanThreshold);
 
     /**
      * @dev Emitted minimal credit score threshold for long term loan changed
@@ -179,7 +179,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     modifier onlyValidTerm(ILoanToken2 loanToken) {
         uint256 term = loanToken.term();
         require(term <= maxLoanTerm, "TrueLender: Loan's term is too long");
-        if (term > longLoanMinTerm) {
+        if (term > longTermLoanThreshold) {
             require(
                 creditOracle.getScore(msg.sender) >= longTermLoanScoreThreshold,
                 "TrueLender: Credit score is too low for loan's term"
@@ -217,7 +217,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         fee = 1000;
         maxLoans = 100;
         maxLoanTerm = 180 days;
-        longLoanMinTerm = 90 days;
+        longTermLoanThreshold = 90 days;
         longTermLoanScoreThreshold = 200;
     }
 
@@ -271,11 +271,11 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
 
     /**
      * @dev Set minimal term of a long term loan. Only owner can change parameters.
-     * @param _longLoanMinTerm New longLoanMinTerm
+     * @param _longTermLoanThreshold New longTermLoanThreshold
      */
-    function setLongLoanMinTerm(uint256 _longLoanMinTerm) external onlyOwner {
-        longLoanMinTerm = _longLoanMinTerm;
-        emit LongLoanMinTermChanged(_longLoanMinTerm);
+    function setLongTermLoanThreshold(uint256 _longTermLoanThreshold) external onlyOwner {
+        longTermLoanThreshold = _longTermLoanThreshold;
+        emit LongTermLoanThresholdChanged(_longTermLoanThreshold);
     }
 
     /**

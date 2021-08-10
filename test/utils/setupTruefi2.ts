@@ -71,7 +71,7 @@ export const setupTruefi2 = async (owner: Wallet, customDeployed?: any) => {
 
   await lender.setFee(0)
   await lender.setMaxLoanTerm(YEAR * 10)
-  await lender.setLongLoanMinTerm(YEAR * 10)
+  await lender.setLongTermLoanThreshold(YEAR * 10)
   await rater.allowChangingAllowances(owner.address, true)
 
   await tru.initialize()
