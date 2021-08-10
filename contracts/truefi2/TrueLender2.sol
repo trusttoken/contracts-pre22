@@ -334,8 +334,8 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         (uint256 start, uint256 no, uint256 yes) = ratingAgency.getResults(address(loanToken));
         uint256 term = loanToken.term();
 
-        require(term <= maxLoanTerm, "TrueLender: Loan's term is too long");
-        require(_isCredibleForTerm(term), "TrueLender: Credit score is too low for loan's term");
+        require(isTermBelowMax(term), "TrueLender: Loan's term is too long");
+        require(isCredibleForTerm(term), "TrueLender: Credit score is too low for loan's term");
         require(votingLastedLongEnough(start), "TrueLender: Voting time is below minimum");
         require(votesThresholdReached(yes.add(no)), "TrueLender: Not enough votes given for the loan");
         require(loanIsCredible(yes, no), "TrueLender: Loan risk is too high");
@@ -565,10 +565,14 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         loan.safeTransfer(recipient, numerator.mul(loan.balanceOf(address(this))).div(denominator));
     }
 
-    function _isCredibleForTerm(uint256 term) internal view returns (bool) {
+    function isCredibleForTerm(uint256 term) internal view returns (bool) {
         if (term > longTermLoanThreshold) {
             return creditOracle.getScore(msg.sender) >= longTermLoanScoreThreshold;
         }
         return true;
+    }
+
+    function isTermBelowMax(uint256 term) internal view returns (bool) {
+        return term <= maxLoanTerm;
     }
 }
