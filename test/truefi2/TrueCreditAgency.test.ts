@@ -603,6 +603,7 @@ describe('TrueCreditAgency', () => {
       await tusd.connect(borrower).approve(creditAgency.address, 1200)
       await creditAgency.connect(borrower).repayInFull(tusdPool.address)
       await timeTravel(DAY * 60)
+      await creditAgency.setCreditScoreUpdateThreshold(YEAR)
       await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000)).to.be.not.reverted
     })
   })
@@ -939,10 +940,9 @@ describe('TrueCreditAgency', () => {
       expect(bucketBefore.totalBorrowed).to.eq(bucketAfter.totalBorrowed.add(1000))
     })
 
-    it('updates nextInterestRepayTime', async () => {
-      const tx = await creditAgency.connect(borrower).repayInFull(tusdPool.address)
-      const timestamp = BigNumber.from((await provider.getBlock(tx.blockNumber)).timestamp)
-      expect(await creditAgency.nextInterestRepayTime(tusdPool.address, borrower.address)).to.eq(timestamp.add(MONTH))
+    it('sets nextInterestRepayTime to 0', async () => {
+      await creditAgency.connect(borrower).repayInFull(tusdPool.address)
+      expect(await creditAgency.nextInterestRepayTime(tusdPool.address, borrower.address)).to.eq(0)
     })
 
     it('emits event', async () => {
