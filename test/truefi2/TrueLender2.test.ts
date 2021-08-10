@@ -404,8 +404,8 @@ describe('TrueLender2', () => {
         await rater.connect(borrower).submit(loan1.address)
         await rater.yes(loan1.address)
         await timeTravel(7 * DAY + 1)
-        await lender.setLongTermLoanThreshold(DAY * 364)
-        await lender.setMaxLoanTerm(DAY * 364)
+        await lender.setLongTermLoanThreshold(DAY * 365 - 1)
+        await lender.setMaxLoanTerm(DAY * 365 - 1)
 
         await expect(lender.connect(borrower).fund(loan1.address))
           .to.be.revertedWith('TrueLender: Loan\'s term is too long')
