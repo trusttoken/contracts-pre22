@@ -97,6 +97,9 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
     uint256 public minCreditScore;
 
+    // @dev How frequently a score needs to be updated for an account to borrow
+    uint256 public creditScoreUpdateThreshold;
+
     // ======= STORAGE DECLARATION END ============
 
     event RiskPremiumChanged(uint256 newRate);
@@ -121,6 +124,8 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
     event MinCreditScoreChanged(uint256 newValue);
 
+    event CreditScoreUpdateThresholdChanged(uint256 newThreshold);
+
     event BorrowLimitConfigChanged(
         uint8 scoreFloor,
         uint16 limitAdjustmentPower,
@@ -138,6 +143,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         utilizationAdjustmentPower = 2;
         interestRepaymentPeriod = 31 days;
         gracePeriod = 3 days;
+        creditScoreUpdateThreshold = 30 days;
     }
 
     modifier onlyAllowedBorrowers() {
@@ -191,6 +197,14 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     function setMinCreditScore(uint256 newValue) external onlyOwner {
         minCreditScore = newValue;
         emit MinCreditScoreChanged(newValue);
+    }
+
+    /**
+     * @dev Set new threshold for updating credit scores
+     */
+    function setCreditScoreUpdateThreshold(uint256 newThreshold) public onlyOwner {
+        creditScoreUpdateThreshold = newThreshold;
+        emit CreditScoreUpdateThresholdChanged(newThreshold);
     }
 
     function allowBorrower(address who, uint256 timePeriod) external onlyOwner {
@@ -324,6 +338,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     function borrow(ITrueFiPool2 pool, uint256 amount) external onlyAllowedBorrowers {
         require(isPoolAllowed[pool], "TrueCreditAgency: The pool is not whitelisted for borrowing");
         require(status(pool, msg.sender) == Status.Eligible, "TrueCreditAgency: Sender not eligible to borrow");
+        require(meetsTimeRequirement(msg.sender), "TrueCreditAgency: Borrower credit score does not meet time requirement");
         (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, msg.sender);
         require(newScore >= minCreditScore, "TrueCreditAgency: Borrower has credit score below minimum");
         require(amount <= borrowLimit(pool, msg.sender), "TrueCreditAgency: Borrow amount cannot exceed borrow limit");
@@ -428,6 +443,12 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     }
 
     function status(ITrueFiPool2 pool, address borrower) public view returns (Status) {
+        if (creditOracle.ineligible(borrower)) {
+            return Status.Ineligible;
+        }
+        if (creditOracle.onHold(borrower)) {
+            return Status.OnHold;
+        }
         if (nextInterestRepayTime[pool][borrower] == 0) {
             return Status.Eligible;
         }
@@ -435,6 +456,14 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
             return Status.OnHold;
         }
         return Status.Eligible;
+    }
+
+    /**
+     * @dev check if borrower score has been updated recently enough
+     * @return Whether block timestamp is less than last update + threshold
+     */
+    function meetsTimeRequirement(address borrower) public view returns (bool) {
+        return block.timestamp <= creditScoreUpdateThreshold.add(creditOracle.lastUpdated(borrower));
     }
 
     function _rebucket(

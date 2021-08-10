@@ -260,6 +260,24 @@ describe('TrueCreditAgency', () => {
     })
   })
 
+  describe('setCreditScoreUpdateThreshold', () => {
+    it('reverts if not called by the owner', async () => {
+      await expect(creditAgency.connect(borrower).setCreditScoreUpdateThreshold(1))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('changes credit score update threshold', async () => {
+      await creditAgency.setCreditScoreUpdateThreshold(1)
+      expect(await creditAgency.creditScoreUpdateThreshold()).to.eq(1)
+    })
+
+    it('emits event', async () => {
+      await expect(creditAgency.setCreditScoreUpdateThreshold(1))
+        .to.emit(creditAgency, 'CreditScoreUpdateThresholdChanged')
+        .withArgs(1)
+    })
+  })
+
   describe('Borrower allowance', () => {
     it('only owner can set allowance', async () => {
       await expect(creditAgency.connect(borrower).allowBorrower(borrower.address, YEAR))
@@ -504,6 +522,12 @@ describe('TrueCreditAgency', () => {
         .to.be.revertedWith('TrueCreditAgency: Borrower has credit score below minimum')
     })
 
+    it('fails if the credit score was not updated for too long', async () => {
+      await timeTravel(DAY * 31)
+      await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000))
+        .to.be.revertedWith('TrueCreditAgency: Borrower credit score does not meet time requirement')
+    })
+
     it('fails if borrower has missed the repay time', async () => {
       await creditAgency.connect(borrower).borrow(tusdPool.address, 500)
       await timeTravel(DAY * 32)
@@ -590,6 +614,17 @@ describe('TrueCreditAgency', () => {
       await timeTravel(DAY * 31 + 1)
       expect(await creditAgency.status(tusdPool.address, borrower.address)).to.equal(Status.OnHold)
       await timeTravel(YEAR)
+      expect(await creditAgency.status(tusdPool.address, borrower.address)).to.equal(Status.OnHold)
+    })
+
+    it('returns Ineligible when account was marked so by oracle', async () => {
+      await creditOracle.setIneligible(borrower.address, true)
+      await creditOracle.setOnHold(borrower.address, true)
+      expect(await creditAgency.status(tusdPool.address, borrower.address)).to.equal(Status.Ineligible)
+    })
+
+    it('returns OnHold when account was marked so by oracle but not marked as Ineligible', async () => {
+      await creditOracle.setOnHold(borrower.address, true)
       expect(await creditAgency.status(tusdPool.address, borrower.address)).to.equal(Status.OnHold)
     })
   })
@@ -971,6 +1006,7 @@ describe('TrueCreditAgency', () => {
       await creditAgency.setRiskPremium(1000)
       await creditOracle.setScore(owner.address, 255)
       await creditAgency.setInterestRepaymentPeriod(YEAR * 10)
+      await creditAgency.setCreditScoreUpdateThreshold(YEAR * 10)
     })
 
     it('interest for single borrower and stable rate', async () => {

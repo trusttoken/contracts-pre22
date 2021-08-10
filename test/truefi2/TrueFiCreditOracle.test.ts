@@ -1,11 +1,8 @@
 import { expect, use } from 'chai'
 import { beforeEachWithFixture, parseEth } from 'utils'
-import {
-  TrueFiCreditOracle__factory,
-  TrueFiCreditOracle,
-} from 'contracts'
-import { solidity } from 'ethereum-waffle'
-import { Wallet } from 'ethers'
+import { TrueFiCreditOracle, TrueFiCreditOracle__factory } from 'contracts'
+import { MockProvider, solidity } from 'ethereum-waffle'
+import { ContractTransaction, Wallet } from 'ethers'
 
 use(solidity)
 
@@ -13,10 +10,13 @@ describe('TrueFiCreditOracle', () => {
   let owner: Wallet
   let manager: Wallet
   let firstAccount: Wallet
+  let secondAccount: Wallet
   let oracle: TrueFiCreditOracle
+  let provider: MockProvider
 
-  beforeEachWithFixture(async (wallets) => {
-    ([owner, manager, firstAccount] = wallets)
+  beforeEachWithFixture(async (wallets, _provider) => {
+    ([owner, manager, firstAccount, secondAccount] = wallets)
+    provider = _provider
 
     oracle = await new TrueFiCreditOracle__factory(owner).deploy()
     await oracle.initialize()
@@ -44,9 +44,13 @@ describe('TrueFiCreditOracle', () => {
   describe('setScore', () => {
     const firstScore = 100
     const secondScore = 200
+    let time: number
+    let tx: ContractTransaction
 
     beforeEach(async () => {
-      await oracle.connect(manager).setScore(firstAccount.address, firstScore)
+      tx = await oracle.connect(manager).setScore(firstAccount.address, firstScore)
+      const { blockNumber } = await tx.wait()
+      time = (await provider.getBlock(blockNumber)).timestamp
     })
 
     it('only manager can set scores', async () => {
@@ -58,10 +62,21 @@ describe('TrueFiCreditOracle', () => {
       expect(await oracle.getScore(firstAccount.address)).to.equal(firstScore)
     })
 
+    it('timestamp is set correctly', async () => {
+      expect(await oracle.lastUpdated(firstAccount.address)).to.equal(time)
+    })
+
+    it('timestamp is updated when setting score', async () => {
+      tx = await oracle.connect(manager).setScore(firstAccount.address, firstScore)
+      const { blockNumber } = await tx.wait()
+      const newTime = (await provider.getBlock(blockNumber)).timestamp
+      expect(await oracle.lastUpdated(firstAccount.address)).to.equal(newTime)
+    })
+
     it('emits event', async () => {
       await expect(oracle.connect(manager).setScore(firstAccount.address, secondScore))
         .to.emit(oracle, 'ScoreChanged')
-        .withArgs(firstAccount.address, secondScore)
+        .withArgs(firstAccount.address, secondScore, time + 1)
     })
   })
 
@@ -74,6 +89,13 @@ describe('TrueFiCreditOracle', () => {
       expect(await oracle.getScore(firstAccount.address)).to.equal(firstScore)
       await oracle.connect(manager).setScore(firstAccount.address, secondScore)
       expect(await oracle.getScore(firstAccount.address)).to.equal(secondScore)
+    })
+
+    it('updates lastUpdated timestamp', async () => {
+      let tx = await (await oracle.connect(manager).setScore(firstAccount.address, firstScore)).wait()
+      expect(await oracle.lastUpdated(firstAccount.address)).to.equal((await provider.getBlock(tx.blockNumber)).timestamp)
+      tx = await (await oracle.connect(manager).setScore(firstAccount.address, firstScore)).wait()
+      expect(await oracle.lastUpdated(firstAccount.address)).to.equal((await provider.getBlock(tx.blockNumber)).timestamp)
     })
   })
 
@@ -97,6 +119,45 @@ describe('TrueFiCreditOracle', () => {
     it('change existing max borrower limit', async () => {
       await oracle.connect(manager).setMaxBorrowerLimit(firstAccount.address, secondBorrowLimit)
       expect(await oracle.getMaxBorrowerLimit(firstAccount.address)).to.equal(secondBorrowLimit)
+    })
+  })
+
+  describe('ineligibility', () => {
+    const firstScore = 100
+    const secondScore = 200
+
+    beforeEach(async () => {
+      await oracle.connect(manager).setScore(firstAccount.address, firstScore)
+      await oracle.connect(manager).setScore(secondAccount.address, secondScore)
+      await oracle.connect(owner).setIneligible(firstAccount.address, true)
+      await oracle.connect(owner).setOnHold(firstAccount.address, true)
+    })
+
+    it('ineligibility and on hold set correctly', async () => {
+      expect(await oracle.onHold(firstAccount.address)).to.be.true
+      expect(await oracle.ineligible(firstAccount.address)).to.be.true
+    })
+
+    it('only owner can set ineligibility', async () => {
+      await expect(oracle.connect(manager).setIneligible(firstAccount.address, false))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('only owner can set onHold', async () => {
+      await expect(oracle.connect(manager).setOnHold(firstAccount.address, false))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('setting ineligibility triggers event', async () => {
+      await expect(oracle.connect(owner).setIneligible(secondAccount.address, true))
+        .to.emit(oracle, 'IneligibleStatusChanged')
+        .withArgs(secondAccount.address, true)
+    })
+
+    it('setting onHold triggers event', async () => {
+      await expect(oracle.connect(owner).setOnHold(secondAccount.address, true))
+        .to.emit(oracle, 'OnHoldStatusChanged')
+        .withArgs(secondAccount.address, true)
     })
   })
 })
