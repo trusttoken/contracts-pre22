@@ -15,7 +15,7 @@ import {
   TrueFiCreditOracle__factory,
 } from 'contracts'
 import { Wallet } from 'ethers'
-import { parseTRU } from '.'
+import { parseTRU, YEAR } from '.'
 
 export const setupTruefi2 = async (owner: Wallet, customDeployed?: any) => {
   const deployContract = setupDeploy(owner)
@@ -70,6 +70,8 @@ export const setupTruefi2 = async (owner: Wallet, customDeployed?: any) => {
   await creditOracle.setManager(owner.address)
 
   await lender.setFee(0)
+  await lender.setMaxLoanTerm(YEAR * 10)
+  await lender.setLongLoanMinTerm(YEAR * 10)
   await rater.allowChangingAllowances(owner.address, true)
 
   await tru.initialize()

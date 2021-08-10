@@ -83,6 +83,12 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
 
     ITrueFiCreditOracle public creditOracle;
 
+    uint256 public maxLoanTerm;
+
+    uint256 public longLoanMinTerm;
+
+    uint8 public longTermLoanScoreThreshold;
+
     // ======= STORAGE DECLARATION END ============
 
     /**
@@ -102,6 +108,24 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
      * @param minRatio New risk aversion factor
      */
     event MinRatioChanged(uint256 minRatio);
+
+    /**
+     * @dev Emitted when max loan term changed
+     * @param maxLoanTerm New max loan term
+     */
+    event MaxLoanTermChanged(uint256 maxLoanTerm);
+
+    /**
+     * @dev Emitted long term loan minimal term changed
+     * @param longLoanMinTerm New long term loan minimal term
+     */
+    event LongLoanMinTermChanged(uint256 longLoanMinTerm);
+
+    /**
+     * @dev Emitted minimal credit score threshold for long term loan changed
+     * @param longTermLoanScoreThreshold New minimal credit score threshold for long term loan
+     */
+    event LongTermLoanScoreThresholdChanged(uint256 longTermLoanScoreThreshold);
 
     /**
      * @dev Emitted when the minimum voting period is changed
@@ -150,6 +174,21 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     }
 
     /**
+     * @dev Can be only called by a pool
+     */
+    modifier onlyValidTerm(ILoanToken2 loanToken) {
+        uint256 term = loanToken.term();
+        require(term <= maxLoanTerm, "TrueLender: Loan's term is too long");
+        if (term > longLoanMinTerm) {
+            require(
+                creditOracle.getScore(msg.sender) >= longTermLoanScoreThreshold,
+                "TrueLender: Credit score is too low for loan's term"
+            );
+        }
+        _;
+    }
+
+    /**
      * @dev Initialize the contract with parameters
      * @param _stakingPool stkTRU address
      * @param _factory PoolFactory address
@@ -177,6 +216,9 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         votingPeriod = 7 days;
         fee = 1000;
         maxLoans = 100;
+        maxLoanTerm = 180 days;
+        longLoanMinTerm = 90 days;
+        longTermLoanScoreThreshold = 200;
     }
 
     /**
@@ -216,6 +258,33 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         require(newMinRatio <= BASIS_RATIO, "TrueLender: minRatio cannot be more than 100%");
         minRatio = newMinRatio;
         emit MinRatioChanged(newMinRatio);
+    }
+
+    /**
+     * @dev Set max loan term. Only owner can change parameters.
+     * @param _maxLoanTerm New maxLoanTerm
+     */
+    function setMaxLoanTerm(uint256 _maxLoanTerm) external onlyOwner {
+        maxLoanTerm = _maxLoanTerm;
+        emit MaxLoanTermChanged(_maxLoanTerm);
+    }
+
+    /**
+     * @dev Set minimal term of a long term loan. Only owner can change parameters.
+     * @param _longLoanMinTerm New longLoanMinTerm
+     */
+    function setLongLoanMinTerm(uint256 _longLoanMinTerm) external onlyOwner {
+        longLoanMinTerm = _longLoanMinTerm;
+        emit LongLoanMinTermChanged(_longLoanMinTerm);
+    }
+
+    /**
+     * @dev Set long term loan credit score threshold. Only owner can change parameters.
+     * @param _longTermLoanScoreThreshold New longTermLoanScoreThreshold
+     */
+    function setLongTermLoanScoreThreshold(uint8 _longTermLoanScoreThreshold) external onlyOwner {
+        longTermLoanScoreThreshold = _longTermLoanScoreThreshold;
+        emit LongTermLoanScoreThresholdChanged(_longTermLoanScoreThreshold);
     }
 
     /**
@@ -268,7 +337,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
      *
      * @param loanToken LoanToken to fund
      */
-    function fund(ILoanToken2 loanToken) external {
+    function fund(ILoanToken2 loanToken) external onlyValidTerm(loanToken) {
         require(msg.sender == loanToken.borrower(), "TrueLender: Sender is not borrower");
         ITrueFiPool2 pool = loanToken.pool();
 
