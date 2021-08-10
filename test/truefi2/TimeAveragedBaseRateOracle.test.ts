@@ -24,7 +24,6 @@ describe('TimeAveragedBaseRateOracle', () => {
 
   let mockSpotOracle: MockContract
   let timeBaseRateOracle: TestTimeAveragedBaseRateOracle
-  let timeOracleShortCooldown: TestTimeAveragedBaseRateOracle
   let oracleLongBuffer: TimeAveragedBaseRateOracle
 
   let INITIAL_TIMESTAMP
@@ -45,7 +44,6 @@ describe('TimeAveragedBaseRateOracle', () => {
     INITIAL_TIMESTAMP = await getCurrentTimestamp()
 
     BUFFER_SIZE = await timeBaseRateOracle.bufferSize()
-    timeOracleShortCooldown = await deployContract(TestTimeAveragedBaseRateOracle__factory, mockSpotOracle.address, asset.address, COOLDOWN_TIME / 2)
     oracleLongBuffer = await deployContract(TimeAveragedBaseRateOracle__factory, mockSpotOracle.address, asset.address, COOLDOWN_TIME)
   })
 
@@ -154,16 +152,16 @@ describe('TimeAveragedBaseRateOracle', () => {
   describe('calculateAverageRate', () => {
     describe('reverts if', () => {
       it('numberOfValues equals 0', async () => {
-        await expect(timeOracleShortCooldown.calculateAverageAPY(0))
+        await expect(timeBaseRateOracle.calculateAverageAPY(0))
           .to.be.revertedWith('TimeAveragedBaseRateOracle: Number of values should be greater than 0')
       })
 
       it('numberOfValues is not less than buffer size', async () => {
         let numberOfValues = BUFFER_SIZE + 1
-        await expect(timeOracleShortCooldown.calculateAverageAPY(numberOfValues))
+        await expect(timeBaseRateOracle.calculateAverageAPY(numberOfValues))
           .to.be.revertedWith('TimeAveragedBaseRateOracle: Number of values should be less than buffer size')
         numberOfValues = BUFFER_SIZE
-        await expect(timeOracleShortCooldown.calculateAverageAPY(numberOfValues))
+        await expect(timeBaseRateOracle.calculateAverageAPY(numberOfValues))
           .to.be.revertedWith('TimeAveragedBaseRateOracle: Number of values should be less than buffer size')
       })
     })
