@@ -116,13 +116,13 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     event MaxLoanTermChanged(uint256 maxLoanTerm);
 
     /**
-     * @dev Emitted long term loan minimal term changed
+     * @dev Emitted when long term loan's minimal term changed
      * @param longTermLoanThreshold New long term loan minimal term
      */
     event LongTermLoanThresholdChanged(uint256 longTermLoanThreshold);
 
     /**
-     * @dev Emitted minimal credit score threshold for long term loan changed
+     * @dev Emitted when minimal credit score threshold for long term loan changed
      * @param longTermLoanScoreThreshold New minimal credit score threshold for long term loan
      */
     event LongTermLoanScoreThresholdChanged(uint256 longTermLoanScoreThreshold);
@@ -170,21 +170,6 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
      */
     modifier onlyPool() {
         require(factory.isPool(msg.sender), "TrueLender: Pool not created by the factory");
-        _;
-    }
-
-    /**
-     * @dev Can be only called by a pool
-     */
-    modifier onlyValidTerm(ILoanToken2 loanToken) {
-        uint256 term = loanToken.term();
-        require(term <= maxLoanTerm, "TrueLender: Loan's term is too long");
-        if (term > longTermLoanThreshold) {
-            require(
-                creditOracle.getScore(msg.sender) >= longTermLoanScoreThreshold,
-                "TrueLender: Credit score is too low for loan's term"
-            );
-        }
         _;
     }
 
@@ -337,7 +322,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
      *
      * @param loanToken LoanToken to fund
      */
-    function fund(ILoanToken2 loanToken) external onlyValidTerm(loanToken) {
+    function fund(ILoanToken2 loanToken) external {
         require(msg.sender == loanToken.borrower(), "TrueLender: Sender is not borrower");
         ITrueFiPool2 pool = loanToken.pool();
 
@@ -347,7 +332,10 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
 
         uint256 amount = loanToken.amount();
         (uint256 start, uint256 no, uint256 yes) = ratingAgency.getResults(address(loanToken));
+        uint256 term = loanToken.term();
 
+        require(term <= maxLoanTerm, "TrueLender: Loan's term is too long");
+        require(_isCredibleForTerm(term), "TrueLender: Credit score is too low for loan's term");
         require(votingLastedLongEnough(start), "TrueLender: Voting time is below minimum");
         require(votesThresholdReached(yes.add(no)), "TrueLender: Not enough votes given for the loan");
         require(loanIsCredible(yes, no), "TrueLender: Loan risk is too high");
@@ -575,5 +563,12 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         uint256 denominator
     ) internal {
         loan.safeTransfer(recipient, numerator.mul(loan.balanceOf(address(this))).div(denominator));
+    }
+
+    function _isCredibleForTerm(uint256 term) internal view returns (bool) {
+        if (term > longTermLoanThreshold) {
+            return creditOracle.getScore(msg.sender) >= longTermLoanScoreThreshold;
+        }
+        return true;
     }
 }
