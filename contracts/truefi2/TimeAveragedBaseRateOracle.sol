@@ -119,7 +119,10 @@ contract TimeAveragedBaseRateOracle is UpgradeableClaimable {
         uint16 _currIndex = totalsBuffer.currIndex;
         uint16 startIndex = (_currIndex + bufferSize() - numberOfValues) % bufferSize();
 
-        require(totalsBuffer.timestamps[startIndex] > 0, "TimeAveragedBaseRateOracle: There are fewer values stored than required");
+        if (totalsBuffer.timestamps[startIndex] == 0) {
+            require(_currIndex > 0, "TimeAveragedBaseRateOracle: Cannot use buffer before any update call");
+            startIndex = 0;
+        }
 
         uint256 diff = totalsBuffer.runningTotals[_currIndex].sub(totalsBuffer.runningTotals[startIndex]);
         uint256 dt = totalsBuffer.timestamps[_currIndex].sub(totalsBuffer.timestamps[startIndex]);

@@ -167,15 +167,15 @@ describe('TimeAveragedBaseRateOracle', () => {
         await expect(timeBaseRateOracle.calculateAverageAPY(numberOfValues))
           .to.be.revertedWith('TimeAveragedBaseRateOracle: Number of values should be less than buffer size')
       })
+
+      it('before any update call', async () => {
+        await expect(timeBaseRateOracle.calculateAverageAPY(2))
+          .to.be.revertedWith('TimeAveragedBaseRateOracle: Cannot use buffer before any update call')
+      })
     })
 
     describe('calculates the rate correctly', () => {
-      it('before any update call', async () => {
-        await expect(timeBaseRateOracle.calculateAverageAPY(2))
-          .to.be.revertedWith('TimeAveragedBaseRateOracle: There are fewer values stored than required')
-      })
-
-      it('with partially overwritten buffer', async () => {
+      it('with partially filled buffer', async () => {
         await mockSpotOracle.mock.getRate.withArgs(asset.address).returns(100)
         await updateBufferRightAfterCooldown(timeBaseRateOracle)
         await mockSpotOracle.mock.getRate.withArgs(asset.address).returns(200)
@@ -183,6 +183,10 @@ describe('TimeAveragedBaseRateOracle', () => {
         // Borrow apys (percents): 1.0, 2.0 probed with 1 day interval
         // Expected value is 3/2 = 1.5
         expect(await timeBaseRateOracle.calculateAverageAPY(2)).to.eq(1_50)
+
+        // If buffer has not requested number of values yet
+        // use all values available at the moment
+        expect(await timeBaseRateOracle.calculateAverageAPY(7)).to.eq(1_50)
       })
 
       it('with overwritten buffer', async () => {
