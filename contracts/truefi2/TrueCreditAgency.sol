@@ -340,12 +340,12 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
     /**
      * @dev Helper function used by poke() to save gas by calculating partial terms of the total rate
-     * @param bucketRate risk premium + utilization adjustment rate + secured rate
+     * @param poolRate risk premium + utilization adjustment rate + secured rate
      * @param __creditScoreAdjustmentRate credit score adjustment
      * @return sum of addends capped by MAX_RATE_CAP
      */
-    function _currentRate(uint256 bucketRate, uint256 __creditScoreAdjustmentRate) internal pure returns (uint256) {
-        return min(bucketRate.add(__creditScoreAdjustmentRate), MAX_RATE_CAP);
+    function _currentRate(uint256 poolRate, uint256 __creditScoreAdjustmentRate) internal pure returns (uint256) {
+        return min(poolRate.add(__creditScoreAdjustmentRate), MAX_RATE_CAP);
     }
 
     function interest(ITrueFiPool2 pool, address borrower) public view returns (uint256) {
@@ -401,29 +401,29 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     function poke(ITrueFiPool2 pool) public {
         uint256 bitMap = usedBucketsBitmap;
         uint256 timeNow = block.timestamp;
-        uint256 bucketRate = securedRate(pool).add(riskPremium).add(utilizationAdjustmentRate(pool));
+        uint256 poolRate = securedRate(pool).add(riskPremium).add(utilizationAdjustmentRate(pool));
 
         for (uint16 i = 0; i <= MAX_CREDIT_SCORE; (i++, bitMap >>= 1)) {
             if (bitMap & 1 == 0) {
                 continue;
             }
 
-            _pokeSingleBucket(pool, uint8(i), timeNow, bucketRate);
+            _pokeSingleBucket(pool, uint8(i), timeNow, poolRate);
         }
     }
 
     function pokeSingleBucket(ITrueFiPool2 pool, uint8 bucketNumber) internal {
         uint256 timeNow = block.timestamp;
-        uint256 bucketRate = securedRate(pool).add(riskPremium).add(utilizationAdjustmentRate(pool));
+        uint256 poolRate = securedRate(pool).add(riskPremium).add(utilizationAdjustmentRate(pool));
 
-        _pokeSingleBucket(pool, bucketNumber, timeNow, bucketRate);
+        _pokeSingleBucket(pool, bucketNumber, timeNow, poolRate);
     }
 
     function _pokeSingleBucket(
         ITrueFiPool2 pool,
         uint8 bucketNumber,
         uint256 timeNow,
-        uint256 bucketRate
+        uint256 poolRate
     ) internal {
         CreditScoreBucket storage bucket = buckets[pool][bucketNumber];
 
@@ -434,7 +434,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         bucket.cumulativeInterestPerShare = bucket.cumulativeInterestPerShare.add(
             bucket.rate.mul(ADDITIONAL_PRECISION.div(10000)).mul(timeNow.sub(bucket.timestamp)).div(365 days)
         );
-        bucket.rate = _currentRate(bucketRate, _creditScoreAdjustmentRate(bucketNumber));
+        bucket.rate = _currentRate(poolRate, _creditScoreAdjustmentRate(bucketNumber));
         bucket.timestamp = uint128(timeNow);
     }
 
