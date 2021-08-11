@@ -20,6 +20,7 @@ use(solidity)
 describe('TimeAveragedBaseRateOracle', () => {
   let provider: MockProvider
   let owner: Wallet
+  let notOwner: Wallet
   let asset: MockErc20Token
 
   let mockSpotOracle: MockContract
@@ -32,7 +33,7 @@ describe('TimeAveragedBaseRateOracle', () => {
   const COOLDOWN_TIME = DAY
 
   beforeEachWithFixture(async (wallets, _provider) => {
-    [owner] = wallets
+    [owner, notOwner] = wallets
     provider = _provider
     const deployContract = setupDeploy(owner)
 
@@ -61,7 +62,7 @@ describe('TimeAveragedBaseRateOracle', () => {
     return (await provider.getBlock('latest')).timestamp
   }
 
-  describe('Constructor', () => {
+  describe('initializer', () => {
     it('correctly sets fields', async () => {
       expect(await timeBaseRateOracle.spotOracle()).to.eq(mockSpotOracle.address)
       expect(await timeBaseRateOracle.asset()).to.eq(asset.address)
@@ -71,6 +72,30 @@ describe('TimeAveragedBaseRateOracle', () => {
     it('fills up one field in historical buffer', async () => {
       const [, timestamps] = await timeBaseRateOracle.getTotalsBuffer()
       expect(timestamps[0]).to.eq(INITIAL_TIMESTAMP)
+    })
+  })
+
+  describe('setSpotOracle', () => {
+    let newSpotOracle: MockContract
+
+    beforeEach(async () => {
+      newSpotOracle = await deployMockContract(owner, SpotBaseRateOracleJson.abi)
+    })
+
+    it('only owner can set spot oracle', async () => {
+      await expect(timeBaseRateOracle.connect(notOwner).setSpotOracle(newSpotOracle.address))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('spot oracle is properly set', async () => {
+      await timeBaseRateOracle.setSpotOracle(newSpotOracle.address)
+      expect(await timeBaseRateOracle.spotOracle()).to.eq(newSpotOracle.address)
+    })
+
+    it('emits a proper event', async () => {
+      await expect(timeBaseRateOracle.setSpotOracle(newSpotOracle.address))
+        .to.emit(timeBaseRateOracle, 'SpotBaseRateOracleChanged')
+        .withArgs(newSpotOracle.address)
     })
   })
 
@@ -182,11 +207,11 @@ describe('TimeAveragedBaseRateOracle', () => {
         await updateBufferRightAfterCooldown(timeBaseRateOracle)
         // Borrow apys (percents): 1.0, 2.0 probed with 1 day interval
         // Expected value is 3/2 = 1.5
-        expect(await timeBaseRateOracle.calculateAverageAPY(2)).to.eq(1_50)
+        expect(await timeBaseRateOracle.calculateAverageAPY(2)).to.eq(150)
 
         // If buffer has not requested number of values yet
         // use all values available at the moment
-        expect(await timeBaseRateOracle.calculateAverageAPY(7)).to.eq(1_50)
+        expect(await timeBaseRateOracle.calculateAverageAPY(7)).to.eq(150)
       })
 
       it('with overwritten buffer', async () => {
@@ -198,7 +223,7 @@ describe('TimeAveragedBaseRateOracle', () => {
         await updateBufferRightAfterCooldown(timeBaseRateOracle)
         // Borrow apys (percents): 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 3.0 probed with 1 day interval
         // Expected value is 15 / 7 = 2.(142857)
-        expect(await timeBaseRateOracle.calculateAverageAPY(7)).to.eq(2_14)
+        expect(await timeBaseRateOracle.calculateAverageAPY(7)).to.eq(214)
       })
 
       it('spot apy value has no impact on average apy', async () => {
@@ -210,7 +235,7 @@ describe('TimeAveragedBaseRateOracle', () => {
         await updateBufferRightAfterCooldown(timeBaseRateOracle)
         // Borrow apys (percents): 1.0, 2.0, 3.0 probed with 1 day interval
         // Expected value is (1.0 + 2.0 + 3.0) / 3 = 2.0
-        expect(await timeBaseRateOracle.calculateAverageAPY(3)).to.eq(2_00)
+        expect(await timeBaseRateOracle.calculateAverageAPY(3)).to.eq(200)
       })
     })
 
@@ -231,8 +256,8 @@ describe('TimeAveragedBaseRateOracle', () => {
           // Borrow apys (percents): 1.0, 1.0, 1.0, 1.0, 2.0, 3.0, 4.0 probed with 1 day interval
           // Expected avg apy is (1.0 * 3 + 2.0 * 2 + 3.0 + 4.0) / 7 = 2.0
           // Expected weekly apy is 2.0
-          expect(await timeBaseRateOracle.calculateAverageAPY(7)).to.eq(2_00)
-          expect(await timeBaseRateOracle.getWeeklyAPY()).to.eq(2_00)
+          expect(await timeBaseRateOracle.calculateAverageAPY(7)).to.eq(200)
+          expect(await timeBaseRateOracle.getWeeklyAPY()).to.eq(200)
         })
 
         it('apy goes up and down', async () => {
@@ -253,8 +278,8 @@ describe('TimeAveragedBaseRateOracle', () => {
           // Borrow apys (percents): 2.0, 1.0, 3, 2.0, 3.0, 2.0, 1.0 probed with 1 day interval
           // Expected avg apy is 14 / 7 = 2.0
           // Expected weekly apy is 2.0
-          expect(await timeBaseRateOracle.calculateAverageAPY(7)).to.eq(2_00)
-          expect(await timeBaseRateOracle.getWeeklyAPY()).to.eq(2_00)
+          expect(await timeBaseRateOracle.calculateAverageAPY(7)).to.eq(200)
+          expect(await timeBaseRateOracle.getWeeklyAPY()).to.eq(200)
         })
       })
     })
@@ -271,7 +296,7 @@ describe('TimeAveragedBaseRateOracle', () => {
         // Borrow apys (percents): 10, 11, ..., 39 probed with 1 day interval
         // Expected avg apy is 24.5
         // Expected monthly apy is 24.5
-        expect(await oracleLongBuffer.getMonthlyAPY()).to.eq(24_50)
+        expect(await oracleLongBuffer.getMonthlyAPY()).to.eq(2450)
       })
     })
 
@@ -287,7 +312,7 @@ describe('TimeAveragedBaseRateOracle', () => {
         // Borrow apys (percents): 10, 11, ..., 374 probed with 1 day interval
         // Expected avg apy is 192
         // Expected yearly apy is 192
-        expect(await oracleLongBuffer.getYearlyAPY()).to.eq(192_00)
+        expect(await oracleLongBuffer.getYearlyAPY()).to.eq(19200)
       }).timeout(100_000)
     })
   })
