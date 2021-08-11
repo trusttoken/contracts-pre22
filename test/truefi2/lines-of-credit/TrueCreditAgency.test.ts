@@ -1,5 +1,6 @@
 import { BigNumber, BigNumberish, Wallet } from 'ethers'
 import {
+  CreditLineRate, CreditLineRate__factory,
   LoanFactory2,
   MockTrueCurrency,
   MockUsdc,
@@ -40,7 +41,8 @@ describe('TrueCreditAgency', () => {
   let tru: MockTrueCurrency
   let stkTru: StkTruToken
   let loanFactory: LoanFactory2
-  let rater: TrueRatingAgencyV2
+  let ratingAgency: TrueRatingAgencyV2
+  let rater: CreditLineRate
   let lender: TrueLender2
   let creditOracle: TrueFiCreditOracle
   let tusdBaseRateOracle: TimeAveragedBaseRateOracle
@@ -72,7 +74,7 @@ describe('TrueCreditAgency', () => {
       loanFactory,
       tru,
       stkTru,
-      rater,
+      rater: ratingAgency,
       lender,
       creditAgency,
       creditOracle,
@@ -91,6 +93,8 @@ describe('TrueCreditAgency', () => {
     await creditOracle.setScore(borrower.address, 255)
     await creditOracle.setMaxBorrowerLimit(owner.address, parseEth(100_000_000))
     await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
+
+    rater = CreditLineRate__factory.connect(await creditAgency.rater(), owner)
   })
 
   describe('initializer', () => {
@@ -100,10 +104,6 @@ describe('TrueCreditAgency', () => {
 
     it('sets interestRepaymentPeriod', async () => {
       expect(await creditAgency.interestRepaymentPeriod()).to.equal(MONTH)
-    })
-
-    it('sets riskPremium', async () => {
-      expect(await creditAgency.riskPremium()).to.eq(100)
     })
   })
 
@@ -148,7 +148,7 @@ describe('TrueCreditAgency', () => {
 
     it('changes riskPremium rate', async () => {
       await creditAgency.setRiskPremium(1)
-      expect(await creditAgency.riskPremium()).to.eq(1)
+      expect(await rater.riskPremium()).to.eq(1)
     })
 
     it('pokes every pool', async () => {
@@ -178,7 +178,7 @@ describe('TrueCreditAgency', () => {
 
     it('emits event', async () => {
       await expect(creditAgency.setRiskPremium(1))
-        .to.emit(creditAgency, 'RiskPremiumChanged')
+        .to.emit(rater, 'RiskPremiumChanged')
         .withArgs(1)
     })
   })
@@ -227,12 +227,12 @@ describe('TrueCreditAgency', () => {
 
     it('changes credit adjustment coefficient', async () => {
       await creditAgency.setCreditAdjustmentCoefficient(1)
-      expect(await creditAgency.creditAdjustmentCoefficient()).to.eq(1)
+      expect(await rater.creditAdjustmentCoefficient()).to.eq(1)
     })
 
     it('emits event', async () => {
       await expect(creditAgency.setCreditAdjustmentCoefficient(1))
-        .to.emit(creditAgency, 'CreditAdjustmentCoefficientChanged')
+        .to.emit(rater, 'CreditAdjustmentCoefficientChanged')
         .withArgs(1)
     })
   })
@@ -245,12 +245,12 @@ describe('TrueCreditAgency', () => {
 
     it('changes utilization adjustment coefficient', async () => {
       await creditAgency.setUtilizationAdjustmentCoefficient(1)
-      expect(await creditAgency.utilizationAdjustmentCoefficient()).to.eq(1)
+      expect(await rater.utilizationAdjustmentCoefficient()).to.eq(1)
     })
 
     it('emits event', async () => {
       await expect(creditAgency.setUtilizationAdjustmentCoefficient(1))
-        .to.emit(creditAgency, 'UtilizationAdjustmentCoefficientChanged')
+        .to.emit(rater, 'UtilizationAdjustmentCoefficientChanged')
         .withArgs(1)
     })
   })
@@ -263,12 +263,12 @@ describe('TrueCreditAgency', () => {
 
     it('changes utilization adjustment power', async () => {
       await creditAgency.setUtilizationAdjustmentPower(1)
-      expect(await creditAgency.utilizationAdjustmentPower()).to.eq(1)
+      expect(await rater.utilizationAdjustmentPower()).to.eq(1)
     })
 
     it('emits event', async () => {
       await expect(creditAgency.setUtilizationAdjustmentPower(1))
-        .to.emit(creditAgency, 'UtilizationAdjustmentPowerChanged')
+        .to.emit(rater, 'UtilizationAdjustmentPowerChanged')
         .withArgs(1)
     })
   })
@@ -697,7 +697,7 @@ describe('TrueCreditAgency', () => {
     }
     const utilizationAmount = (await pool.poolValue()).mul(utilization).div(100)
     const loan = await createApprovedLoan(
-      rater, tru, stkTru,
+      ratingAgency, tru, stkTru,
       loanFactory, borrower, tusdPool,
       utilizationAmount, DAY, 1,
       owner, provider,
