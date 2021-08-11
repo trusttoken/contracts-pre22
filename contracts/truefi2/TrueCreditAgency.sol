@@ -8,6 +8,7 @@ import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {ITrueCreditAgency} from "./interface/ITrueCreditAgency.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
+import {ITimeAveragedBaseRateOracle} from "./interface/ITimeAveragedBaseRateOracle.sol";
 import {TrueFiFixed64x64} from "./libraries/TrueFiFixed64x64.sol";
 
 interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
@@ -81,6 +82,8 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
     ITrueFiCreditOracle public creditOracle;
 
+    mapping(ITrueFiPool2 => ITimeAveragedBaseRateOracle) public baseRateOracle;
+
     /**
      * This bitmap is used to non-empty buckets.
      * If at least one borrower with a score n has an opened credit line, the n-th bit of the bitmap is set
@@ -101,6 +104,8 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     uint256 public creditScoreUpdateThreshold;
 
     // ======= STORAGE DECLARATION END ============
+
+    event BaseRateOracleChanged(ITrueFiPool2 pool, ITimeAveragedBaseRateOracle oracle);
 
     event RiskPremiumChanged(uint256 newRate);
 
@@ -149,6 +154,11 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     modifier onlyAllowedBorrowers() {
         require(borrowerAllowedUntilTime[msg.sender] >= block.timestamp, "TrueCreditAgency: Sender is not allowed to borrow");
         _;
+    }
+
+    function setBaseRateOracle(ITrueFiPool2 pool, ITimeAveragedBaseRateOracle _baseRateOracle) external onlyOwner {
+        baseRateOracle[pool] = _baseRateOracle;
+        emit BaseRateOracleChanged(pool, _baseRateOracle);
     }
 
     function setRiskPremium(uint256 newRate) external onlyOwner {

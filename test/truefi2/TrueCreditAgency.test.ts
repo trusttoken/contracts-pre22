@@ -4,6 +4,7 @@ import {
   MockTrueCurrency,
   MockUsdc,
   StkTruToken,
+  TimeAveragedBaseRateOracle,
   TrueCreditAgency,
   TrueFiCreditOracle,
   TrueFiPool2,
@@ -41,6 +42,8 @@ describe('TrueCreditAgency', () => {
   let rater: TrueRatingAgencyV2
   let lender: TrueLender2
   let creditOracle: TrueFiCreditOracle
+  let tusdBaseRateOracle: TimeAveragedBaseRateOracle
+  let usdcBaseRateOracle: TimeAveragedBaseRateOracle
   let timeTravel: (time: number) => void
 
   const MONTH = DAY * 31
@@ -71,6 +74,8 @@ describe('TrueCreditAgency', () => {
       lender,
       creditAgency,
       creditOracle,
+      standardBaseRateOracle: tusdBaseRateOracle,
+      feeBaseRateOracle: usdcBaseRateOracle,
     } = await setupTruefi2(owner))
 
     await tusdPool.setCreditAgency(creditAgency.address)
@@ -111,6 +116,24 @@ describe('TrueCreditAgency', () => {
       await creditAgency.connect(borrower).claimOwnership()
       expect(await creditAgency.owner()).to.equal(borrower.address)
       expect(await creditAgency.pendingOwner()).to.equal(AddressZero)
+    })
+  })
+
+  describe('setBaseRateOracle', () => {
+    it('reverts if not called by the owner', async () => {
+      await expect(creditAgency.connect(borrower).setBaseRateOracle(tusdPool.address, usdcBaseRateOracle.address))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('sets base rate oracle', async () => {
+      await creditAgency.setBaseRateOracle(tusdPool.address, usdcBaseRateOracle.address)
+      expect(await creditAgency.baseRateOracle(tusdPool.address)).to.eq(usdcBaseRateOracle.address)
+    })
+
+    it('emits event', async () => {
+      await expect(creditAgency.setBaseRateOracle(tusdPool.address, usdcBaseRateOracle.address))
+        .to.emit(creditAgency, 'BaseRateOracleChanged')
+        .withArgs(tusdPool.address, usdcBaseRateOracle.address)
     })
   })
 
