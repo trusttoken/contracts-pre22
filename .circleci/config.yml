@@ -93,6 +93,13 @@ jobs:
       - attach_workspace:
           at: .
       - run: yarn test:truefi2
+  test-lines-of-credit:
+    docker:
+      - image: cimg/node:16.1.0
+    steps:
+      - attach_workspace:
+          at: .
+      - run: yarn test:lines-of-credit
   deploy:
     docker:
       - image: cimg/node:16.1.0
@@ -126,6 +133,9 @@ workflows:
           requires:
             - build
       - test-truefi2:
+          requires:
+            - build
+      - test-lines-of-credit:
           requires:
             - build
       - test-others:
