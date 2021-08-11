@@ -330,6 +330,10 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         return _currentRate(riskPremium.add(utilizationAdjustmentRate(pool)), creditScoreAdjustmentRate(pool, borrower));
     }
 
+    function getSecuredRate(ITrueFiPool2 pool) public view returns (uint256) {
+        return baseRateOracle[pool].getWeeklyAPY();
+    }
+
     /**
      * @dev Helper function used by poke() to save gas by calculating partial terms of the total rate
      * @param partialRate risk premium + utilization adjustment rate

@@ -20,11 +20,12 @@ import {
   parseUSDC,
   setupTruefi2,
   timeTravel as _timeTravel,
+  updateRateOracle,
   YEAR,
 } from 'utils'
 import { expect } from 'chai'
 import { AddressZero } from '@ethersproject/constants'
-import { MockProvider } from 'ethereum-waffle'
+import { MockContract, MockProvider } from 'ethereum-waffle'
 
 describe('TrueCreditAgency', () => {
   let provider: MockProvider
@@ -44,6 +45,7 @@ describe('TrueCreditAgency', () => {
   let creditOracle: TrueFiCreditOracle
   let tusdBaseRateOracle: TimeAveragedBaseRateOracle
   let usdcBaseRateOracle: TimeAveragedBaseRateOracle
+  let mockSpotOracle: MockContract
   let timeTravel: (time: number) => void
 
   const MONTH = DAY * 31
@@ -55,6 +57,14 @@ describe('TrueCreditAgency', () => {
     await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
 
     await creditAgency.connect(borrower).borrow(tusdPool.address, amount)
+  }
+
+  const weeklyFillBaseRateOracle = async (oracle: TimeAveragedBaseRateOracle) => {
+    for (let i = 0; i < 7; i++) {
+      await updateRateOracle(oracle, DAY, provider)
+      const [, , currIndex] = await tusdBaseRateOracle.getTotalsBuffer()
+      expect(currIndex).to.eq(i + 1)
+    }
   }
 
   beforeEachWithFixture(async (wallets, _provider) => {
@@ -76,6 +86,7 @@ describe('TrueCreditAgency', () => {
       creditOracle,
       standardBaseRateOracle: tusdBaseRateOracle,
       feeBaseRateOracle: usdcBaseRateOracle,
+      mockSpotOracle,
     } = await setupTruefi2(owner))
 
     await tusdPool.setCreditAgency(creditAgency.address)
@@ -88,6 +99,9 @@ describe('TrueCreditAgency', () => {
     await creditOracle.setScore(borrower.address, 255)
     await creditOracle.setMaxBorrowerLimit(owner.address, parseEth(100_000_000))
     await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
+
+    await mockSpotOracle.mock.getRate.withArgs(tusd.address).returns(300)
+    await weeklyFillBaseRateOracle(tusdBaseRateOracle)
   })
 
   describe('initializer', () => {
@@ -732,6 +746,18 @@ describe('TrueCreditAgency', () => {
         expect(await creditAgency.utilizationAdjustmentRate(tusdPool.address)).to.eq(adjustment)
       }),
     )
+  })
+
+  describe('getSecuredRate', () => {
+    it('gets rate from oracle', async () => {
+      expect(await creditAgency.getSecuredRate(tusdPool.address)).to.eq(300)
+    })
+
+    it('gets changed rate after update', async () => {
+      await mockSpotOracle.mock.getRate.withArgs(tusd.address).returns(307)
+      await updateRateOracle(tusdBaseRateOracle, DAY, provider)
+      expect(await creditAgency.getSecuredRate(tusdPool.address)).to.eq(301)
+    })
   })
 
   describe('currentRate', () => {
