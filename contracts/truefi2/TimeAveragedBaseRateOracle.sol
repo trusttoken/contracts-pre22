@@ -29,6 +29,8 @@ contract TimeAveragedBaseRateOracle is UpgradeableClaimable {
 
     RunningTotalsBuffer public totalsBuffer;
 
+    event SpotBaseRateOracleChanged(address newSpotOracle);
+
     /**
      * @dev Throws if cooldown is on when updating the totalsBuffer
      */
@@ -52,6 +54,11 @@ contract TimeAveragedBaseRateOracle is UpgradeableClaimable {
 
     function bufferSize() public virtual pure returns (uint16) {
         return BUFFER_SIZE;
+    }
+
+    function setSpotOracle(address newSpotOracle) public onlyOwner {
+        spotOracle = SpotBaseRateOracle(newSpotOracle);
+        emit SpotBaseRateOracleChanged(newSpotOracle);
     }
 
     function isOffCooldown() public view returns (bool) {

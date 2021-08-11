@@ -20,6 +20,7 @@ use(solidity)
 describe('TimeAveragedBaseRateOracle', () => {
   let provider: MockProvider
   let owner: Wallet
+  let notOwner: Wallet
   let asset: MockErc20Token
 
   let mockSpotOracle: MockContract
@@ -32,7 +33,7 @@ describe('TimeAveragedBaseRateOracle', () => {
   const COOLDOWN_TIME = DAY
 
   beforeEachWithFixture(async (wallets, _provider) => {
-    [owner] = wallets
+    [owner, notOwner] = wallets
     provider = _provider
     const deployContract = setupDeploy(owner)
 
@@ -71,6 +72,30 @@ describe('TimeAveragedBaseRateOracle', () => {
     it('fills up one field in historical buffer', async () => {
       const [, timestamps] = await timeBaseRateOracle.getTotalsBuffer()
       expect(timestamps[0]).to.eq(INITIAL_TIMESTAMP)
+    })
+  })
+
+  describe('setSpotOracle', () => {
+    let newSpotOracle: MockContract
+
+    beforeEach(async () => {
+      newSpotOracle = await deployMockContract(owner, SpotBaseRateOracleJson.abi)
+    })
+
+    it('only owner can set spot oracle', async () => {
+      await expect(timeBaseRateOracle.connect(notOwner).setSpotOracle(newSpotOracle.address))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('spot oracle is properly set', async () => {
+      await timeBaseRateOracle.setSpotOracle(newSpotOracle.address)
+      expect(await timeBaseRateOracle.spotOracle()).to.eq(newSpotOracle.address)
+    })
+
+    it('emits a proper event', async () => {
+      await expect(timeBaseRateOracle.setSpotOracle(newSpotOracle.address))
+        .to.emit(timeBaseRateOracle, 'SpotBaseRateOracleChanged')
+        .withArgs(newSpotOracle.address)
     })
   })
 
