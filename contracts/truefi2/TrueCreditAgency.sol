@@ -327,7 +327,11 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     }
 
     function currentRate(ITrueFiPool2 pool, address borrower) external view returns (uint256) {
-        return _currentRate(riskPremium.add(utilizationAdjustmentRate(pool)), creditScoreAdjustmentRate(pool, borrower));
+        return
+            _currentRate(
+                riskPremium.add(utilizationAdjustmentRate(pool)).add(getSecuredRate(pool)),
+                creditScoreAdjustmentRate(pool, borrower)
+            );
     }
 
     function getSecuredRate(ITrueFiPool2 pool) public view returns (uint256) {
@@ -336,7 +340,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
     /**
      * @dev Helper function used by poke() to save gas by calculating partial terms of the total rate
-     * @param partialRate risk premium + utilization adjustment rate
+     * @param partialRate risk premium + utilization adjustment rate + secured rate
      * @param __creditScoreAdjustmentRate credit score adjustment
      * @return sum of addends capped by MAX_RATE_CAP
      */
@@ -397,7 +401,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     function poke(ITrueFiPool2 pool) public {
         uint256 bitMap = usedBucketsBitmap;
         uint256 timeNow = block.timestamp;
-        uint256 partialRate = riskPremium.add(utilizationAdjustmentRate(pool));
+        uint256 partialRate = riskPremium.add(utilizationAdjustmentRate(pool)).add(getSecuredRate(pool));
 
         for (uint16 i = 0; i <= MAX_CREDIT_SCORE; (i++, bitMap >>= 1)) {
             if (bitMap & 1 == 0) {
@@ -410,7 +414,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
     function pokeSingleBucket(ITrueFiPool2 pool, uint8 bucketNumber) internal {
         uint256 timeNow = block.timestamp;
-        uint256 partialRate = riskPremium.add(utilizationAdjustmentRate(pool));
+        uint256 partialRate = riskPremium.add(utilizationAdjustmentRate(pool)).add(getSecuredRate(pool));
 
         _pokeSingleBucket(pool, bucketNumber, timeNow, partialRate);
     }
