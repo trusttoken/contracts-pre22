@@ -62,7 +62,7 @@ describe('TimeAveragedBaseRateOracle', () => {
     return (await provider.getBlock('latest')).timestamp
   }
 
-  describe('Constructor', () => {
+  describe('initializer', () => {
     it('correctly sets fields', async () => {
       expect(await timeBaseRateOracle.spotOracle()).to.eq(mockSpotOracle.address)
       expect(await timeBaseRateOracle.asset()).to.eq(asset.address)
