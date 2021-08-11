@@ -401,7 +401,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     function poke(ITrueFiPool2 pool) public {
         uint256 bitMap = usedBucketsBitmap;
         uint256 timeNow = block.timestamp;
-        uint256 poolRate = securedRate(pool).add(riskPremium).add(utilizationAdjustmentRate(pool));
+        uint256 poolRate = _poolRate(pool);
 
         for (uint16 i = 0; i <= MAX_CREDIT_SCORE; (i++, bitMap >>= 1)) {
             if (bitMap & 1 == 0) {
@@ -414,9 +414,8 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
     function pokeSingleBucket(ITrueFiPool2 pool, uint8 bucketNumber) internal {
         uint256 timeNow = block.timestamp;
-        uint256 poolRate = securedRate(pool).add(riskPremium).add(utilizationAdjustmentRate(pool));
 
-        _pokeSingleBucket(pool, bucketNumber, timeNow, poolRate);
+        _pokeSingleBucket(pool, bucketNumber, timeNow, _poolRate(pool));
     }
 
     function _pokeSingleBucket(
@@ -559,6 +558,10 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         address borrower
     ) internal view returns (uint256) {
         return _totalBorrowerInterest(pool, bucket, borrower).sub(borrowerTotalPaidInterest[pool][borrower]);
+    }
+
+    function _poolRate(ITrueFiPool2 pool) internal view returns (uint256) {
+        return securedRate(pool).add(riskPremium).add(utilizationAdjustmentRate(pool));
     }
 
     function _payInterestWithoutTransfer(ITrueFiPool2 pool, uint256 amount) internal {
