@@ -14,12 +14,23 @@ import {
   TrueCreditAgency__factory,
   TrueFiCreditOracle__factory,
   TimeAveragedBaseRateOracle__factory,
+  TimeAveragedBaseRateOracle,
 } from 'contracts'
 import { Wallet } from 'ethers'
-import { parseTRU, weeklyFillBaseRateOracles, YEAR } from '.'
+import { parseTRU, timeTravelTo, YEAR } from '.'
 import { deployMockContract, MockProvider } from 'ethereum-waffle'
 import { SpotBaseRateOracleJson } from 'build'
 import { DAY } from './constants'
+
+const weeklyFillBaseRateOracles = async (tusdOracle: TimeAveragedBaseRateOracle, usdcOracle: TimeAveragedBaseRateOracle, provider: MockProvider) => {
+  for (let i = 0; i < 7; i++) {
+    const [, timestamps, currIndex] = await tusdOracle.getTotalsBuffer()
+    const newestTimestamp = timestamps[currIndex].toNumber()
+    await timeTravelTo(provider, newestTimestamp + DAY - 1)
+    await tusdOracle.update()
+    await usdcOracle.update()
+  }
+}
 
 export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, customDeployed?: any) => {
   const deployContract = setupDeploy(owner)

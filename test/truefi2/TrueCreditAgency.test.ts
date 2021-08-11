@@ -1109,7 +1109,7 @@ describe('TrueCreditAgency', () => {
       expect(await creditAgency.interest(tusdPool.address, borrower.address)).to.be.closeTo(parseUSDC(20), 1e5) // 20 = 2*(10% * 36500 / 365)
 
       await timeTravel(DAY)
-      expect(await creditAgency.interest(tusdPool.address, borrower.address)).to.be.closeTo(parseUSDC(31), 1e5) // 21 = 2*(10% * 36500 / 365) + (11% * 36500 / 365)
+      expect(await creditAgency.interest(tusdPool.address, borrower.address)).to.be.closeTo(parseUSDC(31), 1e5) // 31 = 2*(10% * 36500 / 365) + (11% * 36500 / 365)
     })
 
     it('interest for multiple borrowers', async () => {
