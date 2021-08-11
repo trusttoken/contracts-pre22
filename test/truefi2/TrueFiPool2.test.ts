@@ -69,7 +69,7 @@ describe('TrueFiPool2', () => {
       safu,
       creditAgency,
       creditOracle,
-    } = await setupTruefi2(owner))
+    } = await setupTruefi2(owner, provider))
 
     loan = await createApprovedLoan(rater, tru, stkTru, loanFactory, borrower, tusdPool, 500000, DAY, 1000, owner, provider)
 
@@ -84,7 +84,7 @@ describe('TrueFiPool2', () => {
     await creditOracle.setScore(borrower.address, 255)
     await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
     await creditAgency.allowBorrower(borrower.address, YEAR * 10)
-    await creditAgency.setRiskPremium(1000)
+    await creditAgency.setRiskPremium(700)
   })
 
   const currencyBalanceOf = async (pool: TrueFiPool2) => (

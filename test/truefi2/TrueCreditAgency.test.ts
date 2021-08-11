@@ -20,7 +20,6 @@ import {
   parseUSDC,
   setupTruefi2,
   timeTravel as _timeTravel,
-  timeTravelTo,
   updateRateOracle,
   YEAR,
 } from 'utils'
@@ -60,16 +59,6 @@ describe('TrueCreditAgency', () => {
     await creditAgency.connect(borrower).borrow(tusdPool.address, amount)
   }
 
-  const weeklyFillBaseRateOracles = async (tusdOracle: TimeAveragedBaseRateOracle, usdcOracle: TimeAveragedBaseRateOracle) => {
-    for (let i = 0; i < 7; i++) {
-      const [, timestamps, currIndex] = await tusdOracle.getTotalsBuffer()
-      const newestTimestamp = timestamps[currIndex].toNumber()
-      await timeTravelTo(provider, newestTimestamp + DAY - 1)
-      await tusdOracle.update()
-      await usdcOracle.update()
-    }
-  }
-
   beforeEachWithFixture(async (wallets, _provider) => {
     [owner, borrower, borrower2] = wallets
     timeTravel = (time: number) => _timeTravel(_provider, time)
@@ -90,7 +79,7 @@ describe('TrueCreditAgency', () => {
       standardBaseRateOracle: tusdBaseRateOracle,
       feeBaseRateOracle: usdcBaseRateOracle,
       mockSpotOracle,
-    } = await setupTruefi2(owner))
+    } = await setupTruefi2(owner, provider))
 
     await tusdPool.setCreditAgency(creditAgency.address)
     await creditAgency.allowPool(tusdPool.address, true)
@@ -102,10 +91,6 @@ describe('TrueCreditAgency', () => {
     await creditOracle.setScore(borrower.address, 255)
     await creditOracle.setMaxBorrowerLimit(owner.address, parseEth(100_000_000))
     await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
-
-    await mockSpotOracle.mock.getRate.withArgs(tusd.address).returns(300)
-    await mockSpotOracle.mock.getRate.withArgs(usdc.address).returns(300)
-    await weeklyFillBaseRateOracles(tusdBaseRateOracle, usdcBaseRateOracle)
   })
 
   describe('initializer', () => {

@@ -84,7 +84,7 @@ describe('TrueRatingAgencyV2', () => {
       loanFactory,
       feePool: usdcPool,
       standardPool: tusdPool,
-    } = await setupTruefi2(owner))
+    } = await setupTruefi2(owner, _provider))
 
     await rater.setRatersRewardFactor(10000)
 

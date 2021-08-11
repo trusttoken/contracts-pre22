@@ -16,12 +16,12 @@ import {
   TimeAveragedBaseRateOracle__factory,
 } from 'contracts'
 import { Wallet } from 'ethers'
-import { parseTRU, YEAR } from '.'
-import { deployMockContract } from 'ethereum-waffle'
+import { parseTRU, weeklyFillBaseRateOracles, YEAR } from '.'
+import { deployMockContract, MockProvider } from 'ethereum-waffle'
 import { SpotBaseRateOracleJson } from 'build'
 import { DAY } from './constants'
 
-export const setupTruefi2 = async (owner: Wallet, customDeployed?: any) => {
+export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, customDeployed?: any) => {
   const deployContract = setupDeploy(owner)
 
   // ====== DEPLOY ======
@@ -74,6 +74,10 @@ export const setupTruefi2 = async (owner: Wallet, customDeployed?: any) => {
 
   await creditAgency.setBaseRateOracle(standardPool.address, standardBaseRateOracle.address)
   await creditAgency.setBaseRateOracle(feePool.address, feeBaseRateOracle.address)
+
+  await mockSpotOracle.mock.getRate.withArgs(standardToken.address).returns(300)
+  await mockSpotOracle.mock.getRate.withArgs(feeToken.address).returns(300)
+  await weeklyFillBaseRateOracles(standardBaseRateOracle, feeBaseRateOracle, provider)
 
   await liquidator.setTokenApproval(feeToken.address, true)
   await liquidator.setTokenApproval(standardToken.address, true)
