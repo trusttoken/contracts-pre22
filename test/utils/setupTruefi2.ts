@@ -13,9 +13,13 @@ import {
   MockUsdc__factory,
   TrueCreditAgency__factory,
   TrueFiCreditOracle__factory,
+  TimeAveragedBaseRateOracle__factory,
 } from 'contracts'
 import { Wallet } from 'ethers'
 import { parseTRU, YEAR } from '.'
+import { deployMockContract } from 'ethereum-waffle'
+import { SpotBaseRateOracleJson } from 'build'
+import { DAY } from './constants'
 
 export const setupTruefi2 = async (owner: Wallet, customDeployed?: any) => {
   const deployContract = setupDeploy(owner)
@@ -40,6 +44,8 @@ export const setupTruefi2 = async (owner: Wallet, customDeployed?: any) => {
   const feeTokenOracle = await deployContract(MockTrueFiPoolOracle__factory, feeToken.address)
   const standardTokenOracle = await deployContract(MockTrueFiPoolOracle__factory, standardToken.address)
   const creditOracle = await deployContract(TrueFiCreditOracle__factory)
+  const baseRateOracle = await deployContract(TimeAveragedBaseRateOracle__factory)
+  const mockSpotOracle = await deployMockContract(owner, SpotBaseRateOracleJson.abi)
   const linearDistributor = await deployContract(LinearTrueDistributor__factory)
   const arbitraryDistributor = await deployContract(ArbitraryDistributor__factory)
 
@@ -52,6 +58,7 @@ export const setupTruefi2 = async (owner: Wallet, customDeployed?: any) => {
   await safu.initialize(loanFactory.address, liquidator.address, customDeployed?.oneInch ? customDeployed.oneInch.address : AddressZero)
   await poolFactory.initialize(implementationReference.address, lender.address, safu.address)
   await creditAgency.initialize(creditOracle.address, 100)
+  await baseRateOracle.initialize(mockSpotOracle.address, standardToken.address, DAY)
 
   await poolFactory.allowToken(feeToken.address, true)
   await poolFactory.createPool(feeToken.address)
@@ -98,5 +105,7 @@ export const setupTruefi2 = async (owner: Wallet, customDeployed?: any) => {
     safu,
     creditAgency,
     creditOracle,
+    mockSpotOracle,
+    baseRateOracle,
   }
 }

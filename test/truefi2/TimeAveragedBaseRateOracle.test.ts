@@ -2,7 +2,7 @@ import { expect, use } from 'chai'
 import { solidity, deployMockContract, MockContract, MockProvider } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
 import { setupDeploy } from 'scripts/utils'
-import { DAY, timeTravel, timeTravelTo } from 'utils'
+import { DAY, timeTravel, timeTravelTo, updateRateOracle } from 'utils'
 import { beforeEachWithFixture } from 'utils/beforeEachWithFixture'
 
 import {
@@ -51,10 +51,7 @@ describe('TimeAveragedBaseRateOracle', () => {
   })
 
   const updateBufferRightAfterCooldown = async (oracle: TimeAveragedBaseRateOracle | TestTimeAveragedBaseRateOracle) => {
-    const [, timestamps, currIndex] = await oracle.getTotalsBuffer()
-    const newestTimestamp = timestamps[currIndex].toNumber()
-    await timeTravelTo(provider, newestTimestamp + COOLDOWN_TIME - 1)
-    await oracle.update()
+    await updateRateOracle(oracle, COOLDOWN_TIME, provider)
   }
 
   const getCurrentTimestamp = async () => {
