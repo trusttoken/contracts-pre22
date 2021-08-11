@@ -74,7 +74,6 @@ describe('TrueCreditAgency', () => {
     [owner, borrower, borrower2] = wallets
     timeTravel = (time: number) => _timeTravel(_provider, time)
     provider = _provider
-    await provider.send('hardhat_reset', [])
 
     ;({
       standardToken: tusd,
@@ -1084,7 +1083,7 @@ describe('TrueCreditAgency', () => {
       expect(await creditAgency.interest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(200), 2)
     })
 
-    it('interest for single borrower, rate changes', async () => {
+    it('interest for single borrower, risk premium changes', async () => {
       await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
       await timeTravel(YEAR)
       expect(await creditAgency.interest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(100), 2)
@@ -1110,6 +1109,22 @@ describe('TrueCreditAgency', () => {
       await creditAgency.updateCreditScore(tusdPool.address, borrower.address)
       await timeTravel(YEAR)
       expect(await creditAgency.interest(tusdPool.address, borrower.address)).to.be.closeTo(BigNumber.from(397), 2)
+    })
+
+    it('interest for single borrower, secured rate changes', async () => {
+      await creditAgency.connect(borrower).borrow(tusdPool.address, parseUSDC(36500))
+      await updateRateOracle(tusdBaseRateOracle, DAY, provider)
+      await creditAgency.poke(tusdPool.address)
+
+      expect(await creditAgency.interest(tusdPool.address, borrower.address)).to.be.closeTo(parseUSDC(10), 1e5) // 10 = 10% * 36500 / 365
+
+      await mockSpotOracle.mock.getRate.withArgs(tusd.address).returns(1000) // this will increase average by 1%
+      await updateRateOracle(tusdBaseRateOracle, DAY, provider)
+      await creditAgency.poke(tusdPool.address)
+      expect(await creditAgency.interest(tusdPool.address, borrower.address)).to.be.closeTo(parseUSDC(20), 1e5) // 20 = 2*(10% * 36500 / 365)
+
+      await timeTravel(DAY)
+      expect(await creditAgency.interest(tusdPool.address, borrower.address)).to.be.closeTo(parseUSDC(31), 1e5) // 21 = 2*(10% * 36500 / 365) + (11% * 36500 / 365)
     })
 
     it('interest for multiple borrowers', async () => {
