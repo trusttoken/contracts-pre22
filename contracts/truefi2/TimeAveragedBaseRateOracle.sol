@@ -12,13 +12,6 @@ contract TimeAveragedBaseRateOracle is UpgradeableClaimable, ITimeAveragedBaseRa
 
     uint16 public constant BUFFER_SIZE = 365 + 1;
 
-    SpotBaseRateOracle public spotOracle;
-    address public asset;
-
-    // A fixed amount of time to wait
-    // to be able to update the totalsBuffer
-    uint256 public cooldownTime;
-
     // A cyclic buffer structure for storing running total (cumulative sum)
     // values and their respective timestamps.
     // currIndex points to the previously inserted value.
@@ -28,7 +21,24 @@ contract TimeAveragedBaseRateOracle is UpgradeableClaimable, ITimeAveragedBaseRa
         uint16 currIndex;
     }
 
+    // ================ WARNING ==================
+    // ===== THIS CONTRACT IS INITIALIZABLE ======
+    // === STORAGE VARIABLES ARE DECLARED BELOW ==
+    // REMOVAL OR REORDER OF VARIABLES WILL RESULT
+    // ========= IN STORAGE CORRUPTION ===========
+
+    SpotBaseRateOracle public spotOracle;
+    address public asset;
+
+    // A fixed amount of time to wait
+    // to be able to update the totalsBuffer
+    uint256 public cooldownTime;
+
     RunningTotalsBuffer public totalsBuffer;
+
+    // ======= STORAGE DECLARATION END ===========
+
+    event SpotBaseRateOracleChanged(SpotBaseRateOracle newSpotOracle);
 
     /**
      * @dev Throws if cooldown is on when updating the totalsBuffer
@@ -53,6 +63,11 @@ contract TimeAveragedBaseRateOracle is UpgradeableClaimable, ITimeAveragedBaseRa
 
     function bufferSize() public virtual pure returns (uint16) {
         return BUFFER_SIZE;
+    }
+
+    function setSpotOracle(SpotBaseRateOracle newSpotOracle) public onlyOwner {
+        spotOracle = newSpotOracle;
+        emit SpotBaseRateOracleChanged(newSpotOracle);
     }
 
     function isOffCooldown() public view returns (bool) {
@@ -120,7 +135,10 @@ contract TimeAveragedBaseRateOracle is UpgradeableClaimable, ITimeAveragedBaseRa
         uint16 _currIndex = totalsBuffer.currIndex;
         uint16 startIndex = (_currIndex + bufferSize() - numberOfValues) % bufferSize();
 
-        require(totalsBuffer.timestamps[startIndex] > 0, "TimeAveragedBaseRateOracle: There are fewer values stored than required");
+        if (totalsBuffer.timestamps[startIndex] == 0) {
+            require(_currIndex > 0, "TimeAveragedBaseRateOracle: Cannot use buffer before any update call");
+            startIndex = 0;
+        }
 
         uint256 diff = totalsBuffer.runningTotals[_currIndex].sub(totalsBuffer.runningTotals[startIndex]);
         uint256 dt = totalsBuffer.timestamps[_currIndex].sub(totalsBuffer.timestamps[startIndex]);
