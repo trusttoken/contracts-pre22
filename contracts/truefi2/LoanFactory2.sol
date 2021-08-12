@@ -106,7 +106,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         emit LoanTokenCreated(newToken);
     }
 
-    function setCreditOracle(ITrueFiCreditOracle _creditOracle) external onlyAdmin() {
+    function setCreditOracle(ITrueFiCreditOracle _creditOracle) external onlyAdmin {
         creditOracle = _creditOracle;
         emit CreditOracleChanged(_creditOracle);
     }
