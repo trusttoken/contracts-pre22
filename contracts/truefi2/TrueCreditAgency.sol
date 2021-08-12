@@ -435,7 +435,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     }
 
     function _hasOverdueInterest(ITrueFiPool2 pool, address borrower) private view returns (bool) {
-        return interest(pool, borrower) != 0 && block.timestamp >= nextInterestRepayTime[pool][borrower];
+        return borrowed[pool][borrower] > 0 && block.timestamp >= nextInterestRepayTime[pool][borrower];
     }
 
     function _rebucket(
