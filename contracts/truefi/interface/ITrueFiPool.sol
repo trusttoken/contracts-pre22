@@ -23,14 +23,6 @@ interface ITrueFiPool is IERC20 {
     function join(uint256 amount) external;
 
     /**
-     * @dev exit pool
-     * 1. Transfer pool tokens from sender
-     * 2. Burn pool tokens
-     * 3. Transfer value of pool tokens in TUSD to sender
-     */
-    function exit(uint256 amount) external;
-
-    /**
      * @dev borrow from pool
      * 1. Transfer TUSD to sender
      * 2. Only lending pool should be allowed to call this
