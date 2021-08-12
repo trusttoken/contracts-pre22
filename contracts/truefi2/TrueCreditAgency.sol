@@ -5,8 +5,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import {ERC20, IERC20, SafeMath} from "../common/UpgradeableERC20.sol";
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 
-import {CreditLineRate} from "./CreditLineRate.sol";
-
+import {ITrueRateAdjuster} from "./interface/ITrueRateAdjuster.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {ITrueCreditAgency} from "./interface/ITrueCreditAgency.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
@@ -73,7 +72,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
     uint256 public gracePeriod;
 
-    CreditLineRate public rater;
+    ITrueRateAdjuster public rater;
 
     BorrowLimitConfig public borrowLimitConfig;
 
@@ -104,7 +103,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
     event BaseRateOracleChanged(ITrueFiPool2 pool, ITimeAveragedBaseRateOracle oracle);
 
-    event RaterChanged(CreditLineRate newRater);
+    event TrueRateAdjusterChanged(ITrueRateAdjuster newRater);
 
     event BorrowerAllowed(address indexed who, uint256 timePeriod);
 
@@ -129,10 +128,10 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         uint16 poolValueLimitCoefficient
     );
 
-    function initialize(ITrueFiCreditOracle _creditOracle, uint256 _riskPremium) public initializer {
+    function initialize(ITrueFiCreditOracle _creditOracle, ITrueRateAdjuster _rater) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
         creditOracle = _creditOracle;
-        rater = new CreditLineRate(_riskPremium);
+        rater = _rater;
         borrowLimitConfig = BorrowLimitConfig(40, 7500, 1500, 1500);
         interestRepaymentPeriod = 31 days;
         gracePeriod = 3 days;
@@ -144,19 +143,10 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         _;
     }
 
-    function setRater(CreditLineRate newRater) external onlyOwner {
+    function setRater(ITrueRateAdjuster newRater) external onlyOwner {
         rater = newRater;
-        rater.claimOwnership();
-    }
-
-    function setBaseRateOracle(ITrueFiPool2 pool, ITimeAveragedBaseRateOracle _baseRateOracle) external onlyOwner {
-        baseRateOracle[pool] = _baseRateOracle;
-        emit BaseRateOracleChanged(pool, _baseRateOracle);
-    }
-
-    function setRiskPremium(uint256 newRate) external onlyOwner {
-        rater.setRiskPremium(newRate);
         pokeAll();
+        emit TrueRateAdjusterChanged(newRater);
     }
 
     function setInterestRepaymentPeriod(uint256 newPeriod) external onlyOwner {
@@ -177,21 +167,6 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     ) external onlyOwner {
         borrowLimitConfig = BorrowLimitConfig(scoreFloor, limitAdjustmentPower, tvlLimitCoefficient, poolValueLimitCoefficient);
         emit BorrowLimitConfigChanged(scoreFloor, limitAdjustmentPower, tvlLimitCoefficient, poolValueLimitCoefficient);
-    }
-
-    function setCreditAdjustmentCoefficient(uint256 newCoefficient) external onlyOwner {
-        rater.setCreditAdjustmentCoefficient(newCoefficient);
-        pokeAll();
-    }
-
-    function setUtilizationAdjustmentCoefficient(uint256 newCoefficient) external onlyOwner {
-        rater.setUtilizationAdjustmentCoefficient(newCoefficient);
-        pokeAll();
-    }
-
-    function setUtilizationAdjustmentPower(uint256 newValue) external onlyOwner {
-        rater.setUtilizationAdjustmentPower(newValue);
-        pokeAll();
     }
 
     function setMinCreditScore(uint256 newValue) external onlyOwner {

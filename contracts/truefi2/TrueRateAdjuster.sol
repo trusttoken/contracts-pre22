@@ -5,7 +5,7 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 
-contract CreditLineRate is UpgradeableClaimable {
+contract TrueRateAdjuster is UpgradeableClaimable {
     using SafeMath for uint256;
 
     uint256 constant MAX_RATE_CAP = 50000;
