@@ -105,7 +105,7 @@ describe('LoanFactory2', () => {
     })
   })
 
-  describe('fixTermLoanAdjustment', () => {
+  describe('fixedTermLoanAdjustment', () => {
     beforeEach(async () => {
       await factory.setAdjustmentCoefficient(25)
     })
@@ -118,7 +118,7 @@ describe('LoanFactory2', () => {
       [60 * DAY, 50],
     ].map(([term, adjustment]) =>
       it(`returns adjustment of ${adjustment} basis points for term of ${term / DAY} days`, async () => {
-        expect(await factory.fixTermLoanAdjustment(term)).to.eq(adjustment)
+        expect(await factory.fixedTermLoanAdjustment(term)).to.eq(adjustment)
       }),
     )
   })

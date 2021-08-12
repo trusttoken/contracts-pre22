@@ -80,7 +80,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         emit AdjustmentCoefficientChanged(newCoefficient);
     }
 
-    function fixTermLoanAdjustment(uint256 term) public view returns (uint256) {
+    function fixedTermLoanAdjustment(uint256 term) public view returns (uint256) {
         return term.div(30 days).mul(adjustmentCoefficient);
     }
 
