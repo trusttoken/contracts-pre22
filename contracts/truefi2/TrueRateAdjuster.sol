@@ -83,11 +83,15 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     }
 
     function poolBasicRate(ITrueFiPool2 pool) public override view returns (uint256) {
-        return min(riskPremium.add(securedRate(pool)).add(utilizationAdjustmentRate(pool)), MAX_RATE_CAP);
+        return _poolBasicRate(pool, utilizationAdjustmentRate(pool));
     }
 
     function proFormaPoolBasicRate(ITrueFiPool2 pool, uint256 amount) public view returns (uint256) {
-        return min(riskPremium.add(securedRate(pool)).add(proFormaUtilizationAdjustmentRate(pool, amount)), MAX_RATE_CAP);
+        return _poolBasicRate(pool, proFormaUtilizationAdjustmentRate(pool, amount));
+    }
+
+    function _poolBasicRate(ITrueFiPool2 pool, uint256 _utilizationAdjustmentRate) internal view returns (uint256) {
+        return min(riskPremium.add(securedRate(pool)).add(_utilizationAdjustmentRate), MAX_RATE_CAP);
     }
 
     function securedRate(ITrueFiPool2 pool) public override view returns (uint256) {
