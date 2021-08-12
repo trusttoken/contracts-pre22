@@ -113,7 +113,7 @@ deploy({}, (_, config) => {
     trueLender2.setVotingPeriod(deployParams[NETWORK].WITHDRAW_PERIOD)
   })
   runIf(loanFactory2.isInitialized().not(), () => {
-    loanFactory2.initialize(poolFactory, trueLender2, liquidator2)
+    loanFactory2.initialize(poolFactory, trueLender2, liquidator2, AddressZero)
   })
   runIf(liquidator2.isInitialized().not(), () => {
     liquidator2.initialize(stkTruToken, trustToken, loanFactory2, AddressZero)
