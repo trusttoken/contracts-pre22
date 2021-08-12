@@ -184,8 +184,10 @@ describe('TrueFiCreditOracle', () => {
     })
 
     it('emits a proper event', async () => {
-      await expect(oracle.setEligibleForDuration(borrower.address, 10 * DAY))
-        .to.emit(oracle, 'EligibleUntilTimeChanged')
+      const tx = await oracle.setEligibleForDuration(borrower.address, 10 * DAY)
+      const timestamp = BigNumber.from((await provider.getBlock(tx.blockNumber)).timestamp)
+      expect(tx).to.emit(oracle, 'EligibleUntilTimeChanged')
+        .withArgs(borrower.address, timestamp.add(10 * DAY))
     })
   })
 
@@ -205,8 +207,10 @@ describe('TrueFiCreditOracle', () => {
     })
 
     it('emits a proper event', async () => {
-      await expect(oracle.setOnHold(borrower.address))
-        .to.emit(oracle, 'EligibleUntilTimeChanged')
+      const tx = await oracle.setOnHold(borrower.address)
+      const timestamp = BigNumber.from((await provider.getBlock(tx.blockNumber)).timestamp)
+      expect(tx).to.emit(oracle, 'EligibleUntilTimeChanged')
+        .withArgs(borrower.address, timestamp)
     })
   })
 
@@ -226,8 +230,10 @@ describe('TrueFiCreditOracle', () => {
     })
 
     it('emits a proper event', async () => {
-      await expect(oracle.setIneligible(borrower.address))
-        .to.emit(oracle, 'EligibleUntilTimeChanged')
+      const tx = await oracle.setIneligible(borrower.address)
+      const timestamp = BigNumber.from((await provider.getBlock(tx.blockNumber)).timestamp)
+      expect(tx).to.emit(oracle, 'EligibleUntilTimeChanged')
+        .withArgs(borrower.address, timestamp.sub(3 * DAY))
     })
   })
 })
