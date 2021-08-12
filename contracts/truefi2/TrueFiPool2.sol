@@ -672,7 +672,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
         if (_poolValue == 0) {
             return 0;
         }
-        return liquidValue().sub(amount).mul(BASIS_PRECISION).div(_poolValue);
+        return (liquidValue().sub(amount)).mul(BASIS_PRECISION).div(_poolValue);
     }
 
     /**
