@@ -25,6 +25,9 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     // basis precision: 10000 = 100%
     uint256 public riskPremium;
 
+    //@dev Adds to loan apy for each 30 days of its term
+    uint256 public fixedTermLoanAdjustmentCoefficient;
+
     mapping(ITrueFiPool2 => ITimeAveragedBaseRateOracle) public baseRateOracle;
 
     event RiskPremiumChanged(uint256 newRate);
@@ -37,12 +40,15 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
 
     event BaseRateOracleChanged(ITrueFiPool2 pool, ITimeAveragedBaseRateOracle oracle);
 
+    event FixedTermLoanAdjustmentCoefficientChanged(uint256 newCoefficient);
+
     constructor(uint256 _riskPremium) public {
         UpgradeableClaimable.initialize(msg.sender);
         riskPremium = _riskPremium;
         creditAdjustmentCoefficient = 1000;
         utilizationAdjustmentCoefficient = 50;
         utilizationAdjustmentPower = 2;
+        fixedTermLoanAdjustmentCoefficient = 25;
     }
 
     function setRiskPremium(uint256 newRate) external onlyOwner {
@@ -68,6 +74,11 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     function setBaseRateOracle(ITrueFiPool2 pool, ITimeAveragedBaseRateOracle _baseRateOracle) external onlyOwner {
         baseRateOracle[pool] = _baseRateOracle;
         emit BaseRateOracleChanged(pool, _baseRateOracle);
+    }
+
+    function setFixedTermLoanAdjustmentCoefficient(uint256 newCoefficient) external onlyOwner {
+        fixedTermLoanAdjustmentCoefficient = newCoefficient;
+        emit FixedTermLoanAdjustmentCoefficientChanged(newCoefficient);
     }
 
     function rate(ITrueFiPool2 pool, uint8 score) external override view returns (uint256) {

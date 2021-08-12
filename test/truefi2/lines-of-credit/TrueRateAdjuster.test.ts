@@ -15,10 +15,11 @@ use(solidity)
 
 describe('TrueRateAdjuster', () => {
   let owner: Wallet
+  let borrower: Wallet
   let rateAdjuster: TrueRateAdjuster
 
   beforeEachWithFixture(async (wallets) => {
-    [owner] = wallets
+    [owner, borrower] = wallets
 
     const deployContract = setupDeploy(owner)
 
@@ -44,6 +45,24 @@ describe('TrueRateAdjuster', () => {
 
     it('sets utilization adjustment power', async () => {
       expect(await rateAdjuster.utilizationAdjustmentPower()).to.eq(2)
+    })
+  })
+
+  describe('setFixedTermLoanAdjustmentCoefficient', () => {
+    it('reverts if caller is not the owner', async () => {
+      await expect(rateAdjuster.connect(borrower).setFixedTermLoanAdjustmentCoefficient(0))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('sets fixed-term loan adjustment coefficient', async () => {
+      await rateAdjuster.setFixedTermLoanAdjustmentCoefficient(50)
+      expect(await rateAdjuster.fixedTermLoanAdjustmentCoefficient()).to.eq(50)
+    })
+
+    it('emits event', async () => {
+      await expect(rateAdjuster.setFixedTermLoanAdjustmentCoefficient(50))
+        .to.emit(rateAdjuster, 'FixedTermLoanAdjustmentCoefficientChanged')
+        .withArgs(50)
     })
   })
 })
