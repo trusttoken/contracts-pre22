@@ -53,7 +53,7 @@ describe('TrueCreditAgency', () => {
   const PRECISION = BigNumber.from(10).pow(27)
 
   async function setupBorrower (borrower: Wallet, score: number, amount: BigNumberish) {
-    await creditAgency.allowBorrower(borrower.address, YEAR * 10)
+    await creditAgency.allowBorrower(borrower.address, true)
     await creditOracle.setScore(borrower.address, score)
     await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
 
@@ -119,20 +119,20 @@ describe('TrueCreditAgency', () => {
     })
   })
 
-  describe('setGracePeriod', () => {
-    it('only owner can set grace period', async () => {
-      await expect(creditAgency.connect(borrower).setGracePeriod(DAY))
+  describe('setInterestRepaymentPeriod', () => {
+    it('only owner can set repayment period', async () => {
+      await expect(creditAgency.connect(borrower).setInterestRepaymentPeriod(0))
         .to.be.revertedWith('Ownable: caller is not the owner')
     })
 
     it('period is properly set', async () => {
-      await creditAgency.setGracePeriod(DAY)
-      expect(await creditAgency.gracePeriod()).to.equal(DAY)
+      await creditAgency.setInterestRepaymentPeriod(DAY)
+      expect(await creditAgency.interestRepaymentPeriod()).to.equal(DAY)
     })
 
     it('emits a proper event', async () => {
-      await expect(creditAgency.setGracePeriod(DAY))
-        .to.emit(creditAgency, 'GracePeriodChanged')
+      await expect(creditAgency.setInterestRepaymentPeriod(DAY))
+        .to.emit(creditAgency, 'InterestRepaymentPeriodChanged')
         .withArgs(DAY)
     })
   })
@@ -155,41 +155,22 @@ describe('TrueCreditAgency', () => {
     })
   })
 
-  describe('setCreditScoreUpdateThreshold', () => {
-    it('reverts if not called by the owner', async () => {
-      await expect(creditAgency.connect(borrower).setCreditScoreUpdateThreshold(1))
-        .to.be.revertedWith('Ownable: caller is not the owner')
-    })
-
-    it('changes credit score update threshold', async () => {
-      await creditAgency.setCreditScoreUpdateThreshold(1)
-      expect(await creditAgency.creditScoreUpdateThreshold()).to.eq(1)
-    })
-
-    it('emits event', async () => {
-      await expect(creditAgency.setCreditScoreUpdateThreshold(1))
-        .to.emit(creditAgency, 'CreditScoreUpdateThresholdChanged')
-        .withArgs(1)
-    })
-  })
-
   describe('Borrower allowance', () => {
     it('only owner can set allowance', async () => {
-      await expect(creditAgency.connect(borrower).allowBorrower(borrower.address, YEAR))
+      await expect(creditAgency.connect(borrower).allowBorrower(borrower.address, true))
         .to.be.revertedWith('Ownable: caller is not the owner')
     })
 
-    it('allowance time is properly set', async () => {
-      expect(await creditAgency.borrowerAllowedUntilTime(borrower.address)).to.equal(0)
-      const tx = await creditAgency.allowBorrower(borrower.address, YEAR)
-      const timestamp = BigNumber.from((await provider.getBlock(tx.blockNumber)).timestamp)
-      expect(await creditAgency.borrowerAllowedUntilTime(borrower.address)).to.equal(timestamp.add(YEAR))
+    it('allowance is properly set', async () => {
+      expect(await creditAgency.isBorrowerAllowed(borrower.address)).to.equal(false)
+      await creditAgency.allowBorrower(borrower.address, true)
+      expect(await creditAgency.isBorrowerAllowed(borrower.address)).to.equal(true)
     })
 
     it('emits a proper event', async () => {
-      await expect(creditAgency.allowBorrower(borrower.address, YEAR))
+      await expect(creditAgency.allowBorrower(borrower.address, true))
         .to.emit(creditAgency, 'BorrowerAllowed')
-        .withArgs(borrower.address, YEAR)
+        .withArgs(borrower.address, true)
     })
   })
 
@@ -267,7 +248,7 @@ describe('TrueCreditAgency', () => {
     })
 
     it('totalBorrowed returns total borrowed amount across all pools with 18 decimals precision', async () => {
-      await creditAgency.allowBorrower(borrower.address, YEAR)
+      await creditAgency.allowBorrower(borrower.address, true)
       await creditAgency.connect(borrower).borrow(tusdPool.address, parseEth(100))
       await creditAgency.connect(borrower).borrow(usdcPool.address, parseUSDC(500))
       expect(await creditAgency.totalBorrowed(borrower.address, 18)).to.equal(parseEth(600))
@@ -275,14 +256,14 @@ describe('TrueCreditAgency', () => {
 
     it('totalTVL remains unchanged after borrowing', async () => {
       expect(await creditAgency.totalTVL(18)).to.equal(parseEth(3e7))
-      await creditAgency.allowBorrower(borrower.address, YEAR)
+      await creditAgency.allowBorrower(borrower.address, true)
       await creditAgency.connect(borrower).borrow(tusdPool.address, parseEth(100))
       expect(await creditAgency.totalTVL(18)).to.equal(parseEth(3e7))
     })
 
     it('totalTVL scales with credit interest', async () => {
       expect(await creditAgency.totalTVL(18)).to.equal(parseEth(3e7))
-      await creditAgency.allowBorrower(borrower.address, YEAR)
+      await creditAgency.allowBorrower(borrower.address, true)
       await creditAgency.connect(borrower).borrow(tusdPool.address, parseEth(100))
       await timeTravel(YEAR)
       expectScaledCloseTo(await creditAgency.totalTVL(18), parseEth(3e7).add(parseEth(1)))
@@ -291,7 +272,7 @@ describe('TrueCreditAgency', () => {
 
   describe('singleCreditValue', () => {
     beforeEach(async () => {
-      await creditAgency.allowBorrower(borrower.address, YEAR)
+      await creditAgency.allowBorrower(borrower.address, true)
       await rater.setRiskPremium(700)
       await creditOracle.setScore(owner.address, 255)
     })
@@ -350,7 +331,7 @@ describe('TrueCreditAgency', () => {
   describe('Borrow limit', () => {
     beforeEach(async () => {
       await creditOracle.setScore(borrower.address, 191) // adjustment = 0.8051
-      await creditAgency.allowBorrower(borrower.address, YEAR)
+      await creditAgency.allowBorrower(borrower.address, true)
 
       await usdcPool.setCreditAgency(creditAgency.address)
       await creditAgency.allowPool(usdcPool.address, true)
@@ -367,7 +348,7 @@ describe('TrueCreditAgency', () => {
     })
 
     it('borrow amount is limited by total TVL', async () => {
-      await usdcPool.exit(parseUSDC(19e6))
+      await usdcPool.liquidExit(parseUSDC(19e6))
       const maxTVLLimit = (await creditAgency.totalTVL(18)).mul(15).div(100)
       expect(await creditAgency.borrowLimit(tusdPool.address, borrower.address)).to.equal(maxTVLLimit.mul(8051).div(10000))
     })
@@ -387,16 +368,18 @@ describe('TrueCreditAgency', () => {
       expect(await creditAgency.borrowLimit(usdcPool.address, borrower.address)).to.be.closeTo(parseUSDC(0), oneUSDC)
     })
 
-    it('borrow limit is 0 if credit limit is above the borrowed amount', async () => {
+    it('borrow limit is 0 if credit limit is below the borrowed amount', async () => {
+      await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100))
       await creditAgency.connect(borrower).borrow(usdcPool.address, parseUSDC(80))
-      await usdcPool.exit(parseUSDC(2e7).sub(parseUSDC(80)))
+      expect(await creditAgency.borrowLimit(usdcPool.address, borrower.address)).to.be.gt(parseUSDC(0))
+      await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(95))
       expect(await creditAgency.borrowLimit(usdcPool.address, borrower.address)).to.equal(parseUSDC(0))
     })
   })
 
   describe('Borrowing', () => {
     beforeEach(async () => {
-      await creditAgency.allowBorrower(borrower.address, YEAR)
+      await creditAgency.allowBorrower(borrower.address, true)
     })
 
     it('borrows funds from the pool', async () => {
@@ -405,7 +388,7 @@ describe('TrueCreditAgency', () => {
     })
 
     it('fails if borrower is not whitelisted', async () => {
-      await creditAgency.allowBorrower(borrower.address, 0)
+      await creditAgency.allowBorrower(borrower.address, false)
       await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000))
         .to.be.revertedWith('TrueCreditAgency: Sender is not allowed to borrow')
     })
@@ -418,23 +401,18 @@ describe('TrueCreditAgency', () => {
     })
 
     it('fails if the credit score was not updated for too long', async () => {
-      await timeTravel(DAY * 31)
+      await creditOracle.connect(owner).setEligibleForDuration(borrower.address, DAY * 15)
+      await timeTravel(DAY * 16)
       await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000))
-        .to.be.revertedWith('TrueCreditAgency: Borrower credit score does not meet time requirement')
-    })
-
-    it('fails if borrower has missed the repay time', async () => {
-      await creditAgency.connect(borrower).borrow(tusdPool.address, 500)
-      await timeTravel(DAY * 32)
-      await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 500))
         .to.be.revertedWith('TrueCreditAgency: Sender not eligible to borrow')
     })
 
-    it('fails if borrower tries to borrow after whitelist period', async () => {
-      await creditAgency.allowBorrower(borrower.address, YEAR)
-      await timeTravel(YEAR)
-      await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000))
-        .to.be.revertedWith('TrueCreditAgency: Sender is not allowed to borrow')
+    it('fails if borrower has missed the repay time', async () => {
+      await creditAgency.setInterestRepaymentPeriod(DAY * 15)
+      await creditAgency.connect(borrower).borrow(tusdPool.address, 500)
+      await timeTravel(DAY * 16)
+      await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 500))
+        .to.be.revertedWith('TrueCreditAgency: Sender has overdue interest in this pool')
     })
 
     it('cannot borrow from the pool that is not whitelisted', async () => {
@@ -459,7 +437,7 @@ describe('TrueCreditAgency', () => {
     })
 
     it('cannot borrow over the borrow limit', async () => {
-      await creditAgency.allowBorrower(borrower.address, YEAR)
+      await creditAgency.allowBorrower(borrower.address, true)
       await creditOracle.setScore(borrower.address, 191)
       await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100))
 
@@ -489,47 +467,12 @@ describe('TrueCreditAgency', () => {
     })
 
     it('should be possible to borrow over 1 month after full repayment', async () => {
+      await creditOracle.connect(owner).setEligibleForDuration(borrower.address, DAY * 90)
       await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
       await tusd.connect(borrower).approve(creditAgency.address, 1200)
       await creditAgency.connect(borrower).repayInFull(tusdPool.address)
       await timeTravel(DAY * 60)
-      await creditAgency.setCreditScoreUpdateThreshold(YEAR)
       await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000)).to.be.not.reverted
-    })
-  })
-
-  describe('Status', () => {
-    enum Status {Ineligible, OnHold, Eligible}
-
-    beforeEach(async () => {
-      await creditAgency.allowBorrower(borrower.address, YEAR)
-    })
-
-    it('returns Eligible when account has no missed payments', async () => {
-      expect(await creditAgency.status(tusdPool.address, borrower.address)).to.equal(Status.Eligible)
-      await creditAgency.connect(borrower).borrow(tusdPool.address, 100)
-      expect(await creditAgency.status(tusdPool.address, borrower.address)).to.equal(Status.Eligible)
-      await timeTravel(DAY * 29)
-      expect(await creditAgency.status(tusdPool.address, borrower.address)).to.equal(Status.Eligible)
-    })
-
-    it('returns OnHold when account has a missed payment', async () => {
-      await creditAgency.connect(borrower).borrow(tusdPool.address, 100)
-      await timeTravel(DAY * 31 + 1)
-      expect(await creditAgency.status(tusdPool.address, borrower.address)).to.equal(Status.OnHold)
-      await timeTravel(YEAR)
-      expect(await creditAgency.status(tusdPool.address, borrower.address)).to.equal(Status.OnHold)
-    })
-
-    it('returns Ineligible when account was marked so by oracle', async () => {
-      await creditOracle.setIneligible(borrower.address, true)
-      await creditOracle.setOnHold(borrower.address, true)
-      expect(await creditAgency.status(tusdPool.address, borrower.address)).to.equal(Status.Ineligible)
-    })
-
-    it('returns OnHold when account was marked so by oracle but not marked as Ineligible', async () => {
-      await creditOracle.setOnHold(borrower.address, true)
-      expect(await creditAgency.status(tusdPool.address, borrower.address)).to.equal(Status.OnHold)
     })
   })
 
@@ -623,7 +566,7 @@ describe('TrueCreditAgency', () => {
 
   describe('payInterest', () => {
     beforeEach(async () => {
-      await creditAgency.allowBorrower(borrower.address, YEAR)
+      await creditAgency.allowBorrower(borrower.address, true)
       await rater.setRiskPremium(700)
       await creditOracle.setScore(borrower.address, 255)
       await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
@@ -662,7 +605,7 @@ describe('TrueCreditAgency', () => {
     })
 
     it('updates poolTotalPaidInterest with 2 separate LoC', async () => {
-      await creditAgency.allowBorrower(owner.address, YEAR)
+      await creditAgency.allowBorrower(owner.address, true)
       await creditOracle.setScore(owner.address, 255)
       await creditAgency.connect(owner).borrow(tusdPool.address, 1000)
       await tusd.connect(owner).approve(creditAgency.address, 1000)
@@ -684,7 +627,7 @@ describe('TrueCreditAgency', () => {
 
   describe('repay', () => {
     beforeEach(async () => {
-      await creditAgency.allowBorrower(borrower.address, YEAR)
+      await creditAgency.allowBorrower(borrower.address, true)
       await rater.setRiskPremium(700)
       await creditOracle.setScore(owner.address, 255)
       await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
@@ -789,7 +732,7 @@ describe('TrueCreditAgency', () => {
 
   describe('repayInFull', () => {
     beforeEach(async () => {
-      await creditAgency.allowBorrower(borrower.address, YEAR)
+      await creditAgency.allowBorrower(borrower.address, true)
       await rater.setRiskPremium(700)
       await creditOracle.setScore(owner.address, 255)
       await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
@@ -849,8 +792,8 @@ describe('TrueCreditAgency', () => {
       .reduce((sum, bit) => sum.add(bit), BigNumber.from(0))
 
     beforeEach(async () => {
-      await creditAgency.allowBorrower(borrower.address, YEAR)
-      await creditAgency.allowBorrower(owner.address, YEAR)
+      await creditAgency.allowBorrower(borrower.address, true)
+      await creditAgency.allowBorrower(owner.address, true)
       await creditOracle.setScore(owner.address, 200)
       await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
       await creditAgency.borrow(tusdPool.address, 2000)
@@ -904,12 +847,13 @@ describe('TrueCreditAgency', () => {
 
   describe('Interest calculation', () => {
     beforeEach(async () => {
-      await creditAgency.allowBorrower(borrower.address, YEAR * 10)
-      await creditAgency.allowBorrower(owner.address, YEAR * 10)
+      await creditAgency.allowBorrower(borrower.address, true)
+      await creditAgency.allowBorrower(owner.address, true)
       await rater.setRiskPremium(700)
+      await creditOracle.connect(owner).setCreditUpdatePeriod(YEAR * 10)
       await creditOracle.setScore(owner.address, 255)
+      await creditOracle.setScore(borrower.address, 255)
       await creditAgency.setInterestRepaymentPeriod(YEAR * 10)
-      await creditAgency.setCreditScoreUpdateThreshold(YEAR * 10)
     })
 
     it('interest for single borrower and stable rate', async () => {
@@ -1047,8 +991,8 @@ describe('TrueCreditAgency', () => {
 
   describe('poolCreditValue', () => {
     beforeEach(async () => {
-      await creditAgency.allowBorrower(borrower.address, YEAR * 10)
-      await creditAgency.allowBorrower(owner.address, YEAR * 10)
+      await creditAgency.allowBorrower(borrower.address, true)
+      await creditAgency.allowBorrower(owner.address, true)
       await rater.setRiskPremium(700)
       await creditOracle.setScore(borrower.address, 255)
     })
