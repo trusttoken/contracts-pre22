@@ -106,7 +106,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         emit LoanTokenCreated(newToken);
     }
 
-    function setRateAdjuster(ITrueRateAdjuster _rateAdjuster) external onlyAdmin() {
+    function setRateAdjuster(ITrueRateAdjuster _rateAdjuster) external onlyAdmin {
         rateAdjuster = _rateAdjuster;
         emit RateAdjusterChanged(_rateAdjuster);
     }
