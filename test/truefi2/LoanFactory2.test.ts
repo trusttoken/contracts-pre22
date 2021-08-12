@@ -107,6 +107,8 @@ describe('LoanFactory2', () => {
       [30 * DAY, 25],
       [60 * DAY - 1, 25],
       [60 * DAY, 50],
+      [3.5 * 30 * DAY, 75],
+      [180 * DAY, 150],
     ].map(([term, adjustment]) =>
       it(`returns adjustment of ${adjustment} basis points for term of ${term / DAY} days`, async () => {
         expect(await factory.fixedTermLoanAdjustment(term)).to.eq(adjustment)
