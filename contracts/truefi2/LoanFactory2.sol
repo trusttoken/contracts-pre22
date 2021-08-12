@@ -43,7 +43,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
      */
     event LoanTokenCreated(address contractAddress);
 
-    event RateAdjusterChanged(ITrueRateAdjuster rateAdjuster);
+    event CreditOracleChanged(ITrueFiCreditOracle creditOracle);
 
     /**
      * @dev Initialize this contract and set currency token
@@ -106,8 +106,8 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         emit LoanTokenCreated(newToken);
     }
 
-    function setRateAdjuster(ITrueRateAdjuster _rateAdjuster) external onlyAdmin() {
-        rateAdjuster = _rateAdjuster;
-        emit RateAdjusterChanged(_rateAdjuster);
+    function setCreditOracle(ITrueFiCreditOracle _creditOracle) external onlyAdmin() {
+        creditOracle = _creditOracle;
+        emit CreditOracleChanged(_creditOracle);
     }
 }
