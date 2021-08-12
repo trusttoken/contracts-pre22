@@ -329,7 +329,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     function currentRate(ITrueFiPool2 pool, address borrower) external view returns (uint256) {
         return
             _currentRate(
-                securedRate(pool).add(riskPremium).add(utilizationAdjustmentRate(pool)),
+                _poolRate(pool),
                 creditScoreAdjustmentRate(pool, borrower)
             );
     }
