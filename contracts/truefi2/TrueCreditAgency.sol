@@ -471,10 +471,6 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         return Status.Eligible;
     }
 
-    /**
-     * @dev check if borrower score has been updated recently enough
-     * @return Whether block timestamp is less than last update + threshold
-     */
     function meetsTimeRequirement(address borrower) public view returns (bool) {
         return block.timestamp <= creditScoreUpdateThreshold.add(creditOracle.lastUpdated(borrower));
     }
@@ -529,12 +525,10 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         CreditScoreBucket storage bucket,
         address borrower
     ) internal view returns (uint256) {
-        uint256 interestPerShare = bucket.cumulativeInterestPerShare.sub(
-            bucket.savedInterest[borrower].perShare).add(
-            _newInterestPerShare(bucket, block.timestamp));
-        return bucket.savedInterest[borrower].total.add(
-            borrowed[pool][borrower].mul(interestPerShare).div(ADDITIONAL_PRECISION)
+        uint256 interestPerShare = bucket.cumulativeInterestPerShare.sub(bucket.savedInterest[borrower].perShare).add(
+            _newInterestPerShare(bucket, block.timestamp)
         );
+        return bucket.savedInterest[borrower].total.add(borrowed[pool][borrower].mul(interestPerShare).div(ADDITIONAL_PRECISION));
     }
 
     function _interest(
