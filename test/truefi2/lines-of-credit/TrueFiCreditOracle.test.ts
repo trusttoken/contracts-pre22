@@ -1,21 +1,25 @@
 import { expect, use } from 'chai'
-import { beforeEachWithFixture, parseEth } from 'utils'
-import { TrueFiCreditOracle, TrueFiCreditOracle__factory } from 'contracts'
+import { beforeEachWithFixture, DAY, timeTravel } from 'utils'
+import {
+  TrueFiCreditOracle__factory,
+  TrueFiCreditOracle,
+} from 'contracts'
 import { MockProvider, solidity } from 'ethereum-waffle'
-import { ContractTransaction, Wallet } from 'ethers'
+import { BigNumber, Wallet } from 'ethers'
 
 use(solidity)
 
 describe('TrueFiCreditOracle', () => {
   let owner: Wallet
   let manager: Wallet
-  let firstAccount: Wallet
-  let secondAccount: Wallet
-  let oracle: TrueFiCreditOracle
+  let borrower: Wallet
   let provider: MockProvider
+  let oracle: TrueFiCreditOracle
+
+  enum Status {Eligible, OnHold, Ineligible}
 
   beforeEachWithFixture(async (wallets, _provider) => {
-    ([owner, manager, firstAccount, secondAccount] = wallets)
+    ([owner, manager, borrower] = wallets)
     provider = _provider
 
     oracle = await new TrueFiCreditOracle__factory(owner).deploy()
@@ -27,137 +31,209 @@ describe('TrueFiCreditOracle', () => {
     it('only owner can set manager', async () => {
       await expect(oracle.connect(manager).setManager(manager.address))
         .to.be.revertedWith('Ownable: caller is not the owner')
+      await expect(oracle.connect(borrower).setManager(borrower.address))
+        .to.be.revertedWith('Ownable: caller is not the owner')
     })
 
-    it('sets manager address', async () => {
-      await oracle.setManager(owner.address)
-      expect(await oracle.manager()).to.eq(owner.address)
+    it('manager is properly set', async () => {
+      await oracle.setManager(manager.address)
+      expect(await oracle.manager()).to.equal(manager.address)
     })
 
-    it('emits event', async () => {
-      await expect(oracle.setManager(owner.address))
+    it('emits a proper event', async () => {
+      await expect(oracle.setManager(manager.address))
         .to.emit(oracle, 'ManagerChanged')
-        .withArgs(owner.address)
+        .withArgs(manager.address)
     })
   })
 
-  describe('setScore', () => {
-    const firstScore = 100
-    const secondScore = 200
-    let time: number
-    let tx: ContractTransaction
-
-    beforeEach(async () => {
-      tx = await oracle.connect(manager).setScore(firstAccount.address, firstScore)
-      const { blockNumber } = await tx.wait()
-      time = (await provider.getBlock(blockNumber)).timestamp
+  describe('setCreditUpdatePeriod', () => {
+    it('only owner can set credit update period', async () => {
+      await expect(oracle.connect(manager).setCreditUpdatePeriod(0))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+      await expect(oracle.connect(borrower).setCreditUpdatePeriod(0))
+        .to.be.revertedWith('Ownable: caller is not the owner')
     })
 
-    it('only manager can set scores', async () => {
-      await expect(oracle.connect(owner).setScore(firstAccount.address, firstScore))
+    it('period is properly set', async () => {
+      await oracle.setCreditUpdatePeriod(DAY)
+      expect(await oracle.creditUpdatePeriod()).to.equal(DAY)
+    })
+
+    it('emits a proper event', async () => {
+      await expect(oracle.setCreditUpdatePeriod(DAY))
+        .to.emit(oracle, 'CreditUpdatePeriodChanged')
+        .withArgs(DAY)
+    })
+  })
+
+  describe('setGracePeriod', () => {
+    it('only owner can set grace period', async () => {
+      await expect(oracle.connect(manager).setGracePeriod(0))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+      await expect(oracle.connect(borrower).setGracePeriod(0))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('period is properly set', async () => {
+      await oracle.setGracePeriod(DAY)
+      expect(await oracle.gracePeriod()).to.equal(DAY)
+    })
+
+    it('emits a proper event', async () => {
+      await expect(oracle.setGracePeriod(DAY))
+        .to.emit(oracle, 'GracePeriodChanged')
+        .withArgs(DAY)
+    })
+  })
+
+  describe('Status', () => {
+    it('returns Ineligible for borrowers who have never interacted', async () => {
+      expect(await oracle.status(borrower.address)).to.equal(Status.Ineligible)
+    })
+
+    it('returns Eligible for borrowers before expiry', async () => {
+      await oracle.setEligibleForDuration(borrower.address, 10 * DAY)
+      expect(await oracle.status(borrower.address)).to.equal(Status.Eligible)
+      timeTravel(provider, 10 * DAY - 1)
+      expect(await oracle.status(borrower.address)).to.equal(Status.Eligible)
+    })
+
+    it('returns OnHold for borrowers after expiry but before grace period', async () => {
+      await oracle.setEligibleForDuration(borrower.address, 10 * DAY)
+      timeTravel(provider, 10 * DAY)
+      expect(await oracle.status(borrower.address)).to.equal(Status.OnHold)
+      timeTravel(provider, 3 * DAY - 1)
+      expect(await oracle.status(borrower.address)).to.equal(Status.OnHold)
+    })
+
+    it('returns Ineligible for borrowers after grace period', async () => {
+      await oracle.setEligibleForDuration(borrower.address, 10 * DAY)
+      timeTravel(provider, 10 * DAY + 3 * DAY)
+      expect(await oracle.status(borrower.address)).to.equal(Status.Ineligible)
+      timeTravel(provider, 1_000 * DAY)
+      expect(await oracle.status(borrower.address)).to.equal(Status.Ineligible)
+    })
+  })
+
+  describe('set credit scores', () => {
+    it('only manager can set credit scores', async () => {
+      await expect(oracle.connect(borrower).setScore(borrower.address, 1))
+        .to.be.revertedWith('TrueFiCreditOracle: Caller is not the manager')
+      await expect(oracle.connect(owner).setScore(borrower.address, 1))
         .to.be.revertedWith('TrueFiCreditOracle: Caller is not the manager')
     })
 
-    it('score is set correctly for account', async () => {
-      expect(await oracle.getScore(firstAccount.address)).to.equal(firstScore)
+    it('credit score is properly set', async () => {
+      await oracle.connect(manager).setScore(borrower.address, 100)
+      expect(await oracle.getScore(borrower.address)).to.equal(100)
     })
 
-    it('timestamp is set correctly', async () => {
-      expect(await oracle.lastUpdated(firstAccount.address)).to.equal(time)
+    it('updates eligible until time', async () => {
+      const tx = await oracle.connect(manager).setScore(borrower.address, 100)
+      const timestamp = BigNumber.from((await provider.getBlock(tx.blockNumber)).timestamp)
+      expect(await oracle.eligibleUntilTime(borrower.address)).to.equal(timestamp.add(31 * DAY))
     })
 
-    it('timestamp is updated when setting score', async () => {
-      tx = await oracle.connect(manager).setScore(firstAccount.address, firstScore)
-      const { blockNumber } = await tx.wait()
-      const newTime = (await provider.getBlock(blockNumber)).timestamp
-      expect(await oracle.lastUpdated(firstAccount.address)).to.equal(newTime)
-    })
-
-    it('emits event', async () => {
-      await expect(oracle.connect(manager).setScore(firstAccount.address, secondScore))
+    it('emits a proper event', async () => {
+      await expect(oracle.connect(manager).setScore(borrower.address, 100))
         .to.emit(oracle, 'ScoreChanged')
-        .withArgs(firstAccount.address, secondScore, time + 1)
+        .withArgs(borrower.address, 100)
     })
   })
 
-  describe('getScore', () => {
-    const firstScore = 100
-    const secondScore = 200
-
-    it('gets score correctly after it has changed', async () => {
-      await oracle.connect(manager).setScore(firstAccount.address, firstScore)
-      expect(await oracle.getScore(firstAccount.address)).to.equal(firstScore)
-      await oracle.connect(manager).setScore(firstAccount.address, secondScore)
-      expect(await oracle.getScore(firstAccount.address)).to.equal(secondScore)
-    })
-
-    it('updates lastUpdated timestamp', async () => {
-      let tx = await (await oracle.connect(manager).setScore(firstAccount.address, firstScore)).wait()
-      expect(await oracle.lastUpdated(firstAccount.address)).to.equal((await provider.getBlock(tx.blockNumber)).timestamp)
-      tx = await (await oracle.connect(manager).setScore(firstAccount.address, firstScore)).wait()
-      expect(await oracle.lastUpdated(firstAccount.address)).to.equal((await provider.getBlock(tx.blockNumber)).timestamp)
-    })
-  })
-
-  describe('set and get max borrower limits', () => {
-    const firstBorrowLimit = parseEth(100)
-    const secondBorrowLimit = parseEth(200)
-
-    beforeEach(async () => {
-      await oracle.connect(manager).setMaxBorrowerLimit(firstAccount.address, firstBorrowLimit)
-    })
-
+  describe('set max borrower limits', () => {
     it('only manager can set max borrower limits', async () => {
-      await expect(oracle.connect(owner).setMaxBorrowerLimit(firstAccount.address, firstBorrowLimit))
+      await expect(oracle.connect(borrower).setMaxBorrowerLimit(borrower.address, 1))
+        .to.be.revertedWith('TrueFiCreditOracle: Caller is not the manager')
+      await expect(oracle.connect(owner).setMaxBorrowerLimit(borrower.address, 1))
         .to.be.revertedWith('TrueFiCreditOracle: Caller is not the manager')
     })
 
-    it('max borrower limit is set correctly for account', async () => {
-      expect(await oracle.getMaxBorrowerLimit(firstAccount.address)).to.equal(firstBorrowLimit)
+    it('max borrower limit is properly set', async () => {
+      await oracle.connect(manager).setMaxBorrowerLimit(borrower.address, 1_000_000)
+      expect(await oracle.getMaxBorrowerLimit(borrower.address)).to.equal(1_000_000)
     })
 
-    it('change existing max borrower limit', async () => {
-      await oracle.connect(manager).setMaxBorrowerLimit(firstAccount.address, secondBorrowLimit)
-      expect(await oracle.getMaxBorrowerLimit(firstAccount.address)).to.equal(secondBorrowLimit)
+    it('updates eligible until time', async () => {
+      const tx = await oracle.connect(manager).setMaxBorrowerLimit(borrower.address, 1_000_000)
+      const timestamp = BigNumber.from((await provider.getBlock(tx.blockNumber)).timestamp)
+      expect(await oracle.eligibleUntilTime(borrower.address)).to.equal(timestamp.add(31 * DAY))
+    })
+
+    it('emits a proper event', async () => {
+      await expect(oracle.connect(manager).setMaxBorrowerLimit(borrower.address, 1_000_000))
+        .to.emit(oracle, 'MaxBorrowerLimitChanged')
+        .withArgs(borrower.address, 1_000_000)
     })
   })
 
-  describe('ineligibility', () => {
-    const firstScore = 100
-    const secondScore = 200
-
-    beforeEach(async () => {
-      await oracle.connect(manager).setScore(firstAccount.address, firstScore)
-      await oracle.connect(manager).setScore(secondAccount.address, secondScore)
-      await oracle.connect(owner).setIneligible(firstAccount.address, true)
-      await oracle.connect(owner).setOnHold(firstAccount.address, true)
-    })
-
-    it('ineligibility and on hold set correctly', async () => {
-      expect(await oracle.onHold(firstAccount.address)).to.be.true
-      expect(await oracle.ineligible(firstAccount.address)).to.be.true
-    })
-
-    it('only owner can set ineligibility', async () => {
-      await expect(oracle.connect(manager).setIneligible(firstAccount.address, false))
+  describe('setEligibleForDuration', () => {
+    it('only owner can set eligible for duration', async () => {
+      await expect(oracle.connect(manager).setEligibleForDuration(borrower.address, 10 * DAY))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+      await expect(oracle.connect(borrower).setEligibleForDuration(borrower.address, 10 * DAY))
         .to.be.revertedWith('Ownable: caller is not the owner')
     })
 
-    it('only owner can set onHold', async () => {
-      await expect(oracle.connect(manager).setOnHold(firstAccount.address, false))
+    it('eligibility is properly set', async () => {
+      const tx = await oracle.setEligibleForDuration(borrower.address, 10 * DAY)
+      const timestamp = BigNumber.from((await provider.getBlock(tx.blockNumber)).timestamp)
+      expect(await oracle.eligibleUntilTime(borrower.address)).to.equal(timestamp.add(10 * DAY))
+      expect(await oracle.status(borrower.address)).to.equal(Status.Eligible)
+    })
+
+    it('emits a proper event', async () => {
+      const tx = await oracle.setEligibleForDuration(borrower.address, 10 * DAY)
+      const timestamp = BigNumber.from((await provider.getBlock(tx.blockNumber)).timestamp)
+      expect(tx).to.emit(oracle, 'EligibleUntilTimeChanged')
+        .withArgs(borrower.address, timestamp.add(10 * DAY))
+    })
+  })
+
+  describe('setOnHold', () => {
+    it('only owner can set on hold', async () => {
+      await expect(oracle.connect(manager).setOnHold(borrower.address))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+      await expect(oracle.connect(borrower).setOnHold(borrower.address))
         .to.be.revertedWith('Ownable: caller is not the owner')
     })
 
-    it('setting ineligibility triggers event', async () => {
-      await expect(oracle.connect(owner).setIneligible(secondAccount.address, true))
-        .to.emit(oracle, 'IneligibleStatusChanged')
-        .withArgs(secondAccount.address, true)
+    it('eligibility is properly set', async () => {
+      const tx = await oracle.setOnHold(borrower.address)
+      const timestamp = BigNumber.from((await provider.getBlock(tx.blockNumber)).timestamp)
+      expect(await oracle.eligibleUntilTime(borrower.address)).to.equal(timestamp)
+      expect(await oracle.status(borrower.address)).to.equal(Status.OnHold)
     })
 
-    it('setting onHold triggers event', async () => {
-      await expect(oracle.connect(owner).setOnHold(secondAccount.address, true))
-        .to.emit(oracle, 'OnHoldStatusChanged')
-        .withArgs(secondAccount.address, true)
+    it('emits a proper event', async () => {
+      const tx = await oracle.setOnHold(borrower.address)
+      const timestamp = BigNumber.from((await provider.getBlock(tx.blockNumber)).timestamp)
+      expect(tx).to.emit(oracle, 'EligibleUntilTimeChanged')
+        .withArgs(borrower.address, timestamp)
+    })
+  })
+
+  describe('setIneligible', () => {
+    it('only owner can set ineligible', async () => {
+      await expect(oracle.connect(manager).setIneligible(borrower.address))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+      await expect(oracle.connect(borrower).setIneligible(borrower.address))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('eligibility is properly set', async () => {
+      const tx = await oracle.setIneligible(borrower.address)
+      const timestamp = BigNumber.from((await provider.getBlock(tx.blockNumber)).timestamp)
+      expect(await oracle.eligibleUntilTime(borrower.address)).to.equal(timestamp.sub(3 * DAY))
+      expect(await oracle.status(borrower.address)).to.equal(Status.Ineligible)
+    })
+
+    it('emits a proper event', async () => {
+      const tx = await oracle.setIneligible(borrower.address)
+      const timestamp = BigNumber.from((await provider.getBlock(tx.blockNumber)).timestamp)
+      expect(tx).to.emit(oracle, 'EligibleUntilTimeChanged')
+        .withArgs(borrower.address, timestamp.sub(3 * DAY))
     })
   })
 })

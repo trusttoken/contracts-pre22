@@ -84,7 +84,7 @@ describe('TrueFiPool2', () => {
     await creditAgency.allowPool(tusdPool.address, true)
     await creditOracle.setScore(borrower.address, 255)
     await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
-    await creditAgency.allowBorrower(borrower.address, YEAR * 10)
+    await creditAgency.allowBorrower(borrower.address, true)
     await rateAdjuster.setRiskPremium(700)
   })
 
