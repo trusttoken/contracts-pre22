@@ -64,6 +64,10 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         admin = 0x16cEa306506c387713C70b9C1205fd5aC997E78E;
     }
 
+    function utilizationAdjustmentRate(ITrueFiPool2 pool, uint256 amount) internal view returns (uint256) {
+        return rateAdjuster.proFormaUtilizationAdjustmentRate(pool, amount);
+    }
+
     /**
      * @dev Deploy LoanToken with parameters
      * @param _amount Amount to borrow
