@@ -281,7 +281,7 @@ describe('TrueCreditAgency', () => {
 
     it('allowance is properly set', async () => {
       expect(await creditAgency.isBorrowerAllowed(borrower.address)).to.equal(false)
-      const tx = await creditAgency.allowBorrower(borrower.address, true)
+      await creditAgency.allowBorrower(borrower.address, true)
       expect(await creditAgency.isBorrowerAllowed(borrower.address)).to.equal(true)
     })
 
