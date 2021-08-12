@@ -8,7 +8,7 @@ import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {ITimeAveragedBaseRateOracle} from "./interface/ITimeAveragedBaseRateOracle.sol";
 import {ITrueRateAdjuster} from "./interface/ITrueRateAdjuster.sol";
 
-contract TrueRateAdjuster is UpgradeableClaimable, ITrueRateAdjuster {
+contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     using SafeMath for uint256;
 
     uint256 constant MAX_RATE_CAP = 50000;
@@ -90,7 +90,7 @@ contract TrueRateAdjuster is UpgradeableClaimable, ITrueRateAdjuster {
         return min(riskPremium.add(securedRate(pool)).add(proFormaUtilizationAdjustmentRate(pool, amount)), MAX_RATE_CAP);
     }
 
-    function securedRate(ITrueFiPool2 pool) public view returns (uint256) {
+    function securedRate(ITrueFiPool2 pool) public override view returns (uint256) {
         return baseRateOracle[pool].getWeeklyAPY();
     }
 
