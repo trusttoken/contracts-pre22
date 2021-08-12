@@ -99,7 +99,14 @@ contract TrueRateAdjuster is UpgradeableClaimable {
     }
 
     function utilizationAdjustmentRate(ITrueFiPool2 pool) public view returns (uint256) {
-        uint256 liquidRatio = pool.liquidRatio();
+        _utilizationAdjustmentRate(pool.liquidRatio());
+    }
+
+    function proFormaUtilizationAdjustmentRate(ITrueFiPool2 pool, uint256 amount) external view returns (uint256) {
+        _utilizationAdjustmentRate(pool.proFormaLiquidRatio(amount));
+    }
+
+    function _utilizationAdjustmentRate(uint256 liquidRatio) internal view returns (uint256) {
         if (liquidRatio == 0) {
             // if utilization is at 100 %
             return MAX_RATE_CAP; // Cap rate by 500%
