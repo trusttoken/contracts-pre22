@@ -11,6 +11,8 @@ import {
   TrueLender2,
   Liquidator2,
   PoolFactory,
+  TrueRateAdjuster,
+  TrueRateAdjuster__factory,
 } from 'contracts'
 import { solidity } from 'ethereum-waffle'
 
@@ -84,6 +86,31 @@ describe('LoanFactory2', () => {
       const fakePool = await new TrueFiPool2__factory(owner).deploy()
       await expect(loanFactory.connect(borrower).createLoanToken(fakePool.address, parseEth(123), 0, 200))
         .to.be.revertedWith('LoanFactory: Loans cannot have instantaneous term of repay')
+    })
+  })
+
+  describe('setRateAdjuster', () => {
+    let fakeRateAdjuster: TrueRateAdjuster
+    beforeEach(async () => {
+      fakeRateAdjuster = await new TrueRateAdjuster__factory(owner).deploy([100])
+    })
+
+    it('only admin can call', async () => {
+      await expect(loanFactory.connect(owner).setRateAdjuster(fakeRateAdjuster.address))
+        .not.to.be.reverted
+      await expect(loanFactory.connect(borrower).setRateAdjuster(fakeRateAdjuster.address))
+        .to.be.revertedWith('LoanFactory: Caller is not the admin')
+    })
+
+    it('changes rateAdjuster', async () => {
+      await loanFactory.setRateAdjuster(fakeRateAdjuster.address)
+      expect(await loanFactory.rateAdjuster()).to.eq(fakeRateAdjuster.address)
+    })
+
+    it('emits event', async () => {
+      await expect(loanFactory.setRateAdjuster(fakeRateAdjuster.address))
+        .to.emit(loanFactory, 'RateAdjusterChanged')
+        .withArgs(fakeRateAdjuster.address)
     })
   })
 })
