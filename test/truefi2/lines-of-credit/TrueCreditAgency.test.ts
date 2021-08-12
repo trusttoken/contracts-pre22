@@ -503,7 +503,7 @@ describe('TrueCreditAgency', () => {
     })
 
     it('borrow amount is limited by total TVL', async () => {
-      await usdcPool.exit(parseUSDC(19e6))
+      await usdcPool.liquidExit(parseUSDC(19e6))
       const maxTVLLimit = (await creditAgency.totalTVL(18)).mul(15).div(100)
       expect(await creditAgency.borrowLimit(tusdPool.address, borrower.address)).to.equal(maxTVLLimit.mul(8051).div(10000))
     })
@@ -523,9 +523,11 @@ describe('TrueCreditAgency', () => {
       expect(await creditAgency.borrowLimit(usdcPool.address, borrower.address)).to.be.closeTo(parseUSDC(0), oneUSDC)
     })
 
-    it('borrow limit is 0 if credit limit is above the borrowed amount', async () => {
+    it('borrow limit is 0 if credit limit is below the borrowed amount', async () => {
+      await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100))
       await creditAgency.connect(borrower).borrow(usdcPool.address, parseUSDC(80))
-      await usdcPool.exit(parseUSDC(2e7).sub(parseUSDC(80)))
+      expect(await creditAgency.borrowLimit(usdcPool.address, borrower.address)).to.be.gt(parseUSDC(0))
+      await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(95))
       expect(await creditAgency.borrowLimit(usdcPool.address, borrower.address)).to.equal(parseUSDC(0))
     })
   })
