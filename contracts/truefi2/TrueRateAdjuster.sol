@@ -14,12 +14,6 @@ contract TrueRateAdjuster is UpgradeableClaimable, ITrueRateAdjuster {
     uint256 constant MAX_RATE_CAP = 50000;
     uint8 constant MAX_CREDIT_SCORE = 255;
 
-    // ================ WARNING ==================
-    // ===== THIS CONTRACT IS INITIALIZABLE ======
-    // === STORAGE VARIABLES ARE DECLARED BELOW ==
-    // REMOVAL OR REORDER OF VARIABLES WILL RESULT
-    // ========= IN STORAGE CORRUPTION ===========
-
     // basis precision: 10000 = 100%
     uint256 public utilizationAdjustmentCoefficient;
 
@@ -35,8 +29,6 @@ contract TrueRateAdjuster is UpgradeableClaimable, ITrueRateAdjuster {
     uint256 public override fixedTermLoanAdjustmentCoefficient;
 
     mapping(ITrueFiPool2 => ITimeAveragedBaseRateOracle) public baseRateOracle;
-
-    // ======= STORAGE DECLARATION END ============
 
     event RiskPremiumChanged(uint256 newRate);
 
