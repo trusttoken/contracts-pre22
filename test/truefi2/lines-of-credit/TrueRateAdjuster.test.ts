@@ -1,7 +1,7 @@
 import { expect, use } from 'chai'
 import { Wallet } from 'ethers'
 
-import { beforeEachWithFixture } from 'utils'
+import { beforeEachWithFixture, DAY } from 'utils'
 import { setupDeploy } from 'scripts/utils'
 
 import {
@@ -64,5 +64,25 @@ describe('TrueRateAdjuster', () => {
         .to.emit(rateAdjuster, 'FixedTermLoanAdjustmentCoefficientChanged')
         .withArgs(50)
     })
+  })
+
+  describe('fixedTermLoanAdjustment', () => {
+    beforeEach(async () => {
+      await rateAdjuster.setFixedTermLoanAdjustmentCoefficient(25)
+    })
+
+    ;[
+      [0, 0],
+      [30 * DAY - 1, 0],
+      [30 * DAY, 25],
+      [60 * DAY - 1, 25],
+      [60 * DAY, 50],
+      [3.5 * 30 * DAY, 75],
+      [180 * DAY, 150],
+    ].map(([term, adjustment]) =>
+      it(`returns adjustment of ${adjustment} basis points for term of ${term / DAY} days`, async () => {
+        expect(await rateAdjuster.fixedTermLoanAdjustment(term)).to.eq(adjustment)
+      }),
+    )
   })
 })
