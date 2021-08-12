@@ -16,6 +16,8 @@ import {
   ImplementationReference,
   TrueFiPool2__factory,
   ImplementationReference__factory,
+  TrueRateAdjuster,
+  TrueRateAdjuster__factory,
 } from 'contracts'
 import { solidity } from 'ethereum-waffle'
 
@@ -32,6 +34,7 @@ describe('LoanFactory2', () => {
   let implementationReference: ImplementationReference
   let factory: LoanFactory2
   let poolAddress: string
+  let rateAdjuster: TrueRateAdjuster
 
   beforeEachWithFixture(async (wallets) => {
     [owner, borrower, lender, liquidator] = wallets
@@ -40,9 +43,10 @@ describe('LoanFactory2', () => {
     poolFactory = await new PoolFactory__factory(owner).deploy()
     poolImplementation = await new TrueFiPool2__factory(owner).deploy()
     implementationReference = await new ImplementationReference__factory(owner).deploy(poolImplementation.address)
+    rateAdjuster = await new TrueRateAdjuster__factory(owner).deploy([100])
 
     await poolFactory.initialize(implementationReference.address, AddressZero, AddressZero)
-    await factory.initialize(poolFactory.address, lender.address, liquidator.address)
+    await factory.initialize(poolFactory.address, lender.address, liquidator.address, rateAdjuster.address)
 
     await poolFactory.allowToken(token.address, true)
     await poolFactory.createPool(token.address)

@@ -5,6 +5,7 @@ import {Initializable} from "../common/Initializable.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
+import {ITrueRateAdjuster} from "./interface/ITrueRateAdjuster.sol";
 
 import {LoanToken2, IERC20} from "./LoanToken2.sol";
 
@@ -30,6 +31,8 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
 
     address public admin;
 
+    ITrueRateAdjuster public rateAdjuster;
+
     // ======= STORAGE DECLARATION END ============
 
     /**
@@ -47,12 +50,14 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     function initialize(
         IPoolFactory _poolFactory,
         address _lender,
-        address _liquidator
+        address _liquidator,
+        ITrueRateAdjuster _rateAdjuster
     ) external initializer {
         poolFactory = _poolFactory;
         lender = _lender;
         admin = msg.sender;
         liquidator = _liquidator;
+        rateAdjuster = _rateAdjuster;
     }
 
     function setAdmin() external {
