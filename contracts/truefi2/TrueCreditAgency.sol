@@ -5,6 +5,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import {ERC20, IERC20, SafeMath} from "../common/UpgradeableERC20.sol";
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 
+import {ITrueRateAdjuster} from "./interface/ITrueRateAdjuster.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {ITrueCreditAgency} from "./interface/ITrueCreditAgency.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
@@ -24,7 +25,6 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     enum Status {Ineligible, OnHold, Eligible}
 
     uint8 constant MAX_CREDIT_SCORE = 255;
-    uint256 constant MAX_RATE_CAP = 50000;
     uint256 constant ADDITIONAL_PRECISION = 1e27;
 
     struct SavedInterest {
@@ -72,17 +72,11 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
     uint256 public gracePeriod;
 
-    // basis precision: 10000 = 100%
-    uint256 public riskPremium;
-
-    // basis precision: 10000 = 100%
-    uint256 public creditAdjustmentCoefficient;
+    ITrueRateAdjuster public rater;
 
     BorrowLimitConfig public borrowLimitConfig;
 
     ITrueFiCreditOracle public creditOracle;
-
-    mapping(ITrueFiPool2 => ITimeAveragedBaseRateOracle) public baseRateOracle;
 
     /**
      * This bitmap is used to non-empty buckets.
@@ -107,13 +101,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
     event BaseRateOracleChanged(ITrueFiPool2 pool, ITimeAveragedBaseRateOracle oracle);
 
-    event RiskPremiumChanged(uint256 newRate);
-
-    event CreditAdjustmentCoefficientChanged(uint256 newCoefficient);
-
-    event UtilizationAdjustmentCoefficientChanged(uint256 newCoefficient);
-
-    event UtilizationAdjustmentPowerChanged(uint256 newValue);
+    event TrueRateAdjusterChanged(ITrueRateAdjuster newRater);
 
     event BorrowerAllowed(address indexed who, uint256 timePeriod);
 
@@ -138,14 +126,11 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         uint16 poolValueLimitCoefficient
     );
 
-    function initialize(ITrueFiCreditOracle _creditOracle, uint256 _riskPremium) public initializer {
+    function initialize(ITrueFiCreditOracle _creditOracle, ITrueRateAdjuster _rater) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
         creditOracle = _creditOracle;
-        riskPremium = _riskPremium;
-        creditAdjustmentCoefficient = 1000;
+        rater = _rater;
         borrowLimitConfig = BorrowLimitConfig(40, 7500, 1500, 1500);
-        utilizationAdjustmentCoefficient = 50;
-        utilizationAdjustmentPower = 2;
         interestRepaymentPeriod = 31 days;
         gracePeriod = 3 days;
         creditScoreUpdateThreshold = 30 days;
@@ -156,17 +141,10 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         _;
     }
 
-    function setBaseRateOracle(ITrueFiPool2 pool, ITimeAveragedBaseRateOracle _baseRateOracle) external onlyOwner {
-        baseRateOracle[pool] = _baseRateOracle;
-        emit BaseRateOracleChanged(pool, _baseRateOracle);
-    }
-
-    function setRiskPremium(uint256 newRate) external onlyOwner {
-        riskPremium = newRate;
-        for (uint256 i = 0; i < pools.length; i++) {
-            poke(pools[i]);
-        }
-        emit RiskPremiumChanged(newRate);
+    function setRater(ITrueRateAdjuster newRater) external onlyOwner {
+        rater = newRater;
+        pokeAll();
+        emit TrueRateAdjusterChanged(newRater);
     }
 
     function setInterestRepaymentPeriod(uint256 newPeriod) external onlyOwner {
@@ -187,21 +165,6 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     ) external onlyOwner {
         borrowLimitConfig = BorrowLimitConfig(scoreFloor, limitAdjustmentPower, tvlLimitCoefficient, poolValueLimitCoefficient);
         emit BorrowLimitConfigChanged(scoreFloor, limitAdjustmentPower, tvlLimitCoefficient, poolValueLimitCoefficient);
-    }
-
-    function setCreditAdjustmentCoefficient(uint256 newCoefficient) external onlyOwner {
-        creditAdjustmentCoefficient = newCoefficient;
-        emit CreditAdjustmentCoefficientChanged(newCoefficient);
-    }
-
-    function setUtilizationAdjustmentCoefficient(uint256 newCoefficient) external onlyOwner {
-        utilizationAdjustmentCoefficient = newCoefficient;
-        emit UtilizationAdjustmentCoefficientChanged(newCoefficient);
-    }
-
-    function setUtilizationAdjustmentPower(uint256 newValue) external onlyOwner {
-        utilizationAdjustmentPower = newValue;
-        emit UtilizationAdjustmentPowerChanged(newValue);
     }
 
     function setMinCreditScore(uint256 newValue) external onlyOwner {
@@ -256,29 +219,11 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     }
 
     function creditScoreAdjustmentRate(ITrueFiPool2 pool, address borrower) public view returns (uint256) {
-        return _creditScoreAdjustmentRate(creditScore[pool][borrower]);
-    }
-
-    function _creditScoreAdjustmentRate(uint8 score) internal view returns (uint256) {
-        if (score == 0) {
-            return MAX_RATE_CAP; // Cap rate by 500%
-        }
-        return min(creditAdjustmentCoefficient.mul(MAX_CREDIT_SCORE - score).div(score), MAX_RATE_CAP);
+        return rater.creditScoreAdjustmentRate(creditScore[pool][borrower]);
     }
 
     function utilizationAdjustmentRate(ITrueFiPool2 pool) public view returns (uint256) {
-        uint256 liquidRatio = pool.liquidRatio();
-        if (liquidRatio == 0) {
-            // if utilization is at 100 %
-            return MAX_RATE_CAP; // Cap rate by 500%
-        }
-        return
-            min(
-                utilizationAdjustmentCoefficient.mul(1e4**utilizationAdjustmentPower).div(liquidRatio**utilizationAdjustmentPower).sub(
-                    utilizationAdjustmentCoefficient
-                ),
-                MAX_RATE_CAP
-            );
+        return rater.utilizationAdjustmentRate(pool);
     }
 
     function totalTVL(uint8 decimals) public view returns (uint256) {
@@ -327,21 +272,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     }
 
     function currentRate(ITrueFiPool2 pool, address borrower) external view returns (uint256) {
-        return _currentRate(_poolRate(pool), creditScoreAdjustmentRate(pool, borrower));
-    }
-
-    function securedRate(ITrueFiPool2 pool) public view returns (uint256) {
-        return baseRateOracle[pool].getWeeklyAPY();
-    }
-
-    /**
-     * @dev Helper function used by poke() to save gas by calculating partial terms of the total rate
-     * @param poolRate risk premium + utilization adjustment rate + secured rate
-     * @param __creditScoreAdjustmentRate credit score adjustment
-     * @return sum of addends capped by MAX_RATE_CAP
-     */
-    function _currentRate(uint256 poolRate, uint256 __creditScoreAdjustmentRate) internal pure returns (uint256) {
-        return min(poolRate.add(__creditScoreAdjustmentRate), MAX_RATE_CAP);
+        return rater.rate(pool, creditScore[pool][borrower]);
     }
 
     function interest(ITrueFiPool2 pool, address borrower) public view returns (uint256) {
@@ -397,7 +328,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     function poke(ITrueFiPool2 pool) public {
         uint256 bitMap = usedBucketsBitmap;
         uint256 timeNow = block.timestamp;
-        uint256 poolRate = _poolRate(pool);
+        uint256 poolRate = rater.poolBasicRate(pool);
 
         for (uint16 i = 0; i <= MAX_CREDIT_SCORE; (i++, bitMap >>= 1)) {
             if (bitMap & 1 == 0) {
@@ -408,10 +339,17 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         }
     }
 
+    function pokeAll() public {
+        for (uint256 i = 0; i < pools.length; i++) {
+            poke(pools[i]);
+        }
+    }
+
     function pokeSingleBucket(ITrueFiPool2 pool, uint8 bucketNumber) internal {
         uint256 timeNow = block.timestamp;
+        uint256 poolRate = rater.poolBasicRate(pool);
 
-        _pokeSingleBucket(pool, bucketNumber, timeNow, _poolRate(pool));
+        _pokeSingleBucket(pool, bucketNumber, timeNow, poolRate);
     }
 
     function _pokeSingleBucket(
@@ -425,7 +363,8 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         uint256 newInterestPerShare = _newInterestPerShare(bucket, timeNow);
         poolTotalInterest[pool] = poolTotalInterest[pool].add(bucket.totalBorrowed.mul(newInterestPerShare));
         bucket.cumulativeInterestPerShare = bucket.cumulativeInterestPerShare.add(newInterestPerShare);
-        bucket.rate = _currentRate(poolRate, _creditScoreAdjustmentRate(bucketNumber));
+
+        bucket.rate = rater.combinedRate(poolRate, rater.creditScoreAdjustmentRate(bucketNumber));
         bucket.timestamp = uint128(timeNow);
     }
 
@@ -537,10 +476,6 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         address borrower
     ) internal view returns (uint256) {
         return _totalBorrowerInterest(pool, bucket, borrower).sub(borrowerTotalPaidInterest[pool][borrower]);
-    }
-
-    function _poolRate(ITrueFiPool2 pool) internal view returns (uint256) {
-        return securedRate(pool).add(riskPremium).add(utilizationAdjustmentRate(pool));
     }
 
     function _payInterestWithoutTransfer(ITrueFiPool2 pool, uint256 amount) internal {
