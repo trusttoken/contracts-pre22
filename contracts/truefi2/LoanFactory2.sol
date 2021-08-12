@@ -6,6 +6,7 @@ import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {ITrueRateAdjuster} from "./interface/ITrueRateAdjuster.sol";
+import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
 
 import {LoanToken2, IERC20} from "./LoanToken2.sol";
 
@@ -32,6 +33,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     address public admin;
 
     ITrueRateAdjuster public rateAdjuster;
+    ITrueFiCreditOracle public creditOracle;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -51,21 +53,28 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         IPoolFactory _poolFactory,
         address _lender,
         address _liquidator,
-        ITrueRateAdjuster _rateAdjuster
+        ITrueRateAdjuster _rateAdjuster,
+        ITrueFiCreditOracle _creditOracle
     ) external initializer {
         poolFactory = _poolFactory;
         lender = _lender;
         admin = msg.sender;
         liquidator = _liquidator;
         rateAdjuster = _rateAdjuster;
+        creditOracle = _creditOracle;
     }
 
     function setAdmin() external {
         admin = 0x16cEa306506c387713C70b9C1205fd5aC997E78E;
     }
 
-    function utilizationAdjustmentRate(ITrueFiPool2 pool, uint256 amount) internal view returns (uint256) {
-        return rateAdjuster.proFormaUtilizationAdjustmentRate(pool, amount);
+    function rate(
+        ITrueFiPool2 pool,
+        address borrower,
+        uint256 amount
+    ) internal view returns (uint256) {
+        uint8 borrowerScore = creditOracle.getScore(borrower);
+        return rateAdjuster.proFormaRate(pool, borrowerScore, amount);
     }
 
     /**

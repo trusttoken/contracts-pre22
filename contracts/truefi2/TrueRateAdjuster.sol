@@ -74,8 +74,20 @@ contract TrueRateAdjuster is UpgradeableClaimable, ITrueRateAdjuster {
         return combinedRate(poolBasicRate(pool), creditScoreAdjustmentRate(score));
     }
 
+    function proFormaRate(
+        ITrueFiPool2 pool,
+        uint8 score,
+        uint256 amount
+    ) external override view returns (uint256) {
+        return combinedRate(proFormaPoolBasicRate(pool, amount), creditScoreAdjustmentRate(score));
+    }
+
     function poolBasicRate(ITrueFiPool2 pool) public override view returns (uint256) {
         return min(riskPremium.add(securedRate(pool)).add(utilizationAdjustmentRate(pool)), MAX_RATE_CAP);
+    }
+
+    function proFormaPoolBasicRate(ITrueFiPool2 pool, uint256 amount) public view returns (uint256) {
+        return min(riskPremium.add(securedRate(pool)).add(proFormaUtilizationAdjustmentRate(pool, amount)), MAX_RATE_CAP);
     }
 
     function securedRate(ITrueFiPool2 pool) public view returns (uint256) {
@@ -103,7 +115,7 @@ contract TrueRateAdjuster is UpgradeableClaimable, ITrueRateAdjuster {
         return _utilizationAdjustmentRate(pool.liquidRatio());
     }
 
-    function proFormaUtilizationAdjustmentRate(ITrueFiPool2 pool, uint256 amount) external override view returns (uint256) {
+    function proFormaUtilizationAdjustmentRate(ITrueFiPool2 pool, uint256 amount) public view returns (uint256) {
         return _utilizationAdjustmentRate(pool.proFormaLiquidRatio(amount));
     }
 

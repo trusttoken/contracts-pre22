@@ -18,6 +18,7 @@ import {
   ImplementationReference__factory,
   TrueRateAdjuster,
   TrueRateAdjuster__factory,
+  TrueCreditAgency__factory,
 } from 'contracts'
 import { solidity } from 'ethereum-waffle'
 
@@ -44,9 +45,10 @@ describe('LoanFactory2', () => {
     poolImplementation = await new TrueFiPool2__factory(owner).deploy()
     implementationReference = await new ImplementationReference__factory(owner).deploy(poolImplementation.address)
     rateAdjuster = await new TrueRateAdjuster__factory(owner).deploy([100])
+    const creditAgency = await new TrueCreditAgency__factory(owner).deploy()
 
     await poolFactory.initialize(implementationReference.address, AddressZero, AddressZero)
-    await factory.initialize(poolFactory.address, lender.address, liquidator.address, rateAdjuster.address)
+    await factory.initialize(poolFactory.address, lender.address, liquidator.address, rateAdjuster.address, creditAgency.address)
 
     await poolFactory.allowToken(token.address, true)
     await poolFactory.createPool(token.address)
