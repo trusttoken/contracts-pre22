@@ -30,6 +30,9 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
 
     address public admin;
 
+    //@dev Adds to loan apy for each 30 days of its term
+    uint256 public adjustmentCoefficient;
+
     // ======= STORAGE DECLARATION END ============
 
     /**
@@ -37,6 +40,12 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
      * @param contractAddress LoanToken contract address
      */
     event LoanTokenCreated(address contractAddress);
+
+    /**
+     * @dev Emitted when a adjustmentCoefficient is changed
+     * @param newCoefficient New adjustmentCoefficient value
+     */
+    event AdjustmentCoefficientChanged(uint256 newCoefficient);
 
     /**
      * @dev Initialize this contract and set currency token
@@ -53,10 +62,18 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         lender = _lender;
         admin = msg.sender;
         liquidator = _liquidator;
+
+        adjustmentCoefficient = 25;
     }
 
     function setAdmin() external {
         admin = 0x16cEa306506c387713C70b9C1205fd5aC997E78E;
+    }
+
+    function setAdjustmentCoefficient(uint256 newCoefficient) external {
+        require(msg.sender == admin, "LoanFactory: Only admin can set adjustment coefficient");
+        adjustmentCoefficient = newCoefficient;
+        emit AdjustmentCoefficientChanged(newCoefficient);
     }
 
     /**

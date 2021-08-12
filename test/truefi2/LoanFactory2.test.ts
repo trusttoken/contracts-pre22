@@ -86,4 +86,22 @@ describe('LoanFactory2', () => {
         .to.be.revertedWith('LoanFactory: Pool was not created by PoolFactory')
     })
   })
+
+  describe('setAdjustmentCoefficient', () => {
+    it('reverts if not called by the admin', async () => {
+      await expect(factory.connect(borrower).setAdjustmentCoefficient(0))
+        .to.be.revertedWith('LoanFactory: Only admin can set adjustment coefficient')
+    })
+
+    it('sets adjustment coefficient', async () => {
+      await factory.setAdjustmentCoefficient(50)
+      expect(await factory.adjustmentCoefficient()).to.eq(50)
+    })
+
+    it('emits event', async () => {
+      await expect(factory.setAdjustmentCoefficient(50))
+        .to.emit(factory, 'AdjustmentCoefficientChanged')
+        .withArgs(50)
+    })
+  })
 })
