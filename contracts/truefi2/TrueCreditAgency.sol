@@ -337,23 +337,23 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     ) internal {
         CreditScoreBucket storage bucket = buckets[pool][bucketNumber];
 
-        poolTotalInterest[pool] = poolTotalInterest[pool].add(
-            bucket.rate.mul(1e23).mul(bucket.totalBorrowed).mul(timeNow.sub(bucket.timestamp)).div(365 days)
-        );
+        uint256 newInterestPerShare = _newInterestPerShare(bucket, timeNow);
+        poolTotalInterest[pool] = poolTotalInterest[pool].add(bucket.totalBorrowed.mul(newInterestPerShare));
+        bucket.cumulativeInterestPerShare = bucket.cumulativeInterestPerShare.add(newInterestPerShare);
 
-        bucket.cumulativeInterestPerShare = bucket.cumulativeInterestPerShare.add(
-            bucket.rate.mul(ADDITIONAL_PRECISION.div(10000)).mul(timeNow.sub(bucket.timestamp)).div(365 days)
-        );
         bucket.rate = rater.combinedRate(poolRate, rater.creditScoreAdjustmentRate(bucketNumber));
         bucket.timestamp = uint128(timeNow);
+    }
+
+    function _newInterestPerShare(CreditScoreBucket storage bucket, uint256 timeNow) private view returns (uint256) {
+        return bucket.rate.mul(timeNow.sub(bucket.timestamp)).mul(ADDITIONAL_PRECISION / 10_000).div(365 days);
     }
 
     function poolCreditValue(ITrueFiPool2 pool) external override view returns (uint256) {
         uint256 bitMap = usedBucketsBitmap;
         CreditScoreBucket[256] storage creditScoreBuckets = buckets[pool];
         uint256 timeNow = block.timestamp;
-        uint256 value = poolTotalInterest[pool].div(1e27);
-
+        uint256 bucketSum = 0;
         for (uint16 i = 0; i <= MAX_CREDIT_SCORE; (i++, bitMap >>= 1)) {
             if (bitMap & 1 == 0) {
                 continue;
@@ -361,11 +361,10 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
             CreditScoreBucket storage bucket = creditScoreBuckets[i];
 
-            value = value.add(bucket.totalBorrowed).add(
-                bucket.rate.mul(1e23).mul(bucket.totalBorrowed).mul(timeNow.sub(bucket.timestamp)).div(365 days).div(1e27)
-            );
+            bucketSum = bucketSum.add(bucket.totalBorrowed.mul(ADDITIONAL_PRECISION));
+            bucketSum = bucketSum.add(bucket.totalBorrowed.mul(_newInterestPerShare(bucket, timeNow)));
         }
-        return value.sub(poolTotalPaidInterest[pool]);
+        return (poolTotalInterest[pool].add(bucketSum).div(ADDITIONAL_PRECISION)).sub(poolTotalPaidInterest[pool]);
     }
 
     function singleCreditValue(ITrueFiPool2 pool, address borrower) external view returns (uint256) {
@@ -426,21 +425,10 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         CreditScoreBucket storage bucket,
         address borrower
     ) internal view returns (uint256) {
-        uint256 borrowedByBorrower = borrowed[pool][borrower];
-        // prettier-ignore
-        return
-            bucket.savedInterest[borrower].total.add(
-                bucket.cumulativeInterestPerShare
-                    .sub(bucket.savedInterest[borrower].perShare)
-                    .mul(borrowedByBorrower)
-                    .div(ADDITIONAL_PRECISION)
-            ).add(
-                block.timestamp.sub(bucket.timestamp)
-                .mul(borrowedByBorrower)
-                .mul(bucket.rate)
-                .div(10000)
-                .div(365 days)
-            );
+        uint256 interestPerShare = bucket.cumulativeInterestPerShare.sub(bucket.savedInterest[borrower].perShare).add(
+            _newInterestPerShare(bucket, block.timestamp)
+        );
+        return bucket.savedInterest[borrower].total.add(borrowed[pool][borrower].mul(interestPerShare).div(ADDITIONAL_PRECISION));
     }
 
     function _interest(
