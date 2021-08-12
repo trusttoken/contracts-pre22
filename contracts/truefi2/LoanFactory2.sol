@@ -7,6 +7,7 @@ import {Initializable} from "../common/Initializable.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
+import {ITrueRateAdjuster} from "./interface/ITrueRateAdjuster.sol";
 
 import {LoanToken2, IERC20} from "./LoanToken2.sol";
 
@@ -34,8 +35,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
 
     address public admin;
 
-    //@dev Adds to loan apy for each 30 days of its term
-    uint256 public adjustmentCoefficient;
+    ITrueRateAdjuster public rater;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -46,12 +46,6 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     event LoanTokenCreated(address contractAddress);
 
     /**
-     * @dev Emitted when a adjustmentCoefficient is changed
-     * @param newCoefficient New adjustmentCoefficient value
-     */
-    event AdjustmentCoefficientChanged(uint256 newCoefficient);
-
-    /**
      * @dev Initialize this contract and set currency token
      * @param _poolFactory PoolFactory address
      * @param _lender Lender address
@@ -60,28 +54,22 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     function initialize(
         IPoolFactory _poolFactory,
         address _lender,
-        address _liquidator
+        address _liquidator,
+        ITrueRateAdjuster _rater
     ) external initializer {
         poolFactory = _poolFactory;
         lender = _lender;
         admin = msg.sender;
         liquidator = _liquidator;
-
-        adjustmentCoefficient = 25;
+        rater = _rater;
     }
 
     function setAdmin() external {
         admin = 0x16cEa306506c387713C70b9C1205fd5aC997E78E;
     }
 
-    function setAdjustmentCoefficient(uint256 newCoefficient) external {
-        require(msg.sender == admin, "LoanFactory: Only admin can set adjustment coefficient");
-        adjustmentCoefficient = newCoefficient;
-        emit AdjustmentCoefficientChanged(newCoefficient);
-    }
-
     function fixedTermLoanAdjustment(uint256 term) public view returns (uint256) {
-        return term.div(30 days).mul(adjustmentCoefficient);
+        return term.div(30 days).mul(rater.fixedTermLoanAdjustmentCoefficient());
     }
 
     /**

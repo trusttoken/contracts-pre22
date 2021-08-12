@@ -13,4 +13,6 @@ interface ITrueRateAdjuster {
     function creditScoreAdjustmentRate(uint8 score) external view returns (uint256);
 
     function utilizationAdjustmentRate(ITrueFiPool2 pool) external view returns (uint256);
+
+    function fixedTermLoanAdjustmentCoefficient() external view returns (uint256);
 }

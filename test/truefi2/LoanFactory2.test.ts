@@ -2,6 +2,7 @@ import { expect, use } from 'chai'
 import { Wallet } from 'ethers'
 
 import { beforeEachWithFixture, DAY, parseEth } from 'utils'
+import { setupDeploy } from 'scripts/utils'
 
 import { AddressZero } from '@ethersproject/constants'
 
@@ -16,7 +17,10 @@ import {
   ImplementationReference,
   TrueFiPool2__factory,
   ImplementationReference__factory,
+  TrueRateAdjuster,
+  TrueRateAdjuster__factory,
 } from 'contracts'
+
 import { solidity } from 'ethereum-waffle'
 
 use(solidity)
@@ -30,18 +34,23 @@ describe('LoanFactory2', () => {
   let poolImplementation: TrueFiPool2
   let implementationReference: ImplementationReference
   let factory: LoanFactory2
+  let rater: TrueRateAdjuster
   let poolAddress: string
 
   beforeEachWithFixture(async (wallets) => {
     [owner, borrower, lender, liquidator] = wallets
     const token = await new MockErc20Token__factory(owner).deploy()
-    factory = await new LoanFactory2__factory(owner).deploy()
-    poolFactory = await new PoolFactory__factory(owner).deploy()
-    poolImplementation = await new TrueFiPool2__factory(owner).deploy()
-    implementationReference = await new ImplementationReference__factory(owner).deploy(poolImplementation.address)
+
+    const deployContract = setupDeploy(owner)
+
+    factory = await deployContract(LoanFactory2__factory)
+    poolFactory = await deployContract(PoolFactory__factory)
+    poolImplementation = await deployContract(TrueFiPool2__factory)
+    implementationReference = await deployContract(ImplementationReference__factory, poolImplementation.address)
+    rater = await deployContract(TrueRateAdjuster__factory, 1000)
 
     await poolFactory.initialize(implementationReference.address, AddressZero, AddressZero)
-    await factory.initialize(poolFactory.address, lender.address, liquidator.address)
+    await factory.initialize(poolFactory.address, lender.address, liquidator.address, rater.address)
 
     await poolFactory.allowToken(token.address, true)
     await poolFactory.createPool(token.address)
@@ -87,27 +96,9 @@ describe('LoanFactory2', () => {
     })
   })
 
-  describe('setAdjustmentCoefficient', () => {
-    it('reverts if not called by the admin', async () => {
-      await expect(factory.connect(borrower).setAdjustmentCoefficient(0))
-        .to.be.revertedWith('LoanFactory: Only admin can set adjustment coefficient')
-    })
-
-    it('sets adjustment coefficient', async () => {
-      await factory.setAdjustmentCoefficient(50)
-      expect(await factory.adjustmentCoefficient()).to.eq(50)
-    })
-
-    it('emits event', async () => {
-      await expect(factory.setAdjustmentCoefficient(50))
-        .to.emit(factory, 'AdjustmentCoefficientChanged')
-        .withArgs(50)
-    })
-  })
-
   describe('fixedTermLoanAdjustment', () => {
     beforeEach(async () => {
-      await factory.setAdjustmentCoefficient(25)
+      await rater.setFixedTermLoanAdjustmentCoefficient(25)
     })
 
     ;[
