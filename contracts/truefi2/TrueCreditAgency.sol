@@ -78,8 +78,6 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
     ITrueFiCreditOracle public creditOracle;
 
-    mapping(ITrueFiPool2 => ITimeAveragedBaseRateOracle) public baseRateOracle;
-
     /**
      * This bitmap is used to non-empty buckets.
      * If at least one borrower with a score n has an opened credit line, the n-th bit of the bitmap is set
@@ -277,10 +275,6 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         return rater.rate(pool, creditScore[pool][borrower]);
     }
 
-    function securedRate(ITrueFiPool2 pool) public view returns (uint256) {
-        return baseRateOracle[pool].getWeeklyAPY();
-    }
-
     function interest(ITrueFiPool2 pool, address borrower) public view returns (uint256) {
         CreditScoreBucket storage bucket = buckets[pool][creditScore[pool][borrower]];
         return _interest(pool, bucket, borrower);
@@ -334,7 +328,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     function poke(ITrueFiPool2 pool) public {
         uint256 bitMap = usedBucketsBitmap;
         uint256 timeNow = block.timestamp;
-        uint256 partialRate = rater.poolBasicRate(pool);
+        uint256 poolRate = rater.poolBasicRate(pool);
 
         for (uint16 i = 0; i <= MAX_CREDIT_SCORE; (i++, bitMap >>= 1)) {
             if (bitMap & 1 == 0) {

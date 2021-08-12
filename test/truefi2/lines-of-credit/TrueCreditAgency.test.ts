@@ -603,18 +603,6 @@ describe('TrueCreditAgency', () => {
     )
   })
 
-  describe('securedRate', () => {
-    it('gets rate from oracle', async () => {
-      expect(await creditAgency.securedRate(tusdPool.address)).to.eq(300)
-    })
-
-    it('gets changed rate after update', async () => {
-      await mockSpotOracle.mock.getRate.withArgs(tusd.address).returns(307)
-      await updateRateOracle(tusdBaseRateOracle, DAY, provider)
-      expect(await creditAgency.securedRate(tusdPool.address)).to.eq(301)
-    })
-  })
-
   describe('currentRate', () => {
     it('calculates rate correctly', async () => {
       await rater.setRiskPremium(100)

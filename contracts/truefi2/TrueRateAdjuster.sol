@@ -2,8 +2,10 @@
 pragma solidity 0.6.10;
 
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
-import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
+
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
+import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
+import {ITimeAveragedBaseRateOracle} from "./interface/ITimeAveragedBaseRateOracle.sol";
 
 contract TrueRateAdjuster is UpgradeableClaimable {
     using SafeMath for uint256;
@@ -22,6 +24,8 @@ contract TrueRateAdjuster is UpgradeableClaimable {
     // basis precision: 10000 = 100%
     uint256 public riskPremium;
 
+    mapping(ITrueFiPool2 => ITimeAveragedBaseRateOracle) public baseRateOracle;
+
     event RiskPremiumChanged(uint256 newRate);
 
     event CreditAdjustmentCoefficientChanged(uint256 newCoefficient);
@@ -29,6 +33,8 @@ contract TrueRateAdjuster is UpgradeableClaimable {
     event UtilizationAdjustmentCoefficientChanged(uint256 newCoefficient);
 
     event UtilizationAdjustmentPowerChanged(uint256 newValue);
+
+    event BaseRateOracleChanged(ITrueFiPool2 pool, ITimeAveragedBaseRateOracle oracle);
 
     constructor(uint256 _riskPremium) public {
         UpgradeableClaimable.initialize(msg.sender);
@@ -58,12 +64,21 @@ contract TrueRateAdjuster is UpgradeableClaimable {
         emit UtilizationAdjustmentPowerChanged(newValue);
     }
 
+    function setBaseRateOracle(ITrueFiPool2 pool, ITimeAveragedBaseRateOracle _baseRateOracle) external onlyOwner {
+        baseRateOracle[pool] = _baseRateOracle;
+        emit BaseRateOracleChanged(pool, _baseRateOracle);
+    }
+
     function rate(ITrueFiPool2 pool, uint8 score) external view returns (uint256) {
         return combinedRate(poolBasicRate(pool), creditScoreAdjustmentRate(score));
     }
 
     function poolBasicRate(ITrueFiPool2 pool) public view returns (uint256) {
-        return riskPremium.add(utilizationAdjustmentRate(pool));
+        return min(riskPremium.add(securedRate(pool)).add(utilizationAdjustmentRate(pool)), MAX_RATE_CAP);
+    }
+
+    function securedRate(ITrueFiPool2 pool) public view returns (uint256) {
+        return baseRateOracle[pool].getWeeklyAPY();
     }
 
     /**
