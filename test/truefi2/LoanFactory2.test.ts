@@ -1,7 +1,7 @@
 import { expect, use } from 'chai'
 import { Wallet } from 'ethers'
 
-import { beforeEachWithFixture, parseEth } from 'utils'
+import { beforeEachWithFixture, DAY, parseEth } from 'utils'
 
 import { AddressZero } from '@ethersproject/constants'
 
@@ -103,5 +103,23 @@ describe('LoanFactory2', () => {
         .to.emit(factory, 'AdjustmentCoefficientChanged')
         .withArgs(50)
     })
+  })
+
+  describe('fixTermLoanAdjustment', () => {
+    beforeEach(async () => {
+      await factory.setAdjustmentCoefficient(25)
+    })
+
+    ;[
+      [0, 0],
+      [30 * DAY - 1, 0],
+      [30 * DAY, 25],
+      [60 * DAY - 1, 25],
+      [60 * DAY, 50],
+    ].map(([term, adjustment]) =>
+      it(`returns adjustment of ${adjustment} basis points for term of ${term / DAY} days`, async () => {
+        expect(await factory.fixTermLoanAdjustment(term)).to.eq(adjustment)
+      }),
+    )
   })
 })

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+
 import {Initializable} from "../common/Initializable.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
@@ -15,6 +17,8 @@ import {LoanToken2, IERC20} from "./LoanToken2.sol";
  * LoanTokens adhere to the same contract code, rather than using an interface.
  */
 contract LoanFactory2 is ILoanFactory2, Initializable {
+    using SafeMath for uint256;
+
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
     // === STORAGE VARIABLES ARE DECLARED BELOW ==
@@ -74,6 +78,10 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         require(msg.sender == admin, "LoanFactory: Only admin can set adjustment coefficient");
         adjustmentCoefficient = newCoefficient;
         emit AdjustmentCoefficientChanged(newCoefficient);
+    }
+
+    function fixTermLoanAdjustment(uint256 term) public view returns (uint256) {
+        return term.div(30 days).mul(adjustmentCoefficient);
     }
 
     /**
