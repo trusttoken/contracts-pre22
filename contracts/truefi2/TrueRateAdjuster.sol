@@ -100,11 +100,11 @@ contract TrueRateAdjuster is UpgradeableClaimable, ITrueRateAdjuster {
     }
 
     function utilizationAdjustmentRate(ITrueFiPool2 pool) public override view returns (uint256) {
-        _utilizationAdjustmentRate(pool.liquidRatio());
+        return _utilizationAdjustmentRate(pool.liquidRatio());
     }
 
     function proFormaUtilizationAdjustmentRate(ITrueFiPool2 pool, uint256 amount) external override view returns (uint256) {
-        _utilizationAdjustmentRate(pool.proFormaLiquidRatio(amount));
+        return _utilizationAdjustmentRate(pool.proFormaLiquidRatio(amount));
     }
 
     function _utilizationAdjustmentRate(uint256 liquidRatio) internal view returns (uint256) {
