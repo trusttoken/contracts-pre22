@@ -26,7 +26,6 @@ describe('LoanFactory2', () => {
   let borrower: Wallet
   let lender: Wallet
   let liquidator: Wallet
-  let contractAddress: string
   let poolFactory: PoolFactory
   let poolImplementation: TrueFiPool2
   let implementationReference: ImplementationReference
@@ -47,38 +46,44 @@ describe('LoanFactory2', () => {
     await poolFactory.allowToken(token.address, true)
     await poolFactory.createPool(token.address)
     poolAddress = await poolFactory.pool(token.address)
-
-    const tx = await factory.connect(borrower).createLoanToken(poolAddress, parseEth(123), 100, 200)
-    const creationEvent = (await tx.wait()).events[0]
-    ;({ contractAddress } = creationEvent.args)
   })
 
-  it('deploys loan token contract', async () => {
-    const loanToken = LoanToken__factory.connect(contractAddress, owner)
-    expect(await loanToken.amount()).to.equal(parseEth(123))
-    expect(await loanToken.term()).to.equal(100)
-    expect(await loanToken.apy()).to.equal(200)
-    expect(await loanToken.lender()).to.equal(lender.address)
-    expect(await loanToken.liquidator()).to.equal(liquidator.address)
-  })
+  describe('createLoanToken', () => {
+    let contractAddress: string
 
-  it('marks deployed contract as loan token', async () => {
-    expect(await factory.isLoanToken(contractAddress)).to.be.true
-  })
+    beforeEach(async () => {
+      const tx = await factory.connect(borrower).createLoanToken(poolAddress, parseEth(123), 100, 200)
+      const creationEvent = (await tx.wait()).events[0]
+      ;({ contractAddress } = creationEvent.args)
+    })
 
-  it('prevents 0 loans', async () => {
-    await expect(factory.connect(borrower).createLoanToken(poolAddress, 0, 100, 200))
-      .to.be.revertedWith('LoanFactory: Loans of amount 0, will not be approved')
-  })
+    it('deploys loan token contract', async () => {
+      const loanToken = LoanToken__factory.connect(contractAddress, owner)
+      expect(await loanToken.amount()).to.equal(parseEth(123))
+      expect(await loanToken.term()).to.equal(100)
+      expect(await loanToken.apy()).to.equal(200)
+      expect(await loanToken.lender()).to.equal(lender.address)
+      expect(await loanToken.liquidator()).to.equal(liquidator.address)
+    })
 
-  it('prevents 0 time loans', async () => {
-    await expect(factory.connect(borrower).createLoanToken(poolAddress, parseEth(123), 0, 200))
-      .to.be.revertedWith('LoanFactory: Loans cannot have instantaneous term of repay')
-  })
+    it('marks deployed contract as loan token', async () => {
+      expect(await factory.isLoanToken(contractAddress)).to.be.true
+    })
 
-  it('prevents fake pool loans', async () => {
-    const fakePool = await new TrueFiPool2__factory(owner).deploy()
-    await expect(factory.connect(borrower).createLoanToken(fakePool.address, parseEth(123), 100, 200))
-      .to.be.revertedWith('LoanFactory: Pool was not created by PoolFactory')
+    it('prevents 0 loans', async () => {
+      await expect(factory.connect(borrower).createLoanToken(poolAddress, 0, 100, 200))
+        .to.be.revertedWith('LoanFactory: Loans of amount 0, will not be approved')
+    })
+
+    it('prevents 0 time loans', async () => {
+      await expect(factory.connect(borrower).createLoanToken(poolAddress, parseEth(123), 0, 200))
+        .to.be.revertedWith('LoanFactory: Loans cannot have instantaneous term of repay')
+    })
+
+    it('prevents fake pool loans', async () => {
+      const fakePool = await new TrueFiPool2__factory(owner).deploy()
+      await expect(factory.connect(borrower).createLoanToken(fakePool.address, parseEth(123), 100, 200))
+        .to.be.revertedWith('LoanFactory: Pool was not created by PoolFactory')
+    })
   })
 })
