@@ -35,7 +35,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
 
     address public admin;
 
-    ITrueRateAdjuster public rater;
+    ITrueRateAdjuster public rateAdjuster;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -55,13 +55,13 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         IPoolFactory _poolFactory,
         address _lender,
         address _liquidator,
-        ITrueRateAdjuster _rater
+        ITrueRateAdjuster _rateAdjuster
     ) external initializer {
         poolFactory = _poolFactory;
         lender = _lender;
         admin = msg.sender;
         liquidator = _liquidator;
-        rater = _rater;
+        rateAdjuster = _rateAdjuster;
     }
 
     function setAdmin() external {
@@ -69,7 +69,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     }
 
     function fixedTermLoanAdjustment(uint256 term) public view returns (uint256) {
-        return term.div(30 days).mul(rater.fixedTermLoanAdjustmentCoefficient());
+        return term.div(30 days).mul(rateAdjuster.fixedTermLoanAdjustmentCoefficient());
     }
 
     /**

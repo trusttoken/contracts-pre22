@@ -34,7 +34,7 @@ describe('LoanFactory2', () => {
   let poolImplementation: TrueFiPool2
   let implementationReference: ImplementationReference
   let factory: LoanFactory2
-  let rater: TrueRateAdjuster
+  let rateAdjuster: TrueRateAdjuster
   let poolAddress: string
 
   beforeEachWithFixture(async (wallets) => {
@@ -47,10 +47,10 @@ describe('LoanFactory2', () => {
     poolFactory = await deployContract(PoolFactory__factory)
     poolImplementation = await deployContract(TrueFiPool2__factory)
     implementationReference = await deployContract(ImplementationReference__factory, poolImplementation.address)
-    rater = await deployContract(TrueRateAdjuster__factory, 1000)
+    rateAdjuster = await deployContract(TrueRateAdjuster__factory, 1000)
 
     await poolFactory.initialize(implementationReference.address, AddressZero, AddressZero)
-    await factory.initialize(poolFactory.address, lender.address, liquidator.address, rater.address)
+    await factory.initialize(poolFactory.address, lender.address, liquidator.address, rateAdjuster.address)
 
     await poolFactory.allowToken(token.address, true)
     await poolFactory.createPool(token.address)
@@ -98,7 +98,7 @@ describe('LoanFactory2', () => {
 
   describe('fixedTermLoanAdjustment', () => {
     beforeEach(async () => {
-      await rater.setFixedTermLoanAdjustmentCoefficient(25)
+      await rateAdjuster.setFixedTermLoanAdjustmentCoefficient(25)
     })
 
     ;[
