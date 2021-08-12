@@ -975,11 +975,12 @@ describe('TrueCreditAgency', () => {
 
   describe('Interest calculation', () => {
     beforeEach(async () => {
-      await creditOracle.connect(owner).setEligibleForDuration(borrower.address, YEAR * 10)
       await creditAgency.allowBorrower(borrower.address, true)
       await creditAgency.allowBorrower(owner.address, true)
       await creditAgency.setRiskPremium(700)
+      await creditOracle.connect(owner).setCreditUpdatePeriod(YEAR * 10)
       await creditOracle.setScore(owner.address, 255)
+      await creditOracle.setScore(borrower.address, 255)
       await creditAgency.setInterestRepaymentPeriod(YEAR * 10)
     })
 
