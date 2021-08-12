@@ -14,6 +14,7 @@ contract TestCurveStrategy is CurveYearnStrategy {
         ICurveMinter _minter,
         I1Inch3 _1inchExchange,
         ICrvPriceOracle _crvOracle,
+        uint256 _maxPriceSlippage,
         uint8 _tokenIndex
     ) external initializer {
         UpgradeableClaimable.initialize(msg.sender);
@@ -26,6 +27,7 @@ contract TestCurveStrategy is CurveYearnStrategy {
         minter = _minter;
         _1Inch = _1inchExchange;
         crvOracle = _crvOracle;
+        maxPriceSlippage = _maxPriceSlippage;
         tokenIndex = _tokenIndex;
     }
 }

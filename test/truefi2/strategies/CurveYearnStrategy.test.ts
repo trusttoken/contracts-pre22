@@ -53,6 +53,7 @@ describe('CurveYearnStrategy', () => {
       mockMinter.address,
       AddressZero,
       crvOracle.address,
+      200,
       3,
     )
   })
