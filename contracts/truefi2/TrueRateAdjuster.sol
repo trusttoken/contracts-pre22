@@ -6,8 +6,9 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {ITimeAveragedBaseRateOracle} from "./interface/ITimeAveragedBaseRateOracle.sol";
+import {ITrueRateAdjuster} from "./interface/ITrueRateAdjuster.sol";
 
-contract TrueRateAdjuster is UpgradeableClaimable {
+contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     using SafeMath for uint256;
 
     uint256 constant MAX_RATE_CAP = 50000;
@@ -69,15 +70,15 @@ contract TrueRateAdjuster is UpgradeableClaimable {
         emit BaseRateOracleChanged(pool, _baseRateOracle);
     }
 
-    function rate(ITrueFiPool2 pool, uint8 score) external view returns (uint256) {
+    function rate(ITrueFiPool2 pool, uint8 score) external override view returns (uint256) {
         return combinedRate(poolBasicRate(pool), creditScoreAdjustmentRate(score));
     }
 
-    function poolBasicRate(ITrueFiPool2 pool) public view returns (uint256) {
+    function poolBasicRate(ITrueFiPool2 pool) public override view returns (uint256) {
         return min(riskPremium.add(securedRate(pool)).add(utilizationAdjustmentRate(pool)), MAX_RATE_CAP);
     }
 
-    function securedRate(ITrueFiPool2 pool) public view returns (uint256) {
+    function securedRate(ITrueFiPool2 pool) public override view returns (uint256) {
         return baseRateOracle[pool].getWeeklyAPY();
     }
 
@@ -87,18 +88,18 @@ contract TrueRateAdjuster is UpgradeableClaimable {
      * @param __creditScoreAdjustmentRate credit score adjustment
      * @return sum of addends capped by MAX_RATE_CAP
      */
-    function combinedRate(uint256 partialRate, uint256 __creditScoreAdjustmentRate) public pure returns (uint256) {
+    function combinedRate(uint256 partialRate, uint256 __creditScoreAdjustmentRate) public override pure returns (uint256) {
         return min(partialRate.add(__creditScoreAdjustmentRate), MAX_RATE_CAP);
     }
 
-    function creditScoreAdjustmentRate(uint8 score) public view returns (uint256) {
+    function creditScoreAdjustmentRate(uint8 score) public override view returns (uint256) {
         if (score == 0) {
             return MAX_RATE_CAP; // Cap rate by 500%
         }
         return min(creditAdjustmentCoefficient.mul(MAX_CREDIT_SCORE - score).div(score), MAX_RATE_CAP);
     }
 
-    function utilizationAdjustmentRate(ITrueFiPool2 pool) public view returns (uint256) {
+    function utilizationAdjustmentRate(ITrueFiPool2 pool) public override view returns (uint256) {
         uint256 liquidRatio = pool.liquidRatio();
         if (liquidRatio == 0) {
             // if utilization is at 100 %
