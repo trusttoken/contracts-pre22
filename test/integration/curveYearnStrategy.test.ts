@@ -73,7 +73,7 @@ describe('[Skip CI] Curve Yearn Pool Strategy', () => {
     strategy = await new CurveYearnStrategy__factory(owner).deploy()
     const oracle = await deployContract(CrvPriceOracle__factory)
 
-    await strategy.initialize(pool.address, CURVE_POOL, GAUGE, MINTER, ONE_INCH, oracle.address, 1)
+    await strategy.initialize(pool.address, CURVE_POOL, GAUGE, MINTER, ONE_INCH, oracle.address, 75, 1)
     await pool.switchStrategy(strategy.address)
   })
 

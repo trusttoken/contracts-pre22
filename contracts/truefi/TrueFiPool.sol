@@ -24,9 +24,7 @@ import {PoolExtensions} from "../truefi2/PoolExtensions.sol";
  * Earn high interest rates on currency deposits through uncollateralized loans
  *
  * Funds deposited in this pool are not fully liquid. Liquidity
- * Exiting the pool has 2 options:
- * - withdraw a basket of LoanTokens backing the pool
- * - take an exit penalty depending on pool liquidity
+ * Exiting incurs an exit penalty depending on pool liquidity
  * After exiting, an account will need to wait for LoanTokens to expire and burn them
  * It is recommended to perform a zap or swap tokens on Uniswap for increased liquidity
  *
@@ -416,62 +414,6 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
         require(token.transferFrom(msg.sender, address(this), amount));
 
         emit Joined(msg.sender, amount, mintedAmount);
-    }
-
-    // prettier-ignore
-    /**
-     * @dev Exit pool
-     * This function will withdraw a basket of currencies backing the pool value
-     * @param amount amount of pool tokens to redeem for underlying tokens
-     */
-    function exit(uint256 amount) external override nonReentrant {
-        require(block.number != latestJoinBlock[tx.origin], "TrueFiPool: Cannot join and exit in same block");
-        require(amount <= balanceOf(msg.sender), "TrueFiPool: insufficient funds");
-
-        uint256 _totalSupply = totalSupply();
-        uint256 _deficitValue = deficitValue();
-        if (_deficitValue > 0) {
-            uint256 value = poolValue();
-            _totalSupply = _totalSupply.mul(value.sub(_deficitValue)).div(value);
-        }
-
-        // get share of currency tokens kept in the pool
-        uint256 currencyAmountToTransfer = amount.mul(
-            currencyBalance()).div(_totalSupply);
-
-        // calculate amount of curve.fi pool tokens
-        uint256 curveLiquidityAmountToTransfer = amount.mul(
-            yTokenBalance()).div(_totalSupply);
-
-        // calculate amount of CRV
-        uint256 crvTokenAmountToTransfer = amount.mul(
-            crvBalance()).div(_totalSupply);
-
-        // burn tokens sent
-        _burn(msg.sender, amount);
-
-        // withdraw basket of loan tokens
-        _lender.distribute(msg.sender, amount, _totalSupply);
-        if (address(_lender2) != address(0)) {
-            _lender2.distribute(msg.sender, amount, _totalSupply);
-        }
-
-        // if currency remaining, transfer
-        if (currencyAmountToTransfer > 0) {
-            require(token.transfer(msg.sender, currencyAmountToTransfer));
-        }
-        // if curve tokens remaining, transfer
-        if (curveLiquidityAmountToTransfer > 0) {
-            ensureEnoughTokensAreAvailable(curveLiquidityAmountToTransfer);
-            require(_curvePool.token().transfer(msg.sender, curveLiquidityAmountToTransfer));
-        }
-
-        // if crv remaining, transfer
-        if (crvTokenAmountToTransfer > 0) {
-            require(_minter.token().transfer(msg.sender, crvTokenAmountToTransfer));
-        }
-
-        emit Exited(msg.sender, amount);
     }
 
     /**
