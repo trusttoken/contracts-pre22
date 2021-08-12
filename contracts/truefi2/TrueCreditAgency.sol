@@ -21,8 +21,6 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     using TrueFiFixed64x64 for int128;
     using TrueFiFixed64x64 for uint256;
 
-    enum Status {Ineligible, OnHold, Eligible}
-
     uint8 constant MAX_CREDIT_SCORE = 255;
     uint256 constant MAX_RATE_CAP = 50000;
     uint256 constant ADDITIONAL_PRECISION = 1e27;
@@ -66,11 +64,9 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     mapping(ITrueFiPool2 => bool) public isPoolAllowed;
     ITrueFiPool2[] public pools;
 
-    mapping(address => uint256) public borrowerAllowedUntilTime;
+    mapping(address => bool) public isBorrowerAllowed;
 
     uint256 public interestRepaymentPeriod;
-
-    uint256 public gracePeriod;
 
     // basis precision: 10000 = 100%
     uint256 public riskPremium;
@@ -100,9 +96,6 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
     uint256 public minCreditScore;
 
-    // @dev How frequently a score needs to be updated for an account to borrow
-    uint256 public creditScoreUpdateThreshold;
-
     // ======= STORAGE DECLARATION END ============
 
     event BaseRateOracleChanged(ITrueFiPool2 pool, ITimeAveragedBaseRateOracle oracle);
@@ -115,21 +108,17 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
     event UtilizationAdjustmentPowerChanged(uint256 newValue);
 
-    event BorrowerAllowed(address indexed who, uint256 timePeriod);
+    event BorrowerAllowed(address indexed who, bool isAllowed);
 
     event PoolAllowed(ITrueFiPool2 pool, bool isAllowed);
 
     event InterestRepaymentPeriodChanged(uint256 newPeriod);
-
-    event GracePeriodChanged(uint256 newGracePeriod);
 
     event InterestPaid(ITrueFiPool2 pool, address borrower, uint256 amount);
 
     event PrincipalRepaid(ITrueFiPool2 pool, address borrower, uint256 amount);
 
     event MinCreditScoreChanged(uint256 newValue);
-
-    event CreditScoreUpdateThresholdChanged(uint256 newThreshold);
 
     event BorrowLimitConfigChanged(
         uint8 scoreFloor,
@@ -147,12 +136,10 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         utilizationAdjustmentCoefficient = 50;
         utilizationAdjustmentPower = 2;
         interestRepaymentPeriod = 31 days;
-        gracePeriod = 3 days;
-        creditScoreUpdateThreshold = 30 days;
     }
 
     modifier onlyAllowedBorrowers() {
-        require(borrowerAllowedUntilTime[msg.sender] >= block.timestamp, "TrueCreditAgency: Sender is not allowed to borrow");
+        require(isBorrowerAllowed[msg.sender], "TrueCreditAgency: Sender is not allowed to borrow");
         _;
     }
 
@@ -172,11 +159,6 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     function setInterestRepaymentPeriod(uint256 newPeriod) external onlyOwner {
         interestRepaymentPeriod = newPeriod;
         emit InterestRepaymentPeriodChanged(newPeriod);
-    }
-
-    function setGracePeriod(uint256 newGracePeriod) external onlyOwner {
-        gracePeriod = newGracePeriod;
-        emit GracePeriodChanged(newGracePeriod);
     }
 
     function setBorrowLimitConfig(
@@ -209,17 +191,9 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         emit MinCreditScoreChanged(newValue);
     }
 
-    /**
-     * @dev Set new threshold for updating credit scores
-     */
-    function setCreditScoreUpdateThreshold(uint256 newThreshold) public onlyOwner {
-        creditScoreUpdateThreshold = newThreshold;
-        emit CreditScoreUpdateThresholdChanged(newThreshold);
-    }
-
-    function allowBorrower(address who, uint256 timePeriod) external onlyOwner {
-        borrowerAllowedUntilTime[who] = block.timestamp.add(timePeriod);
-        emit BorrowerAllowed(who, timePeriod);
+    function allowBorrower(address who, bool isAllowed) external onlyOwner {
+        isBorrowerAllowed[who] = isAllowed;
+        emit BorrowerAllowed(who, isAllowed);
     }
 
     function allowPool(ITrueFiPool2 pool, bool isAllowed) external onlyOwner {
@@ -351,8 +325,11 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
     function borrow(ITrueFiPool2 pool, uint256 amount) external onlyAllowedBorrowers {
         require(isPoolAllowed[pool], "TrueCreditAgency: The pool is not whitelisted for borrowing");
-        require(status(pool, msg.sender) == Status.Eligible, "TrueCreditAgency: Sender not eligible to borrow");
-        require(meetsTimeRequirement(msg.sender), "TrueCreditAgency: Borrower credit score does not meet time requirement");
+        require(
+            creditOracle.status(msg.sender) == ITrueFiCreditOracle.Status.Eligible,
+            "TrueCreditAgency: Sender not eligible to borrow"
+        );
+        require(!_hasOverdueInterest(pool, msg.sender), "TrueCreditAgency: Sender has overdue interest in this pool");
         (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, msg.sender);
         require(newScore >= minCreditScore, "TrueCreditAgency: Borrower has credit score below minimum");
         require(amount <= borrowLimit(pool, msg.sender), "TrueCreditAgency: Borrow amount cannot exceed borrow limit");
@@ -457,28 +434,8 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         return borrowed[pool][borrower].add(interest(pool, borrower));
     }
 
-    function status(ITrueFiPool2 pool, address borrower) public view returns (Status) {
-        if (creditOracle.ineligible(borrower)) {
-            return Status.Ineligible;
-        }
-        if (creditOracle.onHold(borrower)) {
-            return Status.OnHold;
-        }
-        if (nextInterestRepayTime[pool][borrower] == 0) {
-            return Status.Eligible;
-        }
-        if (nextInterestRepayTime[pool][borrower] < block.timestamp) {
-            return Status.OnHold;
-        }
-        return Status.Eligible;
-    }
-
-    /**
-     * @dev check if borrower score has been updated recently enough
-     * @return Whether block timestamp is less than last update + threshold
-     */
-    function meetsTimeRequirement(address borrower) public view returns (bool) {
-        return block.timestamp <= creditScoreUpdateThreshold.add(creditOracle.lastUpdated(borrower));
+    function _hasOverdueInterest(ITrueFiPool2 pool, address borrower) private view returns (bool) {
+        return interest(pool, borrower) != 0 && block.timestamp >= nextInterestRepayTime[pool][borrower];
     }
 
     function _rebucket(
