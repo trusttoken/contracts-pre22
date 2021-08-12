@@ -31,6 +31,7 @@ import {
   TrueLender__factory,
   MockTrueFiPoolOracle__factory, Safu__factory,
   Safu,
+  TrueRateAdjuster__factory,
 } from 'contracts'
 import { ICurveGaugeJson, ICurveMinterJson, TrueRatingAgencyV2Json } from 'build'
 import { AddressZero } from '@ethersproject/constants'
@@ -505,7 +506,8 @@ describe('TrueFiPool', () => {
     await pool.setLender2(lender2.address)
     const loanFactory2 = await new LoanFactory2__factory(owner).deploy()
     const liquidator2 = await new Liquidator2__factory(owner).deploy()
-    await loanFactory2.initialize(factory.address, lender2.address, liquidator2.address)
+    const rateAdjuster = await new TrueRateAdjuster__factory(owner).deploy(100)
+    await loanFactory2.initialize(factory.address, lender2.address, liquidator2.address, rateAdjuster.address)
     await liquidator2.initialize(mockStakingPool.address, trustToken.address, loanFactory2.address, owner.address)
 
     return { lender2, loanFactory2, liquidator2 }

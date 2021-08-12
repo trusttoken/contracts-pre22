@@ -12,6 +12,7 @@ import {
   TrueFiPool2,
   TrueFiPool2__factory,
   TrueLender2__factory,
+  TrueRateAdjuster__factory,
 } from 'contracts'
 import {
   ITrueDistributorJson,
@@ -42,6 +43,7 @@ export const trueFi2Fixture = async (_wallets: Wallet[], _provider: MockProvider
   const token = await deployContract(MockTrueCurrency__factory)
   const oracle = await deployContract(MockTrueFiPoolOracle__factory, token.address)
   const safu = await deployContract(Safu__factory)
+  const rateAdjuster = await deployContract(TrueRateAdjuster__factory, [100])
 
   const rater = await deployMockContract(owner, TrueRatingAgencyV2Json.abi)
   await rater.mock.getResults.returns(0, 0, parseTRU(15e6))
@@ -49,7 +51,7 @@ export const trueFi2Fixture = async (_wallets: Wallet[], _provider: MockProvider
   await distributor.mock.nextDistribution.returns(0)
 
   await liquidator.initialize(stkTru.address, tru.address, loanFactory.address, safu.address)
-  await loanFactory.initialize(poolFactory.address, lender.address, liquidator.address)
+  await loanFactory.initialize(poolFactory.address, lender.address, liquidator.address, rateAdjuster.address)
   await poolFactory.initialize(implementationReference.address, lender.address, safu.address)
 
   await poolFactory.allowToken(token.address, true)

@@ -14,6 +14,7 @@ import {
   LoanFactory2__factory,
   LoanToken2,
   LoanToken2__factory,
+  TrueRateAdjuster__factory,
 } from 'contracts'
 import { DAY, parseEth, parseTRU } from 'utils'
 import fetch from 'node-fetch'
@@ -56,6 +57,7 @@ describe('TrueLender2', () => {
     const poolFactory = await deployContract(PoolFactory__factory)
     const poolImplementation = await deployContract(TrueFiPool2__factory)
     const implementationReference = await deployContract(ImplementationReference__factory, poolImplementation.address)
+    const rateAdjuster = await deployContract(TrueRateAdjuster__factory, [100])
 
     mockRatingAgency = await deployMockContract(owner, TrueRatingAgencyV2Json.abi)
     await mockRatingAgency.mock.getResults.returns(0, 0, parseTRU(50e6))
@@ -82,7 +84,7 @@ describe('TrueLender2', () => {
     usdtLoanPool = TrueFiPool2__factory.connect(await poolFactory.pool(usdt.address), owner)
 
     loanFactory = await new LoanFactory2__factory(owner).deploy()
-    await loanFactory.initialize(poolFactory.address, lender.address, AddressZero)
+    await loanFactory.initialize(poolFactory.address, lender.address, AddressZero, rateAdjuster.address)
   })
 
   it('[Skip CI] ensure max 1% swap fee slippage', async () => {
