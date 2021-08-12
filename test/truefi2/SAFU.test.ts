@@ -112,14 +112,6 @@ describe('SAFU', () => {
         await safu.liquidate(loan.address)
         await expect(await loan.balanceOf(safu.address)).to.equal(defaultAmount)
       })
-
-      it('transfers LoanTokens that were partially taken from pool', async () => {
-        await pool.exit(parseUSDC(1e6))
-        await timeTravel(DAY * 400)
-        await loan.enterDefault()
-        await safu.liquidate(loan.address)
-        await expect(await loan.balanceOf(safu.address)).to.equal(defaultAmount.mul(9).div(10))
-      })
     })
 
     describe('Handles debt repay', () => {
@@ -160,39 +152,6 @@ describe('SAFU', () => {
         })
       })
 
-      describe('Safu has funds to cover, 90% of loan tokens are in pool', () => {
-        beforeEach(async () => {
-          await token.mint(safu.address, defaultAmount)
-          await pool.exit(parseUSDC(1e6))
-        })
-
-        it('takes funds from safu', async () => {
-          await expect(() => safu.liquidate(loan.address))
-            .to.changeTokenBalance(token, safu, defaultAmount.mul(9).div(10).mul(-1))
-        })
-
-        it('transfers funds to the pool', async () => {
-          await expect(() => safu.liquidate(loan.address))
-            .to.changeTokenBalance(token, pool, defaultAmount.mul(9).div(10))
-        })
-
-        it('sets deficiencyToken', async () => {
-          await safu.liquidate(loan.address)
-          expect(await safu.deficiencyToken(loan.address)).to.eq(AddressZero)
-        })
-
-        it('increases pool deficit', async () => {
-          await safu.liquidate(loan.address)
-          expect(await safu.poolDeficit(pool.address)).to.eq(0)
-        })
-
-        it('emits event', async () => {
-          await expect(safu.liquidate(loan.address))
-            .to.emit(safu, 'Liquidated')
-            .withArgs(loan.address, defaultAmount.mul(9).div(10), AddressZero, 0)
-        })
-      })
-
       describe('Safu does not have funds to cover, all loan tokens are in pool', () => {
         beforeEach(async () => {
           await token.mint(safu.address, defaultAmount.div(2))
@@ -224,41 +183,6 @@ describe('SAFU', () => {
           await expect(tx)
             .to.emit(safu, 'Liquidated')
             .withArgs(loan.address, defaultAmount.div(2), await safu.deficiencyToken(loan.address), defaultAmount.div(2))
-        })
-      })
-
-      describe('Safu does not have funds to cover, 90% of loan tokens are in pool', () => {
-        beforeEach(async () => {
-          await token.mint(safu.address, defaultAmount.div(2))
-          await pool.exit(parseUSDC(1e6))
-        })
-
-        it('takes funds from safu', async () => {
-          await expect(() => safu.liquidate(loan.address))
-            .to.changeTokenBalance(token, safu, defaultAmount.div(2).mul(-1))
-        })
-
-        it('transfers funds to the pool', async () => {
-          await expect(() => safu.liquidate(loan.address))
-            .to.changeTokenBalance(token, pool, defaultAmount.div(2))
-        })
-
-        it('sets deficiencyToken', async () => {
-          const tx = await safu.liquidate(loan.address)
-          const deficiencyToken = (await tx.wait()).events[8].args.deficiencyToken
-          expect(await safu.deficiencyToken(loan.address)).to.eq(deficiencyToken)
-        })
-
-        it('increases pool deficit', async () => {
-          await safu.liquidate(loan.address)
-          expect(await safu.poolDeficit(pool.address)).to.eq(defaultAmount.mul(9).div(10).sub(defaultAmount.div(2)))
-        })
-
-        it('emits event', async () => {
-          const tx = await safu.liquidate(loan.address)
-          await expect(tx)
-            .to.emit(safu, 'Liquidated')
-            .withArgs(loan.address, defaultAmount.div(2), await safu.deficiencyToken(loan.address), defaultAmount.mul(9).div(10).sub(defaultAmount.div(2)))
         })
       })
     })
