@@ -1,6 +1,5 @@
 import { BigNumber, BigNumberish, Wallet } from 'ethers'
 import {
-  TrueRateAdjuster,
   LoanFactory2,
   MockTrueCurrency,
   MockUsdc,
@@ -10,6 +9,7 @@ import {
   TrueFiCreditOracle,
   TrueFiPool2,
   TrueLender2,
+  TrueRateAdjuster,
   TrueRatingAgencyV2,
 } from 'contracts'
 import {
@@ -46,7 +46,6 @@ describe('TrueCreditAgency', () => {
   let lender: TrueLender2
   let creditOracle: TrueFiCreditOracle
   let tusdBaseRateOracle: TimeAveragedBaseRateOracle
-  let usdcBaseRateOracle: TimeAveragedBaseRateOracle
   let mockSpotOracle: MockContract
   let timeTravel: (time: number) => void
 
@@ -79,7 +78,6 @@ describe('TrueCreditAgency', () => {
       creditAgency,
       creditOracle,
       standardBaseRateOracle: tusdBaseRateOracle,
-      feeBaseRateOracle: usdcBaseRateOracle,
       mockSpotOracle,
       rateAdjuster: rater,
     } = await setupTruefi2(owner, provider))

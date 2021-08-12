@@ -15,7 +15,7 @@ import {
   TrueFiCreditOracle__factory,
   TimeAveragedBaseRateOracle__factory,
   TimeAveragedBaseRateOracle,
-  TrueRateAdjuster__factory
+  TrueRateAdjuster__factory,
 } from 'contracts'
 import { Wallet } from 'ethers'
 import { parseTRU, timeTravelTo, YEAR } from '.'
