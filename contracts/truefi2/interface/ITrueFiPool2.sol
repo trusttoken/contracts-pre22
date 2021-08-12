@@ -36,6 +36,12 @@ interface ITrueFiPool2 is IERC20 {
     function liquidRatio() external view returns (uint256);
 
     /**
+     * @dev Ratio of liquid assets in the pool after lending
+     * @param amount Amount of asset being lent
+     */
+    function proFormaLiquidRatio(uint256 amount) external view returns (uint256);
+
+    /**
      * @dev Join the pool by depositing tokens
      * @param amount amount of tokens to deposit
      */

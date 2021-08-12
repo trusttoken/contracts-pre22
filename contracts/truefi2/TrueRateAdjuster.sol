@@ -74,8 +74,24 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
         return combinedRate(poolBasicRate(pool), creditScoreAdjustmentRate(score));
     }
 
+    function proFormaRate(
+        ITrueFiPool2 pool,
+        uint8 score,
+        uint256 amount
+    ) external override view returns (uint256) {
+        return combinedRate(proFormaPoolBasicRate(pool, amount), creditScoreAdjustmentRate(score));
+    }
+
     function poolBasicRate(ITrueFiPool2 pool) public override view returns (uint256) {
-        return min(riskPremium.add(securedRate(pool)).add(utilizationAdjustmentRate(pool)), MAX_RATE_CAP);
+        return _poolBasicRate(pool, utilizationAdjustmentRate(pool));
+    }
+
+    function proFormaPoolBasicRate(ITrueFiPool2 pool, uint256 amount) public view returns (uint256) {
+        return _poolBasicRate(pool, proFormaUtilizationAdjustmentRate(pool, amount));
+    }
+
+    function _poolBasicRate(ITrueFiPool2 pool, uint256 _utilizationAdjustmentRate) internal view returns (uint256) {
+        return min(riskPremium.add(securedRate(pool)).add(_utilizationAdjustmentRate), MAX_RATE_CAP);
     }
 
     function securedRate(ITrueFiPool2 pool) public override view returns (uint256) {
@@ -100,7 +116,14 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     }
 
     function utilizationAdjustmentRate(ITrueFiPool2 pool) public override view returns (uint256) {
-        uint256 liquidRatio = pool.liquidRatio();
+        return _utilizationAdjustmentRate(pool.liquidRatio());
+    }
+
+    function proFormaUtilizationAdjustmentRate(ITrueFiPool2 pool, uint256 amount) public view returns (uint256) {
+        return _utilizationAdjustmentRate(pool.proFormaLiquidRatio(amount));
+    }
+
+    function _utilizationAdjustmentRate(uint256 liquidRatio) internal view returns (uint256) {
         if (liquidRatio == 0) {
             // if utilization is at 100 %
             return MAX_RATE_CAP; // Cap rate by 500%

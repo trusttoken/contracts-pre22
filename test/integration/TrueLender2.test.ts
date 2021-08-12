@@ -82,7 +82,7 @@ describe('TrueLender2', () => {
     usdtLoanPool = TrueFiPool2__factory.connect(await poolFactory.pool(usdt.address), owner)
 
     loanFactory = await new LoanFactory2__factory(owner).deploy()
-    await loanFactory.initialize(poolFactory.address, lender.address, AddressZero)
+    await loanFactory.initialize(poolFactory.address, lender.address, AddressZero, AddressZero, AddressZero)
   })
 
   it('[Skip CI] ensure max 1% swap fee slippage', async () => {

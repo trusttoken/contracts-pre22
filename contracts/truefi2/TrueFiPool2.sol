@@ -628,6 +628,19 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     }
 
     /**
+     * @dev Ratio of liquid assets in the pool after lending
+     * @param amount Amount of asset being lent
+     * @return Calculated ratio in basis points
+     */
+    function proFormaLiquidRatio(uint256 amount) external override view returns (uint256) {
+        uint256 _poolValue = poolValue();
+        if (_poolValue == 0) {
+            return 0;
+        }
+        return (liquidValue().sub(amount)).mul(BASIS_PRECISION).div(_poolValue);
+    }
+
+    /**
      * @param depositedAmount Amount of currency deposited
      * @return amount minted from this transaction
      */
