@@ -53,6 +53,7 @@ describe('CurveYearnStrategy', () => {
       mockMinter.address,
       AddressZero,
       crvOracle.address,
+      200,
       3,
     )
   })
@@ -77,6 +78,24 @@ describe('CurveYearnStrategy', () => {
       await expect(strategy.setOracle(newOracle.address))
         .to.emit(strategy, 'OracleChanged')
         .withArgs(newOracle.address)
+    })
+  })
+
+  describe('setMaxPriceSlippage', () => {
+    it('only owner', async () => {
+      await expect(strategy.connect(pool).setMaxPriceSlippage(75))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('sets new maxPriceSlippage', async () => {
+      await strategy.setMaxPriceSlippage(75)
+      expect(await strategy.maxPriceSlippage()).to.eq(75)
+    })
+
+    it('emits event', async () => {
+      await expect(strategy.setMaxPriceSlippage(75))
+        .to.emit(strategy, 'MaxPriceSlippageChanged')
+        .withArgs(75)
     })
   })
 

@@ -16,7 +16,7 @@ import {
   DeficiencyToken__factory,
   DeficiencyToken,
   TrueCreditAgency,
-  TrueFiCreditOracle,
+  TrueFiCreditOracle, TrueRateAdjuster,
 } from 'contracts'
 import { MockProvider, solidity } from 'ethereum-waffle'
 import { BigNumber, Wallet } from 'ethers'
@@ -49,6 +49,7 @@ describe('TrueFiPool2', () => {
   let poolStrategy1: MockStrategy
   let poolStrategy2: MockStrategy
   let badPoolStrategy: BadStrategy
+  let rateAdjuster: TrueRateAdjuster
 
   let timeTravel: (time: number) => void
 
@@ -69,6 +70,7 @@ describe('TrueFiPool2', () => {
       safu,
       creditAgency,
       creditOracle,
+      rateAdjuster,
     } = await setupTruefi2(owner, provider))
 
     loan = await createApprovedLoan(rater, tru, stkTru, loanFactory, borrower, tusdPool, 500000, DAY, 1000, owner, provider)
@@ -84,7 +86,7 @@ describe('TrueFiPool2', () => {
     await creditOracle.setScore(borrower.address, 255)
     await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
     await creditAgency.allowBorrower(borrower.address, YEAR * 10)
-    await creditAgency.setRiskPremium(700)
+    await rateAdjuster.setRiskPremium(700)
   })
 
   const currencyBalanceOf = async (pool: TrueFiPool2) => (
