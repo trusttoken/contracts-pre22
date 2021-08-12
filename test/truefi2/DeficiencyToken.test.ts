@@ -20,10 +20,10 @@ describe('DeficiencyToken', () => {
   let loan: LoanToken2
   let deficiency: TestDeficiencyToken
 
-  beforeEachWithFixture(async (wallets) => {
+  beforeEachWithFixture(async (wallets, provider) => {
     [owner, friend, stranger] = wallets
 
-    ;({ standardPool: pool, loanFactory } = await setupTruefi2(owner))
+    ;({ standardPool: pool, loanFactory } = await setupTruefi2(owner, provider))
     loan = await createLoan(loanFactory, owner, pool, parseEth(1), 1, 1)
     deficiency = await deployContract(owner, TestDeficiencyToken__factory, [loan.address, parseEth(1)])
   })

@@ -2,11 +2,12 @@
 pragma solidity 0.6.10;
 
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
+import {SpotBaseRateOracle} from "./SpotBaseRateOracle.sol";
+import {ITimeAveragedBaseRateOracle} from "./interface/ITimeAveragedBaseRateOracle.sol";
 
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
-import {SpotBaseRateOracle} from "./SpotBaseRateOracle.sol";
 
-contract TimeAveragedBaseRateOracle is UpgradeableClaimable {
+contract TimeAveragedBaseRateOracle is UpgradeableClaimable, ITimeAveragedBaseRateOracle {
     using SafeMath for uint256;
 
     uint16 public constant BUFFER_SIZE = 365 + 1;
@@ -127,7 +128,7 @@ contract TimeAveragedBaseRateOracle is UpgradeableClaimable {
      * @param numberOfValues How many values of totalsBuffer should be involved in calculations.
      * @return Average apy.
      */
-    function calculateAverageAPY(uint16 numberOfValues) public view returns (uint256) {
+    function calculateAverageAPY(uint16 numberOfValues) public override view returns (uint256) {
         require(numberOfValues > 0, "TimeAveragedBaseRateOracle: Number of values should be greater than 0");
         require(numberOfValues < bufferSize(), "TimeAveragedBaseRateOracle: Number of values should be less than buffer size");
 
@@ -147,21 +148,21 @@ contract TimeAveragedBaseRateOracle is UpgradeableClaimable {
     /**
      * @dev apy based on last 7 entries in totalsBuffer.
      */
-    function getWeeklyAPY() public view returns (uint256) {
+    function getWeeklyAPY() public override view returns (uint256) {
         return calculateAverageAPY(7);
     }
 
     /**
      * @dev apy based on last 30 entries in totalsBuffer.
      */
-    function getMonthlyAPY() public view returns (uint256) {
+    function getMonthlyAPY() public override view returns (uint256) {
         return calculateAverageAPY(30);
     }
 
     /**
      * @dev apy based on last 365 entries in totalsBuffer.
      */
-    function getYearlyAPY() public view returns (uint256) {
+    function getYearlyAPY() public override view returns (uint256) {
         return calculateAverageAPY(365);
     }
 }

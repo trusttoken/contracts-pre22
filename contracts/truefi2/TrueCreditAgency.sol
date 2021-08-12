@@ -8,6 +8,7 @@ import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {ITrueCreditAgency} from "./interface/ITrueCreditAgency.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
+import {ITimeAveragedBaseRateOracle} from "./interface/ITimeAveragedBaseRateOracle.sol";
 import {TrueFiFixed64x64} from "./libraries/TrueFiFixed64x64.sol";
 
 interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
@@ -81,6 +82,8 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
     ITrueFiCreditOracle public creditOracle;
 
+    mapping(ITrueFiPool2 => ITimeAveragedBaseRateOracle) public baseRateOracle;
+
     /**
      * This bitmap is used to non-empty buckets.
      * If at least one borrower with a score n has an opened credit line, the n-th bit of the bitmap is set
@@ -101,6 +104,8 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     uint256 public creditScoreUpdateThreshold;
 
     // ======= STORAGE DECLARATION END ============
+
+    event BaseRateOracleChanged(ITrueFiPool2 pool, ITimeAveragedBaseRateOracle oracle);
 
     event RiskPremiumChanged(uint256 newRate);
 
@@ -149,6 +154,11 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     modifier onlyAllowedBorrowers() {
         require(borrowerAllowedUntilTime[msg.sender] >= block.timestamp, "TrueCreditAgency: Sender is not allowed to borrow");
         _;
+    }
+
+    function setBaseRateOracle(ITrueFiPool2 pool, ITimeAveragedBaseRateOracle _baseRateOracle) external onlyOwner {
+        baseRateOracle[pool] = _baseRateOracle;
+        emit BaseRateOracleChanged(pool, _baseRateOracle);
     }
 
     function setRiskPremium(uint256 newRate) external onlyOwner {
@@ -317,17 +327,21 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     }
 
     function currentRate(ITrueFiPool2 pool, address borrower) external view returns (uint256) {
-        return _currentRate(riskPremium.add(utilizationAdjustmentRate(pool)), creditScoreAdjustmentRate(pool, borrower));
+        return _currentRate(_poolRate(pool), creditScoreAdjustmentRate(pool, borrower));
+    }
+
+    function securedRate(ITrueFiPool2 pool) public view returns (uint256) {
+        return baseRateOracle[pool].getWeeklyAPY();
     }
 
     /**
      * @dev Helper function used by poke() to save gas by calculating partial terms of the total rate
-     * @param partialRate risk premium + utilization adjustment rate
+     * @param poolRate risk premium + utilization adjustment rate + secured rate
      * @param __creditScoreAdjustmentRate credit score adjustment
      * @return sum of addends capped by MAX_RATE_CAP
      */
-    function _currentRate(uint256 partialRate, uint256 __creditScoreAdjustmentRate) internal pure returns (uint256) {
-        return min(partialRate.add(__creditScoreAdjustmentRate), MAX_RATE_CAP);
+    function _currentRate(uint256 poolRate, uint256 __creditScoreAdjustmentRate) internal pure returns (uint256) {
+        return min(poolRate.add(__creditScoreAdjustmentRate), MAX_RATE_CAP);
     }
 
     function interest(ITrueFiPool2 pool, address borrower) public view returns (uint256) {
@@ -383,29 +397,28 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     function poke(ITrueFiPool2 pool) public {
         uint256 bitMap = usedBucketsBitmap;
         uint256 timeNow = block.timestamp;
-        uint256 partialRate = riskPremium.add(utilizationAdjustmentRate(pool));
+        uint256 poolRate = _poolRate(pool);
 
         for (uint16 i = 0; i <= MAX_CREDIT_SCORE; (i++, bitMap >>= 1)) {
             if (bitMap & 1 == 0) {
                 continue;
             }
 
-            _pokeSingleBucket(pool, uint8(i), timeNow, partialRate);
+            _pokeSingleBucket(pool, uint8(i), timeNow, poolRate);
         }
     }
 
     function pokeSingleBucket(ITrueFiPool2 pool, uint8 bucketNumber) internal {
         uint256 timeNow = block.timestamp;
-        uint256 partialRate = riskPremium.add(utilizationAdjustmentRate(pool));
 
-        _pokeSingleBucket(pool, bucketNumber, timeNow, partialRate);
+        _pokeSingleBucket(pool, bucketNumber, timeNow, _poolRate(pool));
     }
 
     function _pokeSingleBucket(
         ITrueFiPool2 pool,
         uint8 bucketNumber,
         uint256 timeNow,
-        uint256 partialRate
+        uint256 poolRate
     ) internal {
         CreditScoreBucket storage bucket = buckets[pool][bucketNumber];
 
@@ -416,7 +429,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         bucket.cumulativeInterestPerShare = bucket.cumulativeInterestPerShare.add(
             bucket.rate.mul(ADDITIONAL_PRECISION.div(10000)).mul(timeNow.sub(bucket.timestamp)).div(365 days)
         );
-        bucket.rate = _currentRate(partialRate, _creditScoreAdjustmentRate(bucketNumber));
+        bucket.rate = _currentRate(poolRate, _creditScoreAdjustmentRate(bucketNumber));
         bucket.timestamp = uint128(timeNow);
     }
 
@@ -541,6 +554,10 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         address borrower
     ) internal view returns (uint256) {
         return _totalBorrowerInterest(pool, bucket, borrower).sub(borrowerTotalPaidInterest[pool][borrower]);
+    }
+
+    function _poolRate(ITrueFiPool2 pool) internal view returns (uint256) {
+        return securedRate(pool).add(riskPremium).add(utilizationAdjustmentRate(pool));
     }
 
     function _payInterestWithoutTransfer(ITrueFiPool2 pool, uint256 amount) internal {
