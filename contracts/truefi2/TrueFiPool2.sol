@@ -25,9 +25,7 @@ import {PoolExtensions} from "./PoolExtensions.sol";
  * Earn high interest rates on currency deposits through uncollateralized loans
  *
  * Funds deposited in this pool are not fully liquid.
- * Exiting the pool has 2 options:
- * - withdraw a basket of LoanTokens backing the pool
- * - take an exit penalty depending on pool liquidity
+ * Exiting incurs an exit penalty depending on pool liquidity
  * After exiting, an account will need to wait for LoanTokens to expire and burn them
  * It is recommended to perform a zap or swap tokens on Uniswap for increased liquidity
  *
@@ -418,39 +416,6 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
         token.safeTransferFrom(msg.sender, address(this), amount);
 
         emit Joined(msg.sender, amount, mintedAmount);
-    }
-
-    /**
-     * @dev Exit pool
-     * This function will withdraw a basket of currencies backing the pool value
-     * @param amount amount of pool tokens to redeem for underlying tokens
-     */
-    function exit(uint256 amount) external {
-        require(block.number != latestJoinBlock[tx.origin], "TrueFiPool: Cannot join and exit in same block");
-        require(amount <= balanceOf(msg.sender), "TrueFiPool: Insufficient funds");
-
-        uint256 _totalSupply = totalSupply();
-        uint256 _deficitValue = deficitValue();
-        if (_deficitValue > 0) {
-            uint256 value = poolValue();
-            _totalSupply = _totalSupply.mul(value.sub(_deficitValue)).div(value);
-        }
-        // get share of tokens kept in the pool
-        uint256 liquidAmountToTransfer = amount.mul(liquidValue()).div(_totalSupply);
-
-        // burn tokens sent
-        _burn(msg.sender, amount);
-
-        // withdraw basket of loan tokens
-        lender.distribute(msg.sender, amount, _totalSupply);
-
-        // if tokens remaining, transfer
-        if (liquidAmountToTransfer > 0) {
-            ensureSufficientLiquidity(liquidAmountToTransfer);
-            token.safeTransfer(msg.sender, liquidAmountToTransfer);
-        }
-
-        emit Exited(msg.sender, amount);
     }
 
     /**
