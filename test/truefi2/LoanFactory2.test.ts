@@ -78,7 +78,7 @@ describe('LoanFactory2', () => {
 
   it('prevents fake pool loans', async () => {
     const fakePool = await new TrueFiPool2__factory(owner).deploy()
-    await expect(factory.connect(borrower).createLoanToken(fakePool.address, parseEth(123), 0, 200))
-      .to.be.revertedWith('LoanFactory: Loans cannot have instantaneous term of repay')
+    await expect(factory.connect(borrower).createLoanToken(fakePool.address, parseEth(123), 100, 200))
+      .to.be.revertedWith('LoanFactory: Pool was not created by PoolFactory')
   })
 })
