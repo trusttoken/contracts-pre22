@@ -28,8 +28,6 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
 
     // Number of tokens in Curve yPool
     uint8 public constant N_TOKENS = 4;
-    // Max slippage during the swap
-    uint256 public constant MAX_PRICE_SLIPPAGE = 75; // 0.75%
 
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
@@ -55,9 +53,13 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
     // CRV price oracle
     ICrvPriceOracle public crvOracle;
 
+    // Max slippage during the swap, in basis points (10000 == 100%)
+    uint256 public maxPriceSlippage;
+
     // ======= STORAGE DECLARATION END ===========
 
     event OracleChanged(ICrvPriceOracle newOracle);
+    event MaxPriceSlippageChanged(uint256 maxPriceSlippage);
     event Deposited(uint256 depositedAmount, uint256 receivedYAmount);
     event Withdrawn(uint256 minAmount, uint256 yAmount);
     event WithdrawnAll(uint256 yAmount);
@@ -74,6 +76,7 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
         ICurveMinter _minter,
         I1Inch3 _1inchExchange,
         ICrvPriceOracle _crvOracle,
+        uint256 _maxPriceSlippage,
         uint8 _tokenIndex
     ) external initializer {
         UpgradeableClaimable.initialize(msg.sender);
@@ -86,6 +89,7 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
         minter = _minter;
         _1Inch = _1inchExchange;
         crvOracle = _crvOracle;
+        maxPriceSlippage = _maxPriceSlippage;
         tokenIndex = _tokenIndex;
     }
 
@@ -96,6 +100,15 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
     function setOracle(ICrvPriceOracle _crvOracle) external onlyOwner {
         crvOracle = _crvOracle;
         emit OracleChanged(_crvOracle);
+    }
+
+    /**
+     * @dev Sets new maximum allowed price slippage
+     * @param _maxPriceSlippage new oracle address
+     */
+    function setMaxPriceSlippage(uint256 _maxPriceSlippage) external onlyOwner {
+        maxPriceSlippage = _maxPriceSlippage;
+        emit MaxPriceSlippageChanged(_maxPriceSlippage);
     }
 
     /**
@@ -270,8 +283,8 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
      * compared to the oracle price but will ensure that the value doesn't drop
      * when token exchanges are performed.
      */
-    function conservativePriceEstimation(uint256 price) internal pure returns (uint256) {
-        return price.mul(uint256(10000).sub(MAX_PRICE_SLIPPAGE)).div(10000);
+    function conservativePriceEstimation(uint256 price) internal view returns (uint256) {
+        return price.mul(uint256(10000).sub(maxPriceSlippage)).div(10000);
     }
 
     /**

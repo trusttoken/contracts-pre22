@@ -80,6 +80,24 @@ describe('CurveYearnStrategy', () => {
     })
   })
 
+  describe('setMaxPriceSlippage', () => {
+    it('only owner', async () => {
+      await expect(strategy.connect(pool).setMaxPriceSlippage(75))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('sets new maxPriceSlippage', async () => {
+      await strategy.setMaxPriceSlippage(75)
+      expect(await strategy.maxPriceSlippage()).to.eq(75)
+    })
+
+    it('emits event', async () => {
+      await expect(strategy.setMaxPriceSlippage(75))
+        .to.emit(strategy, 'MaxPriceSlippageChanged')
+        .withArgs(75)
+    })
+  })
+
   describe('deposit', () => {
     beforeEach(async () => {
       await token.connect(pool).approve(strategy.address, amount)
