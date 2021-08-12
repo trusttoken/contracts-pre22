@@ -148,7 +148,7 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
             );
     }
 
-    function fixedTermLoanAdjustment(uint256 term) public view returns (uint256) {
+    function fixedTermLoanAdjustment(uint256 term) public override view returns (uint256) {
         return term.div(30 days).mul(fixedTermLoanAdjustmentCoefficient);
     }
 
