@@ -15,6 +15,7 @@ interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
     function decimals() external view returns (uint8);
 }
 
+// prettier-ignore
 /**
  * @title TrueCreditAgency
  * @dev Manager for Lines of Credit in the TrueFi Protocol
@@ -423,7 +424,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         }
     }
 
-    /// @dev Internal function to update state for `bucketNumber` in `pool
+    /// @dev Internal function to update state for `bucketNumber` in `pool`
     function pokeSingleBucket(ITrueFiPool2 pool, uint8 bucketNumber) internal {
         uint256 timeNow = block.timestamp;
         uint256 poolRate = rateAdjuster.poolBasicRate(pool);
@@ -460,9 +461,9 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     }
 
     /**
-     * @dev Calculate USD value for credit lines in `pool`
+     * @dev Calculate USD value for credit lines in pool
      * @param pool Pool to get USD value for
-     * @return USD value of credit lines in `pool`
+     * @return USD value of credit lines for pool
      */
     function poolCreditValue(ITrueFiPool2 pool) external override view returns (uint256) {
         uint256 bitMap = usedBucketsBitmap;
@@ -527,7 +528,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     }
 
     /**
-     * @dev Internal function to take borrower out of a bucket
+     * @dev Internal function to take `borrower` out of a bucket
      * @param pool Pool to remove borrower from
      * @param bucket Bucket data
      * @param bucketNumber Bucket number based on credit score
@@ -625,7 +626,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         emit InterestPaid(pool, msg.sender, amount);
     }
 
-     /**
+    /**
      * @dev Internal function to change state when msg.sender pays principal
      * Used before transfer to satisfy check-effects interactions
      * @param pool Pool to pay principal in for msg.sender
