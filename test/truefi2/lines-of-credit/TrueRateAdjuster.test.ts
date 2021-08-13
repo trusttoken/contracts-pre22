@@ -194,7 +194,7 @@ describe('TrueRateAdjuster', () => {
         .withArgs(1, 2, 3, 4)
     })
   })
-  
+
   describe('rate', () => {
     let mockOracle: MockContract
 
