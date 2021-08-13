@@ -13,7 +13,8 @@ import {
   TimeAveragedBaseRateOracle__factory,
 } from 'contracts'
 
-import { solidity } from 'ethereum-waffle'
+import { deployMockContract, MockContract, solidity } from 'ethereum-waffle'
+import { ITrueFiPool2Json } from 'build'
 
 use(solidity)
 
@@ -21,6 +22,7 @@ describe('TrueRateAdjuster', () => {
   let owner: Wallet
   let borrower: Wallet
   let rateAdjuster: TrueRateAdjuster
+  let mockPool: MockContract
 
   beforeEachWithFixture(async (wallets) => {
     [owner, borrower] = wallets
@@ -28,6 +30,7 @@ describe('TrueRateAdjuster', () => {
     const deployContract = setupDeploy(owner)
 
     rateAdjuster = await deployContract(TrueRateAdjuster__factory)
+    mockPool = await deployMockContract(owner, ITrueFiPool2Json.abi)
 
     await rateAdjuster.initialize()
   })
@@ -186,6 +189,29 @@ describe('TrueRateAdjuster', () => {
     ].map(([term, adjustment]) =>
       it(`returns adjustment of ${adjustment} basis points for term of ${term / DAY} days`, async () => {
         expect(await rateAdjuster.fixedTermLoanAdjustment(term)).to.eq(adjustment)
+      }),
+    )
+  })
+
+  describe('utilizationAdjustmentRate', () => {
+    [
+      [0, 0],
+      [10, 11],
+      [20, 28],
+      [30, 52],
+      [40, 88],
+      [50, 150],
+      [60, 262],
+      [70, 505],
+      [80, 1200],
+      [90, 4950],
+      [95, 19950],
+      [99, 50000],
+      [100, 50000],
+    ].map(([utilization, adjustment]) =>
+      it(`returns ${adjustment} if utilization is at ${utilization} percent`, async () => {
+        await mockPool.mock.liquidRatio.returns(10000 - utilization * 100)
+        expect(await rateAdjuster.utilizationAdjustmentRate(mockPool.address)).to.eq(adjustment)
       }),
     )
   })
