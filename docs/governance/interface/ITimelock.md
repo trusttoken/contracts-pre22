@@ -47,4 +47,22 @@
 
 
 
+### `emergencyPauseProxy(contract IOwnedUpgradeabilityProxy proxy)` (external)
+
+
+
+
+
+### `emergencyPauseReference(contract ImplementationReference implementationReference)` (external)
+
+
+
+
+
+### `setPauseStatus(contract IPauseableContract pauseContract, bool status)` (external)
+
+
+
+
+
 

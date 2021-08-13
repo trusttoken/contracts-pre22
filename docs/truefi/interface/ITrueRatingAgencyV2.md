@@ -23,6 +23,12 @@
 
 
 
+### `resetCastRatings(address id)` (external)
+
+
+
+
+
 ### `yes(address id)` (external)
 
 

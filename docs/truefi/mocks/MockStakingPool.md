@@ -11,6 +11,18 @@
 
 
 
+### `stakeSupply() → uint256` (external)
+
+
+
+
+
+### `withdraw(uint256)` (external)
+
+
+
+
+
 ### `unstake()` (public)
 
 

@@ -53,17 +53,6 @@ Only loans in Pending state
 
 Only loans that have been funded
 
-### `calculateTotalReward(address id)`
-
-
-
-Update total TRU reward for a Loan
-Reward is divided proportionally based on # TRU staked
-chi = (TRU remaining in distributor) / (Total TRU allocated for distribution)
-interest = (loan APY * term * principal)
-R = Total Reward = (interest * chi * rewardFactor)
-
-
 
 ### `initialize(contract IBurnableERC20 _TRU, contract IVoteTokenWithERC20 _stkTRU, contract IArbitraryDistributor _distributor, contract ILoanFactory _factory)` (public)
 
@@ -71,6 +60,13 @@ R = Total Reward = (interest * chi * rewardFactor)
 
 Initialize Rating Agency
 Distributor contract decides how much TRU is rewarded to stakers
+
+
+### `setLoanFactory(contract ILoanFactory _factory)` (external)
+
+
+
+Set new loan factory.
 
 
 ### `setRatersRewardFactor(uint256 newRatersRewardFactor)` (external)
@@ -212,11 +208,12 @@ Internal view to convert values to 8 decimals precision
 
 
 Claim TRU rewards for raters
+- Reward is divided proportionally based on # TRU staked
 - Only can claim TRU rewards for funded loans
 - Claimed automatically when a user withdraws stake
 chi = (TRU remaining in distributor) / (Total TRU allocated for distribution)
 interest = (loan APY * term * principal)
-R = Total Reward = (interest * chi)
+R = Total Reward = (interest * chi * rewardFactor)
 R is distributed to raters based on their proportion of ratings/total_ratings
 Claimable reward = R x (current time / total time)
 
@@ -301,6 +298,12 @@ We rely on correct implementation of LoanToken
 
 
 ### `SubmissionPauseStatusChanged(bool status)`
+
+
+
+
+
+### `LoanFactoryChanged(address newLoanFactory)`
 
 
 

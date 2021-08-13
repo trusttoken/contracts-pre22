@@ -168,6 +168,7 @@ Count the total PriorVotes from TRU and stkTRU
 
 
 
+safe96 add function
 
 
 

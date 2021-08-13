@@ -8,6 +8,12 @@ in order to prevent rewards from getting stuck in the remainder on division.
 Tolerates dilution to slash stake and accept rewards.
 
 
+### `_transfer(address _from, address _to, uint256 _amount)` (internal)
+
+
+
+
+
 ### `initialize()` (public)
 
 

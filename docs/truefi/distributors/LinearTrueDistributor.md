@@ -38,7 +38,7 @@ Distribute tokens to farm in linear fashion based on time
 Calculate next distribution amount
 
 
-### `empty()` (public)
+### `empty()` (external)
 
 
 
@@ -46,12 +46,18 @@ Withdraw funds (for instance if owner decides to create a new distribution)
 Distributes remaining funds before withdrawing
 Ends current distribution
 
-### `setDailyDistribution(uint256 dailyDistribution)` (public)
+### `setDailyDistribution(uint256 dailyDistribution)` (external)
 
 
 
 Change amount of tokens distributed daily by changing total distributed amount
 
+
+### `restart(uint256 _distributionStart, uint256 _duration, uint256 _dailyDistribution)` (external)
+
+
+
+Restart the distribution that has ended
 
 
 ### `FarmChanged(address newFarm)`
@@ -74,4 +80,10 @@ Emitted when the total distributed amount is changed
 
 Emitted when a distribution occurs
 
+
+### `DistributionRestarted(uint256 _distributionStart, uint256 _duration, uint256 _dailyDistribution)`
+
+
+
+Emitted when a distribution is restarted after it was over
 

@@ -1,0 +1,14 @@
+## `MockCurveGauge`
+
+
+
+
+
+
+### `minter() → address` (external)
+
+
+
+
+
+
