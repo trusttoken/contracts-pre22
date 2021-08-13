@@ -409,8 +409,8 @@
       "address": "0xa47DEfA29a4Df6a9243BDaEB4A4E5c592E17D930"
     },
     "poolFactory": {
-      "txHash": "0xd66fa509c2e7f8ff0c27a122ea4dc99d0fdb3841bd161c52bb23ab150e7b75fc",
-      "address": "0xF71a2544a3358AB10109B79160AAd10241CE3194"
+      "txHash": "0x7d45fd25fcba4ece09cd0c6f31e210691977bf7b3834728c7e8935b224983fe4",
+      "address": "0x4eD3477307f64FF9EE2a26b693FBead4Cf2AF226"
     },
     "poolFactory_proxy": {
       "txHash": "0x75dab2c94c06d6f9ce54d3c48505e658e04a7012304f187f689b1efac9193905",
