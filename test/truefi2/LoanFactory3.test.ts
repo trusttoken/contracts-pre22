@@ -62,7 +62,7 @@ describe('LoanFactory3', () => {
     } = await setupTruefi2WithLoanFactory3(owner, _provider))
 
     await creditOracle.setScore(borrower.address, 255)
-    borrowerCreditScore = await creditOracle.getScore(borrower.address)
+    borrowerCreditScore = await creditOracle.score(borrower.address)
 
     await poolToken.mint(depositor.address, parseEth(10_000))
     await poolToken.connect(depositor).approve(pool.address, parseEth(10_000))
