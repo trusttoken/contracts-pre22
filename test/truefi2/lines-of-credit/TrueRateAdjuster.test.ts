@@ -7,6 +7,10 @@ import { setupDeploy } from 'scripts/utils'
 import {
   TrueRateAdjuster,
   TrueRateAdjuster__factory,
+  TrueFiPool2,
+  TrueFiPool2__factory,
+  TimeAveragedBaseRateOracle,
+  TimeAveragedBaseRateOracle__factory,
 } from 'contracts'
 
 import { solidity } from 'ethereum-waffle'
@@ -47,6 +51,104 @@ describe('TrueRateAdjuster', () => {
 
     it('sets utilization adjustment power', async () => {
       expect(await rateAdjuster.utilizationAdjustmentPower()).to.eq(2)
+    })
+  })
+
+  describe('setRiskPremium', () => {
+    it('reverts if caller is not the owner', async () => {
+      await expect(rateAdjuster.connect(borrower).setRiskPremium(0))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('sets riskPremium', async () => {
+      await rateAdjuster.setRiskPremium(300)
+      expect(await rateAdjuster.riskPremium()).to.eq(300)
+    })
+
+    it('emits event', async () => {
+      await expect(rateAdjuster.setRiskPremium(300))
+        .to.emit(rateAdjuster, 'RiskPremiumChanged')
+        .withArgs(300)
+    })
+  })
+
+  describe('setCreditAdjustmentCoefficient', () => {
+    it('reverts if caller is not the owner', async () => {
+      await expect(rateAdjuster.connect(borrower).setCreditAdjustmentCoefficient(0))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('sets credit adjustment coefficient', async () => {
+      await rateAdjuster.setCreditAdjustmentCoefficient(2000)
+      expect(await rateAdjuster.creditAdjustmentCoefficient()).to.eq(2000)
+    })
+
+    it('emits event', async () => {
+      await expect(rateAdjuster.setCreditAdjustmentCoefficient(2000))
+        .to.emit(rateAdjuster, 'CreditAdjustmentCoefficientChanged')
+        .withArgs(2000)
+    })
+  })
+
+  describe('setUtilizationAdjustmentCoefficient', () => {
+    it('reverts if caller is not the owner', async () => {
+      await expect(rateAdjuster.connect(borrower).setUtilizationAdjustmentCoefficient(0))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('sets utilization adjustment coefficient', async () => {
+      await rateAdjuster.setUtilizationAdjustmentCoefficient(100)
+      expect(await rateAdjuster.utilizationAdjustmentCoefficient()).to.eq(100)
+    })
+
+    it('emits event', async () => {
+      await expect(rateAdjuster.setUtilizationAdjustmentCoefficient(100))
+        .to.emit(rateAdjuster, 'UtilizationAdjustmentCoefficientChanged')
+        .withArgs(100)
+    })
+  })
+
+  describe('setUtilizationAdjustmentPower', () => {
+    it('reverts if caller is not the owner', async () => {
+      await expect(rateAdjuster.connect(borrower).setUtilizationAdjustmentPower(0))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('sets utilization adjustment power', async () => {
+      await rateAdjuster.setUtilizationAdjustmentPower(3)
+      expect(await rateAdjuster.utilizationAdjustmentPower()).to.eq(3)
+    })
+
+    it('emits event', async () => {
+      await expect(rateAdjuster.setUtilizationAdjustmentPower(3))
+        .to.emit(rateAdjuster, 'UtilizationAdjustmentPowerChanged')
+        .withArgs(3)
+    })
+  })
+
+  describe('setBaseRateOracle', () => {
+    let fakePool: TrueFiPool2
+    let fakeOracle: TimeAveragedBaseRateOracle
+
+    beforeEach(async () => {
+      fakePool = await new TrueFiPool2__factory(owner).deploy()
+      fakeOracle = await new TimeAveragedBaseRateOracle__factory(owner).deploy()
+    })
+
+    it('reverts if caller is not the owner', async () => {
+      await expect(rateAdjuster.connect(borrower).setBaseRateOracle(fakePool.address, fakeOracle.address))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('sets base rate oracle', async () => {
+      await rateAdjuster.setBaseRateOracle(fakePool.address, fakeOracle.address)
+      expect(await rateAdjuster.baseRateOracle(fakePool.address)).to.eq(fakeOracle.address)
+    })
+
+    it('emits event', async () => {
+      await expect(rateAdjuster.setBaseRateOracle(fakePool.address, fakeOracle.address))
+        .to.emit(rateAdjuster, 'BaseRateOracleChanged')
+        .withArgs(fakePool.address, fakeOracle.address)
     })
   })
 
