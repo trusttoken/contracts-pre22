@@ -1,12 +1,10 @@
 import { expect, use } from 'chai'
 import { Wallet } from 'ethers'
 
-import { beforeEachWithFixture, DAY } from 'utils'
-import { setupDeploy } from 'scripts/utils'
+import { beforeEachWithFixture, DAY, setupTruefi2 } from 'utils'
 
 import {
   TrueRateAdjuster,
-  TrueRateAdjuster__factory,
   TrueFiPool2,
   TrueFiPool2__factory,
   TimeAveragedBaseRateOracle,
@@ -22,14 +20,12 @@ describe('TrueRateAdjuster', () => {
   let borrower: Wallet
   let rateAdjuster: TrueRateAdjuster
 
-  beforeEachWithFixture(async (wallets) => {
+  beforeEachWithFixture(async (wallets, _provider) => {
     [owner, borrower] = wallets
 
-    const deployContract = setupDeploy(owner)
-
-    rateAdjuster = await deployContract(TrueRateAdjuster__factory)
-
-    await rateAdjuster.initialize()
+    ;({
+      rateAdjuster,
+    } = await setupTruefi2(owner, _provider))
   })
 
   describe('initializer', () => {
