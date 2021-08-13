@@ -82,7 +82,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         address borrower,
         uint256 amount
     ) internal view returns (uint256) {
-        uint8 borrowerScore = creditOracle.getScore(borrower);
+        uint8 borrowerScore = creditOracle.score(borrower);
         return rateAdjuster.proFormaRate(pool, borrowerScore, amount);
     }
 
