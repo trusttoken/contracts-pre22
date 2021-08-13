@@ -58,7 +58,7 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     /// @dev power factor to control affect of utilization on score (basis precision)
     uint256 public utilizationAdjustmentPower;
 
-    /// @dev coefficient to control affect of credit on score (basis precision)
+    /// @dev proportional coefficient to control effect of credit on score (basis precision)
     uint256 public creditAdjustmentCoefficient;
 
     // @dev premium rate for uncollateralized landing (basis precision)
