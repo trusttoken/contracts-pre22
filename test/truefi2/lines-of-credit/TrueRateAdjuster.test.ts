@@ -1,7 +1,7 @@
 import { expect, use } from 'chai'
 import { Wallet } from 'ethers'
 
-import { beforeEachWithFixture, DAY, setupTruefi2 } from 'utils'
+import { beforeEachWithFixture, createApprovedLoan, DAY, parseEth, setupTruefi2 } from 'utils'
 
 import {
   TrueRateAdjuster,
@@ -9,24 +9,66 @@ import {
   TrueFiPool2__factory,
   TimeAveragedBaseRateOracle,
   TimeAveragedBaseRateOracle__factory,
+  TrueRatingAgencyV2,
+  MockTrueCurrency,
+  StkTruToken,
+  LoanFactory2,
+  TrueLender2,
+  TrueCreditAgency,
 } from 'contracts'
 
-import { solidity } from 'ethereum-waffle'
+import { MockProvider, solidity } from 'ethereum-waffle'
 
 use(solidity)
 
 describe('TrueRateAdjuster', () => {
   let owner: Wallet
   let borrower: Wallet
+  let provider: MockProvider
   let rateAdjuster: TrueRateAdjuster
+  let ratingAgency: TrueRatingAgencyV2
+  let tru: MockTrueCurrency
+  let stkTru: StkTruToken
+  let loanFactory: LoanFactory2
+  let tusdPool: TrueFiPool2
+  let tusd: MockTrueCurrency
+  let lender: TrueLender2
+  let creditAgency: TrueCreditAgency
 
   beforeEachWithFixture(async (wallets, _provider) => {
     [owner, borrower] = wallets
+    provider = _provider
 
     ;({
       rateAdjuster,
-    } = await setupTruefi2(owner, _provider))
+      rater: ratingAgency,
+      tru,
+      stkTru,
+      loanFactory,
+      standardToken: tusd,
+      standardPool: tusdPool,
+      lender,
+      creditAgency,
+    } = await setupTruefi2(owner, provider))
+
+    await tusd.mint(owner.address, parseEth(1e7))
+    await tusd.approve(tusdPool.address, parseEth(1e7))
+    await tusdPool.join(parseEth(1e7))
   })
+
+  const setUtilization = async (pool: TrueFiPool2, utilization: number) => {
+    if (utilization === 0) {
+      return
+    }
+    const utilizationAmount = (await pool.poolValue()).mul(utilization).div(100)
+    const loan = await createApprovedLoan(
+      ratingAgency, tru, stkTru,
+      loanFactory, borrower, tusdPool,
+      utilizationAmount, DAY, 1,
+      owner, provider,
+    )
+    await lender.connect(borrower).fund(loan.address)
+  }
 
   describe('initializer', () => {
     it('transfers ownership', async () => {
@@ -182,6 +224,29 @@ describe('TrueRateAdjuster', () => {
     ].map(([term, adjustment]) =>
       it(`returns adjustment of ${adjustment} basis points for term of ${term / DAY} days`, async () => {
         expect(await rateAdjuster.fixedTermLoanAdjustment(term)).to.eq(adjustment)
+      }),
+    )
+  })
+
+  describe('utilizationAdjustmentRate', () => {
+    [
+      [0, 0],
+      [10, 11],
+      [20, 28],
+      [30, 52],
+      [40, 88],
+      [50, 150],
+      [60, 262],
+      [70, 505],
+      [80, 1200],
+      [90, 4950],
+      [95, 19950],
+      [99, 50000],
+      [100, 50000],
+    ].map(([utilization, adjustment]) =>
+      it(`returns ${adjustment} if utilization is at ${utilization} percent`, async () => {
+        await setUtilization(tusdPool, utilization)
+        expect(await creditAgency.utilizationAdjustmentRate(tusdPool.address)).to.eq(adjustment)
       }),
     )
   })
