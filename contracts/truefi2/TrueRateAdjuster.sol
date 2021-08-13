@@ -121,7 +121,7 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
         emit RiskPremiumChanged(newRate);
     }
 
-    /// @dev Set risk premium to `newRate`
+    /// @dev Set credit adjustment coefficient to `newCoefficient`
     function setCreditAdjustmentCoefficient(uint256 newCoefficient) external onlyOwner {
         creditAdjustmentCoefficient = newCoefficient;
         emit CreditAdjustmentCoefficientChanged(newCoefficient);
