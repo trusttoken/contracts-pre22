@@ -25,6 +25,7 @@ use(solidity)
 describe('LoanFactory3', () => {
   let owner: Wallet
   let borrower: Wallet
+  let depositor: Wallet
   let lender: TrueLender2
   let liquidator: Liquidator2
   let pool: TrueFiPool2
@@ -47,7 +48,7 @@ describe('LoanFactory3', () => {
   }
 
   beforeEachWithFixture(async (wallets, _provider) => {
-    [owner, borrower] = wallets
+    [owner, borrower, depositor] = wallets
 
     ;({
       standardPool: pool,
@@ -63,7 +64,10 @@ describe('LoanFactory3', () => {
     await creditOracle.setScore(borrower.address, 255)
     borrowerCreditScore = await creditOracle.getScore(borrower.address)
 
-    await poolToken.mint(pool.address, parseEth(10_000))
+    await poolToken.mint(depositor.address, parseEth(10_000))
+    await poolToken.connect(depositor).approve(pool.address, parseEth(10_000))
+    await pool.connect(depositor).join(parseEth(10_000))
+
     loanToken = await createLoan(parseEth(1_000), 100)
   })
 
@@ -116,6 +120,12 @@ describe('LoanFactory3', () => {
         it('low pro forma utilization', async () => {
           const loan = await createLoan(parseEth(1_000), term)
           expect(await loan.apy()).to.equal(511)
+        })
+
+        it('mid pro forma utilization (some funds were removed from the pool)', async () => {
+          await pool.connect(depositor).liquidExit(parseEth(5_000))
+          const loan = await createLoan(parseEth(3_000), term)
+          expect(await loan.apy()).to.equal(762)
         })
 
         it('high pro forma utilization', async () => {
