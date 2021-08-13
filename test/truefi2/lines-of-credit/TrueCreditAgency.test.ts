@@ -500,49 +500,6 @@ describe('TrueCreditAgency', () => {
     )
   })
 
-  const setUtilization = async (pool: TrueFiPool2, utilization: number) => {
-    if (utilization === 0) {
-      return
-    }
-    const utilizationAmount = (await pool.poolValue()).mul(utilization).div(100)
-    const loan = await createApprovedLoan(
-      ratingAgency, tru, stkTru,
-      loanFactory, borrower, tusdPool,
-      utilizationAmount, DAY, 1,
-      owner, provider,
-    )
-    await lender.connect(borrower).fund(loan.address)
-  }
-
-  describe('setUtilization', () => {
-    [0, 20, 50, 80, 100].map((utilization) => {
-      it(`sets utilization to ${utilization} percent`, async () => {
-        await setUtilization(tusdPool, utilization)
-        expect(await tusdPool.utilization()).to.eq(utilization * 100)
-      })
-    })
-  })
-
-  describe('currentRate', () => {
-    it('calculates rate correctly', async () => {
-      await rateAdjuster.setRiskPremium(100)
-      await creditOracle.setScore(borrower.address, 223)
-      await creditAgency.updateCreditScore(tusdPool.address, borrower.address)
-      await setUtilization(tusdPool, 50)
-      const expectedCurrentRate = 693 // 100 + 300 + 143 + 150
-      expect(await creditAgency.currentRate(tusdPool.address, borrower.address)).to.eq(expectedCurrentRate)
-    })
-
-    it('caps current rate if it exceeds max rate', async () => {
-      await rateAdjuster.setRiskPremium(22600)
-      await creditOracle.setScore(borrower.address, 31)
-      await creditAgency.updateCreditScore(tusdPool.address, borrower.address)
-      await setUtilization(tusdPool, 95)
-      const expectedCurrentRate = 50000 // min(22600 + 300 + 7225 + 19950 = 50075, 50000)
-      expect(await creditAgency.currentRate(tusdPool.address, borrower.address)).to.eq(expectedCurrentRate)
-    })
-  })
-
   describe('payInterest', () => {
     beforeEach(async () => {
       await creditAgency.allowBorrower(borrower.address, true)
@@ -1040,10 +997,43 @@ describe('TrueCreditAgency', () => {
   })
 
   describe('rate adjuster integration', () => {
+    const setUtilization = async (pool: TrueFiPool2, utilization: number) => {
+      if (utilization === 0) {
+        return
+      }
+      const utilizationAmount = (await pool.poolValue()).mul(utilization).div(100)
+      const loan = await createApprovedLoan(
+        ratingAgency, tru, stkTru,
+        loanFactory, borrower, tusdPool,
+        utilizationAmount, DAY, 1,
+        owner, provider,
+      )
+      await lender.connect(borrower).fund(loan.address)
+    }
+
+    describe('setUtilization', () => {
+      [0, 20, 50, 80, 100].map((utilization) => {
+        it(`sets utilization to ${utilization} percent`, async () => {
+          await setUtilization(tusdPool, utilization)
+          expect(await tusdPool.utilization()).to.eq(utilization * 100)
+        })
+      })
+    })
+
     it('utilizationAdjustmentRate', async () => {
       await setUtilization(tusdPool, 70)
       expect(await creditAgency.utilizationAdjustmentRate(tusdPool.address)).to.eq(505)
       expect('utilizationAdjustmentRate').to.be.calledOnContractWith(rateAdjuster, [tusdPool.address])
+    })
+
+    it('currentRate', async () => {
+      await rateAdjuster.setRiskPremium(100)
+      await creditOracle.setScore(borrower.address, 223)
+      await creditAgency.updateCreditScore(tusdPool.address, borrower.address)
+      await setUtilization(tusdPool, 50)
+      const expectedCurrentRate = 693 // 300 + 100 + 143 + 150
+      expect(await creditAgency.currentRate(tusdPool.address, borrower.address)).to.eq(expectedCurrentRate)
+      expect('rate').to.be.calledOnContractWith(rateAdjuster, [tusdPool.address, 223])
     })
   })
 })
