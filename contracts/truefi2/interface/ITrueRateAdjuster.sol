@@ -23,4 +23,12 @@ interface ITrueRateAdjuster {
     function utilizationAdjustmentRate(ITrueFiPool2 pool) external view returns (uint256);
 
     function fixedTermLoanAdjustment(uint256 term) external view returns (uint256);
+
+    function borrowLimit(
+        ITrueFiPool2 pool,
+        uint8 score,
+        uint256 maxBorrowerLimit,
+        uint256 totalTVL,
+        uint256 totalBorrowed
+    ) external view returns (uint256);
 }
