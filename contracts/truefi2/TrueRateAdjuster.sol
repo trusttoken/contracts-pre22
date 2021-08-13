@@ -272,7 +272,7 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     }
 
     /**
-     * @dev Internal fcuntion to calculate utilization adjusted rate given a `liquidRatio`
+     * @dev Internal function to calculate utilization adjusted rate given a `liquidRatio`
      * utilization_adjustment = utilization_adjustment_coefficient * (1/(pool_liquid_ratio)^utilization_adjustment_power - 1)
      */
     function _utilizationAdjustmentRate(uint256 liquidRatio) internal view returns (uint256) {
