@@ -24,9 +24,11 @@ import {
   updateRateOracle,
   YEAR,
 } from 'utils'
-import { expect } from 'chai'
+import { expect, use } from 'chai'
 import { AddressZero } from '@ethersproject/constants'
-import { MockContract, MockProvider } from 'ethereum-waffle'
+import { MockContract, MockProvider, solidity } from 'ethereum-waffle'
+
+use(solidity)
 
 describe('TrueCreditAgency', () => {
   let provider: MockProvider
@@ -1034,6 +1036,14 @@ describe('TrueCreditAgency', () => {
 
       await timeTravel(YEAR)
       expect(await creditAgency.poolCreditValue(tusdPool.address)).to.be.closeTo(BigNumber.from(25275), 2)
+    })
+  })
+
+  describe('rate adjuster integration', () => {
+    it('utilizationAdjustmentRate', async () => {
+      await setUtilization(tusdPool, 70)
+      expect(await creditAgency.utilizationAdjustmentRate(tusdPool.address)).to.eq(505)
+      expect('utilizationAdjustmentRate').to.be.calledOnContractWith(rateAdjuster, [tusdPool.address])
     })
   })
 })

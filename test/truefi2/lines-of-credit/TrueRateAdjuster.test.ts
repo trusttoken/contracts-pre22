@@ -14,7 +14,6 @@ import {
   StkTruToken,
   LoanFactory2,
   TrueLender2,
-  TrueCreditAgency,
 } from 'contracts'
 
 import { MockProvider, solidity } from 'ethereum-waffle'
@@ -33,7 +32,6 @@ describe('TrueRateAdjuster', () => {
   let tusdPool: TrueFiPool2
   let tusd: MockTrueCurrency
   let lender: TrueLender2
-  let creditAgency: TrueCreditAgency
 
   beforeEachWithFixture(async (wallets, _provider) => {
     [owner, borrower] = wallets
@@ -48,7 +46,6 @@ describe('TrueRateAdjuster', () => {
       standardToken: tusd,
       standardPool: tusdPool,
       lender,
-      creditAgency,
     } = await setupTruefi2(owner, provider))
 
     await tusd.mint(owner.address, parseEth(1e7))
@@ -246,7 +243,7 @@ describe('TrueRateAdjuster', () => {
     ].map(([utilization, adjustment]) =>
       it(`returns ${adjustment} if utilization is at ${utilization} percent`, async () => {
         await setUtilization(tusdPool, utilization)
-        expect(await creditAgency.utilizationAdjustmentRate(tusdPool.address)).to.eq(adjustment)
+        expect(await rateAdjuster.utilizationAdjustmentRate(tusdPool.address)).to.eq(adjustment)
       }),
     )
   })
