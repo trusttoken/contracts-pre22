@@ -50,6 +50,24 @@ describe('TrueRateAdjuster', () => {
     })
   })
 
+  describe('setRiskPremium', () => {
+    it('reverts if caller is not the owner', async () => {
+      await expect(rateAdjuster.connect(borrower).setRiskPremium(0))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('sets riskPremium', async () => {
+      await rateAdjuster.setRiskPremium(300)
+      expect(await rateAdjuster.riskPremium()).to.eq(300)
+    })
+
+    it('emits event', async () => {
+      await expect(rateAdjuster.setRiskPremium(300))
+        .to.emit(rateAdjuster, 'RiskPremiumChanged')
+        .withArgs(300)
+    })
+  })
+
   describe('setFixedTermLoanAdjustmentCoefficient', () => {
     it('reverts if caller is not the owner', async () => {
       await expect(rateAdjuster.connect(borrower).setFixedTermLoanAdjustmentCoefficient(0))
