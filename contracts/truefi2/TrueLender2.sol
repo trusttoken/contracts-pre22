@@ -567,7 +567,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
 
     function isCredibleForTerm(uint256 term) internal view returns (bool) {
         if (term > longTermLoanThreshold) {
-            return creditOracle.getScore(msg.sender) >= longTermLoanScoreThreshold;
+            return creditOracle.score(msg.sender) >= longTermLoanScoreThreshold;
         }
         return true;
     }

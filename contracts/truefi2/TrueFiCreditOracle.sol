@@ -26,10 +26,10 @@ contract TrueFiCreditOracle is ITrueFiCreditOracle, UpgradeableClaimable {
     // ========= IN STORAGE CORRUPTION ===========
 
     // @dev Track credit scores for an account
-    mapping(address => uint8) score;
+    mapping(address => uint8) public override score;
 
     // @dev Track max borrowing limit for an account
-    mapping(address => uint256) maxBorrowerLimit;
+    mapping(address => uint256) public override maxBorrowerLimit;
 
     // @dev Manager role authorized to set credit scores
     address public manager;
@@ -90,15 +90,6 @@ contract TrueFiCreditOracle is ITrueFiCreditOracle, UpgradeableClaimable {
     }
 
     /**
-     * @dev Get score for `account`
-     * Scores are stored as uint8 allowing scores of 0-255
-     * @return Credit score for account
-     */
-    function getScore(address account) public override view returns (uint8) {
-        return score[account];
-    }
-
-    /**
      * @dev Set `newScore` value for `account`
      * Scores are stored as uint8 allowing scores of 0-255
      */
@@ -106,14 +97,6 @@ contract TrueFiCreditOracle is ITrueFiCreditOracle, UpgradeableClaimable {
         _setEligibleUntilTime(account, Math.max(eligibleUntilTime[account], block.timestamp.add(creditUpdatePeriod)));
         score[account] = newScore;
         emit ScoreChanged(account, newScore);
-    }
-
-    /**
-     * @dev Get max borrow limit for `account`
-     * Limit should be stored with 18 decimal precision
-     */
-    function getMaxBorrowerLimit(address account) public override view returns (uint256) {
-        return maxBorrowerLimit[account];
     }
 
     /**

@@ -182,7 +182,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
     function _updateCreditScore(ITrueFiPool2 pool, address borrower) internal returns (uint8, uint8) {
         uint8 oldScore = creditScore[pool][borrower];
-        uint8 newScore = creditOracle.getScore(borrower);
+        uint8 newScore = creditOracle.score(borrower);
         creditScore[pool][borrower] = newScore;
         return (oldScore, newScore);
     }
@@ -227,12 +227,12 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     }
 
     function borrowLimit(ITrueFiPool2 pool, address borrower) public view returns (uint256) {
-        uint256 score = uint256(creditOracle.getScore(borrower));
+        uint256 score = uint256(creditOracle.score(borrower));
         if (score < borrowLimitConfig.scoreFloor) {
             return 0;
         }
         uint8 poolDecimals = ITrueFiPool2WithDecimals(address(pool)).decimals();
-        uint256 maxBorrowerLimit = creditOracle.getMaxBorrowerLimit(borrower).mul(uint256(10)**poolDecimals).div(1 ether);
+        uint256 maxBorrowerLimit = creditOracle.maxBorrowerLimit(borrower).mul(uint256(10)**poolDecimals).div(1 ether);
         uint256 maxTVLLimit = totalTVL(poolDecimals).mul(borrowLimitConfig.tvlLimitCoefficient).div(10000);
         uint256 adjustment = borrowLimitAdjustment(score);
         uint256 creditLimit = min(maxBorrowerLimit, maxTVLLimit).mul(adjustment).div(10000);
