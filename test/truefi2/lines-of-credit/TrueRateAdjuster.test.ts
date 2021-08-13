@@ -86,6 +86,24 @@ describe('TrueRateAdjuster', () => {
     })
   })
 
+  describe('setUtilizationAdjustmentCoefficient', () => {
+    it('reverts if caller is not the owner', async () => {
+      await expect(rateAdjuster.connect(borrower).setUtilizationAdjustmentCoefficient(0))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('sets utilization adjustment coefficient', async () => {
+      await rateAdjuster.setUtilizationAdjustmentCoefficient(100)
+      expect(await rateAdjuster.utilizationAdjustmentCoefficient()).to.eq(100)
+    })
+
+    it('emits event', async () => {
+      await expect(rateAdjuster.setUtilizationAdjustmentCoefficient(100))
+        .to.emit(rateAdjuster, 'UtilizationAdjustmentCoefficientChanged')
+        .withArgs(100)
+    })
+  })
+
   describe('setFixedTermLoanAdjustmentCoefficient', () => {
     it('reverts if caller is not the owner', async () => {
       await expect(rateAdjuster.connect(borrower).setFixedTermLoanAdjustmentCoefficient(0))
