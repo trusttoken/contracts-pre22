@@ -210,7 +210,7 @@ describe('TrueRateAdjuster', () => {
       [100, 50000],
     ].map(([utilization, adjustment]) =>
       it(`returns ${adjustment} if utilization is at ${utilization} percent`, async () => {
-        await mockPool.mock.liquidRatio.withArgs().returns(10000 - utilization*100)
+        await mockPool.mock.liquidRatio.withArgs().returns(10000 - utilization * 100)
         expect(await rateAdjuster.utilizationAdjustmentRate(mockPool.address)).to.eq(adjustment)
       }),
     )
