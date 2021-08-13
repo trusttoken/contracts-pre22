@@ -7,6 +7,12 @@ import {ITimeAveragedBaseRateOracle} from "./interface/ITimeAveragedBaseRateOrac
 
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
+/**
+ * @title TimeAveragedBaseRateOracle
+ * @dev Used to find the time averaged interest rate for TrueFi secured lending rate
+ * - Uses a spot oracle to capture data points over time
+ * - Finds and stores time-weighted average of borrow APYs
+ */
 contract TimeAveragedBaseRateOracle is UpgradeableClaimable, ITimeAveragedBaseRateOracle {
     using SafeMath for uint256;
 
