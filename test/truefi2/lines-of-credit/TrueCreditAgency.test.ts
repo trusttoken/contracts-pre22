@@ -1025,5 +1025,15 @@ describe('TrueCreditAgency', () => {
       expect(await creditAgency.utilizationAdjustmentRate(tusdPool.address)).to.eq(505)
       expect('utilizationAdjustmentRate').to.be.calledOnContractWith(rateAdjuster, [tusdPool.address])
     })
+
+    it('currentRate', async () => {
+      await rateAdjuster.setRiskPremium(100)
+      await creditOracle.setScore(borrower.address, 223)
+      await creditAgency.updateCreditScore(tusdPool.address, borrower.address)
+      await setUtilization(tusdPool, 50)
+      const expectedCurrentRate = 693 // 300 + 100 + 143 + 150
+      expect(await creditAgency.currentRate(tusdPool.address, borrower.address)).to.eq(expectedCurrentRate)
+      expect('rate').to.be.calledOnContractWith(rateAdjuster, [tusdPool.address, 223])
+    })
   })
 })
