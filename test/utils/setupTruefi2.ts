@@ -42,7 +42,7 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
   const rater = await deployContract(TrueRatingAgencyV2__factory)
   const lender = customDeployed?.lender ? customDeployed.lender : await deployContract(TrueLender2__factory)
   const safu = await deployContract(Safu__factory)
-  const rateAdjuster = await deployContract(TrueRateAdjuster__factory, [100])
+  const rateAdjuster = await deployContract(TrueRateAdjuster__factory)
   const creditAgency = await deployContract(TrueCreditAgency__factory)
 
   const poolFactory = await deployContract(PoolFactory__factory)
@@ -71,6 +71,7 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
   await lender.initialize(stkTru.address, poolFactory.address, rater.address, customDeployed?.oneInch ? customDeployed.oneInch.address : AddressZero, creditOracle.address)
   await safu.initialize(loanFactory.address, liquidator.address, customDeployed?.oneInch ? customDeployed.oneInch.address : AddressZero)
   await poolFactory.initialize(implementationReference.address, lender.address, safu.address)
+  await rateAdjuster.initialize()
   await creditAgency.initialize(creditOracle.address, rateAdjuster.address)
   await standardBaseRateOracle.initialize(mockSpotOracle.address, standardToken.address, DAY)
   await feeBaseRateOracle.initialize(mockSpotOracle.address, feeToken.address, DAY)
