@@ -6,7 +6,7 @@ interface ITrueFiCreditOracle {
 
     function status(address account) external view returns (Status);
 
-    function getScore(address account) external view returns (uint8);
+    function score(address account) external view returns (uint8);
 
-    function getMaxBorrowerLimit(address account) external view returns (uint256);
+    function maxBorrowerLimit(address account) external view returns (uint256);
 }

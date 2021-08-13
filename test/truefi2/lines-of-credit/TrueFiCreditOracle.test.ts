@@ -126,7 +126,7 @@ describe('TrueFiCreditOracle', () => {
 
     it('credit score is properly set', async () => {
       await oracle.connect(manager).setScore(borrower.address, 100)
-      expect(await oracle.getScore(borrower.address)).to.equal(100)
+      expect(await oracle.score(borrower.address)).to.equal(100)
     })
 
     it('updates eligible until time', async () => {
@@ -152,7 +152,7 @@ describe('TrueFiCreditOracle', () => {
 
     it('max borrower limit is properly set', async () => {
       await oracle.connect(manager).setMaxBorrowerLimit(borrower.address, 1_000_000)
-      expect(await oracle.getMaxBorrowerLimit(borrower.address)).to.equal(1_000_000)
+      expect(await oracle.maxBorrowerLimit(borrower.address)).to.equal(1_000_000)
     })
 
     it('updates eligible until time', async () => {
