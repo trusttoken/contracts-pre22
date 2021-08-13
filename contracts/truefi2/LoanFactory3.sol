@@ -84,10 +84,13 @@ contract LoanFactory3 is ILoanFactory3, Initializable {
     function rate(
         ITrueFiPool2 pool,
         address borrower,
-        uint256 amount
+        uint256 amount,
+        uint256 _term
     ) internal view returns (uint256) {
         uint8 borrowerScore = creditOracle.getScore(borrower);
-        return rateAdjuster.proFormaRate(pool, borrowerScore, amount);
+        uint256 fixedTermLoanAdjustment = rateAdjuster.fixedTermLoanAdjustment(_term);
+        uint256 proFormaRate = rateAdjuster.proFormaRate(pool, borrowerScore, amount);
+        return proFormaRate.add(fixedTermLoanAdjustment);
     }
 
     /**
@@ -104,8 +107,7 @@ contract LoanFactory3 is ILoanFactory3, Initializable {
         require(_term > 0, "LoanFactory: Loans cannot have instantaneous term of repay");
         require(poolFactory.isPool(address(_pool)), "LoanFactory: Pool was not created by PoolFactory");
 
-        uint256 apy = rate(_pool, msg.sender, _amount);
-        apy = apy.add(rateAdjuster.fixedTermLoanAdjustment(_term));
+        uint256 apy = rate(_pool, msg.sender, _amount, _term);
         address newToken = address(new LoanToken2(_pool, msg.sender, lender, admin, liquidator, _amount, _term, apy));
         isLoanToken[newToken] = true;
 
