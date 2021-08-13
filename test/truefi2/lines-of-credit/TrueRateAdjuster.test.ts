@@ -1,7 +1,7 @@
 import { expect, use } from 'chai'
 import { Wallet } from 'ethers'
 
-import { beforeEachWithFixture, DAY } from 'utils'
+import { beforeEachWithFixture, DAY, parseEth, parseUSDC } from 'utils'
 import { setupDeploy } from 'scripts/utils'
 
 import {
@@ -14,7 +14,7 @@ import {
 } from 'contracts'
 
 import { deployMockContract, MockContract, solidity } from 'ethereum-waffle'
-import { ITrueFiPool2Json } from 'build'
+import { ITrueFiPool2WithDecimalsJson } from 'build'
 
 use(solidity)
 
@@ -30,7 +30,7 @@ describe('TrueRateAdjuster', () => {
     const deployContract = setupDeploy(owner)
 
     rateAdjuster = await deployContract(TrueRateAdjuster__factory)
-    mockPool = await deployMockContract(owner, ITrueFiPool2Json.abi)
+    mockPool = await deployMockContract(owner, ITrueFiPool2WithDecimalsJson.abi)
 
     await rateAdjuster.initialize()
   })
@@ -173,6 +173,25 @@ describe('TrueRateAdjuster', () => {
     })
   })
 
+  describe('setBorrowLimitConfig', () => {
+    it('reverts if caller is not the owner', async () => {
+      await expect(rateAdjuster.connect(borrower).setBorrowLimitConfig(0, 0, 0, 0))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('sets borrow limit config', async () => {
+      await rateAdjuster.setBorrowLimitConfig(1, 2, 3, 4)
+      const [scoreFloor, limitAdjustmentPower, tvlLimitCoefficient, poolValueLimitCoefficient] = await rateAdjuster.borrowLimitConfig()
+      expect([scoreFloor, limitAdjustmentPower, tvlLimitCoefficient, poolValueLimitCoefficient]).to.deep.eq([1, 2, 3, 4])
+    })
+
+    it('emits event', async () => {
+      await expect(rateAdjuster.setBorrowLimitConfig(1, 2, 3, 4))
+        .to.emit(rateAdjuster, 'BorrowLimitConfigChanged')
+        .withArgs(1, 2, 3, 4)
+    })
+  })
+
   describe('fixedTermLoanAdjustment', () => {
     beforeEach(async () => {
       await rateAdjuster.setFixedTermLoanAdjustmentCoefficient(25)
@@ -214,5 +233,59 @@ describe('TrueRateAdjuster', () => {
         expect(await rateAdjuster.utilizationAdjustmentRate(mockPool.address)).to.eq(adjustment)
       }),
     )
+  })
+
+  describe('borrowLimitAdjustment', () => {
+    [
+      [255, 10000],
+      [223, 9043],
+      [191, 8051],
+      [159, 7016],
+      [127, 5928],
+      [95, 4768],
+      [63, 3504],
+      [31, 2058],
+      [1, 156],
+      [0, 0],
+    ].map(([score, adjustment]) =>
+      it(`returns ${adjustment} when score is ${score}`, async () => {
+        expect(await rateAdjuster.borrowLimitAdjustment(score)).to.equal(adjustment)
+      }),
+    )
+  })
+
+  describe('Borrow limit', () => {
+    beforeEach(async () => {
+      await mockPool.mock.decimals.returns(18)
+      await mockPool.mock.poolValue.returns(parseEth(1e7))
+    })
+
+    it('borrow amount is limited by borrower limit', async () => {
+      expect(await rateAdjuster.borrowLimit(mockPool.address, 191, parseEth(100), parseEth(2e7), 0)).to.equal(parseEth(80.51)) // borrowLimitAdjustment(191)
+    })
+
+    it('borrow limit depends on decimal count of the pool', async () => {
+      await mockPool.mock.decimals.returns(6)
+      expect(await rateAdjuster.borrowLimit(mockPool.address, 191, parseEth(100), parseUSDC(2e7), 0)).to.equal(parseUSDC(80.51))
+    })
+
+    it('borrow amount is limited by total TVL', async () => {
+      const maxTVLLimit = parseEth(10)
+      expect(await rateAdjuster.borrowLimit(mockPool.address, 191, parseEth(100), maxTVLLimit, 0)).to.equal(maxTVLLimit.mul(15).div(100).mul(8051).div(10000))
+    })
+
+    it('borrow amount is limited by a single pool value', async () => {
+      await mockPool.mock.poolValue.returns(parseUSDC(100))
+      await mockPool.mock.decimals.returns(18)
+      expect(await rateAdjuster.borrowLimit(mockPool.address, 191, parseEth(100), parseEth(2e7), 0)).to.equal(parseUSDC(100).mul(15).div(100))
+    })
+
+    it('subtracts borrowed amount from credit limit', async () => {
+      expect(await rateAdjuster.borrowLimit(mockPool.address, 191, parseEth(100), parseEth(2e7), 100)).to.equal(parseEth(80.51).sub(100))
+    })
+
+    it('borrow limit is 0 if credit limit is below the borrowed amount', async () => {
+      expect(await rateAdjuster.borrowLimit(mockPool.address, 191, parseEth(100), parseEth(2e7), parseEth(100))).to.equal(0)
+    })
   })
 })
