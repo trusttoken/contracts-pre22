@@ -244,7 +244,7 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     /**
      * @dev Get rate adjustment based on credit score
      * @param score Score to get adjustment for
-     * @return Rate adjustment for credit score capped at MAX_CAP_RATE
+     * @return Rate adjustment for credit score capped at MAX_RATE_CAP
      */
     function creditScoreAdjustmentRate(uint8 score) public override view returns (uint256) {
         if (score == 0) {
