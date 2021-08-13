@@ -193,7 +193,7 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
         return term.div(30 days).mul(fixedTermLoanAdjustmentCoefficient);
     }
 
-    function borrowLimitAdjustment(uint8 score) public view returns (uint256) {
+    function borrowLimitAdjustment(uint8 score) public override view returns (uint256) {
         int128 f64x64Score = TrueFiFixed64x64.fromUInt(uint256(score));
         int128 f64x64LimitAdjustmentPower = TrueFiFixed64x64.fromUInt(uint256(borrowLimitConfig.limitAdjustmentPower));
         return ((f64x64Score / MAX_CREDIT_SCORE).fixed64x64Pow(f64x64LimitAdjustmentPower / 10000) * 10000).toUInt();

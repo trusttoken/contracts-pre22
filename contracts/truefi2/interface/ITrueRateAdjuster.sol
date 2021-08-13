@@ -24,6 +24,8 @@ interface ITrueRateAdjuster {
 
     function fixedTermLoanAdjustment(uint256 term) external view returns (uint256);
 
+    function borrowLimitAdjustment(uint8 score) external view returns (uint256);
+
     function borrowLimit(
         ITrueFiPool2 pool,
         uint8 score,

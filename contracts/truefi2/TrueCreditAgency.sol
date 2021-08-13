@@ -165,6 +165,10 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         return rateAdjuster.utilizationAdjustmentRate(pool);
     }
 
+    function borrowLimitAdjustment(uint8 score) public view returns (uint256) {
+        return rateAdjuster.borrowLimitAdjustment(score);
+    }
+
     function totalTVL(uint8 decimals) public view returns (uint256) {
         uint256 tvl = 0;
         uint256 resultPrecision = uint256(10)**decimals;
