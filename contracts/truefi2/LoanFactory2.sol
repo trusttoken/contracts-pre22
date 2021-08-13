@@ -43,6 +43,8 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
      */
     event LoanTokenCreated(address contractAddress);
 
+    event RateAdjusterChanged(ITrueRateAdjuster rateAdjuster);
+
     /**
      * @dev Initialize this contract and set currency token
      * @param _poolFactory PoolFactory address
@@ -62,6 +64,11 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         liquidator = _liquidator;
         rateAdjuster = _rateAdjuster;
         creditOracle = _creditOracle;
+    }
+
+    modifier onlyAdmin() {
+        require(msg.sender == admin, "LoanFactory: Caller is not the admin");
+        _;
     }
 
     function setAdmin() external {
@@ -97,5 +104,10 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         isLoanToken[newToken] = true;
 
         emit LoanTokenCreated(newToken);
+    }
+
+    function setRateAdjuster(ITrueRateAdjuster _rateAdjuster) external onlyAdmin {
+        rateAdjuster = _rateAdjuster;
+        emit RateAdjusterChanged(_rateAdjuster);
     }
 }
