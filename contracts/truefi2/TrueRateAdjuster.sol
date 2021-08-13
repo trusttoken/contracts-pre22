@@ -13,18 +13,37 @@ interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
     function decimals() external view returns (uint8);
 }
 
+/**
+ * @title TrueFi Rate Adjuster
+ * @dev Rate Adjuster for interest rates in the TrueFi Protocol
+ * https://github.com/trusttoken/truefi-spec/blob/master/TrueFi2.0.md#lines-of-credit
+ *
+ * - Extracts interest rate calculations into a separate contract
+ * - Calculates interest rates for Lines of Credit and Term Loans
+ * - Calculates borrow limits for Lines of Credit and Term Loans
+ * - Includes some adjustable parameters for changing models
+ */
 contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     using SafeMath for uint256;
     using TrueFiFixed64x64 for int128;
 
+    /// @dev basis precision: 10000 = 100%
+    /// @dev maximum interest rate in basis points
     uint256 constant MAX_RATE_CAP = 50000;
+
+    /// @dev credit score is stored as uint(8)
     uint8 constant MAX_CREDIT_SCORE = 255;
 
+    /// @dev holds data to configure borrow limits
     struct BorrowLimitConfig {
+        // minimum score
         uint8 scoreFloor;
-        uint16 limitAdjustmentPower; // times 10000
-        uint16 tvlLimitCoefficient; // times 10000
-        uint16 poolValueLimitCoefficient; // times 10000
+        // adjust agressiveness of curve (basis precision)
+        uint16 limitAdjustmentPower;
+        // adjust for TVL (basis precision)
+        uint16 tvlLimitCoefficient;
+        // adjust for pool value (basis precision)
+        uint16 poolValueLimitCoefficient;
     }
 
     // ================ WARNING ==================
@@ -33,38 +52,51 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     // REMOVAL OR REORDER OF VARIABLES WILL RESULT
     // ========= IN STORAGE CORRUPTION ===========
 
-    // basis precision: 10000 = 100%
+    /// @dev coefficient to control affect of utilization on score (basis precision)
     uint256 public utilizationAdjustmentCoefficient;
 
+    /// @dev power factor to control affect of utilization on score (basis precision)
     uint256 public utilizationAdjustmentPower;
 
-    // basis precision: 10000 = 100%
+    /// @dev coefficient to control affect of credit on score (basis precision)
     uint256 public creditAdjustmentCoefficient;
 
-    // basis precision: 10000 = 100%
+    // @dev premium rate for uncollateralized landing (basis precision)
     uint256 public riskPremium;
 
-    //@dev Adds to loan apy for each 30 days of its term
+    /// @dev interest rate adjustment per each 30 days for term loans (basis precision)
     uint256 public fixedTermLoanAdjustmentCoefficient;
 
+    /// @dev Base rate oracles stored for each pool
     mapping(ITrueFiPool2 => ITimeAveragedBaseRateOracle) public baseRateOracle;
 
+    /// @dev store borrow limit configuration
     BorrowLimitConfig public borrowLimitConfig;
 
     // ======= STORAGE DECLARATION END ============
 
+    /// @dev Emit `newRate` when risk premium changed
     event RiskPremiumChanged(uint256 newRate);
 
+    /// @dev Emit `newCoefficient` when credit adjustment coefficient changed
     event CreditAdjustmentCoefficientChanged(uint256 newCoefficient);
 
+    /// @dev Emit `newCoefficient` when utilization adjustment coefficient changed
     event UtilizationAdjustmentCoefficientChanged(uint256 newCoefficient);
 
+    /// @dev Emit `newValue` when utilization adjustment power changed
     event UtilizationAdjustmentPowerChanged(uint256 newValue);
 
+    /// @dev Emit `pool` and `oracle` when base rate oracle changed
     event BaseRateOracleChanged(ITrueFiPool2 pool, ITimeAveragedBaseRateOracle oracle);
 
+    /// @dev Emit `newCoefficient` when fixed term loan adjustment coefficient changed
     event FixedTermLoanAdjustmentCoefficientChanged(uint256 newCoefficient);
 
+    /**
+     * @dev Emit `scoreFloor`, `limitAdjustmentPower`, `tvlLimitCoefficient`, `poolValueLimitCoefficient`
+     * when borrow limit config changed
+     */
     event BorrowLimitConfigChanged(
         uint8 scoreFloor,
         uint16 limitAdjustmentPower,
@@ -72,6 +104,7 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
         uint16 poolValueLimitCoefficient
     );
 
+    /// @dev initializer
     function initialize() public initializer {
         UpgradeableClaimable.initialize(msg.sender);
         riskPremium = 200;
@@ -82,36 +115,49 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
         borrowLimitConfig = BorrowLimitConfig(40, 7500, 1500, 1500);
     }
 
+    /// @dev Set risk premium to `newRate`
     function setRiskPremium(uint256 newRate) external onlyOwner {
         riskPremium = newRate;
         emit RiskPremiumChanged(newRate);
     }
 
+    /// @dev Set risk premium to `newRate`
     function setCreditAdjustmentCoefficient(uint256 newCoefficient) external onlyOwner {
         creditAdjustmentCoefficient = newCoefficient;
         emit CreditAdjustmentCoefficientChanged(newCoefficient);
     }
 
+    /// @dev Set risk premium to `newRate`
     function setUtilizationAdjustmentCoefficient(uint256 newCoefficient) external onlyOwner {
         utilizationAdjustmentCoefficient = newCoefficient;
         emit UtilizationAdjustmentCoefficientChanged(newCoefficient);
     }
 
+    /// @dev Set risk premium to `newRate`
     function setUtilizationAdjustmentPower(uint256 newValue) external onlyOwner {
         utilizationAdjustmentPower = newValue;
         emit UtilizationAdjustmentPowerChanged(newValue);
     }
 
+    /// @dev Set base rate oracle for `pool` to `_baseRateOracle`
     function setBaseRateOracle(ITrueFiPool2 pool, ITimeAveragedBaseRateOracle _baseRateOracle) external onlyOwner {
         baseRateOracle[pool] = _baseRateOracle;
         emit BaseRateOracleChanged(pool, _baseRateOracle);
     }
 
+    /// @dev Set fixed term adjustment coefficient to `newCoefficient`
     function setFixedTermLoanAdjustmentCoefficient(uint256 newCoefficient) external onlyOwner {
         fixedTermLoanAdjustmentCoefficient = newCoefficient;
         emit FixedTermLoanAdjustmentCoefficientChanged(newCoefficient);
     }
 
+    /**
+     * @dev Set new borrow limit configuration
+     * @param scoreFloor Minimum score
+     * @param limitAdjustmentPower Adjust agressiveness of curve (basis precision)
+     * @param tvlLimitCoefficient Adjust for TVL (basis precision)
+     * @param poolValueLimitCoefficient Adjust for pool value (basis precision)
+     */
     function setBorrowLimitConfig(
         uint8 scoreFloor,
         uint16 limitAdjustmentPower,
@@ -122,10 +168,25 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
         emit BorrowLimitConfigChanged(scoreFloor, limitAdjustmentPower, tvlLimitCoefficient, poolValueLimitCoefficient);
     }
 
+    /**
+     * @dev Get rate given a `pool` and borrower `score`
+     * Rate returned is based on pool utilization and credit score
+     * @param pool TrueFiPool to get rate for
+     * @param score Score to get rate for
+     * @return Interest rate for borrower (basis precision)
+     */
     function rate(ITrueFiPool2 pool, uint8 score) external override view returns (uint256) {
         return combinedRate(poolBasicRate(pool), creditScoreAdjustmentRate(score));
     }
 
+    /**
+     * @dev Get rate after borrowing `amount` given a `pool` and borrower `score`
+     * Rate returned is based on pool utilization and credit score after borrowing `amount`
+     * @param pool TrueFiPool to get rate for
+     * @param score Score to get rate for
+     * @param amount Amount borrower wishes to borrow
+     * @return Interest rate for borrowing `amount` (basis precision)
+     */
     function proFormaRate(
         ITrueFiPool2 pool,
         uint8 score,
@@ -134,18 +195,38 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
         return combinedRate(proFormaPoolBasicRate(pool, amount), creditScoreAdjustmentRate(score));
     }
 
+    /**
+     * @dev Get interest rate for `pool` adjusted for utilization
+     * @param pool Pool to get rate for
+     * @return Interest rate for `pool` adjusted for utilization
+     */
     function poolBasicRate(ITrueFiPool2 pool) public override view returns (uint256) {
         return _poolBasicRate(pool, utilizationAdjustmentRate(pool));
     }
 
+    /**
+     * @dev Get interest rate for `pool` adjusted for utilization after borrowing `amount`
+     * @param pool Pool to get rate for
+     * @param amount Requested amount to borrow
+     * @return Interest rate for `pool` adjusted for utilization and `amount` borrowed
+     */
     function proFormaPoolBasicRate(ITrueFiPool2 pool, uint256 amount) public view returns (uint256) {
         return _poolBasicRate(pool, proFormaUtilizationAdjustmentRate(pool, amount));
     }
 
+    /**
+     * @dev Internal function to get basic rate given a `pool` and `_utilizationAdjustmentRate`
+     * basic_rate = min(risk_premium + secured_rate + utilization_adjusted_rate, max_rate)
+     */
     function _poolBasicRate(ITrueFiPool2 pool, uint256 _utilizationAdjustmentRate) internal view returns (uint256) {
         return min(riskPremium.add(securedRate(pool)).add(_utilizationAdjustmentRate), MAX_RATE_CAP);
     }
 
+    /**
+     * @dev Get secured rate for `pool` from a Rate Oracle
+     * @param pool Pool to get secured rate for
+     * @return Secured rate for `pool` as given by Oracle
+     */
     function securedRate(ITrueFiPool2 pool) public override view returns (uint256) {
         return baseRateOracle[pool].getWeeklyAPY();
     }
@@ -160,6 +241,11 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
         return min(partialRate.add(__creditScoreAdjustmentRate), MAX_RATE_CAP);
     }
 
+    /**
+     * @dev Get rate adjustment based on credit score
+     * @param score Score to get adjustment for
+     * @return Rate adjustment for credit score capped at MAX_CAP_RATE
+     */
     function creditScoreAdjustmentRate(uint8 score) public override view returns (uint256) {
         if (score == 0) {
             return MAX_RATE_CAP; // Cap rate by 500%
@@ -167,14 +253,28 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
         return min(creditAdjustmentCoefficient.mul(MAX_CREDIT_SCORE - score).div(score), MAX_RATE_CAP);
     }
 
+    /**
+     * @dev Get utilization adjustment rate based on `pool` utilization
+     * @param pool Pool to get adjustment rate for
+     * @return Utilization adjusted rate for `pool`
+     */
     function utilizationAdjustmentRate(ITrueFiPool2 pool) public override view returns (uint256) {
         return _utilizationAdjustmentRate(pool.liquidRatio());
     }
 
+    /**
+     * @dev Get utilization adjustment rate based on `pool` utilization and `amount` borrowed
+     * @param pool Pool to get pro forma adjustment rate for
+     * @return Utilization adjusted rate for `pool` after borrowing `amount`
+     */
     function proFormaUtilizationAdjustmentRate(ITrueFiPool2 pool, uint256 amount) public view returns (uint256) {
         return _utilizationAdjustmentRate(pool.proFormaLiquidRatio(amount));
     }
 
+    /**
+     * @dev Internal fcuntion to calculate utilization adjusted rate given a `liquidRatio`
+     * utilization_adjustment = utilization_adjustment_coefficient * (1/(pool_liquid_ratio)^utilization_adjustment_power - 1)
+     */
     function _utilizationAdjustmentRate(uint256 liquidRatio) internal view returns (uint256) {
         if (liquidRatio == 0) {
             // if utilization is at 100 %
@@ -189,16 +289,37 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
             );
     }
 
+    /**
+     * @dev Get fixed term loqn adjustment given `term`
+     * stability_adjustment = (term / 30) * stability_adjustment_coefficient
+     * @param term Term of loan
+     * @return Rate adjustment based on loan term
+     */
     function fixedTermLoanAdjustment(uint256 term) public override view returns (uint256) {
         return term.div(30 days).mul(fixedTermLoanAdjustmentCoefficient);
     }
 
+    /**
+     * @dev Get adjustment for borrow limit based on `score`
+     * limit_adjustment = borrower_score < score_floor ? 0 : (borrower_score/MAX_CREDIT_SCORE)^limit_adjustment_power
+     * @param score Score to get limit adjustment for
+     * @return Borrow limit adjusted based on `score`
+     */
     function borrowLimitAdjustment(uint8 score) public override view returns (uint256) {
         int128 f64x64Score = TrueFiFixed64x64.fromUInt(uint256(score));
         int128 f64x64LimitAdjustmentPower = TrueFiFixed64x64.fromUInt(uint256(borrowLimitConfig.limitAdjustmentPower));
         return ((f64x64Score / MAX_CREDIT_SCORE).fixed64x64Pow(f64x64LimitAdjustmentPower / 10000) * 10000).toUInt();
     }
 
+    /**
+     * @dev Get borrow limit
+     * @param pool Pool which is being borrowed from
+     * @param score Borrower score
+     * @param maxBorrowerLimit Borrower maximum borrow limit
+     * @param totalTVL TVL of all pools
+     * @param totalBorrowed Total amount borrowed from all pools
+     * @return Borrow limit
+     */
     function borrowLimit(
         ITrueFiPool2 pool,
         uint8 score,
@@ -218,6 +339,7 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
         return saturatingSub(poolBorrowMax, totalBorrowed);
     }
 
+    /// @dev Internal helper to calculate saturating sub of `a` - `b`
     function saturatingSub(uint256 a, uint256 b) internal pure returns (uint256) {
         if (b > a) {
             return 0;
@@ -225,6 +347,7 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
         return a.sub(b);
     }
 
+    /// @dev Internal helper to calculate minimum of `a` and `b`
     function min(uint256 a, uint256 b) internal pure returns (uint256) {
         return a > b ? b : a;
     }
