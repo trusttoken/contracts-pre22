@@ -317,8 +317,8 @@
       "address": "0x23696914Ca9737466D8553a2d619948f548Ee424"
     },
     "trueFiPool": {
-      "txHash": "0xd6bda561ffc7533381abbb69f693d3a68df457a9755a970cbdb69a76c4452f36",
-      "address": "0xA8A1bf76096668AD25e85223D75294dDe4e1e313"
+      "txHash": "0x18fec82e53138dc1284f456eb2816f3b16a1bc64302a0fe6be0118b4d1d53d88",
+      "address": "0xefB7AEb1dc47c6834a2A30A698fa5fFA2A91f9aa"
     },
     "trueFiPool_proxy": {
       "txHash": "0xe2420b341397151bf2790d3b7e7c77f511830c882393ed81d8b4ffcd9f8f6541",
