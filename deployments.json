@@ -465,8 +465,8 @@
       "address": "0xDA46c92c13D67A32B65c35720d3cd456e5d96128"
     },
     "usdc_CurveYearnStrategy": {
-      "txHash": "0x1411325e133c3bea2927bf8d650d8471fcc5f846a6aaabfce4e14b8660b92058",
-      "address": "0xf19B289C9c37C1A93241772633a7beBBe56Df223"
+      "txHash": "0xc0f3b8351d232df656312834f60dd046bd81fba6b1f32b768264c4e8ad92fabd",
+      "address": "0xEBED2Bab4c2cC032aBa89f61D95E7A6f9C00D953"
     },
     "usdc_CurveYearnStrategy_proxy": {
       "txHash": "0xe79c22e26201792a9e1292173b171634431aa84637fe1193fb92613bb34dba4c",
@@ -501,8 +501,8 @@
       "address": "0xC06E16D2Fbe2b9Fe088a615f23cb20898745Dc6D"
     },
     "usdt_CurveYearnStrategy": {
-      "txHash": "0x1411325e133c3bea2927bf8d650d8471fcc5f846a6aaabfce4e14b8660b92058",
-      "address": "0xf19B289C9c37C1A93241772633a7beBBe56Df223"
+      "txHash": "0xc0f3b8351d232df656312834f60dd046bd81fba6b1f32b768264c4e8ad92fabd",
+      "address": "0xEBED2Bab4c2cC032aBa89f61D95E7A6f9C00D953"
     },
     "usdt_CurveYearnStrategy_proxy": {
       "txHash": "0x558cb43809425cebd4152388e4bce489d6b290506ee0b4cb2881b98c85b86c24",
