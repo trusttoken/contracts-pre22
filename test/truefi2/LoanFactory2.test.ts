@@ -119,7 +119,8 @@ describe('LoanFactory2', () => {
   describe('setRateAdjuster', () => {
     let fakeRateAdjuster: TrueRateAdjuster
     beforeEach(async () => {
-      fakeRateAdjuster = await new TrueRateAdjuster__factory(owner).deploy([100])
+      fakeRateAdjuster = await new TrueRateAdjuster__factory(owner).deploy()
+      await fakeRateAdjuster.initialize()
     })
 
     it('only admin can call', async () => {

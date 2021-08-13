@@ -23,16 +23,18 @@ describe('TrueRateAdjuster', () => {
 
     const deployContract = setupDeploy(owner)
 
-    rateAdjuster = await deployContract(TrueRateAdjuster__factory, 1000)
+    rateAdjuster = await deployContract(TrueRateAdjuster__factory)
+
+    await rateAdjuster.initialize()
   })
 
-  describe('constructor', () => {
+  describe('initializer', () => {
     it('transfers ownership', async () => {
       expect(await rateAdjuster.owner()).to.eq(owner.address)
     })
 
     it('sets riskPremium', async () => {
-      expect(await rateAdjuster.riskPremium()).to.eq(1000)
+      expect(await rateAdjuster.riskPremium()).to.eq(200)
     })
 
     it('sets credit adjustment coefficient', async () => {

@@ -14,6 +14,12 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     uint256 constant MAX_RATE_CAP = 50000;
     uint8 constant MAX_CREDIT_SCORE = 255;
 
+    // ================ WARNING ==================
+    // ===== THIS CONTRACT IS INITIALIZABLE ======
+    // === STORAGE VARIABLES ARE DECLARED BELOW ==
+    // REMOVAL OR REORDER OF VARIABLES WILL RESULT
+    // ========= IN STORAGE CORRUPTION ===========
+
     // basis precision: 10000 = 100%
     uint256 public utilizationAdjustmentCoefficient;
 
@@ -30,6 +36,8 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
 
     mapping(ITrueFiPool2 => ITimeAveragedBaseRateOracle) public baseRateOracle;
 
+    // ======= STORAGE DECLARATION END ============
+
     event RiskPremiumChanged(uint256 newRate);
 
     event CreditAdjustmentCoefficientChanged(uint256 newCoefficient);
@@ -42,9 +50,9 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
 
     event FixedTermLoanAdjustmentCoefficientChanged(uint256 newCoefficient);
 
-    constructor(uint256 _riskPremium) public {
+    function initialize() public initializer {
         UpgradeableClaimable.initialize(msg.sender);
-        riskPremium = _riskPremium;
+        riskPremium = 200;
         creditAdjustmentCoefficient = 1000;
         utilizationAdjustmentCoefficient = 50;
         utilizationAdjustmentPower = 2;
