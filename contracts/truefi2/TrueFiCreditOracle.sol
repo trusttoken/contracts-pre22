@@ -15,7 +15,7 @@ import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
  * Ineligible accounts cannot borrow. If they owe outstanding debt, we can trigger a technical default.
  *
  * Score manager can update scores, but only owner can override eligibility Status
- * 
+ *
  * Statuses:
  * - Eligible: Account can borrow from TrueFi
  * - OnHold: Account cannot borrow additional funds from TrueFi
