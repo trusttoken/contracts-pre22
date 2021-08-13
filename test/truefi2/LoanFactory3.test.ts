@@ -4,7 +4,7 @@ import { BigNumber, BigNumberish, Wallet } from 'ethers'
 import { beforeEachWithFixture, parseEth, setupTruefi2WithLoanFactory3 } from 'utils'
 
 import {
-  LoanToken__factory,
+  LoanToken2__factory,
   LoanFactory3,
   TrueFiPool2,
   TrueFiPool2__factory,
@@ -43,7 +43,7 @@ describe('LoanFactory3', () => {
     const tx = await loanFactory.connect(borrower).createLoanToken(pool.address, amount, term)
     const creationEvent = (await tx.wait()).events[0]
     ;({ contractAddress } = creationEvent.args)
-    return LoanToken__factory.connect(contractAddress, owner)
+    return LoanToken2__factory.connect(contractAddress, owner)
   }
 
   beforeEachWithFixture(async (wallets, _provider) => {
