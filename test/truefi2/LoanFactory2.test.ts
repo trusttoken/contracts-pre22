@@ -11,6 +11,8 @@ import {
   TrueLender2,
   Liquidator2,
   PoolFactory,
+  TrueFiCreditOracle,
+  TrueFiCreditOracle__factory,
   TrueRateAdjuster,
   TrueRateAdjuster__factory,
 } from 'contracts'
@@ -86,6 +88,31 @@ describe('LoanFactory2', () => {
       const fakePool = await new TrueFiPool2__factory(owner).deploy()
       await expect(loanFactory.connect(borrower).createLoanToken(fakePool.address, parseEth(123), 0, 200))
         .to.be.revertedWith('LoanFactory: Loans cannot have instantaneous term of repay')
+    })
+  })
+
+  describe('setCreditOracle', () => {
+    let fakeCreditOracle: TrueFiCreditOracle
+    beforeEach(async () => {
+      fakeCreditOracle = await new TrueFiCreditOracle__factory(owner).deploy()
+    })
+
+    it('only admin can call', async () => {
+      await expect(loanFactory.connect(owner).setCreditOracle(fakeCreditOracle.address))
+        .not.to.be.reverted
+      await expect(loanFactory.connect(borrower).setCreditOracle(fakeCreditOracle.address))
+        .to.be.revertedWith('LoanFactory: Caller is not the admin')
+    })
+
+    it('changes creditOracle', async () => {
+      await loanFactory.setCreditOracle(fakeCreditOracle.address)
+      expect(await loanFactory.creditOracle()).to.eq(fakeCreditOracle.address)
+    })
+
+    it('emits event', async () => {
+      await expect(loanFactory.setCreditOracle(fakeCreditOracle.address))
+        .to.emit(loanFactory, 'CreditOracleChanged')
+        .withArgs(fakeCreditOracle.address)
     })
   })
 
