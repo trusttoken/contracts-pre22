@@ -17,7 +17,7 @@ Update state and get TRU from distributor
 
 
 
-Initalize staking pool with a Distributor contract
+Initialize staking pool with a Distributor contract
 The distributor contract calculates how much TRU rewards this contract
 gets, and stores TRU for distribution.
 

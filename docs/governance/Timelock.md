@@ -18,6 +18,37 @@ Initialize sets the addresses of admin and the delay timestamp
 
 
 
+### `setPauser(address _pauser)` (external)
+
+
+
+Set new pauser address
+
+
+### `emergencyPauseProxy(contract IOwnedUpgradeabilityProxy proxy)` (external)
+
+
+
+Emergency pause a proxy owned by this contract
+Upgrades a proxy to the zero address in order to emergency pause
+
+
+### `emergencyPauseReference(contract ImplementationReference implementationReference)` (external)
+
+
+
+Emergency pause a proxy with reference owned by this contract
+Upgrades implementation in ImplementationReference to 0 address
+
+
+### `setPauseStatus(contract IPauseableContract pauseContract, bool status)` (external)
+
+
+
+Pause or unpause Pausable contracts.
+Useful to allow/disallow deposits or certain actions in compromised contracts
+
+
 ### `setDelay(uint256 delay_)` (public)
 
 
@@ -73,6 +104,12 @@ Get the current block timestamp
 
 
 
+### `NewPauser(address newPauser)`
+
+
+
+
+
 ### `NewPendingAdmin(address newPendingAdmin)`
 
 
@@ -80,6 +117,24 @@ Get the current block timestamp
 
 
 ### `NewDelay(uint256 newDelay)`
+
+
+
+
+
+### `EmergencyPauseProxy(contract IOwnedUpgradeabilityProxy proxy)`
+
+
+
+
+
+### `EmergencyPauseReference(contract ImplementationReference implementationReference)`
+
+
+
+
+
+### `PauseStatusChanged(address pauseContract, bool status)`
 
 
 

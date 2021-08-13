@@ -95,7 +95,13 @@
 
 
 
-### `close()` (external)
+### `settle()` (external)
+
+
+
+
+
+### `enterDefault()` (external)
 
 
 
@@ -119,6 +125,12 @@
 
 
 
+### `repayInFull(address _sender)` (external)
+
+
+
+
+
 ### `reclaim()` (external)
 
 
@@ -132,6 +144,12 @@
 
 
 ### `repaid() → uint256` (external)
+
+
+
+
+
+### `isRepaid() → bool` (external)
 
 
 

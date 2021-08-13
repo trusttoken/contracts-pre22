@@ -4,10 +4,8 @@
 
 Lending pool which uses curve.fi to store idle funds
 Earn high interest rates on currency deposits through uncollateralized loans
-Funds deposited in this pool are not fully liquid. Luqidity
-Exiting the pool has 2 options:
-- withdraw a basket of LoanTokens backing the pool
-- take an exit penallty depending on pool liquidity
+Funds deposited in this pool are not fully liquid. Liquidity
+Exiting incurs an exit penalty depending on pool liquidity
 After exiting, an account will need to wait for LoanTokens to expire and burn them
 It is recommended to perform a zap or swap tokens on Uniswap for increased liquidity
 Funds are managed through an external function to save gas on deposits
@@ -30,6 +28,13 @@ pool can only be joined when it's unpaused
 
 only lender can perform borrowing or repaying
 
+### `exchangeProtector(uint256 expectedGain, contract IERC20 _token)`
+
+
+
+ensure than as a result of running a function,
+balance of `token` increases by at least `expectedGain`
+
 ### `sync()`
 
 Sync values to avoid making expensive calls multiple times
@@ -39,12 +44,17 @@ Wipes cached values to save gas
 
 
 
-### `initialize(contract ICurvePool __curvePool, contract ICurveGauge __curveGauge, contract IERC20 __currencyToken, contract ITrueLender __lender, contract IUniswapRouter __uniRouter, contract IERC20 __stakeToken, contract ITruPriceOracle __oracle)` (public)
+### `updateNameAndSymbolToLegacy()` (public)
 
 
 
-Initialize pool
 
+
+### `borrow(uint256 amount)` (external)
+
+
+
+support borrow function from pool V2
 
 ### `currencyToken() → contract IERC20` (public)
 
@@ -53,19 +63,11 @@ Initialize pool
 get currency token address
 
 
-### `stakeToken() → contract IERC20` (public)
+### `setLender2(contract ITrueLender2 lender2)` (public)
 
 
 
-get stake token address
-
-
-### `setStakeToken(contract IERC20 token)` (public)
-
-
-
-set stake token address
-
+set TrueLenderV2
 
 ### `setFundsManager(address newFundsManager)` (public)
 
@@ -73,25 +75,38 @@ set stake token address
 
 set funds manager address
 
-### `setOracle(contract ITruPriceOracle newOracle)` (public)
+### `setTruOracle(contract ITrueFiPoolOracle newOracle)` (public)
 
 
 
-set oracle token address
+set TrueFi price oracle token address
 
 
-### `changeJoiningPauseStatus(bool status)` (external)
+### `setCrvOracle(contract ICrvPriceOracle newOracle)` (public)
+
+
+
+set CRV price oracle token address
+
+
+### `setPauseStatus(bool status)` (external)
 
 
 
 Allow pausing of deposits in case of emergency
 
 
-### `stakeTokenBalance() → uint256` (public)
+### `setSafuAddress(contract ISAFU _safu)` (external)
 
 
 
-Get total balance of stake tokens
+Change SAFU address
+
+### `crvBalance() → uint256` (public)
+
+
+
+Get total balance of CRV tokens
 
 
 ### `yTokenBalance() → uint256` (public)
@@ -109,11 +124,11 @@ Virtual value of yCRV tokens in the pool
 Will return sync value if inSync
 
 
-### `truValue() → uint256` (public)
+### `crvValue() → uint256` (public)
 
 
 
-Price of TRU in USD
+Price of CRV in USD
 
 
 ### `liquidValue() → uint256` (public)
@@ -121,6 +136,13 @@ Price of TRU in USD
 
 
 Virtual value of liquid assets in the pool
+
+
+### `deficitValue() → uint256` (public)
+
+
+
+Return pool deficiency value, to be returned by safu
 
 
 ### `poolValue() → uint256` (public)
@@ -155,25 +177,11 @@ withdraw remainder from gauge
 set pool join fee
 
 
-### `resetApprovals()` (external)
-
-
-
-sets all token allowances used to 0
-
 ### `join(uint256 amount)` (external)
 
 
 
 Join the pool by depositing currency tokens
-
-
-### `exit(uint256 amount)` (external)
-
-
-
-Exit pool
-This function will withdraw a basket of currencies backing the pool value
 
 
 ### `liquidExit(uint256 amount)` (external)
@@ -185,27 +193,7 @@ This function will withdraw TUSD but with a small penalty
 Uses the sync() modifier to reduce gas costs of using curve
 
 
-### `liquidExitPenalty(uint256 amount) → uint256` (public)
-
-
-
-Penalty (in % * 100) applied if liquid exit is performed with this amount
-returns 10000 if no penalty
-
-### `integrateAtPoint(uint256 x) → uint256` (public)
-
-
-
-Calculates integral of 5/(x+50)dx times 10000
-
-### `averageExitPenalty(uint256 from, uint256 to) → uint256` (public)
-
-
-
-Calculates average penalty on interval [from; to]
-
-
-### `flush(uint256 currencyAmount, uint256 minMintAmount)` (external)
+### `flush(uint256 currencyAmount)` (external)
 
 
 
@@ -220,7 +208,7 @@ Called by owner to help manage funds in pool and save on gas for deposits
 Remove liquidity from curve
 
 
-### `borrow(uint256 amount, uint256 fee)` (external)
+### `borrow(uint256 amount, uint256 fee)` (public)
 
 
 
@@ -257,23 +245,18 @@ Sell collected CRV on Uniswap
 For example, CRV -> WETH -> TUSD
 
 
-### `sellStakeToken(uint256 amountIn, uint256 amountOutMin, address[] path)` (public)
-
-
-
-Sell collected TRU on Uniswap
-- Selling TRU is managed by the contract owner
-- Calculations can be made off-chain and called based on market conditions
-- Need to pass path of exact pairs to go through while executing exchange
-For example, CRV -> WETH -> TUSD
-
-
 ### `collectFees(address beneficiary)` (external)
 
 
 
 Claim fees from the pool
 
+
+### `liquidate(contract ILoanToken2 loan)` (external)
+
+
+
+Function called by SAFU when liquidation happens. It will transfer all tokens of this loan the SAFU
 
 ### `calcTokenAmount(uint256 currencyAmount) → uint256` (public)
 
@@ -284,14 +267,7 @@ Called in flush() function
 
 
 
-### `calcWithdrawOneCoin(uint256 yAmount) → uint256` (public)
-
-
-
-Converts the value of a single yCRV into an underlying asset
-
-
-### `currencyBalance() → uint256` (internal)
+### `currencyBalance() → uint256` (public)
 
 
 
@@ -304,25 +280,28 @@ Currency token balance
 
 
 
-### `updateNameAndSymbol()` (public)
+### `conservativePriceEstimation(uint256 price) → uint256` (internal)
 
 
 
-Update name and symbol of this contract
+Calculate price minus max percentage of slippage during exchange
+This will lead to the pool value become a bit undervalued
+compared to the oracle price but will ensure that the value doesn't drop
+when token exchanges are performed.
 
 
-### `StakeTokenChanged(contract IERC20 token)`
-
-
-
-Emitted when stake token address
-
-
-### `OracleChanged(contract ITruPriceOracle newOracle)`
+### `TruOracleChanged(contract ITrueFiPoolOracle newOracle)`
 
 
 
-Emitted oracle was changed
+Emitted when TrueFi oracle was changed
+
+
+### `CrvOracleChanged(contract ICrvPriceOracle newOracle)`
+
+
+
+Emitted when CRV oracle was changed
 
 
 ### `FundsManagerChanged(address newManager)`
@@ -388,10 +367,17 @@ Emitted when borrower repays the pool
 Emitted when fees are collected
 
 
-### `JoiningPauseStatusChanged(bool isJoiningPaused)`
+### `PauseStatusChanged(bool pauseStatus)`
 
 
 
 Emitted when joining is paused or unpaused
+
+
+### `SafuChanged(contract ISAFU newSafu)`
+
+
+
+Emitted when SAFU address is changed
 
 

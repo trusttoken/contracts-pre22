@@ -1,0 +1,330 @@
+## `LoanToken2`
+
+
+
+A token which represents share of a debt obligation
+Each LoanToken has:
+- borrower address
+- borrow amount
+- loan term
+- loan APY
+Loan progresses through the following states:
+Awaiting:    Waiting for funding to meet capital requirements
+Funded:      Capital requirements met, borrower can withdraw
+Withdrawn:   Borrower withdraws money, loan waiting to be repaid
+Settled:     Loan has been paid back in full with interest
+Defaulted:   Loan has not been paid back in full
+Liquidated:  Loan has Defaulted and stakers have been Liquidated
+- LoanTokens are non-transferable except for whitelisted addresses
+- This version of LoanToken only supports a single funder
+
+### `onlyAdmin()`
+
+
+
+Only admin can withdraw & repay loan
+
+### `onlyBorrower()`
+
+
+
+Only borrower can withdraw & repay loan
+
+### `onlyLiquidator()`
+
+
+
+Only liquidator can liquidate
+
+### `onlyAfterClose()`
+
+
+
+Only after loan has been closed: Settled, Defaulted, or Liquidated
+
+### `onlyOngoing()`
+
+
+
+Only when loan is Funded
+
+### `onlyFunded()`
+
+
+
+Only when loan is Funded
+
+### `onlyAfterWithdraw()`
+
+
+
+Only when loan is Withdrawn
+
+### `onlyAwaiting()`
+
+
+
+Only when loan is Awaiting
+
+### `onlyDefaulted()`
+
+
+
+Only when loan is Defaulted
+
+### `onlyWhoCanTransfer(address sender)`
+
+
+
+Only whitelisted accounts or lender
+
+### `onlyLender()`
+
+
+
+Only lender can perform certain actions
+
+
+### `constructor(contract ITrueFiPool2 _pool, address _borrower, address _lender, address _admin, address _liquidator, uint256 _amount, uint256 _term, uint256 _apy)` (public)
+
+
+
+Create a Loan
+
+
+### `getParameters() → uint256, uint256, uint256` (external)
+
+
+
+Get loan parameters
+
+
+### `value(uint256 _balance) → uint256` (external)
+
+
+
+Get coupon value of this loan token in token
+This assumes the loan will be paid back on time, with interest
+
+
+### `fund()` (external)
+
+
+
+Fund a loan
+Set status, start time, lender
+
+### `allowTransfer(address account, bool _status)` (external)
+
+
+
+Whitelist accounts to transfer
+
+
+### `allowAllTransfers(bool _status)` (external)
+
+
+
+Make token transferable
+
+
+### `withdraw(address _beneficiary)` (external)
+
+
+
+Borrower calls this function to withdraw funds
+Sets the status of the loan to Withdrawn
+
+
+### `settle()` (public)
+
+
+
+Settle the loan after checking it has been repaid
+
+### `enterDefault()` (external)
+
+
+
+Default the loan if it has not been repaid by the end of term
+
+### `liquidate()` (external)
+
+
+
+Liquidate the loan if it has defaulted
+
+### `redeem(uint256 _amount)` (external)
+
+
+
+Redeem LoanToken balances for underlying token
+Can only call this function after the loan is Closed
+
+
+### `repay(address _sender, uint256 _amount)` (external)
+
+
+
+Function for borrower to repay the loan
+Borrower can repay at any time
+
+
+### `repayInFull(address _sender)` (external)
+
+
+
+Function for borrower to repay all of the remaining loan balance
+Borrower should use this to ensure full repayment
+
+
+### `_repay(address _sender, uint256 _amount)` (internal)
+
+
+
+Internal function for loan repayment
+If _amount is sufficient, then this also settles the loan
+
+
+### `reclaim()` (external)
+
+
+
+Function for borrower to reclaim stuck token
+Can only call this function after the loan is Closed
+and all of LoanToken holders have been burnt
+
+### `repaid() → uint256` (external)
+
+
+
+Check how much was already repaid
+Funds stored on the contract's address plus funds already redeemed by lenders
+
+
+### `isRepaid() → bool` (public)
+
+
+
+Check whether an ongoing loan has been repaid in full
+
+
+### `balance() → uint256` (external)
+
+
+
+Public currency token balance function
+
+
+### `_balance() → uint256` (internal)
+
+
+
+Get currency token balance for this contract
+
+
+### `interest(uint256 _amount) → uint256` (internal)
+
+
+
+Calculate interest that will be paid by this loan for an amount (returned funds included)
+amount + ((amount * apy * term) / 365 days / precision)
+
+
+### `profit() → uint256` (external)
+
+
+
+get profit for this loan
+
+
+### `_transfer(address sender, address recipient, uint256 _amount)` (internal)
+
+
+
+Override ERC20 _transfer so only whitelisted addresses can transfer
+
+
+### `version() → uint8` (external)
+
+
+
+
+
+### `decimals() → uint8` (public)
+
+
+
+
+
+
+### `Funded(address lender)`
+
+
+
+Emitted when the loan is funded
+
+
+### `TransferAllowanceChanged(address account, bool status)`
+
+
+
+Emitted when transfer whitelist is updated
+
+
+### `Withdrawn(address beneficiary)`
+
+
+
+Emitted when borrower withdraws funds
+
+
+### `Settled(uint256 returnedAmount)`
+
+
+
+Emitted when loan has been fully repaid
+
+
+### `Defaulted(uint256 returnedAmount)`
+
+
+
+Emitted when term is over without full repayment
+
+
+### `Redeemed(address receiver, uint256 burnedAmount, uint256 redeemedAmount)`
+
+
+
+Emitted when a LoanToken is redeemed for underlying tokens
+
+
+### `Repaid(address repayer, uint256 repaidAmount)`
+
+
+
+Emitted when a LoanToken is repaid by the borrower in underlying tokens
+
+
+### `Reclaimed(address borrower, uint256 reclaimedAmount)`
+
+
+
+Emitted when borrower reclaims remaining tokens
+
+
+### `Liquidated(enum ILoanToken2.Status status)`
+
+
+
+Emitted when loan gets liquidated
+
+
+### `TransferabilityChanged(bool status)`
+
+
+
+Emitted when all transfers are allowed
+
+

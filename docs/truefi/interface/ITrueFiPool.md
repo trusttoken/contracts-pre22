@@ -14,12 +14,6 @@ Each TruePool is also a staking opportunity for TRU
 
 pool token (TUSD)
 
-### `stakeToken() → contract IERC20` (external)
-
-
-
-stake token (TRU)
-
 ### `join(uint256 amount)` (external)
 
 
@@ -27,15 +21,6 @@ stake token (TRU)
 join pool
 1. Transfer TUSD from sender
 2. Mint pool tokens based on value to sender
-
-### `exit(uint256 amount)` (external)
-
-
-
-exit pool
-1. Transfer pool tokens from sender
-2. Burn pool tokens
-3. Transfer value of pool tokens in TUSD to sender
 
 ### `borrow(uint256 amount, uint256 fee)` (external)
 

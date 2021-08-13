@@ -14,8 +14,8 @@ See: https://github.com/trusttoken/truefi-spec
 - minTerm <= loanTerm <= maxTerm
 2. Only approve loans which have been rated in the prediction market under the conditions:
 - timeInMarket >= votingPeriod
-- stakedTRU > (participationFactor * loanSize)
-- 1 < ( interest * P(loan_repaid) - (loanSize * riskAversion * P(loan_defaults))
+- stakedTRU > minVotes
+- yesVotes > minRatio * totalVotes
 Once a loan meets these requirements, fund() can be called to transfer
 funds from the pool to the LoanToken contract
 
@@ -30,7 +30,7 @@ Modifier for only lending pool
 
 
 
-Initalize the contract with parameters
+Initialize the contract with parameters
 
 
 ### `setStakingPool(contract IStakingPool newPool)` (public)
@@ -69,18 +69,18 @@ Set new minimum voting period in credit rating market.
 Only owner can change parameters
 
 
-### `setParticipationFactor(uint256 newParticipationFactor)` (external)
+### `setMinVotes(uint256 newMinVotes)` (external)
 
 
 
-Set new participation factor. Only owner can change parameters.
+Set new minimal amount of votes for loan to be approved. Only owner can change parameters.
 
 
-### `setRiskAversion(uint256 newRiskAversion)` (external)
+### `setMinRatio(uint256 newMinRatio)` (external)
 
 
 
-Set new risk aversion factor. Only owner can change parameters.
+Set new yes to no votes ratio. Only owner can change parameters.
 
 
 ### `setLoansLimit(uint256 newLoansLimit)` (external)
@@ -172,21 +172,18 @@ Check if a loan is within size bounds
 Check if loan term is within term bounds
 
 
-### `votesThresholdReached(uint256 amount, uint256 yesVotes) → bool` (public)
+### `votesThresholdReached(uint256 votes) → bool` (public)
 
 
 
-Check if a loan is within APY bounds
-Minimum absolute value of yes votes, rather than ratio of yes to no
+Check if a loan has enough votes to be approved
 
 
-### `loanIsCredible(uint256 apy, uint256 term, uint256 yesVotes, uint256 noVotes) → bool` (public)
+### `loanIsCredible(uint256 yesVotes, uint256 noVotes) → bool` (public)
 
 
 
-Use APY and term of loan to check expected value of a loan
-Expected value = profit - (default_loss * (no / yes))
-e.g. riskAversion = 10,000 => expected value of 1
+Check if yes to no votes ratio reached the minimum rate
 
 
 
@@ -204,14 +201,14 @@ Emitted when a borrower's whitelist status changes
 Emitted when APY bounds have changed
 
 
-### `ParticipationFactorChanged(uint256 participationFactor)`
+### `MinVotesChanged(uint256 minVotes)`
 
 
 
-Emitted when participation factor changed
+Emitted when minVotes changed
 
 
-### `RiskAversionChanged(uint256 riskAversion)`
+### `MinRatioChanged(uint256 minRatio)`
 
 
 

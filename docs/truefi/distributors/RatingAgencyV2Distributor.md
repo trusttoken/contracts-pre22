@@ -22,6 +22,12 @@ Only beneficiary can receive TRU
 Initialize distributor
 
 
+### `reset()` (public)
+
+
+
+reset remaining & amount to be correct values
+
 ### `setBeneficiaryStatus(address _beneficiary, bool _status)` (public)
 
 

@@ -10,6 +10,12 @@ Rewards are paid in TRU and tfUSD
 stkTRU can be used to vote in governance
 stkTRU can be used to rate and approve loans
 
+### `joiningNotPaused()`
+
+
+
+pool can only be joined when it's unpaused
+
 ### `onlyLiquidator()`
 
 
@@ -43,11 +49,25 @@ Update rewards for a specific token when an account changes state
 
 
 
-### `initialize(contract IERC20 _tru, contract IERC20 _tfusd, contract ITrueDistributor _distributor, address _liquidator)` (public)
+### `initialize(contract IERC20 _tru, contract IERC20 _tfusd, contract IERC20 _feeToken, contract ITrueDistributor _distributor, address _liquidator)` (public)
 
 
 
 Initialize contract and set default values
+
+
+### `setFeeToken(contract IERC20 _feeToken)` (external)
+
+
+
+Set tfUSDC address
+
+
+### `setLiquidator(address _liquidator)` (external)
+
+
+
+Set liquidator address
 
 
 ### `setPayerWhitelistingStatus(address payer, bool status)` (external)
@@ -64,6 +84,13 @@ Only whitelisted payers can call payFee method
 
 Owner can use this function to set cooldown time
 Cooldown time defines how long a staker waits to unstake TRU
+
+
+### `setPauseStatus(bool status)` (external)
+
+
+
+Allow pausing of deposits in case of emergency
 
 
 ### `setUnstakePeriodDuration(uint256 newUnstakePeriodDuration)` (external)
@@ -91,7 +118,7 @@ Can only unstake when cooldown complete and within unstake period
 Claims rewards when unstaking
 
 
-### `cooldown()` (external)
+### `cooldown()` (public)
 
 
 
@@ -132,12 +159,26 @@ Claim rewards for specific token
 Allows account to claim specific token to save gas
 
 
+### `claimRestake(uint256 extraStakeAmount)` (external)
+
+
+
+Claim TRU rewards, transfer in extraStakeAmount, and
+stake both the rewards and the new amount.
+Allows account to save more gas by avoiding out-and-back transfers of rewards
+
 ### `claimable(address account, contract IERC20 token) → uint256` (external)
 
 
 
 View to estimate the claimable reward for an account
 
+
+### `unstakable(address staker) → uint256` (public)
+
+
+
+max amount of stkTRU than can be unstaked after current cooldown period is over
 
 ### `getPriorVotes(address account, uint256 blockNumber) → uint96` (public)
 
@@ -185,12 +226,34 @@ This dilutes voting power when TRU is liquidated
 
 
 
+### `min(uint256 a, uint256 b) → uint256` (internal)
+
+
+
+
+
 ### `_claim(contract IERC20 token)` (internal)
 
 
 
 Internal claim function
 Claim rewards for a specific ERC20 token
+
+
+### `_claimWithoutTransfer(contract IERC20 token) → uint256` (internal)
+
+
+
+Internal claim function that returns the transfer value
+Claim rewards for a specific ERC20 token to return in a uint256
+
+
+### `_stakeWithoutTransfer(uint256 amount)` (internal)
+
+
+
+Internal stake of TRU for stkTRU from a uint256
+Caller is responsible for ensuring amount is transferred from a valid source
 
 
 ### `rewardBalance(contract IERC20 token) → uint256` (internal)
@@ -277,6 +340,24 @@ internal function to insert distribution index in a sorted list
 
 
 ### `FeePayerWhitelistingStatusChanged(address payer, bool status)`
+
+
+
+
+
+### `PauseStatusChanged(bool pauseStatus)`
+
+
+
+
+
+### `FeeTokenChanged(contract IERC20 token)`
+
+
+
+
+
+### `LiquidatorChanged(address liquidator)`
 
 
 

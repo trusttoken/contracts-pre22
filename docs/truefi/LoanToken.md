@@ -30,11 +30,11 @@ Only borrower can withdraw & repay loan
 
 Only liquidator can liquidate
 
-### `onlyClosed()`
+### `onlyAfterClose()`
 
 
 
-Only when loan is Settled
+Only after loan has been closed: Settled, Defaulted, or Liquidated
 
 ### `onlyOngoing()`
 
@@ -130,11 +130,17 @@ Borrower calls this function to withdraw funds
 Sets the status of the loan to Withdrawn
 
 
-### `close()` (external)
+### `settle()` (public)
 
 
 
-Close the loan and check if it has been repaid
+Settle the loan after checking it has been repaid
+
+### `enterDefault()` (external)
+
+
+
+Default the loan if it has not been repaid by the end of term
 
 ### `liquidate()` (external)
 
@@ -158,6 +164,22 @@ Function for borrower to repay the loan
 Borrower can repay at any time
 
 
+### `repayInFull(address _sender)` (external)
+
+
+
+Function for borrower to repay all of the remaining loan balance
+Borrower should use this to ensure full repayment
+
+
+### `_repay(address _sender, uint256 _amount)` (internal)
+
+
+
+Internal function for loan repayment
+If _amount is sufficient, then this also settles the loan
+
+
 ### `reclaim()` (external)
 
 
@@ -172,6 +194,13 @@ and all of LoanToken holders have been burnt
 
 Check how much was already repaid
 Funds stored on the contract's address plus funds already redeemed by lenders
+
+
+### `isRepaid() → bool` (public)
+
+
+
+Check whether an ongoing loan has been repaid in full
 
 
 ### `balance() → uint256` (external)
@@ -217,6 +246,12 @@ get profit for this loan
 Override ERC20 _transfer so only whitelisted addresses can transfer
 
 
+### `version() → uint8` (external)
+
+
+
+
+
 
 ### `Funded(address lender)`
 
@@ -239,11 +274,18 @@ Emitted when transfer whitelist is updated
 Emitted when borrower withdraws funds
 
 
-### `Closed(enum ILoanToken.Status status, uint256 returnedAmount)`
+### `Settled(uint256 returnedAmount)`
 
 
 
-Emitted when term is over
+Emitted when loan has been fully repaid
+
+
+### `Defaulted(uint256 returnedAmount)`
+
+
+
+Emitted when term is over without full repayment
 
 
 ### `Redeemed(address receiver, uint256 burnedAmount, uint256 redeemedAmount)`
