@@ -273,6 +273,11 @@ describe('TrueFiPool', () => {
       await pool.join(parseEth(1e7))
     })
 
+    it('reverts if caller is not the owner', async () => {
+      await expect(pool.connect(borrower).flush(parseEth(100)))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
     it('deposits given amount to curve', async () => {
       await pool.flush(parseEth(100))
       expect('add_liquidity').to.be.calledOnContractWith(curvePool, [[0, 0, 0, parseEth(100)], parseEth(99.9)])

@@ -447,7 +447,7 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
      * Called by owner to help manage funds in pool and save on gas for deposits
      * @param currencyAmount Amount of funds to deposit into curve
      */
-    function flush(uint256 currencyAmount) external {
+    function flush(uint256 currencyAmount) external onlyOwner {
         require(currencyAmount <= currencyBalance(), "TrueFiPool: Insufficient currency balance");
 
         uint256 expectedMinYTokenValue = yTokenValue().add(conservativePriceEstimation(currencyAmount));
