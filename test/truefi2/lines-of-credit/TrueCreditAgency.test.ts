@@ -500,29 +500,6 @@ describe('TrueCreditAgency', () => {
     )
   })
 
-  const setUtilization = async (pool: TrueFiPool2, utilization: number) => {
-    if (utilization === 0) {
-      return
-    }
-    const utilizationAmount = (await pool.poolValue()).mul(utilization).div(100)
-    const loan = await createApprovedLoan(
-      ratingAgency, tru, stkTru,
-      loanFactory, borrower, tusdPool,
-      utilizationAmount, DAY, 1,
-      owner, provider,
-    )
-    await lender.connect(borrower).fund(loan.address)
-  }
-
-  describe('setUtilization', () => {
-    [0, 20, 50, 80, 100].map((utilization) => {
-      it(`sets utilization to ${utilization} percent`, async () => {
-        await setUtilization(tusdPool, utilization)
-        expect(await tusdPool.utilization()).to.eq(utilization * 100)
-      })
-    })
-  })
-
   describe('payInterest', () => {
     beforeEach(async () => {
       await creditAgency.allowBorrower(borrower.address, true)
@@ -1020,6 +997,29 @@ describe('TrueCreditAgency', () => {
   })
 
   describe('rate adjuster integration', () => {
+    const setUtilization = async (pool: TrueFiPool2, utilization: number) => {
+      if (utilization === 0) {
+        return
+      }
+      const utilizationAmount = (await pool.poolValue()).mul(utilization).div(100)
+      const loan = await createApprovedLoan(
+        ratingAgency, tru, stkTru,
+        loanFactory, borrower, tusdPool,
+        utilizationAmount, DAY, 1,
+        owner, provider,
+      )
+      await lender.connect(borrower).fund(loan.address)
+    }
+
+    describe('setUtilization', () => {
+      [0, 20, 50, 80, 100].map((utilization) => {
+        it(`sets utilization to ${utilization} percent`, async () => {
+          await setUtilization(tusdPool, utilization)
+          expect(await tusdPool.utilization()).to.eq(utilization * 100)
+        })
+      })
+    })
+
     it('utilizationAdjustmentRate', async () => {
       await setUtilization(tusdPool, 70)
       expect(await creditAgency.utilizationAdjustmentRate(tusdPool.address)).to.eq(505)
