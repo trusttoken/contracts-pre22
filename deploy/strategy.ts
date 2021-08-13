@@ -18,6 +18,7 @@ const CURVE_GAUGE = '0xFA712EE4788C042e2B7BB55E6cb8ec569C4530c1'
 const CURVE_POOL = '0xbbc81d23ea2c3ec7e56d39296f0cbb648873a5d3'
 const CURVE_MINTER = '0xd061d61a4d941c39e5453435b6345dc261c2fce0'
 const ONE_INCH_EXCHANGE = '0x11111112542d85b3ef69ae05771c2dccff4faa26'
+const MAX_PRICE_SLIPPAGE = 75
 
 deploy({}, (_, config) => {
   const proxy = createProxy(OwnedUpgradeabilityProxy)
@@ -59,13 +60,13 @@ deploy({}, (_, config) => {
 
   // Contract initialization
   runIf(tusd_CurveYearnStrategy.isInitialized().not(), () => {
-    tusd_CurveYearnStrategy.initialize(tusd_TrueFiPool2, CURVE_POOL, CURVE_GAUGE, CURVE_MINTER, ONE_INCH_EXCHANGE, crvPriceOracle, 3)
+    tusd_CurveYearnStrategy.initialize(tusd_TrueFiPool2, CURVE_POOL, CURVE_GAUGE, CURVE_MINTER, ONE_INCH_EXCHANGE, crvPriceOracle, MAX_PRICE_SLIPPAGE, 3)
   })
   runIf(usdc_CurveYearnStrategy.isInitialized().not(), () => {
-    usdc_CurveYearnStrategy.initialize(usdc_TrueFiPool2, CURVE_POOL, CURVE_GAUGE, CURVE_MINTER, ONE_INCH_EXCHANGE, crvPriceOracle, 1)
+    usdc_CurveYearnStrategy.initialize(usdc_TrueFiPool2, CURVE_POOL, CURVE_GAUGE, CURVE_MINTER, ONE_INCH_EXCHANGE, crvPriceOracle, MAX_PRICE_SLIPPAGE, 1)
   })
   runIf(usdt_CurveYearnStrategy.isInitialized().not(), () => {
-    usdt_CurveYearnStrategy.initialize(usdt_TrueFiPool2, CURVE_POOL, CURVE_GAUGE, CURVE_MINTER, ONE_INCH_EXCHANGE, crvPriceOracle, 2)
+    usdt_CurveYearnStrategy.initialize(usdt_TrueFiPool2, CURVE_POOL, CURVE_GAUGE, CURVE_MINTER, ONE_INCH_EXCHANGE, crvPriceOracle, MAX_PRICE_SLIPPAGE, 2)
   })
   const tusd_Strategy = isMainnet
     ? tusd_CurveYearnStrategy
