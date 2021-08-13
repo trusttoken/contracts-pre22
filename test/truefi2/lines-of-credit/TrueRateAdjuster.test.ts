@@ -7,6 +7,10 @@ import { setupDeploy } from 'scripts/utils'
 import {
   TrueRateAdjuster,
   TrueRateAdjuster__factory,
+  TrueFiPool2,
+  TrueFiPool2__factory,
+  TimeAveragedBaseRateOracle,
+  TimeAveragedBaseRateOracle__factory,
 } from 'contracts'
 
 import { solidity } from 'ethereum-waffle'
@@ -119,6 +123,32 @@ describe('TrueRateAdjuster', () => {
       await expect(rateAdjuster.setUtilizationAdjustmentPower(3))
         .to.emit(rateAdjuster, 'UtilizationAdjustmentPowerChanged')
         .withArgs(3)
+    })
+  })
+
+  describe('setBaseRateOracle', () => {
+    let fakePool: TrueFiPool2
+    let fakeOracle: TimeAveragedBaseRateOracle
+
+    beforeEach(async () => {
+      fakePool = await new TrueFiPool2__factory(owner).deploy()
+      fakeOracle = await new TimeAveragedBaseRateOracle__factory(owner).deploy()
+    })
+
+    it('reverts if caller is not the owner', async () => {
+      await expect(rateAdjuster.connect(borrower).setBaseRateOracle(fakePool.address, fakeOracle.address))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('sets base rate oracle', async () => {
+      await rateAdjuster.setBaseRateOracle(fakePool.address, fakeOracle.address)
+      expect(await rateAdjuster.baseRateOracle(fakePool.address)).to.eq(fakeOracle.address)
+    })
+
+    it('emits event', async () => {
+      await expect(rateAdjuster.setBaseRateOracle(fakePool.address, fakeOracle.address))
+        .to.emit(rateAdjuster, 'BaseRateOracleChanged')
+        .withArgs(fakePool.address, fakeOracle.address)
     })
   })
 
