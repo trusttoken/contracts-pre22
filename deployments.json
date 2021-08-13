@@ -151,8 +151,8 @@
       "address": "0xaBd5bC916b6775b407196b268397e0C56db8Fc34"
     },
     "poolFactory": {
-      "txHash": "0x58cd6e5b7b80e3eab4677ab3db28300bf19b5603e3b11a22497d2ef17e0c1c81",
-      "address": "0xdC69C15455a4Dfd69b53f4290ED9B75aB6BD458E"
+      "txHash": "0x69252c616092037e3415927a6cf5f990031381ff1a9778462bc882782e75c3ae",
+      "address": "0x48c652F65C79593E7bC1B41E362A1A83ACD497b8"
     },
     "poolFactory_proxy": {
       "txHash": "0xc35986818f8d42782971824548d8d2d826c82dc4f0c339349d6e331d8f673d54",
@@ -409,8 +409,8 @@
       "address": "0xa47DEfA29a4Df6a9243BDaEB4A4E5c592E17D930"
     },
     "poolFactory": {
-      "txHash": "0xd66fa509c2e7f8ff0c27a122ea4dc99d0fdb3841bd161c52bb23ab150e7b75fc",
-      "address": "0xF71a2544a3358AB10109B79160AAd10241CE3194"
+      "txHash": "0x7d45fd25fcba4ece09cd0c6f31e210691977bf7b3834728c7e8935b224983fe4",
+      "address": "0x4eD3477307f64FF9EE2a26b693FBead4Cf2AF226"
     },
     "poolFactory_proxy": {
       "txHash": "0x75dab2c94c06d6f9ce54d3c48505e658e04a7012304f187f689b1efac9193905",
