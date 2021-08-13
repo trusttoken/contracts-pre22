@@ -55,8 +55,8 @@
       "address": "0x20FA73e9d6cE61DBB0240E57C68dB8b1124B9378"
     },
     "testTrueFiPool": {
-      "txHash": "0x8ad0a937cea03984276bb715ba6b198a3c16c27ab7a7cb4e349d49cd4effcd80",
-      "address": "0x27acdA3652BD3750BDbF75f563d93084ab2B6752"
+      "txHash": "0xe6df97e8a7c97f8f0ff2eb869b3232d4652774d7d20709c2b7525a80f174e401",
+      "address": "0x271848D61715f91FFD9390d5334351293b29C95a"
     },
     "testTrueFiPool_proxy": {
       "txHash": "0x3439bdd66e0396ebaa12e4acee9ccf49d3cea6ed4b01bf8b5a915e86784b8f66",
@@ -143,8 +143,8 @@
       "address": "0xc16eEed3cC648225105B199324E0e2cd3ADB86db"
     },
     "trueFiPool2": {
-      "txHash": "0xaf7502a68f3c537e23531c945f8428cbc064a390ae568ff07fcdc8d7895a979f",
-      "address": "0x7057E880Dd22D734a60c435069A81665eECFE037"
+      "txHash": "0x816d76e61eadd4158ce27108362f5e56e7c2ccdc832edb907dd3ea9331ffc1f9",
+      "address": "0x515D29d8606e568A70C364f2B0C26fb914C10eb9"
     },
     "implementationReference": {
       "txHash": "0x0000d3b3101713c94ee1eb0352ceade5350b78030e9edfd76974fb93a6252250",
@@ -317,8 +317,8 @@
       "address": "0x23696914Ca9737466D8553a2d619948f548Ee424"
     },
     "trueFiPool": {
-      "txHash": "0x4d040179d0f4a32042e38176e1ff5c88cda20f53c77eeb9a2e1827948d1d50f0",
-      "address": "0x27F461C698844ff51B33eCFfA5dC2BD9721060B1"
+      "txHash": "0xd6bda561ffc7533381abbb69f693d3a68df457a9755a970cbdb69a76c4452f36",
+      "address": "0xA8A1bf76096668AD25e85223D75294dDe4e1e313"
     },
     "trueFiPool_proxy": {
       "txHash": "0xe2420b341397151bf2790d3b7e7c77f511830c882393ed81d8b4ffcd9f8f6541",
@@ -401,8 +401,8 @@
       "address": "0xa606dd423dF7dFb65Efe14ab66f5fDEBf62FF583"
     },
     "trueFiPool2": {
-      "txHash": "0x99c9475aa7a33da9599de95cb303ddbe50dabae11cf36d0553777f87f54b4669",
-      "address": "0x47D439d319EE33e4795B353CD144972aD4536C04"
+      "txHash": "0x9c15491b3bcd46e93bb9cef88bc359f3794ff003a9f8495696a89d5a12a99585",
+      "address": "0x7d3AA1CcdBaf485C657313d3ba7770530C7B0673"
     },
     "implementationReference": {
       "txHash": "0x435d1acd1f13f4b8117b8ef2ca39b93902b23bf3e5593d76aedaecd3ac04b38a",
