@@ -133,7 +133,7 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
         emit UtilizationAdjustmentCoefficientChanged(newCoefficient);
     }
 
-    /// @dev Set risk premium to `newRate`
+    /// @dev Set utilization adjustment power to `newValue`
     function setUtilizationAdjustmentPower(uint256 newValue) external onlyOwner {
         utilizationAdjustmentPower = newValue;
         emit UtilizationAdjustmentPowerChanged(newValue);
