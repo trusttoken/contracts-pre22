@@ -523,26 +523,6 @@ describe('TrueCreditAgency', () => {
     })
   })
 
-  describe('currentRate', () => {
-    it('calculates rate correctly', async () => {
-      await rateAdjuster.setRiskPremium(100)
-      await creditOracle.setScore(borrower.address, 223)
-      await creditAgency.updateCreditScore(tusdPool.address, borrower.address)
-      await setUtilization(tusdPool, 50)
-      const expectedCurrentRate = 693 // 100 + 300 + 143 + 150
-      expect(await creditAgency.currentRate(tusdPool.address, borrower.address)).to.eq(expectedCurrentRate)
-    })
-
-    it('caps current rate if it exceeds max rate', async () => {
-      await rateAdjuster.setRiskPremium(22600)
-      await creditOracle.setScore(borrower.address, 31)
-      await creditAgency.updateCreditScore(tusdPool.address, borrower.address)
-      await setUtilization(tusdPool, 95)
-      const expectedCurrentRate = 50000 // min(22600 + 300 + 7225 + 19950 = 50075, 50000)
-      expect(await creditAgency.currentRate(tusdPool.address, borrower.address)).to.eq(expectedCurrentRate)
-    })
-  })
-
   describe('payInterest', () => {
     beforeEach(async () => {
       await creditAgency.allowBorrower(borrower.address, true)

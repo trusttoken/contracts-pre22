@@ -14,7 +14,10 @@ import {
 } from 'contracts'
 
 import { deployMockContract, MockContract, solidity } from 'ethereum-waffle'
-import { ITrueFiPool2Json } from 'build'
+import {
+  ITrueFiPool2Json,
+  ITimeAveragedBaseRateOracleJson,
+} from 'build'
 
 use(solidity)
 
@@ -170,6 +173,32 @@ describe('TrueRateAdjuster', () => {
       await expect(rateAdjuster.setFixedTermLoanAdjustmentCoefficient(50))
         .to.emit(rateAdjuster, 'FixedTermLoanAdjustmentCoefficientChanged')
         .withArgs(50)
+    })
+  })
+
+  describe('rate', () => {
+    let mockOracle: MockContract
+
+    beforeEach(async () => {
+      mockOracle = await deployMockContract(owner, ITimeAveragedBaseRateOracleJson.abi)
+      await mockOracle.mock.getWeeklyAPY.returns(300)
+      await rateAdjuster.setBaseRateOracle(mockPool.address, mockOracle.address)
+    })
+
+    it('calculates rate correctly', async () => {
+      await rateAdjuster.setRiskPremium(100)
+      const borrowerScore = 223
+      await mockPool.mock.liquidRatio.returns(10000 - 50 * 100)
+      const expectedCurrentRate = 693 // 300 + 100 + 143 + 150
+      expect(await rateAdjuster.rate(mockPool.address, borrowerScore)).to.eq(expectedCurrentRate)
+    })
+
+    it('caps current rate if it exceeds max rate', async () => {
+      await rateAdjuster.setRiskPremium(22600)
+      const borrowerScore = 31
+      await mockPool.mock.liquidRatio.returns(10000 - 95 * 100)
+      const expectedCurrentRate = 50000 // min(300 + 22600 + 7225 + 19950 = 50075, 50000)
+      expect(await rateAdjuster.rate(mockPool.address, borrowerScore)).to.eq(expectedCurrentRate)
     })
   })
 
