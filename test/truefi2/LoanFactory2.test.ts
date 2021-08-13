@@ -13,6 +13,8 @@ import {
   PoolFactory,
   TrueFiCreditOracle,
   TrueFiCreditOracle__factory,
+  TrueRateAdjuster,
+  TrueRateAdjuster__factory,
 } from 'contracts'
 import { solidity } from 'ethereum-waffle'
 
@@ -111,6 +113,31 @@ describe('LoanFactory2', () => {
       await expect(loanFactory.setCreditOracle(fakeCreditOracle.address))
         .to.emit(loanFactory, 'CreditOracleChanged')
         .withArgs(fakeCreditOracle.address)
+    })
+  })
+
+  describe('setRateAdjuster', () => {
+    let fakeRateAdjuster: TrueRateAdjuster
+    beforeEach(async () => {
+      fakeRateAdjuster = await new TrueRateAdjuster__factory(owner).deploy([100])
+    })
+
+    it('only admin can call', async () => {
+      await expect(loanFactory.connect(owner).setRateAdjuster(fakeRateAdjuster.address))
+        .not.to.be.reverted
+      await expect(loanFactory.connect(borrower).setRateAdjuster(fakeRateAdjuster.address))
+        .to.be.revertedWith('LoanFactory: Caller is not the admin')
+    })
+
+    it('changes rateAdjuster', async () => {
+      await loanFactory.setRateAdjuster(fakeRateAdjuster.address)
+      expect(await loanFactory.rateAdjuster()).to.eq(fakeRateAdjuster.address)
+    })
+
+    it('emits event', async () => {
+      await expect(loanFactory.setRateAdjuster(fakeRateAdjuster.address))
+        .to.emit(loanFactory, 'RateAdjusterChanged')
+        .withArgs(fakeRateAdjuster.address)
     })
   })
 })
