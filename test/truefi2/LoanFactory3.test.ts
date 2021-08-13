@@ -15,7 +15,7 @@ import {
   TrueFiCreditOracle__factory,
   TrueRateAdjuster,
   TrueRateAdjuster__factory,
-  LoanToken3,
+  LoanToken2,
   MockTrueCurrency,
 } from 'contracts'
 import { solidity } from 'ethereum-waffle'
@@ -32,7 +32,7 @@ describe('LoanFactory3', () => {
   let poolToken: MockTrueCurrency
   let contractAddress: string
   let loanFactory: LoanFactory3
-  let loanToken: LoanToken3
+  let loanToken: LoanToken2
   let rateAdjuster: TrueRateAdjuster
   let creditOracle: TrueFiCreditOracle
   let borrowerCreditScore: number
