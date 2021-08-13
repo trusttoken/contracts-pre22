@@ -15,6 +15,11 @@ import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
  * Ineligible accounts cannot borrow. If they owe outstanding debt, we can trigger a technical default.
  *
  * Score manager can update scores, but only owner can override eligibility Status
+ *
+ * Statuses:
+ * - Eligible: Account can borrow from TrueFi
+ * - OnHold: Account cannot borrow additional funds from TrueFi
+ * - Ineligible: Account cannot borrow from TrueFi, and account can enter default
  */
 contract TrueFiCreditOracle is ITrueFiCreditOracle, UpgradeableClaimable {
     using SafeMath for uint256;
@@ -45,18 +50,25 @@ contract TrueFiCreditOracle is ITrueFiCreditOracle, UpgradeableClaimable {
 
     // ======= STORAGE DECLARATION END ============
 
+    /// @dev emit `newManager` when manager changed
     event ManagerChanged(address newManager);
 
+    /// @dev emit `account`, `newScore` when score changed
     event ScoreChanged(address indexed account, uint8 indexed newScore);
 
+    /// @dev emit `account`, `newMaxBorrowerLimit` when max borrow limit changed
     event MaxBorrowerLimitChanged(address indexed account, uint256 newMaxBorrowerLimit);
 
+    /// @dev emit `account`, `timestamp` when eligiblity time changed
     event EligibleUntilTimeChanged(address indexed account, uint256 timestamp);
 
+    /// @dev emit `newCreditUpdatePeriod` when credit update period changed
     event CreditUpdatePeriodChanged(uint256 newCreditUpdatePeriod);
 
+    /// @dev emit `newGracePeriod` when grace period changed
     event GracePeriodChanged(uint256 newGracePeriod);
 
+    /// @dev initialize
     function initialize() public initializer {
         UpgradeableClaimable.initialize(msg.sender);
         manager = msg.sender;
@@ -70,16 +82,23 @@ contract TrueFiCreditOracle is ITrueFiCreditOracle, UpgradeableClaimable {
         _;
     }
 
+    /// @dev set credit update period to `newCreditUpdatePeriod`
     function setCreditUpdatePeriod(uint256 newCreditUpdatePeriod) external onlyOwner {
         creditUpdatePeriod = newCreditUpdatePeriod;
         emit CreditUpdatePeriodChanged(newCreditUpdatePeriod);
     }
 
+    /// @dev set grace period to `newGracePeriod`
     function setGracePeriod(uint256 newGracePeriod) external onlyOwner {
         gracePeriod = newGracePeriod;
         emit GracePeriodChanged(newGracePeriod);
     }
 
+    /**
+     * @dev Get borrow status of `account`
+     * @param account Account to get borrow status for
+     * @return Borrow status for `account`
+     */
     function status(address account) external override view returns (Status) {
         if (block.timestamp < eligibleUntilTime[account]) {
             return Status.Eligible;
@@ -137,6 +156,7 @@ contract TrueFiCreditOracle is ITrueFiCreditOracle, UpgradeableClaimable {
         _setEligibleUntilTime(account, block.timestamp.sub(gracePeriod));
     }
 
+    /// @dev internal function to set eligible until time
     function _setEligibleUntilTime(address account, uint256 timestamp) private {
         eligibleUntilTime[account] = timestamp;
         emit EligibleUntilTimeChanged(account, timestamp);

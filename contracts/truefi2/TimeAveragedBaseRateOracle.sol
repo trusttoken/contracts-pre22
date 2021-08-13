@@ -7,6 +7,12 @@ import {ITimeAveragedBaseRateOracle} from "./interface/ITimeAveragedBaseRateOrac
 
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
+/**
+ * @title TimeAveragedBaseRateOracle
+ * @dev Used to find the time averaged interest rate for TrueFi secured lending rate
+ * - Uses a spot oracle to capture data points over time
+ * - Finds and stores time-weighted average of borrow APYs
+ */
 contract TimeAveragedBaseRateOracle is UpgradeableClaimable, ITimeAveragedBaseRateOracle {
     using SafeMath for uint256;
 
@@ -48,6 +54,7 @@ contract TimeAveragedBaseRateOracle is UpgradeableClaimable, ITimeAveragedBaseRa
         _;
     }
 
+    /// @dev initialize
     function initialize(
         SpotBaseRateOracle _spotOracle,
         address _asset,
@@ -61,15 +68,18 @@ contract TimeAveragedBaseRateOracle is UpgradeableClaimable, ITimeAveragedBaseRa
         totalsBuffer.timestamps[0] = block.timestamp;
     }
 
+    /// @dev Get buffer size for this oracle
     function bufferSize() public virtual pure returns (uint16) {
         return BUFFER_SIZE;
     }
 
+    /// @dev Set spot oracle to `newSpotOracle`
     function setSpotOracle(SpotBaseRateOracle newSpotOracle) public onlyOwner {
         spotOracle = newSpotOracle;
         emit SpotBaseRateOracleChanged(newSpotOracle);
     }
 
+    /// @dev Return true if this contract is cooled down from the last update
     function isOffCooldown() public view returns (bool) {
         // get the last timestamp written into the buffer
         uint256 lastWritten = totalsBuffer.timestamps[totalsBuffer.currIndex];
