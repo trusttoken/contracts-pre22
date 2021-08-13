@@ -10,7 +10,6 @@ import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {ITrueCreditAgency} from "./interface/ITrueCreditAgency.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
 import {ITimeAveragedBaseRateOracle} from "./interface/ITimeAveragedBaseRateOracle.sol";
-import {TrueFiFixed64x64} from "./libraries/TrueFiFixed64x64.sol";
 
 interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
     function decimals() external view returns (uint8);
@@ -19,8 +18,6 @@ interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
 contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     using SafeERC20 for ERC20;
     using SafeMath for uint256;
-    using TrueFiFixed64x64 for int128;
-    using TrueFiFixed64x64 for uint256;
 
     uint8 constant MAX_CREDIT_SCORE = 255;
     uint256 constant ADDITIONAL_PRECISION = 1e27;
@@ -37,13 +34,6 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         uint256 cumulativeInterestPerShare; // How much interest was gathered by 1 wei times 10^27
         uint256 totalBorrowed;
         mapping(address => SavedInterest) savedInterest;
-    }
-
-    struct BorrowLimitConfig {
-        uint8 scoreFloor;
-        uint16 limitAdjustmentPower; // times 10000
-        uint16 tvlLimitCoefficient; // times 10000
-        uint16 poolValueLimitCoefficient; // times 10000
     }
 
     // ================ WARNING ==================
@@ -69,8 +59,6 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     uint256 public interestRepaymentPeriod;
 
     ITrueRateAdjuster public rateAdjuster;
-
-    BorrowLimitConfig public borrowLimitConfig;
 
     ITrueFiCreditOracle public creditOracle;
 
@@ -103,18 +91,10 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
     event MinCreditScoreChanged(uint256 newValue);
 
-    event BorrowLimitConfigChanged(
-        uint8 scoreFloor,
-        uint16 limitAdjustmentPower,
-        uint16 tvlLimitCoefficient,
-        uint16 poolValueLimitCoefficient
-    );
-
     function initialize(ITrueFiCreditOracle _creditOracle, ITrueRateAdjuster _rateAdjuster) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
         creditOracle = _creditOracle;
         rateAdjuster = _rateAdjuster;
-        borrowLimitConfig = BorrowLimitConfig(40, 7500, 1500, 1500);
         interestRepaymentPeriod = 31 days;
     }
 
@@ -132,16 +112,6 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     function setInterestRepaymentPeriod(uint256 newPeriod) external onlyOwner {
         interestRepaymentPeriod = newPeriod;
         emit InterestRepaymentPeriodChanged(newPeriod);
-    }
-
-    function setBorrowLimitConfig(
-        uint8 scoreFloor,
-        uint16 limitAdjustmentPower,
-        uint16 tvlLimitCoefficient,
-        uint16 poolValueLimitCoefficient
-    ) external onlyOwner {
-        borrowLimitConfig = BorrowLimitConfig(scoreFloor, limitAdjustmentPower, tvlLimitCoefficient, poolValueLimitCoefficient);
-        emit BorrowLimitConfigChanged(scoreFloor, limitAdjustmentPower, tvlLimitCoefficient, poolValueLimitCoefficient);
     }
 
     function setMinCreditScore(uint256 newValue) external onlyOwner {
@@ -195,6 +165,10 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         return rateAdjuster.utilizationAdjustmentRate(pool);
     }
 
+    function borrowLimitAdjustment(uint8 score) public view returns (uint256) {
+        return rateAdjuster.borrowLimitAdjustment(score);
+    }
+
     function totalTVL(uint8 decimals) public view returns (uint256) {
         uint256 tvl = 0;
         uint256 resultPrecision = uint256(10)**decimals;
@@ -219,25 +193,16 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         return borrowSum;
     }
 
-    function borrowLimitAdjustment(uint256 score) public view returns (uint256) {
-        return
-            ((score.fromUInt() / MAX_CREDIT_SCORE).fixed64x64Pow(uint256(borrowLimitConfig.limitAdjustmentPower).fromUInt() / 10000) *
-                10000)
-                .toUInt();
-    }
-
     function borrowLimit(ITrueFiPool2 pool, address borrower) public view returns (uint256) {
-        uint256 score = uint256(creditOracle.score(borrower));
-        if (score < borrowLimitConfig.scoreFloor) {
-            return 0;
-        }
         uint8 poolDecimals = ITrueFiPool2WithDecimals(address(pool)).decimals();
-        uint256 maxBorrowerLimit = creditOracle.maxBorrowerLimit(borrower).mul(uint256(10)**poolDecimals).div(1 ether);
-        uint256 maxTVLLimit = totalTVL(poolDecimals).mul(borrowLimitConfig.tvlLimitCoefficient).div(10000);
-        uint256 adjustment = borrowLimitAdjustment(score);
-        uint256 creditLimit = min(maxBorrowerLimit, maxTVLLimit).mul(adjustment).div(10000);
-        uint256 poolBorrowMax = min(pool.poolValue().mul(borrowLimitConfig.poolValueLimitCoefficient).div(10000), creditLimit);
-        return saturatingSub(poolBorrowMax, totalBorrowed(borrower, poolDecimals));
+        return
+            rateAdjuster.borrowLimit(
+                pool,
+                creditOracle.score(borrower),
+                creditOracle.maxBorrowerLimit(borrower),
+                totalTVL(poolDecimals),
+                totalBorrowed(borrower, poolDecimals)
+            );
     }
 
     function currentRate(ITrueFiPool2 pool, address borrower) external view returns (uint256) {
@@ -454,16 +419,5 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         pool.token().safeTransferFrom(msg.sender, address(this), amount);
         pool.token().safeApprove(address(pool), amount);
         pool.repay(amount);
-    }
-
-    function saturatingSub(uint256 a, uint256 b) internal pure returns (uint256) {
-        if (b > a) {
-            return 0;
-        }
-        return a.sub(b);
-    }
-
-    function min(uint256 a, uint256 b) internal pure returns (uint256) {
-        return a > b ? b : a;
     }
 }

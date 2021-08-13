@@ -7,12 +7,25 @@ import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {ITimeAveragedBaseRateOracle} from "./interface/ITimeAveragedBaseRateOracle.sol";
 import {ITrueRateAdjuster} from "./interface/ITrueRateAdjuster.sol";
+import {TrueFiFixed64x64} from "./libraries/TrueFiFixed64x64.sol";
+
+interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
+    function decimals() external view returns (uint8);
+}
 
 contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     using SafeMath for uint256;
+    using TrueFiFixed64x64 for int128;
 
     uint256 constant MAX_RATE_CAP = 50000;
     uint8 constant MAX_CREDIT_SCORE = 255;
+
+    struct BorrowLimitConfig {
+        uint8 scoreFloor;
+        uint16 limitAdjustmentPower; // times 10000
+        uint16 tvlLimitCoefficient; // times 10000
+        uint16 poolValueLimitCoefficient; // times 10000
+    }
 
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
@@ -36,6 +49,8 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
 
     mapping(ITrueFiPool2 => ITimeAveragedBaseRateOracle) public baseRateOracle;
 
+    BorrowLimitConfig public borrowLimitConfig;
+
     // ======= STORAGE DECLARATION END ============
 
     event RiskPremiumChanged(uint256 newRate);
@@ -50,6 +65,13 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
 
     event FixedTermLoanAdjustmentCoefficientChanged(uint256 newCoefficient);
 
+    event BorrowLimitConfigChanged(
+        uint8 scoreFloor,
+        uint16 limitAdjustmentPower,
+        uint16 tvlLimitCoefficient,
+        uint16 poolValueLimitCoefficient
+    );
+
     function initialize() public initializer {
         UpgradeableClaimable.initialize(msg.sender);
         riskPremium = 200;
@@ -57,6 +79,7 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
         utilizationAdjustmentCoefficient = 50;
         utilizationAdjustmentPower = 2;
         fixedTermLoanAdjustmentCoefficient = 25;
+        borrowLimitConfig = BorrowLimitConfig(40, 7500, 1500, 1500);
     }
 
     function setRiskPremium(uint256 newRate) external onlyOwner {
@@ -87,6 +110,16 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     function setFixedTermLoanAdjustmentCoefficient(uint256 newCoefficient) external onlyOwner {
         fixedTermLoanAdjustmentCoefficient = newCoefficient;
         emit FixedTermLoanAdjustmentCoefficientChanged(newCoefficient);
+    }
+
+    function setBorrowLimitConfig(
+        uint8 scoreFloor,
+        uint16 limitAdjustmentPower,
+        uint16 tvlLimitCoefficient,
+        uint16 poolValueLimitCoefficient
+    ) external onlyOwner {
+        borrowLimitConfig = BorrowLimitConfig(scoreFloor, limitAdjustmentPower, tvlLimitCoefficient, poolValueLimitCoefficient);
+        emit BorrowLimitConfigChanged(scoreFloor, limitAdjustmentPower, tvlLimitCoefficient, poolValueLimitCoefficient);
     }
 
     function rate(ITrueFiPool2 pool, uint8 score) external override view returns (uint256) {
@@ -158,6 +191,38 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
 
     function fixedTermLoanAdjustment(uint256 term) public override view returns (uint256) {
         return term.div(30 days).mul(fixedTermLoanAdjustmentCoefficient);
+    }
+
+    function borrowLimitAdjustment(uint8 score) public override view returns (uint256) {
+        int128 f64x64Score = TrueFiFixed64x64.fromUInt(uint256(score));
+        int128 f64x64LimitAdjustmentPower = TrueFiFixed64x64.fromUInt(uint256(borrowLimitConfig.limitAdjustmentPower));
+        return ((f64x64Score / MAX_CREDIT_SCORE).fixed64x64Pow(f64x64LimitAdjustmentPower / 10000) * 10000).toUInt();
+    }
+
+    function borrowLimit(
+        ITrueFiPool2 pool,
+        uint8 score,
+        uint256 maxBorrowerLimit,
+        uint256 totalTVL,
+        uint256 totalBorrowed
+    ) public override view returns (uint256) {
+        if (score < borrowLimitConfig.scoreFloor) {
+            return 0;
+        }
+        uint8 poolDecimals = ITrueFiPool2WithDecimals(address(pool)).decimals();
+        maxBorrowerLimit = maxBorrowerLimit.mul(uint256(10)**poolDecimals).div(1 ether);
+        uint256 maxTVLLimit = totalTVL.mul(borrowLimitConfig.tvlLimitCoefficient).div(10000);
+        uint256 adjustment = borrowLimitAdjustment(score);
+        uint256 creditLimit = min(maxBorrowerLimit, maxTVLLimit).mul(adjustment).div(10000);
+        uint256 poolBorrowMax = min(pool.poolValue().mul(borrowLimitConfig.poolValueLimitCoefficient).div(10000), creditLimit);
+        return saturatingSub(poolBorrowMax, totalBorrowed);
+    }
+
+    function saturatingSub(uint256 a, uint256 b) internal pure returns (uint256) {
+        if (b > a) {
+            return 0;
+        }
+        return a.sub(b);
     }
 
     function min(uint256 a, uint256 b) internal pure returns (uint256) {
