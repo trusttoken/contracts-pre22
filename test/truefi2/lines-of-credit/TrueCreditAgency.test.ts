@@ -24,9 +24,11 @@ import {
   updateRateOracle,
   YEAR,
 } from 'utils'
-import { expect } from 'chai'
+import { expect, use } from 'chai'
 import { AddressZero } from '@ethersproject/constants'
-import { MockContract, MockProvider } from 'ethereum-waffle'
+import { MockContract, MockProvider, solidity } from 'ethereum-waffle'
+
+use(solidity)
 
 describe('TrueCreditAgency', () => {
   let provider: MockProvider
@@ -519,29 +521,6 @@ describe('TrueCreditAgency', () => {
         expect(await tusdPool.utilization()).to.eq(utilization * 100)
       })
     })
-  })
-
-  describe('utilizationAdjustmentRate', () => {
-    [
-      [0, 0],
-      [10, 11],
-      [20, 28],
-      [30, 52],
-      [40, 88],
-      [50, 150],
-      [60, 262],
-      [70, 505],
-      [80, 1200],
-      [90, 4950],
-      [95, 19950],
-      [99, 50000],
-      [100, 50000],
-    ].map(([utilization, adjustment]) =>
-      it(`returns ${adjustment} if utilization is at ${utilization} percent`, async () => {
-        await setUtilization(tusdPool, utilization)
-        expect(await creditAgency.utilizationAdjustmentRate(tusdPool.address)).to.eq(adjustment)
-      }),
-    )
   })
 
   describe('currentRate', () => {
@@ -1057,6 +1036,14 @@ describe('TrueCreditAgency', () => {
 
       await timeTravel(YEAR)
       expect(await creditAgency.poolCreditValue(tusdPool.address)).to.be.closeTo(BigNumber.from(25275), 2)
+    })
+  })
+
+  describe('rate adjuster integration', () => {
+    it('utilizationAdjustmentRate', async () => {
+      await setUtilization(tusdPool, 70)
+      expect(await creditAgency.utilizationAdjustmentRate(tusdPool.address)).to.eq(505)
+      expect('utilizationAdjustmentRate').to.be.calledOnContractWith(rateAdjuster, [tusdPool.address])
     })
   })
 })
