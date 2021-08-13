@@ -87,7 +87,7 @@ contract LoanFactory3 is ILoanFactory3, Initializable {
         uint256 amount,
         uint256 _term
     ) internal view returns (uint256) {
-        uint8 borrowerScore = creditOracle.getScore(borrower);
+        uint8 borrowerScore = creditOracle.score(borrower);
         uint256 fixedTermLoanAdjustment = rateAdjuster.fixedTermLoanAdjustment(_term);
         uint256 proFormaRate = rateAdjuster.proFormaRate(pool, borrowerScore, amount);
         return proFormaRate.add(fixedTermLoanAdjustment);
