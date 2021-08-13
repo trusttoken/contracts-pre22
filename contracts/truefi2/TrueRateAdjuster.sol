@@ -52,7 +52,7 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     // REMOVAL OR REORDER OF VARIABLES WILL RESULT
     // ========= IN STORAGE CORRUPTION ===========
 
-    /// @dev coefficient to control affect of utilization on score (basis precision)
+    /// @dev proportional coefficient to control effect of utilization on score (basis precision)
     uint256 public utilizationAdjustmentCoefficient;
 
     /// @dev power factor to control affect of utilization on score (basis precision)
