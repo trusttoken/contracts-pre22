@@ -4,7 +4,6 @@ import { BigNumber, BigNumberish, Wallet } from 'ethers'
 import { beforeEachWithFixture, parseEth, setupTruefi2WithLoanFactory3 } from 'utils'
 
 import {
-  LoanToken2__factory,
   LoanFactory3,
   TrueFiPool2,
   TrueFiPool2__factory,
@@ -16,6 +15,7 @@ import {
   TrueRateAdjuster,
   TrueRateAdjuster__factory,
   LoanToken2,
+  LoanToken2__factory,
   MockTrueCurrency,
 } from 'contracts'
 import { solidity } from 'ethereum-waffle'
