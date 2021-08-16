@@ -1,7 +1,7 @@
 import { expect, use } from 'chai'
 import { Wallet } from 'ethers'
 
-import { beforeEachWithFixture, DAY, parseEth, parseUSDC } from 'utils'
+import { beforeEachWithFixture, DAY, parseEth, parseUSDC, timeTravelTo, updateRateOracle } from 'utils'
 import { setupDeploy } from 'scripts/utils'
 
 import {
@@ -11,29 +11,45 @@ import {
   TrueFiPool2__factory,
   TimeAveragedBaseRateOracle,
   TimeAveragedBaseRateOracle__factory,
+  MockErc20Token__factory,
+  MockErc20Token,
+  TestTimeAveragedBaseRateOracle__factory,
 } from 'contracts'
 
-import { deployMockContract, MockContract, solidity } from 'ethereum-waffle'
+import { deployMockContract, MockContract, MockProvider, solidity } from 'ethereum-waffle'
 import {
   ITrueFiPool2WithDecimalsJson,
   ITimeAveragedBaseRateOracleJson,
+  SpotBaseRateOracleJson,
 } from 'build'
 
 use(solidity)
 
 describe('TrueRateAdjuster', () => {
+  let provider: MockProvider
   let owner: Wallet
   let borrower: Wallet
   let rateAdjuster: TrueRateAdjuster
   let mockPool: MockContract
+  let asset: MockErc20Token
+  let mockSpotOracle: MockContract
+  let oracle: TimeAveragedBaseRateOracle
 
-  beforeEachWithFixture(async (wallets) => {
+  beforeEachWithFixture(async (wallets, _provider) => {
     [owner, borrower] = wallets
+    provider = _provider
 
     const deployContract = setupDeploy(owner)
 
     rateAdjuster = await deployContract(TrueRateAdjuster__factory)
     mockPool = await deployMockContract(owner, ITrueFiPool2WithDecimalsJson.abi)
+
+    asset = await deployContract(MockErc20Token__factory)
+    mockSpotOracle = await deployMockContract(owner, SpotBaseRateOracleJson.abi)
+    await mockSpotOracle.mock.getRate.withArgs(asset.address).returns(300)
+
+    oracle = await new TestTimeAveragedBaseRateOracle__factory(owner).deploy()
+    await oracle.initialize(mockSpotOracle.address, asset.address, DAY)
 
     await rateAdjuster.initialize()
   })
@@ -357,6 +373,32 @@ describe('TrueRateAdjuster', () => {
 
     it('borrow limit is 0 if credit limit is below the borrowed amount', async () => {
       expect(await rateAdjuster.borrowLimit(mockPool.address, 191, parseEth(100), parseEth(2e7), parseEth(100))).to.equal(0)
+    })
+  })
+
+  const weeklyFillOracle = async (oracle: TimeAveragedBaseRateOracle) => {
+    for (let i = 0; i < 7; i++) {
+      const [, timestamps, currIndex] = await oracle.getTotalsBuffer()
+      const newestTimestamp = timestamps[currIndex].toNumber()
+      await timeTravelTo(provider, newestTimestamp + DAY - 1)
+      await oracle.update()
+    }
+  }
+
+  describe('securedRate', () => {
+    beforeEach(async () => {
+      await rateAdjuster.setBaseRateOracle(mockPool.address, oracle.address)
+      await weeklyFillOracle(oracle)
+    })
+
+    it('gets correct rate', async () => {
+      expect(await rateAdjuster.securedRate(mockPool.address)).to.eq(300)
+    })
+
+    it('changes with oracle update', async () => {
+      await mockSpotOracle.mock.getRate.withArgs(asset.address).returns(307)
+      await updateRateOracle(oracle, DAY, provider)
+      expect(await rateAdjuster.securedRate(mockPool.address)).to.eq(301)
     })
   })
 })
