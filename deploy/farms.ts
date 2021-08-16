@@ -10,18 +10,19 @@ import {
 import { utils, BigNumber } from 'ethers'
 
 const DAY = 60 * 60 * 24
+const YEAR = 365 * DAY
+const TRU_DECIMALS = 8
 
 const deployParams = {
   mainnet: {
-    DISTRIBUTION_DURATION: 14 * DAY,
-    DISTRIBUTION_START: 1623952800,
-    // 200,000 per day for 14 days
-    STAKE_DISTRIBUTION_AMOUNT: BigNumber.from('280000000000000'),
+    DISTRIBUTION_DURATION: 2 * YEAR,
+    DISTRIBUTION_START: Date.now() / 1000 + DAY,
+    STAKE_DISTRIBUTION_AMOUNT: utils.parseUnits('330_000', TRU_DECIMALS) * 2 * 365,
   },
   testnet: {
-    DISTRIBUTION_DURATION: 180 * DAY,
-    DISTRIBUTION_START: Date.parse('04/24/2021') / 1000,
-    STAKE_DISTRIBUTION_AMOUNT: utils.parseUnits('10', 8),
+    DISTRIBUTION_DURATION: 2 * YEAR,
+    DISTRIBUTION_START: Date.now() / 1000 + DAY,
+    STAKE_DISTRIBUTION_AMOUNT: utils.parseUnits('330_000', TRU_DECIMALS) * 2 * 365,
   },
 }
 
