@@ -293,6 +293,32 @@ describe('TrueRateAdjuster', () => {
     })
   })
 
+  describe('proFormaPoolBasicRate', () => {
+    let mockOracle: MockContract
+
+    beforeEach(async () => {
+      mockOracle = await deployMockContract(owner, ITimeAveragedBaseRateOracleJson.abi)
+      await mockOracle.mock.getWeeklyAPY.returns(300)
+      await rateAdjuster.setBaseRateOracle(mockPool.address, mockOracle.address)
+    })
+
+    it('calculates rate correctly', async () => {
+      await rateAdjuster.setRiskPremium(100)
+      // pro forma utilization: 50%
+      await mockPool.mock.proFormaLiquidRatio.withArgs(15_000).returns(10000 - 50 * 100)
+      const expectedPoolBasicRate = 550 // 300 + 100 + 150
+      expect(await rateAdjuster.proFormaPoolBasicRate(mockPool.address, 15_000)).to.eq(expectedPoolBasicRate)
+    })
+
+    it('caps pool basic rate if it exceeds max rate', async () => {
+      await rateAdjuster.setRiskPremium(29825)
+      // pro forma utilization: 95%
+      await mockPool.mock.proFormaLiquidRatio.withArgs(15_000).returns(10000 - 95 * 100)
+      const expectedPoolBasicRate = 50000 // min(300 + 29825 + 19950 = 50075, 50000)
+      expect(await rateAdjuster.proFormaPoolBasicRate(mockPool.address, 15_000)).to.eq(expectedPoolBasicRate)
+    })
+  })
+
   describe('fixedTermLoanAdjustment', () => {
     beforeEach(async () => {
       await rateAdjuster.setFixedTermLoanAdjustmentCoefficient(25)
@@ -332,6 +358,29 @@ describe('TrueRateAdjuster', () => {
       it(`returns ${adjustment} if utilization is at ${utilization} percent`, async () => {
         await mockPool.mock.liquidRatio.returns(10000 - utilization * 100)
         expect(await rateAdjuster.utilizationAdjustmentRate(mockPool.address)).to.eq(adjustment)
+      }),
+    )
+  })
+
+  describe('proFormaUtilizationAdjustmentRate', () => {
+    [
+      [0, 0],
+      [10, 11],
+      [20, 28],
+      [30, 52],
+      [40, 88],
+      [50, 150],
+      [60, 262],
+      [70, 505],
+      [80, 1200],
+      [90, 4950],
+      [95, 19950],
+      [99, 50000],
+      [100, 50000],
+    ].map(([utilization, adjustment]) =>
+      it(`returns ${adjustment} if pro forma utilization is at ${utilization} percent`, async () => {
+        await mockPool.mock.proFormaLiquidRatio.withArgs(utilization).returns(10000 - utilization * 100)
+        expect(await rateAdjuster.proFormaUtilizationAdjustmentRate(mockPool.address, utilization)).to.eq(adjustment)
       }),
     )
   })
