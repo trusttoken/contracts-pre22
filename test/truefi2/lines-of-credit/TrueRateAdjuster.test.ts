@@ -264,6 +264,16 @@ describe('TrueRateAdjuster', () => {
     )
   })
 
+  describe('combinedRate', () => {
+    it('returns sum of two rates', async () => {
+      expect(await rateAdjuster.combinedRate(29999, 20000)).to.eq(49999)
+    })
+
+    it('caps rate at 500%', async () => {
+      expect(await rateAdjuster.combinedRate(30000, 20001)).to.eq(50000)
+    })
+  })
+
   describe('borrowLimitAdjustment', () => {
     [
       [255, 10000],
