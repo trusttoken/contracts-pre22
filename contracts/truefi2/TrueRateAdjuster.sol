@@ -40,7 +40,7 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     struct BorrowLimitConfig {
         // minimum score
         uint8 scoreFloor;
-        // adjust agressiveness of curve (basis precision)
+        // adjust aggressiveness of curve (basis precision)
         uint16 limitAdjustmentPower;
         // adjust for TVL (basis precision)
         uint16 tvlLimitCoefficient;
@@ -156,7 +156,7 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     /**
      * @dev Set new borrow limit configuration
      * @param scoreFloor Minimum score
-     * @param limitAdjustmentPower Adjust agressiveness of curve (basis precision)
+     * @param limitAdjustmentPower Adjust aggressiveness of curve (basis precision)
      * @param tvlLimitCoefficient Adjust for TVL (basis precision)
      * @param poolValueLimitCoefficient Adjust for pool value (basis precision)
      */
@@ -292,7 +292,7 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     }
 
     /**
-     * @dev Get fixed term loqn adjustment given `term`
+     * @dev Get fixed term loan adjustment given `term`
      * stability_adjustment = (term / 30) * stability_adjustment_coefficient
      * @param term Term of loan
      * @return Rate adjustment based on loan term
