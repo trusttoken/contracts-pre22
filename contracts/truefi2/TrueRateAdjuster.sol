@@ -269,15 +269,9 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
             // if utilization is at 100 %
             return MAX_RATE_CAP; // Cap rate by 500%
         }
-        uint256 utilizationRateCoefficient = uint256(utilizationRateConfig.coefficient);
-        uint256 utilizationRatePower = uint256(utilizationRateConfig.power);
-        return
-            min(
-                utilizationRateCoefficient.mul(1e4**utilizationRatePower).div(liquidRatio**utilizationRatePower).sub(
-                    utilizationRateCoefficient
-                ),
-                MAX_RATE_CAP
-            );
+        uint256 coefficient = uint256(utilizationRateConfig.coefficient);
+        uint256 power = uint256(utilizationRateConfig.power);
+        return min(coefficient.mul(1e4**power).div(liquidRatio**power).sub(coefficient), MAX_RATE_CAP);
     }
 
     /**
