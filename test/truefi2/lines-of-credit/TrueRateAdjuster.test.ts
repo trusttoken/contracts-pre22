@@ -334,7 +334,7 @@ describe('TrueRateAdjuster', () => {
     })
   })
 
-  const weeklyFilOracle = async (oracle: TimeAveragedBaseRateOracle) => {
+  const weeklyFillOracle = async (oracle: TimeAveragedBaseRateOracle) => {
     for (let i = 0; i < 7; i++) {
       const [, timestamps, currIndex] = await oracle.getTotalsBuffer()
       const newestTimestamp = timestamps[currIndex].toNumber()
@@ -346,7 +346,7 @@ describe('TrueRateAdjuster', () => {
   describe('securedRate', () => {
     beforeEach(async () => {
       await rateAdjuster.setBaseRateOracle(mockPool.address, oracle.address)
-      await weeklyFilOracle(oracle)
+      await weeklyFillOracle(oracle)
     })
 
     it('gets correct rate', async () => {
