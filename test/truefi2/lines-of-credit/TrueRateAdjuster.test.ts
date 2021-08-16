@@ -63,8 +63,8 @@ describe('TrueRateAdjuster', () => {
       expect(await rateAdjuster.riskPremium()).to.eq(200)
     })
 
-    it('sets credit adjustment coefficient', async () => {
-      expect(await rateAdjuster.creditAdjustmentCoefficient()).to.eq(1000)
+    it('sets credit score rate config', async () => {
+      expect(await rateAdjuster.creditScoreRateConfig()).to.deep.eq([1000, 1])
     })
 
     it('sets utilization adjustment coefficient', async () => {
@@ -94,21 +94,22 @@ describe('TrueRateAdjuster', () => {
     })
   })
 
-  describe('setCreditAdjustmentCoefficient', () => {
+  describe('setCreditScoreRateConfig', () => {
     it('reverts if caller is not the owner', async () => {
-      await expect(rateAdjuster.connect(borrower).setCreditAdjustmentCoefficient(0))
+      await expect(rateAdjuster.connect(borrower).setCreditScoreRateConfig(0, 0))
         .to.be.revertedWith('Ownable: caller is not the owner')
     })
 
-    it('sets credit adjustment coefficient', async () => {
-      await rateAdjuster.setCreditAdjustmentCoefficient(2000)
-      expect(await rateAdjuster.creditAdjustmentCoefficient()).to.eq(2000)
+    it('sets credit score rate config', async () => {
+      await rateAdjuster.setCreditScoreRateConfig(1, 2)
+      const [creditScoreRateCoefficient, creditScoreRatePower] = await rateAdjuster.creditScoreRateConfig()
+      expect([creditScoreRateCoefficient, creditScoreRatePower]).to.deep.eq([1, 2])
     })
 
     it('emits event', async () => {
-      await expect(rateAdjuster.setCreditAdjustmentCoefficient(2000))
-        .to.emit(rateAdjuster, 'CreditAdjustmentCoefficientChanged')
-        .withArgs(2000)
+      await expect(rateAdjuster.setCreditScoreRateConfig(1, 2))
+        .to.emit(rateAdjuster, 'CreditScoreRateConfigChanged')
+        .withArgs(1, 2)
     })
   })
 
