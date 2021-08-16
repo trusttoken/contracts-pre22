@@ -221,6 +221,38 @@ describe('TrueRateAdjuster', () => {
     })
   })
 
+  describe('proFormaRate', () => {
+    let mockOracle: MockContract
+
+    beforeEach(async () => {
+      mockOracle = await deployMockContract(owner, ITimeAveragedBaseRateOracleJson.abi)
+      await mockOracle.mock.getWeeklyAPY.returns(300)
+      await rateAdjuster.setBaseRateOracle(mockPool.address, mockOracle.address)
+    })
+
+    it('calculates pro forma rate correctly', async () => {
+      await rateAdjuster.setRiskPremium(100)
+      const borrowerScore = 223
+      // pool value: 100_000
+      // initial utilization: 35%
+      // pro forma utilization: 50%
+      await mockPool.mock.proFormaLiquidRatio.withArgs(15_000).returns(10000 - 50 * 100)
+      const expectedProFormaRate = 693 // 300 + 100 + 143 + 150
+      expect(await rateAdjuster.proFormaRate(mockPool.address, borrowerScore, 15_000)).to.eq(expectedProFormaRate)
+    })
+
+    it('caps pro forma rate if it exceeds max rate', async () => {
+      await rateAdjuster.setRiskPremium(22600)
+      const borrowerScore = 31
+      // pool value: 100_000
+      // initial utilization: 80%
+      // pro forma utilization: 95%
+      await mockPool.mock.proFormaLiquidRatio.withArgs(15_000).returns(10000 - 95 * 100)
+      const expectedProFormaRate = 50000 // min(300 + 22600 + 7225 + 19950 = 50075, 50000)
+      expect(await rateAdjuster.proFormaRate(mockPool.address, borrowerScore, 15_000)).to.eq(expectedProFormaRate)
+    })
+  })
+
   describe('fixedTermLoanAdjustment', () => {
     beforeEach(async () => {
       await rateAdjuster.setFixedTermLoanAdjustmentCoefficient(25)
