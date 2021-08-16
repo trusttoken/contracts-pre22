@@ -269,6 +269,30 @@ describe('TrueRateAdjuster', () => {
     })
   })
 
+  describe('poolBasicRate', () => {
+    let mockOracle: MockContract
+
+    beforeEach(async () => {
+      mockOracle = await deployMockContract(owner, ITimeAveragedBaseRateOracleJson.abi)
+      await mockOracle.mock.getWeeklyAPY.returns(300)
+      await rateAdjuster.setBaseRateOracle(mockPool.address, mockOracle.address)
+    })
+
+    it('calculates rate correctly', async () => {
+      await rateAdjuster.setRiskPremium(100)
+      await mockPool.mock.liquidRatio.returns(10000 - 50 * 100)
+      const expectedPoolBasicRate = 550 // 300 + 100 + 150
+      expect(await rateAdjuster.poolBasicRate(mockPool.address)).to.eq(expectedPoolBasicRate)
+    })
+
+    it('caps pool basic rate if it exceeds max rate', async () => {
+      await rateAdjuster.setRiskPremium(29825)
+      await mockPool.mock.liquidRatio.returns(10000 - 95 * 100)
+      const expectedPoolBasicRate = 50000 // min(300 + 29825 + 19950 = 50075, 50000)
+      expect(await rateAdjuster.poolBasicRate(mockPool.address)).to.eq(expectedPoolBasicRate)
+    })
+  })
+
   describe('fixedTermLoanAdjustment', () => {
     beforeEach(async () => {
       await rateAdjuster.setFixedTermLoanAdjustmentCoefficient(25)
