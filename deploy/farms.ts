@@ -16,13 +16,13 @@ const TRU_DECIMALS = 8
 const deployParams = {
   mainnet: {
     DISTRIBUTION_DURATION: 2 * YEAR,
-    DISTRIBUTION_START: Date.now() / 1000 + DAY,
-    STAKE_DISTRIBUTION_AMOUNT: utils.parseUnits('330_000', TRU_DECIMALS) * 2 * 365,
+    DISTRIBUTION_START: Math.floor(Date.now() / 1000) + DAY,
+    STAKE_DISTRIBUTION_AMOUNT: utils.parseUnits('330000', TRU_DECIMALS).mul(2 * 365),
   },
   testnet: {
     DISTRIBUTION_DURATION: 2 * YEAR,
-    DISTRIBUTION_START: Date.now() / 1000 + DAY,
-    STAKE_DISTRIBUTION_AMOUNT: utils.parseUnits('330_000', TRU_DECIMALS) * 2 * 365,
+    DISTRIBUTION_START: Math.floor(Date.now() / 1000) + DAY,
+    STAKE_DISTRIBUTION_AMOUNT: utils.parseUnits('330000', TRU_DECIMALS).mul(2 * 365),
   },
 }
 
