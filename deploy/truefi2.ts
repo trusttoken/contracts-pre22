@@ -17,6 +17,7 @@ import {
   TrueFiPool,
   TrueFiPool2,
   TrueLender2,
+  TrueMultiFarm,
   TrueRatingAgencyV2,
   TrustToken,
   ChainlinkTruUsdcOracle,
@@ -80,6 +81,8 @@ deploy({}, (_, config) => {
   const usdc_TrueFiPool2_TrueFarm_impl = contract('usdc_TrueFiPool2_TrueFarm', TrueFarm)
   const usdt_TrueFiPool2_LinearTrueDistributor_impl = contract('usdt_TrueFiPool2_LinearTrueDistributor', LinearTrueDistributor)
   const usdt_TrueFiPool2_TrueFarm_impl = contract('usdt_TrueFiPool2_TrueFarm', TrueFarm)
+  const trueMultiFarm_LinearTrueDistributor_impl = contract('trueMultiFarm_LinearTrueDistributor', LinearTrueDistributor)
+  const trueMultiFarm_impl = contract(TrueMultiFarm)
   const trueFiCreditOracle_impl = contract(TrueFiCreditOracle)
 
   // New contract proxies
@@ -91,6 +94,8 @@ deploy({}, (_, config) => {
   const usdc_TrueFiPool2_TrueFarm = proxy(usdc_TrueFiPool2_TrueFarm_impl, () => {})
   const usdt_TrueFiPool2_LinearTrueDistributor = proxy(usdt_TrueFiPool2_LinearTrueDistributor_impl, () => {})
   const usdt_TrueFiPool2_TrueFarm = proxy(usdt_TrueFiPool2_TrueFarm_impl, () => {})
+  const trueMultiFarm_LinearTrueDistributor = proxy(trueMultiFarm_LinearTrueDistributor_impl, () => {})
+  const trueMultiFarm = proxy(trueMultiFarm_impl, () => {})
   const trueFiCreditOracle = proxy(trueFiCreditOracle_impl, () => {})
   const safu = proxy(safu_impl, () => {})
   // New bare contracts
@@ -151,6 +156,15 @@ deploy({}, (_, config) => {
   })
   runIf(trueFiCreditOracle.isInitialized().not(), () => {
     trueFiCreditOracle.initialize()
+  })
+  runIf(trueMultiFarm_LinearTrueDistributor.isInitialized().not(), () => {
+    trueMultiFarm_LinearTrueDistributor.initialize(deployParams[NETWORK].DISTRIBUTION_START, deployParams[NETWORK].DISTRIBUTION_DURATION, deployParams[NETWORK].STAKE_DISTRIBUTION_AMOUNT, trustToken)
+  })
+  runIf(trueMultiFarm_LinearTrueDistributor.farm().equals(trueMultiFarm).not(), () => {
+    trueMultiFarm_LinearTrueDistributor.setFarm(trueMultiFarm)
+  })
+  runIf(trueMultiFarm.isInitialized().not(), () => {
+    trueMultiFarm.initialize(trueMultiFarm_LinearTrueDistributor)
   })
   if (!isMainnet) {
     trueLender2.setFee(deployParams['testnet'].LOAN_INTEREST_FEE)
