@@ -315,7 +315,7 @@ describe('TrueRateAdjuster', () => {
       }),
     )
   })
-  
+
   describe('combinedRate', () => {
     it('returns sum of two rates', async () => {
       expect(await rateAdjuster.combinedRate(29999, 20000)).to.eq(49999)
