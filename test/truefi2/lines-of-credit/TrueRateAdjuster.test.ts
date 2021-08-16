@@ -296,6 +296,26 @@ describe('TrueRateAdjuster', () => {
     )
   })
 
+  describe('Credit score rate adjustment', () => {
+    [
+      [255, 0],
+      [223, 143],
+      [191, 335],
+      [159, 603],
+      [127, 1007],
+      [95, 1684],
+      [63, 3047],
+      [31, 7225],
+      [5, 50000],
+      [1, 50000],
+      [0, 50000],
+    ].map(([score, adjustment]) =>
+      it(`returns ${adjustment} when score is ${score}`, async () => {
+        expect(await rateAdjuster.creditScoreAdjustmentRate(score)).to.equal(adjustment)
+      }),
+    )
+  })
+
   describe('borrowLimitAdjustment', () => {
     [
       [255, 10000],

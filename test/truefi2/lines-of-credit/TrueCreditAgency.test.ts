@@ -478,28 +478,6 @@ describe('TrueCreditAgency', () => {
     })
   })
 
-  describe('Credit score rate adjustment', () => {
-    [
-      [255, 0],
-      [223, 143],
-      [191, 335],
-      [159, 603],
-      [127, 1007],
-      [95, 1684],
-      [63, 3047],
-      [31, 7225],
-      [5, 50000],
-      [1, 50000],
-      [0, 50000],
-    ].map(([score, adjustment]) =>
-      it(`returns ${adjustment} when score is ${score}`, async () => {
-        await creditOracle.setScore(borrower.address, score)
-        await creditAgency.updateCreditScore(tusdPool.address, borrower.address)
-        expect(await creditAgency.creditScoreAdjustmentRate(tusdPool.address, borrower.address)).to.equal(adjustment)
-      }),
-    )
-  })
-
   describe('payInterest', () => {
     beforeEach(async () => {
       await creditAgency.allowBorrower(borrower.address, true)
@@ -1034,6 +1012,13 @@ describe('TrueCreditAgency', () => {
       const expectedCurrentRate = 693 // 300 + 100 + 143 + 150
       expect(await creditAgency.currentRate(tusdPool.address, borrower.address)).to.eq(expectedCurrentRate)
       expect('rate').to.be.calledOnContractWith(rateAdjuster, [tusdPool.address, 223])
+    })
+
+    it('creditScoreAdjustmentRate', async () => {
+      await creditOracle.setScore(borrower.address, 223)
+      await creditAgency.updateCreditScore(tusdPool.address, borrower.address)
+      expect(await creditAgency.creditScoreAdjustmentRate(tusdPool.address, borrower.address)).to.equal(143)
+      expect('creditScoreAdjustmentRate').to.be.calledOnContractWith(rateAdjuster, [223])
     })
   })
 })
