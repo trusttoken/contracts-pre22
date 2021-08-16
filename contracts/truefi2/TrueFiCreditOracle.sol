@@ -59,7 +59,7 @@ contract TrueFiCreditOracle is ITrueFiCreditOracle, UpgradeableClaimable {
     /// @dev emit `account`, `newMaxBorrowerLimit` when max borrow limit changed
     event MaxBorrowerLimitChanged(address indexed account, uint256 newMaxBorrowerLimit);
 
-    /// @dev emit `account`, `timestamp` when eligiblity time changed
+    /// @dev emit `account`, `timestamp` when eligibility time changed
     event EligibleUntilTimeChanged(address indexed account, uint256 timestamp);
 
     /// @dev emit `newCreditUpdatePeriod` when credit update period changed

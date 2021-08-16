@@ -353,7 +353,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
      * @dev Pay full balance of interest to `pool`
      * Calling this function resets a timer for when interest payments are due
      * Borrowers should call this function at least once per payment period
-     * @param pool Pool to pay full balacne of interest for
+     * @param pool Pool to pay full balance of interest for
      */
     function payInterest(ITrueFiPool2 pool) external {
         repay(pool, interest(pool, msg.sender));
@@ -600,7 +600,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     }
 
     /**
-     * @dev Internal function to calculate interest for a single pool 
+     * @dev Internal function to calculate interest for a single pool
      * @param pool Pool to calculate interest for
      * @param bucket Bucket data
      * @param borrower Borrower to get total interest for
