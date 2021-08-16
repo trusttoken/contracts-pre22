@@ -35,7 +35,9 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     uint8 constant MAX_CREDIT_SCORE = 255;
 
     struct UtilizationRateConfig {
+        // proportional coefficient: utilization-adjusted rate % (basis precision)
         uint16 coefficient;
+        // inverse power factor (full precision -- no rational powers)
         uint16 power;
     }
 
