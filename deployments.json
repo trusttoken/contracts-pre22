@@ -159,16 +159,16 @@
       "address": "0x6b742eB6bd54537721Ee2fA41229745220A7ce55"
     },
     "liquidator2": {
-      "txHash": "0x16a8bd5c93d1da64243b3eb6d2a6697ca3094e89010d963ca71dc09bd38525f1",
-      "address": "0x9df38Eef4610e0EAB2FbA24A66fE0463a435B385"
+      "txHash": "0xaddc027b5ca97bc1d116c74c2e75d6c212b446752d92b279643d17d9508ca288",
+      "address": "0x23f4DADFf7d69b8671a19DB21460563d99F9f0D2"
     },
     "liquidator2_proxy": {
       "txHash": "0xa7aaf47950a6aa7e28c3c763375449551b8f91e5d49ddbcc73edc61e104af141",
       "address": "0xc9766261d895f5A7b045Fc65c2c47072bc7B5c3b"
     },
     "loanFactory2": {
-      "txHash": "0xb444199f860448a79a84ff07a29c6469ed18afc706e9d094e7aab26f0c4b2246",
-      "address": "0x8D35FfFD7B948F278778995c2890213568b25350"
+      "txHash": "0xc16913aab2f59e3b4b0ef855f1ba3b928d28731e493fa7e85bf676314413cead",
+      "address": "0x1Be4462ca13266c92302983b8b3907BE0f25C409"
     },
     "loanFactory2_proxy": {
       "txHash": "0xb01288f17495e734b3425b165577e15c3051b03b761453ffdb85348730072852",
@@ -231,8 +231,8 @@
       "address": "0xF7598E5cB502D6345175Fdd951AE641D89bfc9fc"
     },
     "sAFU": {
-      "txHash": "0x8f2b1c59d1eaa3f842ee5b722f07b9b4c8b61469aaae15ff40d3e69516e61268",
-      "address": "0x09B87FcdA24277F9FD310CC45475D5a03114109B"
+      "txHash": "0x8cb85fc0da109932c382eb247cefaeba03084a39e0a8e886d14b2bfeb488e059",
+      "address": "0x4C9E5914b91Bc035Bb632B9cfFd054c1EE9b040d"
     },
     "usdt_TrueFiPool2_LinearTrueDistributor": {
       "txHash": "0xb589fa3f257a1c8aecf64d4174fbc5caae126cbbb108b0d3c950119f87b0ebfb",
