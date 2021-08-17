@@ -281,6 +281,22 @@
     "usdt_MockStrategy": {
       "txHash": "0x8ac7a1da80a2fc6dc3b1d334e16f44c6a15fed847139720b82ea344796b72b82",
       "address": "0x893f4Be807fad9BDaFc5fE8929d432B16F279ceF"
+    },
+    "trueMultiFarm_LinearTrueDistributor": {
+      "txHash": "0xae74a3dabdf811235fe19450ea235257856c8476687e79d69ca4659f3a8cef09",
+      "address": "0xd60699e69cc36C428b0c0CAccfD9A5cBC24dEa84"
+    },
+    "trueMultiFarm": {
+      "txHash": "0x011c975e0a00f1b1415325b10bdce83051d7c0df245512a69c79776d20420092",
+      "address": "0x47d73e7E00EB70b359db8ED70fE09b8b35fA833B"
+    },
+    "trueMultiFarm_LinearTrueDistributor_proxy": {
+      "txHash": "0x4aa9cde33f8df16fc87c24f49d2b0cc94594d8b9763115a84e5effc739195982",
+      "address": "0xC750F2bd24bE6b8aEa2E2ca25CEbd76308e09C46"
+    },
+    "trueMultiFarm_proxy": {
+      "txHash": "0xff5acf35a0805b830139173851b0df1de8c7241713011ccba90cf80a01cd8fe5",
+      "address": "0x3A97E0F0B08bD8df82d4eDFde136fe3A2507B80f"
     }
   },
   "mainnet": {
