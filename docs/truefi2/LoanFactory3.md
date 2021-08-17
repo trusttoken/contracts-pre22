@@ -1,4 +1,4 @@
-## `LoanFactory3`
+## `LoanFactory2`
 
 Deploy LoanTokens for pools created by PoolFactory, with this Contract
 
