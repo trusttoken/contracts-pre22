@@ -36,6 +36,13 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     /// @dev credit score is stored as uint(8)
     uint8 constant MAX_CREDIT_SCORE = 255;
 
+    struct CreditScoreRateConfig {
+        // proportional coefficient: credit-score-adjusted rate % (basis precision)
+        uint16 coefficient;
+        // inverse power factor (full precision -- no rational powers)
+        uint16 power;
+    }
+
     /// @dev holds data to configure borrow limits
     struct BorrowLimitConfig {
         // minimum score
@@ -60,8 +67,7 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     /// @dev power factor to control affect of utilization on score (basis precision)
     uint256 public utilizationAdjustmentPower;
 
-    /// @dev proportional coefficient to control effect of credit on score (basis precision)
-    uint256 public creditAdjustmentCoefficient;
+    CreditScoreRateConfig public creditScoreRateConfig;
 
     // @dev premium rate for uncollateralized landing (basis precision)
     uint256 public riskPremium;
@@ -81,7 +87,7 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     event RiskPremiumChanged(uint256 newRate);
 
     /// @dev Emit `newCoefficient` when credit adjustment coefficient changed
-    event CreditAdjustmentCoefficientChanged(uint256 newCoefficient);
+    event CreditScoreRateConfigChanged(uint16 coefficient, uint16 power);
 
     /// @dev Emit `newCoefficient` when utilization adjustment coefficient changed
     event UtilizationAdjustmentCoefficientChanged(uint256 newCoefficient);
@@ -110,7 +116,7 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     function initialize() public initializer {
         UpgradeableClaimable.initialize(msg.sender);
         riskPremium = 200;
-        creditAdjustmentCoefficient = 1000;
+        creditScoreRateConfig = CreditScoreRateConfig(1000, 1);
         utilizationAdjustmentCoefficient = 50;
         utilizationAdjustmentPower = 2;
         fixedTermLoanAdjustmentCoefficient = 25;
@@ -123,10 +129,9 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
         emit RiskPremiumChanged(newRate);
     }
 
-    /// @dev Set credit adjustment coefficient to `newCoefficient`
-    function setCreditAdjustmentCoefficient(uint256 newCoefficient) external onlyOwner {
-        creditAdjustmentCoefficient = newCoefficient;
-        emit CreditAdjustmentCoefficientChanged(newCoefficient);
+    function setCreditScoreRateConfig(uint16 coefficient, uint16 power) external onlyOwner {
+        creditScoreRateConfig = CreditScoreRateConfig(coefficient, power);
+        emit CreditScoreRateConfigChanged(coefficient, power);
     }
 
     /// @dev Set utilization adjustment coefficient to `newCoefficient`
@@ -252,7 +257,9 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
         if (score == 0) {
             return MAX_RATE_CAP; // Cap rate by 500%
         }
-        return min(creditAdjustmentCoefficient.mul(MAX_CREDIT_SCORE - score).div(score), MAX_RATE_CAP);
+        uint256 coefficient = uint256(creditScoreRateConfig.coefficient);
+        uint256 power = uint256(creditScoreRateConfig.power);
+        return min(coefficient.mul(MAX_CREDIT_SCORE**power).div(score**power).sub(coefficient), MAX_RATE_CAP);
     }
 
     /**
