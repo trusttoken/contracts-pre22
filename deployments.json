@@ -281,6 +281,14 @@
     "usdt_MockStrategy": {
       "txHash": "0x8ac7a1da80a2fc6dc3b1d334e16f44c6a15fed847139720b82ea344796b72b82",
       "address": "0x893f4Be807fad9BDaFc5fE8929d432B16F279ceF"
+    },
+    "tusd_CurveYearnStrategy": {
+      "txHash": "0x1d59cd4dc6e3695911e26f182da073ae04b8675eb48ba582dde832e06c537e12",
+      "address": "0x0889D6643BBEeffdC670C035989F88Ea52F41CC5"
+    },
+    "tusd_CurveYearnStrategy_proxy": {
+      "txHash": "0x7bb896528b5ef4f1e0c8d9fa0d468940bb68fcb9d7f088f6a1fc5c8f4d922b89",
+      "address": "0x1f188263ecB43f9A87191a39fCEccE05D10f810a"
     }
   },
   "mainnet": {
