@@ -41,13 +41,12 @@ deploy({}, (_, config) => {
   // const usdt_TrueFiPool2 = poolFactory.pool(usdt)
 
   // New contract impls
-  // const tusd_CurveYearnStrategy_impl = contract('tusd_CurveYearnStrategy', CurveYearnStrategy)
+  const tusd_CurveYearnStrategy_impl = contract('tusd_CurveYearnStrategy', CurveYearnStrategy)
   // const usdc_CurveYearnStrategy_impl = contract('usdc_CurveYearnStrategy', CurveYearnStrategy)
   // const usdt_CurveYearnStrategy_impl = contract('usdt_CurveYearnStrategy', CurveYearnStrategy)
 
   // New contract proxies
-  const tusd_CurveYearnStrategy = contract('tusd_CurveYearnStrategy_proxy', OwnedUpgradeabilityProxy)
-  // const tusd_CurveYearnStrategy = proxy(tusd_CurveYearnStrategy_impl, () => {})
+  const tusd_CurveYearnStrategy = proxy(tusd_CurveYearnStrategy_impl, () => {})
   // const usdc_CurveYearnStrategy = proxy(usdc_CurveYearnStrategy_impl, () => {})
   // const usdt_CurveYearnStrategy = proxy(usdt_CurveYearnStrategy_impl, () => {})
 
