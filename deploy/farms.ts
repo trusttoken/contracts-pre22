@@ -16,7 +16,7 @@ const TRU_DECIMALS = 8
 const deployParams = {
   mainnet: {
     DISTRIBUTION_DURATION: 2 * YEAR,
-    DISTRIBUTION_START: 1629305911,
+    DISTRIBUTION_START: Math.floor(Date.now() / 1000) + DAY,
     STAKE_DISTRIBUTION_AMOUNT: utils.parseUnits('330000', TRU_DECIMALS).mul(2 * 365),
   },
   testnet: {
@@ -33,7 +33,9 @@ deploy({}, (_, config) => {
   const NETWORK = isMainnet ? 'mainnet' : 'testnet'
 
   // Existing contracts
-  const trustToken = '0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784'
+  const trustToken = isMainnet
+    ? timeProxy(contract(TrustToken), () => {})
+    : timeProxy(contract(TestTrustToken), () => {})
 
   // New contract impls
   const trueMultiFarm_LinearTrueDistributor_impl = contract('trueMultiFarm_LinearTrueDistributor', LinearTrueDistributor)
