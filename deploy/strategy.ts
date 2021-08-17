@@ -26,17 +26,17 @@ deploy({}, (_, config) => {
   const NETWORK = isMainnet ? 'mainnet' : 'testnet'
 
   // Existing contracts
-  // const tusd = isMainnet
-  //   ? TUSD
-  //   : contract(MockTrueUSD)
+  const tusd = isMainnet
+    ? TUSD
+    : contract(MockTrueUSD)
   // const usdc = isMainnet
   //   ? USDC
   //   : contract(TestUSDCToken)
   // const usdt = isMainnet
   //   ? USDT
   //   : contract(TestUSDTToken)
-  // const poolFactory = proxy(contract(PoolFactory), () => {})
-  // const tusd_TrueFiPool2 = poolFactory.pool(tusd)
+  const poolFactory = proxy(contract(PoolFactory), () => {})
+  const tusd_TrueFiPool2 = poolFactory.pool(tusd)
   // const usdc_TrueFiPool2 = poolFactory.pool(usdc)
   // const usdt_TrueFiPool2 = poolFactory.pool(usdt)
 
@@ -51,17 +51,17 @@ deploy({}, (_, config) => {
   // const usdt_CurveYearnStrategy = proxy(usdt_CurveYearnStrategy_impl, () => {})
 
   // New bare contracts
-  // const crvPriceOracle = isMainnet
-  //   ? contract(CrvPriceOracle)
-  //   : contract(MockCrvPriceOracle)
+  const crvPriceOracle = isMainnet
+    ? contract(CrvPriceOracle)
+    : contract(MockCrvPriceOracle)
   // const tusd_MockStrategy = contract('tusd_MockStrategy', MockStrategy, [tusd, tusd_TrueFiPool2])
   // const usdc_MockStrategy = contract('usdc_MockStrategy', MockStrategy, [usdc, usdc_TrueFiPool2])
   // const usdt_MockStrategy = contract('usdt_MockStrategy', MockStrategy, [usdt, usdt_TrueFiPool2])
 
   // Contract initialization
-  // runIf(tusd_CurveYearnStrategy.isInitialized().not(), () => {
-  //   tusd_CurveYearnStrategy.initialize(tusd_TrueFiPool2, CURVE_POOL, CURVE_GAUGE, CURVE_MINTER, ONE_INCH_EXCHANGE, crvPriceOracle, MAX_PRICE_SLIPPAGE, 3)
-  // })
+  runIf(tusd_CurveYearnStrategy.isInitialized().not(), () => {
+    tusd_CurveYearnStrategy.initialize(tusd_TrueFiPool2, CURVE_POOL, CURVE_GAUGE, CURVE_MINTER, ONE_INCH_EXCHANGE, crvPriceOracle, MAX_PRICE_SLIPPAGE, 3)
+  })
   // runIf(usdc_CurveYearnStrategy.isInitialized().not(), () => {
   //   usdc_CurveYearnStrategy.initialize(usdc_TrueFiPool2, CURVE_POOL, CURVE_GAUGE, CURVE_MINTER, ONE_INCH_EXCHANGE, crvPriceOracle, MAX_PRICE_SLIPPAGE, 1)
   // })
