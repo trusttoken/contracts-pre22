@@ -2,7 +2,7 @@ import { expect, use } from 'chai'
 import { BigNumber, constants, Wallet } from 'ethers'
 import { deployMockContract, MockContract, MockProvider, solidity } from 'ethereum-waffle'
 
-import { beforeEachWithFixture, createLoan, DAY, expectScaledCloseTo, parseEth, parseTRU, timeTravel } from 'utils'
+import { beforeEachWithFixture, DAY, expectScaledCloseTo, parseEth, parseTRU, timeTravel } from 'utils'
 
 import {
   ImplementationReference__factory,
