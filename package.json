@@ -28,6 +28,7 @@
     "test:truefi2": "mocha 'test/truefi2/**/*.ts' --exclude test/truefi2/lines-of-credit/**/*.ts",
     "test:lines-of-credit": "mocha test/truefi2/lines-of-credit/**/*.ts",
     "test:trusttoken": "mocha 'test/trusttoken/*.ts'",
+    "deploy:farms": "bash ./marsDeploy.sh deploy/farms.ts",
     "deploy:strategy": "bash ./marsDeploy.sh deploy/strategy.ts",
     "deploy:truefi": "bash ./marsDeploy.sh deploy/truefi.ts",
     "deploy:truefi2": "bash ./marsDeploy.sh deploy/truefi2.ts",
