@@ -106,7 +106,7 @@ jobs:
     steps:
       - attach_workspace:
           at: .
-      - run: yarn deploy:truefi --network kovan --dry-run --yes && yarn deploy:truefi2 --network kovan --dry-run --yes
+      - run: yarn deploy:truefi --network kovan --dry-run --yes && yarn deploy:truefi2 --network kovan --dry-run --yes && yarn deploy:strategy --network kovan --dry-run --yes
   integration:
     docker:
       - image: cimg/node:16.1.0
