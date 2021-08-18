@@ -1001,7 +1001,7 @@ describe('TrueCreditAgency', () => {
     it('utilizationAdjustmentRate', async () => {
       await setUtilization(tusdPool, 70)
       expect(await creditAgency.utilizationAdjustmentRate(tusdPool.address)).to.eq(505)
-      expect('utilizationAdjustmentRate').to.be.calledOnContractWith(rateAdjuster, [tusdPool.address])
+      expect('proFormaUtilizationAdjustmentRate').to.be.calledOnContractWith(rateAdjuster, [tusdPool.address, 0])
     })
 
     it('currentRate', async () => {

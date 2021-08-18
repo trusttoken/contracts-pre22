@@ -226,28 +226,12 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     }
 
     /**
-     * @dev Get utilization adjustment rate based on `pool` utilization
-     * @param pool Pool to get adjustment rate for
-     * @return Utilization adjusted rate for `pool`
-     */
-    function utilizationAdjustmentRate(ITrueFiPool2 pool) public override view returns (uint256) {
-        return _utilizationAdjustmentRate(pool.liquidRatio());
-    }
-
-    /**
      * @dev Get utilization adjustment rate based on `pool` utilization and `amount` borrowed
      * @param pool Pool to get pro forma adjustment rate for
      * @return Utilization adjusted rate for `pool` after borrowing `amount`
      */
-    function proFormaUtilizationAdjustmentRate(ITrueFiPool2 pool, uint256 amount) public view returns (uint256) {
-        return _utilizationAdjustmentRate(pool.proFormaLiquidRatio(amount));
-    }
-
-    /**
-     * @dev Internal function to calculate utilization adjusted rate given a `liquidRatio`
-     * utilization_adjustment = utilization_adjustment_coefficient * (1/(pool_liquid_ratio)^utilization_adjustment_power - 1)
-     */
-    function _utilizationAdjustmentRate(uint256 liquidRatio) internal view returns (uint256) {
+    function proFormaUtilizationAdjustmentRate(ITrueFiPool2 pool, uint256 amount) public override view returns (uint256) {
+        uint256 liquidRatio = pool.proFormaLiquidRatio(amount);
         if (liquidRatio == 0) {
             // if utilization is at 100 %
             return MAX_RATE_CAP; // Cap rate by 500%

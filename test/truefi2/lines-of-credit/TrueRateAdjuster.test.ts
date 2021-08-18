@@ -269,29 +269,6 @@ describe('TrueRateAdjuster', () => {
     )
   })
 
-  describe('utilizationAdjustmentRate', () => {
-    [
-      [0, 0],
-      [10, 11],
-      [20, 28],
-      [30, 52],
-      [40, 88],
-      [50, 150],
-      [60, 262],
-      [70, 505],
-      [80, 1200],
-      [90, 4950],
-      [95, 19950],
-      [99, 50000],
-      [100, 50000],
-    ].map(([utilization, adjustment]) =>
-      it(`returns ${adjustment} if utilization is at ${utilization} percent`, async () => {
-        await mockPool.mock.liquidRatio.returns(10000 - utilization * 100)
-        expect(await rateAdjuster.utilizationAdjustmentRate(mockPool.address)).to.eq(adjustment)
-      }),
-    )
-  })
-
   describe('proFormaUtilizationAdjustmentRate', () => {
     [
       [0, 0],

@@ -242,7 +242,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
     /// @dev Get utilization adjustment from rate adjuster
     function utilizationAdjustmentRate(ITrueFiPool2 pool) public view returns (uint256) {
-        return rateAdjuster.utilizationAdjustmentRate(pool);
+        return rateAdjuster.proFormaUtilizationAdjustmentRate(pool, 0);
     }
 
     /// @dev Get pool basic rate from rate adjuster
