@@ -148,7 +148,7 @@ describe('TimeAveragedBaseRateOracle', () => {
     it('returns false if cooldown is on', async () => {
       await timeBaseRateOracle.update()
       expect(await timeBaseRateOracle.isOffCooldown()).to.be.false
-      await timeTravel(provider, COOLDOWN_TIME - 1)
+      await timeTravel(provider, COOLDOWN_TIME - 10)
       expect(await timeBaseRateOracle.isOffCooldown()).to.be.false
     })
   })
