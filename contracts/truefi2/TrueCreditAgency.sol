@@ -405,7 +405,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         uint256 bitMap = usedBucketsBitmap;
         uint256 timeNow = block.timestamp;
         // get basic pool rate
-        uint256 poolRate = rateAdjuster.poolBasicRate(pool);
+        uint256 poolRate = rateAdjuster.proFormaPoolBasicRate(pool, 0);
 
         // loop through scores and poke buckets, ignoring empty buckets
         for (uint16 i = 0; i <= MAX_CREDIT_SCORE; (i++, bitMap >>= 1)) {
@@ -430,7 +430,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     /// @dev Internal function to update state for `bucketNumber` in `pool`
     function pokeSingleBucket(ITrueFiPool2 pool, uint8 bucketNumber) internal {
         uint256 timeNow = block.timestamp;
-        uint256 poolRate = rateAdjuster.poolBasicRate(pool);
+        uint256 poolRate = rateAdjuster.proFormaPoolBasicRate(pool, 0);
 
         _pokeSingleBucket(pool, bucketNumber, timeNow, poolRate);
     }

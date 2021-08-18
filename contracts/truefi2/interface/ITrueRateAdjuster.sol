@@ -12,7 +12,7 @@ interface ITrueRateAdjuster {
 
     function securedRate(ITrueFiPool2 pool) external view returns (uint256);
 
-    function poolBasicRate(ITrueFiPool2 pool) external view returns (uint256);
+    function proFormaPoolBasicRate(ITrueFiPool2 pool, uint256 amount) external view returns (uint256);
 
     function combinedRate(uint256 partialRate, uint256 __creditScoreAdjustmentRate) external pure returns (uint256);
 

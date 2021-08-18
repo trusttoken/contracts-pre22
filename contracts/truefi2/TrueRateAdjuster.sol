@@ -183,30 +183,13 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     }
 
     /**
-     * @dev Get interest rate for `pool` adjusted for utilization
-     * @param pool Pool to get rate for
-     * @return Interest rate for `pool` adjusted for utilization
-     */
-    function poolBasicRate(ITrueFiPool2 pool) public override view returns (uint256) {
-        return _poolBasicRate(pool, utilizationAdjustmentRate(pool));
-    }
-
-    /**
      * @dev Get interest rate for `pool` adjusted for utilization after borrowing `amount`
      * @param pool Pool to get rate for
      * @param amount Requested amount to borrow
      * @return Interest rate for `pool` adjusted for utilization and `amount` borrowed
      */
-    function proFormaPoolBasicRate(ITrueFiPool2 pool, uint256 amount) public view returns (uint256) {
-        return _poolBasicRate(pool, proFormaUtilizationAdjustmentRate(pool, amount));
-    }
-
-    /**
-     * @dev Internal function to get basic rate given a `pool` and `_utilizationAdjustmentRate`
-     * basic_rate = min(risk_premium + secured_rate + utilization_adjusted_rate, max_rate)
-     */
-    function _poolBasicRate(ITrueFiPool2 pool, uint256 _utilizationAdjustmentRate) internal view returns (uint256) {
-        return min(riskPremium.add(securedRate(pool)).add(_utilizationAdjustmentRate), MAX_RATE_CAP);
+    function proFormaPoolBasicRate(ITrueFiPool2 pool, uint256 amount) public override view returns (uint256) {
+        return min(riskPremium.add(securedRate(pool)).add(proFormaUtilizationAdjustmentRate(pool, amount)), MAX_RATE_CAP);
     }
 
     /**
