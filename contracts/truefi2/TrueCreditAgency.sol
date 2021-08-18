@@ -37,6 +37,9 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     /// @dev precision used for cumulative interest per share
     uint256 constant ADDITIONAL_PRECISION = 1e27;
 
+    /// @dev 10000 = 100%
+    uint256 constant BASIS_RATE = 10_000;
+
     /// @dev total & cumulative interest for borrowers in a bucket
     struct SavedInterest {
         uint256 total;
@@ -457,7 +460,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
     /// @dev Calculate new interest per share for `bucket` at `timeNow`
     function _newInterestPerShare(CreditScoreBucket storage bucket, uint256 timeNow) private view returns (uint256) {
-        return bucket.rate.mul(timeNow.sub(bucket.timestamp)).mul(ADDITIONAL_PRECISION / 10_000).div(365 days);
+        return bucket.rate.mul(timeNow.sub(bucket.timestamp)).mul(ADDITIONAL_PRECISION / BASIS_RATE).div(365 days);
     }
 
     /**
