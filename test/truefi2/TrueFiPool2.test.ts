@@ -525,37 +525,17 @@ describe('TrueFiPool2', () => {
       expect(await tusdPool.totalSupply()).to.equal(supply.sub(supply.mul(5).div(6)))
     })
 
-    it('all funds are liquid: transfers TUSD without penalty', async () => {
+    it('all funds are liquid: transfers TUSD', async () => {
       await tusdPool.liquidExit(await tusdPool.balanceOf(owner.address))
       expect(await tusd.balanceOf(owner.address)).to.equal(amount)
     })
 
-    it('all funds are liquid: transfers TUSD without penalty (half of stake)', async () => {
+    it('all funds are liquid: transfers TUSD (half of stake)', async () => {
       await tusdPool.liquidExit(amount.div(2))
       expect(await tusd.balanceOf(owner.address)).to.equal(amount.div(2))
     })
 
-    it('after loan approved, applies a penalty', async () => {
-      const loan1 = await createApprovedLoan(
-        rater,
-        tru,
-        stkTru,
-        loanFactory,
-        borrower,
-        tusdPool,
-        amount.div(3),
-        DAY * 365,
-        1000,
-        owner,
-        provider,
-      )
-      await lender.connect(borrower).fund(loan1.address)
-      expect(await tusdPool.liquidExitPenalty(amount.div(2))).to.equal(9990)
-      await tusdPool.liquidExit(amount.div(2), { gasLimit: 5000000 })
-      expectScaledCloseTo(await tusd.balanceOf(owner.address), (amount.div(2).mul(9990).div(10000)))
-    })
-
-    it('half funds are in strategy: transfers TUSD without penalty', async () => {
+    it('half funds are in strategy: transfers TUSD', async () => {
       await tusdPool.flush(parseEth(5e6))
       await tusdPool.liquidExit(parseEth(6e6))
       expect(await tusd.balanceOf(owner.address)).to.equal(parseEth(6e6))
@@ -563,61 +543,6 @@ describe('TrueFiPool2', () => {
 
     it('emits event', async () => {
       await expect(tusdPool.liquidExit(amount.div(2))).to.emit(tusdPool, 'Exited').withArgs(owner.address, amount.div(2))
-    })
-  })
-
-  describe('integrateAtPoint', () => {
-    const calcOffchain = (x: number) => Math.floor(Math.log(x + 50) * 50000)
-    it('calculates integral * 1e9', async () => {
-      for (let i = 0; i < 100; i++) {
-        expect(await tusdPool.integrateAtPoint(i)).to.equal(calcOffchain(i))
-      }
-    })
-  })
-
-  describe('averageExitPenalty', () => {
-    const testPenalty = async (from: number, to: number, result: number) => expect(await tusdPool.averageExitPenalty(from, to)).to.equal(result)
-
-    it('throws if from > to', async () => {
-      await expect(tusdPool.averageExitPenalty(10, 9)).to.be.revertedWith('TrueFiPool: To precedes from')
-    })
-
-    it('correctly calculates penalty when from = to', async () => {
-      await testPenalty(0, 0, 1000)
-      await testPenalty(1, 1, 980)
-      await testPenalty(100, 100, 333)
-      await testPenalty(10000, 10000, 0)
-    })
-
-    it('correctly calculates penalty when from+1=to', async () => {
-      const testWithStep1 = async (from: number) => {
-        const penalty = await tusdPool.averageExitPenalty(from, from + 1)
-        const expected = (await tusdPool.averageExitPenalty(from, from)).add(await tusdPool.averageExitPenalty(from + 1, from + 1)).div(2)
-        expect(penalty.sub(expected).abs()).to.be.lte(1)
-      }
-
-      await testWithStep1(0)
-      await testWithStep1(1)
-      await testWithStep1(2)
-      await testWithStep1(3)
-      await testWithStep1(5)
-      await testWithStep1(10)
-      await testWithStep1(42)
-      await testWithStep1(150)
-      await testWithStep1(1000)
-      await testWithStep1(10000 - 2)
-    })
-
-    it('correctly calculates penalty when from < to', async () => {
-      // Checked with Wolfram Alpha
-      await testPenalty(0, 12, 896)
-      await testPenalty(1, 100, 544)
-      await testPenalty(5, 10, 870)
-      await testPenalty(15, 55, 599)
-      await testPenalty(42, 420, 215)
-      await testPenalty(100, 1000, 108)
-      await testPenalty(9100, 10000, 5)
-      await testPenalty(1000, 10000, 12)
     })
   })
 
@@ -956,15 +881,6 @@ describe('TrueFiPool2', () => {
     it('transfers all LTs to the safu', async () => {
       await liquidate()
       expect(await loan.balanceOf(safu.address)).to.equal(await loan.totalSupply())
-    })
-
-    it('liquid exit after liquidation returns correct amount of tokens', async () => {
-      await liquidate()
-      const totalValue = await tusdPool.poolValue()
-      const totalSupply = await tusdPool.totalSupply()
-      const penalty = await tusdPool.liquidExitPenalty(totalSupply.div(2))
-      expect(penalty).to.equal(9996)
-      await expect(() => tusdPool.liquidExit(totalSupply.div(2))).to.changeTokenBalance(tusd, owner, totalValue.div(2).mul(penalty).div(10000))
     })
   })
 

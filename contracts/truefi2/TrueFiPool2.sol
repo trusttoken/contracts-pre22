@@ -25,7 +25,6 @@ import {PoolExtensions} from "./PoolExtensions.sol";
  * Earn high interest rates on currency deposits through uncollateralized loans
  *
  * Funds deposited in this pool are not fully liquid.
- * Exiting incurs an exit penalty depending on pool liquidity
  * After exiting, an account will need to wait for LoanTokens to expire and burn them
  * It is recommended to perform a zap or swap tokens on Uniswap for increased liquidity
  *
@@ -420,7 +419,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
 
     /**
      * @dev Exit pool only with liquid tokens
-     * This function will only transfer underlying token but with a small penalty
+     * This function will only transfer underlying token
      * Uses the sync() modifier to reduce gas costs of using strategy and lender
      * @param amount amount of pool liquidity tokens to redeem for underlying tokens
      */
@@ -429,7 +428,6 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
         require(amount <= balanceOf(msg.sender), "TrueFiPool: Insufficient funds");
 
         uint256 amountToWithdraw = poolValue().mul(amount).div(totalSupply());
-        amountToWithdraw = amountToWithdraw.mul(liquidExitPenalty(amountToWithdraw)).div(BASIS_PRECISION);
         require(amountToWithdraw <= liquidValue(), "TrueFiPool: Not enough liquidity in pool");
 
         // burn tokens sent
@@ -440,44 +438,6 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
         token.safeTransfer(msg.sender, amountToWithdraw);
 
         emit Exited(msg.sender, amountToWithdraw);
-    }
-
-    /**
-     * @dev Penalty (in % * 100) applied if liquid exit is performed with this amount
-     * returns BASIS_PRECISION (10000) if no penalty
-     */
-    function liquidExitPenalty(uint256 amount) public view returns (uint256) {
-        uint256 lv = liquidValue();
-        uint256 pv = poolValue();
-        if (amount == pv) {
-            return BASIS_PRECISION;
-        }
-        uint256 liquidRatioBefore = lv.mul(BASIS_PRECISION).div(pv);
-        uint256 liquidRatioAfter = lv.sub(amount).mul(BASIS_PRECISION).div(pv.sub(amount));
-        return BASIS_PRECISION.sub(averageExitPenalty(liquidRatioAfter, liquidRatioBefore));
-    }
-
-    /**
-     * @dev Calculates integral of 5/(x+50)dx times 10000
-     */
-    function integrateAtPoint(uint256 x) public pure returns (uint256) {
-        return uint256(ABDKMath64x64.ln(ABDKMath64x64.fromUInt(x.add(50)))).mul(50000).div(2**64);
-    }
-
-    /**
-     * @dev Calculates average penalty on interval [from; to]
-     * @return average exit penalty
-     */
-    function averageExitPenalty(uint256 from, uint256 to) public pure returns (uint256) {
-        require(from <= to, "TrueFiPool: To precedes from");
-        if (from == BASIS_PRECISION) {
-            // When all liquid, don't penalize
-            return 0;
-        }
-        if (from == to) {
-            return uint256(50000).div(from.add(50));
-        }
-        return integrateAtPoint(to).sub(integrateAtPoint(from)).div(to.sub(from));
     }
 
     /**
