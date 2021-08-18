@@ -27,12 +27,14 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     using SafeMath for uint256;
     using TrueFiFixed64x64 for int128;
 
-    /// @dev basis precision: 10000 = 100%
     /// @dev maximum interest rate in basis points
     uint256 constant MAX_RATE_CAP = 50000;
 
     /// @dev credit score is stored as uint(8)
     uint8 constant MAX_CREDIT_SCORE = 255;
+
+    /// @dev basis precision: 10000 = 100%
+    uint8 constant BASIS_POINTS = 10000;
 
     struct UtilizationRateConfig {
         // proportional coefficient: utilization-adjusted rate % (basis precision)
@@ -302,7 +304,7 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     function borrowLimitAdjustment(uint8 score) public override view returns (uint256) {
         int128 f64x64Score = TrueFiFixed64x64.fromUInt(uint256(score));
         int128 f64x64LimitAdjustmentPower = TrueFiFixed64x64.fromUInt(uint256(borrowLimitConfig.limitAdjustmentPower));
-        return ((f64x64Score / MAX_CREDIT_SCORE).fixed64x64Pow(f64x64LimitAdjustmentPower / 10000) * 10000).toUInt();
+        return ((f64x64Score / MAX_CREDIT_SCORE).fixed64x64Pow(f64x64LimitAdjustmentPower / BASIS_POINTS) * BASIS_POINTS).toUInt();
     }
 
     /**
@@ -326,10 +328,10 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
         }
         uint8 poolDecimals = ITrueFiPool2WithDecimals(address(pool)).decimals();
         maxBorrowerLimit = maxBorrowerLimit.mul(uint256(10)**poolDecimals).div(1 ether);
-        uint256 maxTVLLimit = totalTVL.mul(borrowLimitConfig.tvlLimitCoefficient).div(10000);
+        uint256 maxTVLLimit = totalTVL.mul(borrowLimitConfig.tvlLimitCoefficient).div(BASIS_POINTS);
         uint256 adjustment = borrowLimitAdjustment(score);
-        uint256 creditLimit = min(maxBorrowerLimit, maxTVLLimit).mul(adjustment).div(10000);
-        uint256 poolBorrowMax = min(pool.poolValue().mul(borrowLimitConfig.poolValueLimitCoefficient).div(10000), creditLimit);
+        uint256 creditLimit = min(maxBorrowerLimit, maxTVLLimit).mul(adjustment).div(BASIS_POINTS);
+        uint256 poolBorrowMax = min(pool.poolValue().mul(borrowLimitConfig.poolValueLimitCoefficient).div(BASIS_POINTS), creditLimit);
         return saturatingSub(poolBorrowMax, totalBorrowed);
     }
 
