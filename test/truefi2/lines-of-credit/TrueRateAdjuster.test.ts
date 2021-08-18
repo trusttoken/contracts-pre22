@@ -67,12 +67,8 @@ describe('TrueRateAdjuster', () => {
       expect(await rateAdjuster.creditScoreRateConfig()).to.deep.eq([1000, 1])
     })
 
-    it('sets utilization adjustment coefficient', async () => {
-      expect(await rateAdjuster.utilizationAdjustmentCoefficient()).to.eq(50)
-    })
-
-    it('sets utilization adjustment power', async () => {
-      expect(await rateAdjuster.utilizationAdjustmentPower()).to.eq(2)
+    it('sets utilization rate config', async () => {
+      expect(await rateAdjuster.utilizationRateConfig()).to.deep.eq([50, 2])
     })
   })
 
@@ -113,39 +109,22 @@ describe('TrueRateAdjuster', () => {
     })
   })
 
-  describe('setUtilizationAdjustmentCoefficient', () => {
+  describe('setUtilizationRateConfig', () => {
     it('reverts if caller is not the owner', async () => {
-      await expect(rateAdjuster.connect(borrower).setUtilizationAdjustmentCoefficient(0))
+      await expect(rateAdjuster.connect(borrower).setUtilizationRateConfig(0, 0))
         .to.be.revertedWith('Ownable: caller is not the owner')
     })
 
-    it('sets utilization adjustment coefficient', async () => {
-      await rateAdjuster.setUtilizationAdjustmentCoefficient(100)
-      expect(await rateAdjuster.utilizationAdjustmentCoefficient()).to.eq(100)
+    it('sets utilization rate config', async () => {
+      await rateAdjuster.setUtilizationRateConfig(1, 2)
+      const [utilizationRateCoefficient, utilizationRatePower] = await rateAdjuster.utilizationRateConfig()
+      expect([utilizationRateCoefficient, utilizationRatePower]).to.deep.eq([1, 2])
     })
 
     it('emits event', async () => {
-      await expect(rateAdjuster.setUtilizationAdjustmentCoefficient(100))
-        .to.emit(rateAdjuster, 'UtilizationAdjustmentCoefficientChanged')
-        .withArgs(100)
-    })
-  })
-
-  describe('setUtilizationAdjustmentPower', () => {
-    it('reverts if caller is not the owner', async () => {
-      await expect(rateAdjuster.connect(borrower).setUtilizationAdjustmentPower(0))
-        .to.be.revertedWith('Ownable: caller is not the owner')
-    })
-
-    it('sets utilization adjustment power', async () => {
-      await rateAdjuster.setUtilizationAdjustmentPower(3)
-      expect(await rateAdjuster.utilizationAdjustmentPower()).to.eq(3)
-    })
-
-    it('emits event', async () => {
-      await expect(rateAdjuster.setUtilizationAdjustmentPower(3))
-        .to.emit(rateAdjuster, 'UtilizationAdjustmentPowerChanged')
-        .withArgs(3)
+      await expect(rateAdjuster.setUtilizationRateConfig(1, 2))
+        .to.emit(rateAdjuster, 'UtilizationRateConfigChanged')
+        .withArgs(1, 2)
     })
   })
 

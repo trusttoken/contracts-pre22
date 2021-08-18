@@ -34,6 +34,13 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     /// @dev credit score is stored as uint(8)
     uint8 constant MAX_CREDIT_SCORE = 255;
 
+    struct UtilizationRateConfig {
+        // proportional coefficient: utilization-adjusted rate % (basis precision)
+        uint16 coefficient;
+        // inverse power factor (full precision -- no rational powers)
+        uint16 power;
+    }
+
     struct CreditScoreRateConfig {
         // proportional coefficient: credit-score-adjusted rate % (basis precision)
         uint16 coefficient;
@@ -59,11 +66,7 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     // REMOVAL OR REORDER OF VARIABLES WILL RESULT
     // ========= IN STORAGE CORRUPTION ===========
 
-    /// @dev proportional coefficient to control effect of utilization on score (basis precision)
-    uint256 public utilizationAdjustmentCoefficient;
-
-    /// @dev power factor to control affect of utilization on score (basis precision)
-    uint256 public utilizationAdjustmentPower;
+    UtilizationRateConfig public utilizationRateConfig;
 
     CreditScoreRateConfig public creditScoreRateConfig;
 
@@ -87,11 +90,7 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     /// @dev Emit `newCoefficient` when credit adjustment coefficient changed
     event CreditScoreRateConfigChanged(uint16 coefficient, uint16 power);
 
-    /// @dev Emit `newCoefficient` when utilization adjustment coefficient changed
-    event UtilizationAdjustmentCoefficientChanged(uint256 newCoefficient);
-
-    /// @dev Emit `newValue` when utilization adjustment power changed
-    event UtilizationAdjustmentPowerChanged(uint256 newValue);
+    event UtilizationRateConfigChanged(uint16 coefficient, uint16 power);
 
     /// @dev Emit `pool` and `oracle` when base rate oracle changed
     event BaseRateOracleChanged(ITrueFiPool2 pool, ITimeAveragedBaseRateOracle oracle);
@@ -114,9 +113,8 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     function initialize() public initializer {
         UpgradeableClaimable.initialize(msg.sender);
         riskPremium = 200;
+        utilizationRateConfig = UtilizationRateConfig(50, 2);
         creditScoreRateConfig = CreditScoreRateConfig(1000, 1);
-        utilizationAdjustmentCoefficient = 50;
-        utilizationAdjustmentPower = 2;
         fixedTermLoanAdjustmentCoefficient = 25;
         borrowLimitConfig = BorrowLimitConfig(40, 7500, 1500, 1500);
     }
@@ -132,16 +130,9 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
         emit CreditScoreRateConfigChanged(coefficient, power);
     }
 
-    /// @dev Set utilization adjustment coefficient to `newCoefficient`
-    function setUtilizationAdjustmentCoefficient(uint256 newCoefficient) external onlyOwner {
-        utilizationAdjustmentCoefficient = newCoefficient;
-        emit UtilizationAdjustmentCoefficientChanged(newCoefficient);
-    }
-
-    /// @dev Set utilization adjustment power to `newValue`
-    function setUtilizationAdjustmentPower(uint256 newValue) external onlyOwner {
-        utilizationAdjustmentPower = newValue;
-        emit UtilizationAdjustmentPowerChanged(newValue);
+    function setUtilizationRateConfig(uint16 coefficient, uint16 power) external onlyOwner {
+        utilizationRateConfig = UtilizationRateConfig(coefficient, power);
+        emit UtilizationRateConfigChanged(coefficient, power);
     }
 
     /// @dev Set base rate oracle for `pool` to `_baseRateOracle`
@@ -287,13 +278,9 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
             // if utilization is at 100 %
             return MAX_RATE_CAP; // Cap rate by 500%
         }
-        return
-            min(
-                utilizationAdjustmentCoefficient.mul(1e4**utilizationAdjustmentPower).div(liquidRatio**utilizationAdjustmentPower).sub(
-                    utilizationAdjustmentCoefficient
-                ),
-                MAX_RATE_CAP
-            );
+        uint256 coefficient = uint256(utilizationRateConfig.coefficient);
+        uint256 power = uint256(utilizationRateConfig.power);
+        return min(coefficient.mul(1e4**power).div(liquidRatio**power).sub(coefficient), MAX_RATE_CAP);
     }
 
     /**
