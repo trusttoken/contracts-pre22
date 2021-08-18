@@ -18,6 +18,7 @@ import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {ITrueRatingAgency} from "../truefi/interface/ITrueRatingAgency.sol";
 import {IERC20WithDecimals} from "./interface/IERC20WithDecimals.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
+import {ITrueCreditAgency} from "./interface/ITrueCreditAgency.sol";
 
 /**
  * @title TrueLender v2.0
@@ -88,6 +89,8 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     uint256 public longTermLoanThreshold;
 
     uint8 public longTermLoanScoreThreshold;
+
+    ITrueCreditAgency public creditAgency;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -185,7 +188,8 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         IPoolFactory _factory,
         ITrueRatingAgency _ratingAgency,
         I1Inch3 __1inch,
-        ITrueFiCreditOracle _creditOracle
+        ITrueFiCreditOracle _creditOracle,
+        ITrueCreditAgency _creditAgency
     ) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
 
@@ -194,6 +198,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         ratingAgency = _ratingAgency;
         _1inch = __1inch;
         creditOracle = _creditOracle;
+        creditAgency = _creditAgency;
 
         swapFeeSlippage = 100; // 1%
         minVotes = 15 * (10**6) * (10**8);
@@ -339,6 +344,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         require(votingLastedLongEnough(start), "TrueLender: Voting time is below minimum");
         require(votesThresholdReached(yes.add(no)), "TrueLender: Not enough votes given for the loan");
         require(loanIsCredible(yes, no), "TrueLender: Loan risk is too high");
+        require(amount <= creditAgency.borrowLimit(pool, loanToken.borrower()), "TrueLender: Loan amount cannot exceed borrow limit");
 
         poolLoans[pool].push(loanToken);
         pool.borrow(amount);
