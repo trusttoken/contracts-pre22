@@ -17,7 +17,8 @@ import {
 } from 'utils'
 
 import {
-  TrueRatingAgencyV2__factory, TrueRatingAgencyV2,
+  TrueRatingAgencyV2,
+  TrueRatingAgencyV2__factory,
   MockTrueCurrency,
   StkTruToken,
   ArbitraryDistributor,
@@ -28,6 +29,8 @@ import {
   TrueFiPool2,
   TrueLender2,
   Liquidator2,
+  TrueCreditAgency,
+  TrueFiCreditOracle,
 } from 'contracts'
 
 import {
@@ -46,6 +49,8 @@ describe('TrueRatingAgencyV2', () => {
   let trustToken: MockTrueCurrency
   let stakedTrustToken: StkTruToken
   let arbitraryDistributor: ArbitraryDistributor
+  let creditAgency: TrueCreditAgency
+  let creditOracle: TrueFiCreditOracle
 
   let tusd: MockTrueCurrency
   let usdc: MockUsdc
@@ -84,6 +89,8 @@ describe('TrueRatingAgencyV2', () => {
       loanFactory,
       feePool: usdcPool,
       standardPool: tusdPool,
+      creditAgency,
+      creditOracle,
     } = await setupTruefi2(owner, _provider))
 
     await rater.setRatersRewardFactor(10000)
@@ -102,8 +109,12 @@ describe('TrueRatingAgencyV2', () => {
     await stakedTrustToken.connect(otherWallet).delegate(otherWallet.address)
     await stakedTrustToken.stake(stake)
 
-    await tusd.mint(tusdPool.address, parseEth(1e7))
+    await tusd.mint(tusdPool.address, parseEth(1e8))
     await usdc.mint(usdcPool.address, parseUSDC(1e7))
+
+    await creditAgency.allowPool(tusdPool.address, true)
+    await creditOracle.setScore(owner.address, 255)
+    await creditOracle.setMaxBorrowerLimit(owner.address, parseEth(100_000_000))
   })
 
   const submit = async (loanTokenAddress: string, wallet = owner) =>
