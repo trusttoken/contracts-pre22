@@ -31,7 +31,7 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     uint16 constant BASIS_POINTS = 10000;
 
     /// @dev maximum interest rate in basis points
-    uint256 constant MAX_RATE_CAP = 50000;
+    uint256 constant MAX_RATE_CAP = 5 * BASIS_POINTS;
 
     /// @dev credit score is stored as uint(8)
     uint8 constant MAX_CREDIT_SCORE = 255;
