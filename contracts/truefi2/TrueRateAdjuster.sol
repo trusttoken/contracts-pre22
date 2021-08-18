@@ -167,17 +167,6 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     }
 
     /**
-     * @dev Get rate given a `pool` and borrower `score`
-     * Rate returned is based on pool utilization and credit score
-     * @param pool TrueFiPool to get rate for
-     * @param score Score to get rate for
-     * @return Interest rate for borrower (basis precision)
-     */
-    function rate(ITrueFiPool2 pool, uint8 score) external override view returns (uint256) {
-        return combinedRate(poolBasicRate(pool), creditScoreAdjustmentRate(score));
-    }
-
-    /**
      * @dev Get rate after borrowing `amount` given a `pool` and borrower `score`
      * Rate returned is based on pool utilization and credit score after borrowing `amount`
      * @param pool TrueFiPool to get rate for

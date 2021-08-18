@@ -4,8 +4,6 @@ pragma solidity 0.6.10;
 import {ITrueFiPool2} from "./ITrueFiPool2.sol";
 
 interface ITrueRateAdjuster {
-    function rate(ITrueFiPool2 pool, uint8 score) external view returns (uint256);
-
     function proFormaRate(
         ITrueFiPool2 pool,
         uint8 score,

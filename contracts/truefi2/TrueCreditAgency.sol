@@ -312,7 +312,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
      * @return current rate for `borrower` in `pool`
      */
     function currentRate(ITrueFiPool2 pool, address borrower) external view returns (uint256) {
-        return rateAdjuster.rate(pool, creditScore[pool][borrower]);
+        return rateAdjuster.proFormaRate(pool, creditScore[pool][borrower], 0);
     }
 
     /**
