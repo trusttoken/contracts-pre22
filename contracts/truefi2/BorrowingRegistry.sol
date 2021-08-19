@@ -15,6 +15,8 @@ contract BorrowingRegistry is UpgradeableClaimable {
 
     // ======= STORAGE DECLARATION END ===========
 
+    event BorrowingStatusChanged(address borrower, bool status);
+
     function initialize() external initializer {
         UpgradeableClaimable.initialize(msg.sender);
     }
@@ -22,6 +24,7 @@ contract BorrowingRegistry is UpgradeableClaimable {
     function setBorrowingStatus(address borrower, bool status) external {
         require(canChangeBorrowingStatus[msg.sender] == true, "BorrowingRegistry: Caller is not allowed to change borrowing status");
         borrowingStatus[borrower] = status;
+        emit BorrowingStatusChanged(borrower, status);
     }
 
     function allowChangingBorrowingStatus(address allowedAddress) external onlyOwner {

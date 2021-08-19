@@ -64,5 +64,15 @@ describe('TrueRateAdjuster', () => {
       await registry.connect(manager).setBorrowingStatus(manager.address, false)
       expect(await registry.borrowingStatus(manager.address)).to.eq(false)
     })
+
+    it('emits event', async () => {
+      await expect(registry.connect(manager).setBorrowingStatus(manager.address, true))
+        .to.emit(registry, 'BorrowingStatusChanged')
+        .withArgs(manager.address, true)
+
+      await expect(registry.connect(manager).setBorrowingStatus(manager.address, false))
+        .to.emit(registry, 'BorrowingStatusChanged')
+        .withArgs(manager.address, false)
+    })
   })
 })
