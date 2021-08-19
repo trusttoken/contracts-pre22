@@ -3,7 +3,9 @@ pragma solidity 0.6.10;
 
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 
-contract BorrowingRegistry is UpgradeableClaimable {
+import {IBorrowingRegistry} from "./interface/IBorrowingRegistry.sol";
+
+contract BorrowingRegistry is IBorrowingRegistry, UpgradeableClaimable {
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
     // === STORAGE VARIABLES ARE DECLARED BELOW ==
@@ -28,14 +30,14 @@ contract BorrowingRegistry is UpgradeableClaimable {
         canLock[allowedAddress] = true;
     }
 
-    function lock(address borrower) external {
+    function lock(address borrower) external override {
         require(canLock[msg.sender], "BorrowingRegistry: Sender is not allowed to lock borrowers");
         require(hasLock[borrower] == address(0), "BorrowingRegistry: Borrower is already locked");
         hasLock[borrower] = msg.sender;
         emit BorrowerLocked(borrower, msg.sender);
     }
 
-    function unlock(address borrower) external {
+    function unlock(address borrower) external override {
         require(hasLock[borrower] == msg.sender, "BorrowingRegistry: Only address that locked borrower can unlock");
         hasLock[borrower] = address(0);
         emit BorrowerUnlocked(borrower, msg.sender);
