@@ -12,7 +12,7 @@ contract BorrowingRegistry is IBorrowingRegistry, UpgradeableClaimable {
     // REMOVAL OR REORDER OF VARIABLES WILL RESULT
     // ========= IN STORAGE CORRUPTION ===========
 
-    mapping(address => bool) public override borrowingStatus;
+    mapping(address => bool) public override isBorrowing;
     mapping(address => bool) public canChangeBorrowingStatus;
 
     // ======= STORAGE DECLARATION END ===========
@@ -27,7 +27,7 @@ contract BorrowingRegistry is IBorrowingRegistry, UpgradeableClaimable {
 
     function setBorrowingStatus(address borrower, bool status) external override {
         require(canChangeBorrowingStatus[msg.sender], "BorrowingRegistry: Caller is not allowed to change borrowing status");
-        borrowingStatus[borrower] = status;
+        isBorrowing[borrower] = status;
         emit BorrowingStatusChanged(borrower, status);
     }
 
