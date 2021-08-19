@@ -60,7 +60,7 @@ describe('TrueLender2', () => {
     mockRatingAgency = await deployMockContract(owner, TrueRatingAgencyV2Json.abi)
     await mockRatingAgency.mock.getResults.returns(0, 0, parseTRU(50e6))
     const mockRateAdjuster = await deployMockContract(owner, TrueRateAdjusterJson.abi)
-    await mockRateAdjuster.mock.proFormaRate.returns(0)
+    await mockRateAdjuster.mock.Rate.returns(0)
     await mockRateAdjuster.mock.fixedTermLoanAdjustment.returns(1000)
     const mockCreditOracle = await deployMockContract(owner, TrueFiCreditOracleJson.abi)
     await mockCreditOracle.mock.score.returns(255)
