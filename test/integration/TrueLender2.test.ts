@@ -20,7 +20,7 @@ import fetch from 'node-fetch'
 import { expect, use } from 'chai'
 import { deployMockContract, MockContract, solidity } from 'ethereum-waffle'
 import { utils, Wallet } from 'ethers'
-import { TrueRatingAgencyV2Json } from 'build'
+import { TrueRatingAgencyV2Json, TrueCreditAgencyJson } from 'build'
 import { AddressZero } from '@ethersproject/constants'
 
 use(solidity)
@@ -45,6 +45,7 @@ describe('TrueLender2', () => {
   let lender: TrueLender2
   let loanFactory: LoanFactory2
   let mockRatingAgency: MockContract
+  let mockCreditAgency: MockContract
   let stkTru: Wallet
   let tusd: Erc20Mock
   let usdc: Erc20Mock
@@ -60,8 +61,10 @@ describe('TrueLender2', () => {
     mockRatingAgency = await deployMockContract(owner, TrueRatingAgencyV2Json.abi)
     await mockRatingAgency.mock.getResults.returns(0, 0, parseTRU(50e6))
 
+    mockCreditAgency = await deployMockContract(owner, TrueCreditAgencyJson.abi)
+
     lender = await deployContract(TrueLender2__factory)
-    await lender.initialize(stkTru.address, poolFactory.address, mockRatingAgency.address, INCH_ADDRESS, AddressZero)
+    await lender.initialize(stkTru.address, poolFactory.address, mockRatingAgency.address, INCH_ADDRESS, AddressZero, mockCreditAgency.address)
 
     await poolFactory.initialize(implementationReference.address, lender.address, AddressZero)
 
@@ -80,6 +83,9 @@ describe('TrueLender2', () => {
     usdt = Erc20Mock__factory.connect(USDT_ADDRESS, owner)
     await poolFactory.createPool(usdt.address)
     usdtLoanPool = TrueFiPool2__factory.connect(await poolFactory.pool(usdt.address), owner)
+
+    await mockCreditAgency.mock.borrowLimit.withArgs(tusdLoanPool.address, OWNER).returns(parseEth(100_000_000))
+    await mockCreditAgency.mock.borrowLimit.withArgs(usdtLoanPool.address, OWNER).returns(parseEth(100_000_000))
 
     loanFactory = await new LoanFactory2__factory(owner).deploy()
     await loanFactory.initialize(poolFactory.address, lender.address, AddressZero, AddressZero, AddressZero)

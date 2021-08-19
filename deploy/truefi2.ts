@@ -107,7 +107,7 @@ deploy({}, (_, config) => {
     poolFactory.initialize(implementationReference, trueLender2, safu)
   })
   runIf(trueLender2.isInitialized().not(), () => {
-    trueLender2.initialize(stkTruToken, poolFactory, trueRatingAgencyV2, oneInch, trueFiCreditOracle)
+    trueLender2.initialize(stkTruToken, poolFactory, trueRatingAgencyV2, oneInch, trueFiCreditOracle, AddressZero)
   })
   runIf(trueLender2.votingPeriod().equals(deployParams[NETWORK].WITHDRAW_PERIOD).not(), () => {
     trueLender2.setVotingPeriod(deployParams[NETWORK].WITHDRAW_PERIOD)
