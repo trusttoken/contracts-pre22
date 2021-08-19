@@ -89,8 +89,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     ) internal view returns (uint256) {
         uint8 borrowerScore = creditOracle.score(borrower);
         uint256 fixedTermLoanAdjustment = rateAdjuster.fixedTermLoanAdjustment(_term);
-        uint256 proFormaRate = rateAdjuster.proFormaRate(pool, borrowerScore, amount);
-        return proFormaRate.add(fixedTermLoanAdjustment);
+        return rateAdjuster.rate(pool, borrowerScore, amount).add(fixedTermLoanAdjustment);
     }
 
     /**

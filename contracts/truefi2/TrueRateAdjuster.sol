@@ -171,25 +171,25 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
      * Rate returned is based on pool utilization and credit score after borrowing `amount`
      * @param pool TrueFiPool to get rate for
      * @param score Score to get rate for
-     * @param amount Amount borrower wishes to borrow
+     * @param afterAmountLent Amount borrower wishes to borrow
      * @return Interest rate for borrowing `amount` (basis precision)
      */
-    function proFormaRate(
+    function rate(
         ITrueFiPool2 pool,
         uint8 score,
-        uint256 amount
+        uint256 afterAmountLent
     ) external override view returns (uint256) {
-        return combinedRate(proFormaPoolBasicRate(pool, amount), creditScoreAdjustmentRate(score));
+        return combinedRate(poolBasicRate(pool, afterAmountLent), creditScoreAdjustmentRate(score));
     }
 
     /**
-     * @dev Get interest rate for `pool` adjusted for utilization after borrowing `amount`
+     * @dev Get interest rate for `pool` adjusted for utilization after borrowing `afterAmountLent` amount
      * @param pool Pool to get rate for
-     * @param amount Requested amount to borrow
+     * @param afterAmountLent Requested amount to borrow
      * @return Interest rate for `pool` adjusted for utilization and `amount` borrowed
      */
-    function proFormaPoolBasicRate(ITrueFiPool2 pool, uint256 amount) public override view returns (uint256) {
-        return min(riskPremium.add(securedRate(pool)).add(proFormaUtilizationAdjustmentRate(pool, amount)), MAX_RATE_CAP);
+    function poolBasicRate(ITrueFiPool2 pool, uint256 afterAmountLent) public override view returns (uint256) {
+        return min(riskPremium.add(securedRate(pool)).add(utilizationAdjustmentRate(pool, afterAmountLent)), MAX_RATE_CAP);
     }
 
     /**
@@ -222,16 +222,16 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
         }
         uint256 coefficient = uint256(creditScoreRateConfig.coefficient);
         uint256 power = uint256(creditScoreRateConfig.power);
-        return min(coefficient.mul(MAX_CREDIT_SCORE**power).div(score**power).sub(coefficient), MAX_RATE_CAP);
+        return min(coefficient.mul(uint256(MAX_CREDIT_SCORE)**power).div(uint256(score)**power).sub(coefficient), MAX_RATE_CAP);
     }
 
     /**
-     * @dev Get utilization adjustment rate based on `pool` utilization and `amount` borrowed
+     * @dev Get utilization adjustment rate based on `pool` utilization and `afterAmountLent` borrowed
      * @param pool Pool to get pro forma adjustment rate for
      * @return Utilization adjusted rate for `pool` after borrowing `amount`
      */
-    function proFormaUtilizationAdjustmentRate(ITrueFiPool2 pool, uint256 amount) public override view returns (uint256) {
-        uint256 liquidRatio = pool.proFormaLiquidRatio(amount);
+    function utilizationAdjustmentRate(ITrueFiPool2 pool, uint256 afterAmountLent) public override view returns (uint256) {
+        uint256 liquidRatio = pool.liquidRatio(afterAmountLent);
         if (liquidRatio == 0) {
             // if utilization is at 100 %
             return MAX_RATE_CAP; // Cap rate by 500%
