@@ -46,10 +46,24 @@ describe('TrueRateAdjuster', () => {
   })
 
   describe('lock', () => {
-    it('reverts if borrower is already locked', async () => {
-      await registry.connect(locker).lock(borrower.address)
-      await expect(registry.connect(locker).lock(borrower.address))
-        .to.be.revertedWith('BorrowingRegistry: Borrower is already locked')
+    beforeEach(async () => {
+      await registry.allowLocking(locker.address)
+    })
+
+    describe('reverts if', () => {
+      it('ender not in canLock', async () => {
+        await expect(registry.connect(owner).lock(borrower.address))
+          .to.be.revertedWith('BorrowingRegistry: Sender is not allowed to lock borrowers')
+  
+        await expect(registry.connect(locker).lock(borrower.address))
+          .not.to.be.reverted
+      })
+  
+      it('borrower is already locked', async () => {
+        await registry.connect(locker).lock(borrower.address)
+        await expect(registry.connect(locker).lock(borrower.address))
+          .to.be.revertedWith('BorrowingRegistry: Borrower is already locked')
+      })
     })
 
     it('changes hasLock', async () => {

@@ -25,6 +25,7 @@ contract BorrowingRegistry is UpgradeableClaimable {
     }
 
     function lock(address borrower) external {
+        require(canLock[msg.sender], "BorrowingRegistry: Sender is not allowed to lock borrowers");
         require(hasLock[borrower] == address(0), "BorrowingRegistry: Borrower is already locked");
         hasLock[borrower] = msg.sender;
     }
