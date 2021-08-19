@@ -95,5 +95,11 @@ describe('BorrowingRegistry', () => {
       await registry.connect(locker).unlock(borrower.address)
       expect(await registry.hasLock(borrower.address)).to.eq(AddressZero)
     })
+
+    it('emits event', async () => {
+      await expect(registry.connect(locker).unlock(borrower.address))
+        .to.emit(registry, 'BorrowerUnlocked')
+        .withArgs(borrower.address, locker.address)
+    })
   })
 })
