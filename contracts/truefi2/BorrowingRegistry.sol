@@ -10,6 +10,8 @@ contract BorrowingRegistry is UpgradeableClaimable {
     // REMOVAL OR REORDER OF VARIABLES WILL RESULT
     // ========= IN STORAGE CORRUPTION ===========
 
+    mapping(address => address) public hasLock;
+
     mapping(address => bool) public canLock;
 
     // ======= STORAGE DECLARATION END ===========
@@ -20,5 +22,10 @@ contract BorrowingRegistry is UpgradeableClaimable {
 
     function allowLocking(address allowedAddress) external onlyOwner {
         canLock[allowedAddress] = true;
+    }
+
+    function lock(address borrower) external {
+        require(hasLock[borrower] == address(0), "BorrowingRegistry: Borrower is already locked");
+        hasLock[borrower] = msg.sender;
     }
 }

@@ -13,10 +13,11 @@ use(solidity)
 describe('TrueRateAdjuster', () => {
   let owner: Wallet
   let locker: Wallet
+  let borrower: Wallet
   let registry: BorrowingRegistry
 
   beforeEachWithFixture(async (wallets) => {
-    [owner, locker] = wallets
+    [owner, locker, borrower] = wallets
     const deployContract = setupDeploy(owner)
     registry = await deployContract(BorrowingRegistry__factory)
     await registry.initialize()
@@ -41,6 +42,19 @@ describe('TrueRateAdjuster', () => {
       expect(await registry.canLock(locker.address)).to.eq(false)
       await registry.allowLocking(locker.address)
       expect(await registry.canLock(locker.address)).to.eq(true)
+    })
+  })
+
+  describe('lock', () => {
+    it('reverts if borrower is already locked', async () => {
+      await registry.connect(locker).lock(borrower.address)
+      await expect(registry.connect(locker).lock(borrower.address))
+        .to.be.revertedWith('BorrowingRegistry: Borrower is already locked')
+    })
+
+    it('changes hasLock', async () => {
+      await registry.connect(locker).lock(borrower.address)
+      expect(await registry.hasLock(borrower.address)).to.eq(locker.address)
     })
   })
 })
