@@ -174,12 +174,12 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
      * @param afterAmountLent Amount borrower wishes to borrow
      * @return Interest rate for borrowing `amount` (basis precision)
      */
-    function Rate(
+    function rate(
         ITrueFiPool2 pool,
         uint8 score,
         uint256 afterAmountLent
     ) external override view returns (uint256) {
-        return combinedRate(PoolBasicRate(pool, afterAmountLent), creditScoreAdjustmentRate(score));
+        return combinedRate(poolBasicRate(pool, afterAmountLent), creditScoreAdjustmentRate(score));
     }
 
     /**
@@ -188,8 +188,8 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
      * @param afterAmountLent Requested amount to borrow
      * @return Interest rate for `pool` adjusted for utilization and `amount` borrowed
      */
-    function PoolBasicRate(ITrueFiPool2 pool, uint256 afterAmountLent) public override view returns (uint256) {
-        return min(riskPremium.add(securedRate(pool)).add(UtilizationAdjustmentRate(pool, afterAmountLent)), MAX_RATE_CAP);
+    function poolBasicRate(ITrueFiPool2 pool, uint256 afterAmountLent) public override view returns (uint256) {
+        return min(riskPremium.add(securedRate(pool)).add(utilizationAdjustmentRate(pool, afterAmountLent)), MAX_RATE_CAP);
     }
 
     /**
@@ -230,8 +230,8 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
      * @param pool Pool to get pro forma adjustment rate for
      * @return Utilization adjusted rate for `pool` after borrowing `amount`
      */
-    function UtilizationAdjustmentRate(ITrueFiPool2 pool, uint256 afterAmountLent) public override view returns (uint256) {
-        uint256 liquidRatio = pool.LiquidRatio(afterAmountLent);
+    function utilizationAdjustmentRate(ITrueFiPool2 pool, uint256 afterAmountLent) public override view returns (uint256) {
+        uint256 liquidRatio = pool.liquidRatio(afterAmountLent);
         if (liquidRatio == 0) {
             // if utilization is at 100 %
             return MAX_RATE_CAP; // Cap rate by 500%

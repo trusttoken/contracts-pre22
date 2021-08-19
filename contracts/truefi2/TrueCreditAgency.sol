@@ -242,12 +242,12 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
     /// @dev Get utilization adjustment from rate adjuster
     function utilizationAdjustmentRate(ITrueFiPool2 pool) public view returns (uint256) {
-        return rateAdjuster.UtilizationAdjustmentRate(pool, 0);
+        return rateAdjuster.utilizationAdjustmentRate(pool, 0);
     }
 
     /// @dev Get pool basic rate from rate adjuster
     function poolBasicRate(ITrueFiPool2 pool) public view returns (uint256) {
-        return rateAdjuster.PoolBasicRate(pool, 0);
+        return rateAdjuster.poolBasicRate(pool, 0);
     }
 
     /// @dev Get borrow limit adjustment from rate adjuster
@@ -317,7 +317,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
      * @return current rate for `borrower` in `pool`
      */
     function currentRate(ITrueFiPool2 pool, address borrower) external view returns (uint256) {
-        return rateAdjuster.Rate(pool, creditScore[pool][borrower], 0);
+        return rateAdjuster.rate(pool, creditScore[pool][borrower], 0);
     }
 
     /**

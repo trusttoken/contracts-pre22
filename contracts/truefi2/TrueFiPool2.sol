@@ -610,7 +610,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      * @param afterAmountLent Amount of asset being lent
      * @return Calculated ratio in basis points
      */
-    function LiquidRatio(uint256 afterAmountLent) external override view returns (uint256) {
+    function liquidRatio(uint256 afterAmountLent) external override view returns (uint256) {
         uint256 _poolValue = poolValue();
         if (_poolValue == 0) {
             return 0;
