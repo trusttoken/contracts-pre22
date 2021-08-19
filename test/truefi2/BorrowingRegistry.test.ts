@@ -43,4 +43,26 @@ describe('TrueRateAdjuster', () => {
       expect(await registry.canChangeBorrowingStatus(manager.address)).to.eq(true)
     })
   })
+
+  describe('setBorrowingStatus', () => {
+    beforeEach(async () => {
+      await registry.allowChangingBorrowingStatus(manager.address)
+    })
+
+    it('only allowed addresses can change status', async () => {
+      await expect(registry.connect(owner).setBorrowingStatus(manager.address, true))
+        .to.be.revertedWith('BorrowingRegistry: Caller is not allowed to change borrowing status')
+
+      await expect(registry.connect(manager).setBorrowingStatus(manager.address, true))
+        .not.to.be.reverted
+    })
+
+    it('changes borrowing status', async () => {
+      expect(await registry.borrowingStatus(manager.address)).to.eq(false)
+      await registry.connect(manager).setBorrowingStatus(manager.address, true)
+      expect(await registry.borrowingStatus(manager.address)).to.eq(true)
+      await registry.connect(manager).setBorrowingStatus(manager.address, false)
+      expect(await registry.borrowingStatus(manager.address)).to.eq(false)
+    })
+  })
 })

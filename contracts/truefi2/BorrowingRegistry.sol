@@ -10,12 +10,18 @@ contract BorrowingRegistry is UpgradeableClaimable {
     // REMOVAL OR REORDER OF VARIABLES WILL RESULT
     // ========= IN STORAGE CORRUPTION ===========
 
+    mapping(address => bool) public borrowingStatus;
     mapping(address => bool) public canChangeBorrowingStatus;
 
     // ======= STORAGE DECLARATION END ===========
 
     function initialize() external initializer {
         UpgradeableClaimable.initialize(msg.sender);
+    }
+
+    function setBorrowingStatus(address borrower, bool status) external {
+        require(canChangeBorrowingStatus[msg.sender] == true, "BorrowingRegistry: Caller is not allowed to change borrowing status");
+        borrowingStatus[borrower] = status;
     }
 
     function allowChangingBorrowingStatus(address allowedAddress) external onlyOwner {
