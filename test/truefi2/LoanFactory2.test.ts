@@ -141,7 +141,7 @@ describe('LoanFactory2', () => {
         const amount = parseEth(1_000)
 
         beforeEach(async () => {
-          rateWithoutFixedTermLoanAdjustment = await rateAdjuster.Rate(pool.address, borrowerCreditScore, amount)
+          rateWithoutFixedTermLoanAdjustment = await rateAdjuster.rate(pool.address, borrowerCreditScore, amount)
           fixedTermLoanAdjustmentCoefficient = await rateAdjuster.fixedTermLoanAdjustmentCoefficient()
         })
 
