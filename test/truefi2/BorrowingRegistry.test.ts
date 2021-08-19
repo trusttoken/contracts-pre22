@@ -54,11 +54,11 @@ describe('TrueRateAdjuster', () => {
       it('ender not in canLock', async () => {
         await expect(registry.connect(owner).lock(borrower.address))
           .to.be.revertedWith('BorrowingRegistry: Sender is not allowed to lock borrowers')
-  
+
         await expect(registry.connect(locker).lock(borrower.address))
           .not.to.be.reverted
       })
-  
+
       it('borrower is already locked', async () => {
         await registry.connect(locker).lock(borrower.address)
         await expect(registry.connect(locker).lock(borrower.address))
@@ -69,6 +69,12 @@ describe('TrueRateAdjuster', () => {
     it('changes hasLock', async () => {
       await registry.connect(locker).lock(borrower.address)
       expect(await registry.hasLock(borrower.address)).to.eq(locker.address)
+    })
+
+    it('emits event', async () => {
+      await expect(registry.connect(locker).lock(borrower.address))
+        .to.emit(registry, 'BorrowerLocked')
+        .withArgs(borrower.address, locker.address)
     })
   })
 })

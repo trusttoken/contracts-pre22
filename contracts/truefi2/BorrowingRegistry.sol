@@ -16,6 +16,8 @@ contract BorrowingRegistry is UpgradeableClaimable {
 
     // ======= STORAGE DECLARATION END ===========
 
+    event BorrowerLocked(address borrower, address lockingContract);
+
     function initialize() external initializer {
         UpgradeableClaimable.initialize(msg.sender);
     }
@@ -28,5 +30,6 @@ contract BorrowingRegistry is UpgradeableClaimable {
         require(canLock[msg.sender], "BorrowingRegistry: Sender is not allowed to lock borrowers");
         require(hasLock[borrower] == address(0), "BorrowingRegistry: Borrower is already locked");
         hasLock[borrower] = msg.sender;
+        emit BorrowerLocked(borrower, msg.sender);
     }
 }
