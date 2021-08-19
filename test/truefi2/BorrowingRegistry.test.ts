@@ -22,6 +22,7 @@ describe('BorrowingRegistry', () => {
     const deployContract = setupDeploy(owner)
     registry = await deployContract(BorrowingRegistry__factory)
     await registry.initialize()
+    await registry.allowLocking(locker.address)
   })
 
   describe('initializer', () => {
@@ -40,17 +41,13 @@ describe('BorrowingRegistry', () => {
     })
 
     it('changes allowance status', async () => {
-      expect(await registry.canLock(locker.address)).to.eq(false)
-      await registry.allowLocking(locker.address)
-      expect(await registry.canLock(locker.address)).to.eq(true)
+      expect(await registry.canLock(owner.address)).to.eq(false)
+      await registry.allowLocking(owner.address)
+      expect(await registry.canLock(owner.address)).to.eq(true)
     })
   })
 
   describe('lock', () => {
-    beforeEach(async () => {
-      await registry.allowLocking(locker.address)
-    })
-
     describe('reverts if', () => {
       it('ender not in canLock', async () => {
         await expect(registry.connect(owner).lock(borrower.address))
@@ -81,7 +78,6 @@ describe('BorrowingRegistry', () => {
 
   describe('unlock', () => {
     beforeEach(async () => {
-      await registry.allowLocking(locker.address)
       await registry.connect(locker).lock(borrower.address)
     })
 
