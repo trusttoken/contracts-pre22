@@ -38,6 +38,7 @@ describe('TrueFiPool2', () => {
   let tru: MockTrueCurrency
   let stkTru: StkTruToken
   let tusdPool: TrueFiPool2
+  let usdcPool: TrueFiPool2
   let loanFactory: LoanFactory2
   let lender: TrueLender2
   let rater: TrueRatingAgencyV2
@@ -63,6 +64,7 @@ describe('TrueFiPool2', () => {
       rater,
       lender,
       standardPool: tusdPool,
+      feePool: usdcPool,
       loanFactory,
       safu,
       creditAgency,
@@ -963,6 +965,33 @@ describe('TrueFiPool2', () => {
       const penalty = await tusdPool.liquidExitPenalty(totalSupply.div(2))
       expect(penalty).to.equal(9996)
       await expect(() => tusdPool.liquidExit(totalSupply.div(2))).to.changeTokenBalance(tusd, owner, totalValue.div(2).mul(penalty).div(10000))
+    })
+  })
+
+
+  describe('proFormaLiquidRatio', () => {
+    const includeFee = (amount: BigNumber) => amount.mul(10000).div(9975)
+
+    beforeEach(async () => {
+      await tusd.approve(tusdPool.address, includeFee(parseEth(1e5)))
+      await tusdPool.join(parseEth(1e5))
+      const loanForPartOfPool = await createApprovedLoan(
+        rater, tru,
+        stkTru, loanFactory,
+        borrower, tusdPool,
+        parseEth(1e5).div(4), DAY,
+        100, owner,
+        provider,
+      )
+      await lender.connect(borrower).fund(loanForPartOfPool.address)
+    })
+
+    it('returns 0 if poolValue is 0', async () => {
+      expect(await usdcPool.proFormaLiquidRatio(100)).to.eq(0)
+    })
+
+    it('equals 1 - utilization after lending', async () => {
+      expect(await tusdPool.proFormaLiquidRatio(parseEth(1e5).div(4))).to.eq(50_00)
     })
   })
 })
