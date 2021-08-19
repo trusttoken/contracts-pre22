@@ -993,7 +993,10 @@ describe('TrueCreditAgency', () => {
       [0, 20, 50, 80, 100].map((utilization) => {
         it(`sets utilization to ${utilization} percent`, async () => {
           await setUtilization(tusdPool, utilization)
-          expect(await tusdPool.utilization()).to.eq(utilization * 100)
+          const poolValue = await tusdPool.poolValue()
+          const liquidValue = await tusdPool.liquidValue()
+          const poolUtilization = poolValue.sub(liquidValue).mul(10_000).div(poolValue)
+          expect(poolUtilization).to.eq(utilization * 100)
         })
       })
     })
