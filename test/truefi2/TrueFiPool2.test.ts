@@ -38,7 +38,6 @@ describe('TrueFiPool2', () => {
   let tru: MockTrueCurrency
   let stkTru: StkTruToken
   let tusdPool: TrueFiPool2
-  let usdcPool: TrueFiPool2
   let loanFactory: LoanFactory2
   let lender: TrueLender2
   let rater: TrueRatingAgencyV2
@@ -64,7 +63,6 @@ describe('TrueFiPool2', () => {
       rater,
       lender,
       standardPool: tusdPool,
-      feePool: usdcPool,
       loanFactory,
       safu,
       creditAgency,
