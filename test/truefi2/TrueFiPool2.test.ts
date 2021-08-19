@@ -968,7 +968,7 @@ describe('TrueFiPool2', () => {
     })
   })
 
-  describe('proFormaLiquidRatio', () => {
+  describe('liquidRatio', () => {
     const includeFee = (amount: BigNumber) => amount.mul(10000).div(9975)
 
     beforeEach(async () => {
@@ -986,11 +986,11 @@ describe('TrueFiPool2', () => {
     })
 
     it('returns 0 if poolValue is 0', async () => {
-      expect(await usdcPool.proFormaLiquidRatio(100)).to.eq(0)
+      expect(await usdcPool.liquidRatio(100)).to.eq(0)
     })
 
     it('equals 1 - utilization after lending', async () => {
-      expect(await tusdPool.proFormaLiquidRatio(parseEth(1e5).div(4))).to.eq(50_00)
+      expect(await tusdPool.liquidRatio(parseEth(1e5).div(4))).to.eq(50_00)
     })
   })
 })
