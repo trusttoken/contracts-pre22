@@ -441,6 +441,14 @@ describe('TrueLender2', () => {
         await expect(lender.connect(borrower).fund(loan1.address))
           .to.be.revertedWith('TrueLender: Credit score is too low for loan\'s term')
       })
+
+      it('amount to fund exceeds borrow limit', async () => {
+        const amountToFund = parseEth(1e7).mul(15).div(100).add(1) // 15% of pool value + 1
+        const badLoan = await createLoan(loanFactory, borrower, pool1, amountToFund, YEAR, 100)
+        await approveLoanRating(badLoan)
+        await expect(lender.connect(borrower).fund(badLoan.address))
+          .to.be.revertedWith('TrueLender: Loan amount cannot exceed borrow limit')
+      })
     })
 
     describe('all requirements are met', () => {
