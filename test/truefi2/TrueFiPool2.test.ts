@@ -968,7 +968,6 @@ describe('TrueFiPool2', () => {
     })
   })
 
-
   describe('proFormaLiquidRatio', () => {
     const includeFee = (amount: BigNumber) => amount.mul(10000).div(9975)
 
