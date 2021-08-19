@@ -191,7 +191,7 @@ describe('TrueRateAdjuster', () => {
     })
   })
 
-  describe('Rate', () => {
+  describe('rate', () => {
     let mockOracle: MockContract
 
     beforeEach(async () => {
@@ -223,7 +223,7 @@ describe('TrueRateAdjuster', () => {
     })
   })
 
-  describe('PoolBasicRate', () => {
+  describe('poolBasicRate', () => {
     let mockOracle: MockContract
 
     beforeEach(async () => {
@@ -269,7 +269,7 @@ describe('TrueRateAdjuster', () => {
     )
   })
 
-  describe('UtilizationAdjustmentRate', () => {
+  describe('utilizationAdjustmentRate', () => {
     [
       [0, 0],
       [10, 11],
