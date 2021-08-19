@@ -11,7 +11,7 @@ import { AddressZero } from '@ethersproject/constants'
 
 use(solidity)
 
-describe('TrueRateAdjuster', () => {
+describe('BorrowingRegistry', () => {
   let owner: Wallet
   let locker: Wallet
   let borrower: Wallet
@@ -83,6 +83,11 @@ describe('TrueRateAdjuster', () => {
     beforeEach(async () => {
       await registry.allowLocking(locker.address)
       await registry.connect(locker).lock(borrower.address)
+    })
+
+    it('reverts if other caller tries to unlock', async () => {
+      await expect(registry.connect(owner).unlock(borrower.address))
+        .to.be.revertedWith('BorrowingRegistry: Only address that locked borrower can unlock')
     })
 
     it('changes hasLock', async () => {

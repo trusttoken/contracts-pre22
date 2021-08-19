@@ -34,6 +34,7 @@ contract BorrowingRegistry is UpgradeableClaimable {
     }
 
     function unlock(address borrower) external {
+        require(hasLock[borrower] == msg.sender, "BorrowingRegistry: Only address that locked borrower can unlock");
         hasLock[borrower] = address(0);
     }
 }
