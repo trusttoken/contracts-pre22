@@ -7,6 +7,7 @@ import {
   BorrowingRegistry,
   BorrowingRegistry__factory,
 } from 'contracts'
+import { AddressZero } from '@ethersproject/constants'
 
 use(solidity)
 
@@ -75,6 +76,19 @@ describe('TrueRateAdjuster', () => {
       await expect(registry.connect(locker).lock(borrower.address))
         .to.emit(registry, 'BorrowerLocked')
         .withArgs(borrower.address, locker.address)
+    })
+  })
+
+  describe('unlock', () => {
+    beforeEach(async () => {
+      await registry.allowLocking(locker.address)
+      await registry.connect(locker).lock(borrower.address)
+    })
+
+    it('changes hasLock', async () => {
+      expect(await registry.hasLock(borrower.address)).to.eq(locker.address)
+      await registry.connect(locker).unlock(borrower.address)
+      expect(await registry.hasLock(borrower.address)).to.eq(AddressZero)
     })
   })
 })

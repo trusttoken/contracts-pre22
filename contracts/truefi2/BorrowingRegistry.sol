@@ -32,4 +32,8 @@ contract BorrowingRegistry is UpgradeableClaimable {
         hasLock[borrower] = msg.sender;
         emit BorrowerLocked(borrower, msg.sender);
     }
+
+    function unlock(address borrower) external {
+        hasLock[borrower] = address(0);
+    }
 }
