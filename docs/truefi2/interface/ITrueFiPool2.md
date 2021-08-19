@@ -35,8 +35,6 @@
 
 
 
-Ratio of liquid assets in the pool to the pool value
-
 ### `proFormaLiquidRatio(uint256 amount) → uint256` (external)
 
 
