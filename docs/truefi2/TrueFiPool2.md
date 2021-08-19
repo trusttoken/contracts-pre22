@@ -245,13 +245,6 @@ Change oracle, can only be called by owner
 Currency token balance
 
 
-### `utilization() → uint256` (public)
-
-
-
-Utilization of the pool
-
-
 
 ### `proFormaLiquidRatio(uint256 amount) → uint256` (external)
 

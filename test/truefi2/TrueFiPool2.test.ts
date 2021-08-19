@@ -968,20 +968,20 @@ describe('TrueFiPool2', () => {
     })
   })
 
-  describe('utilization', () => {
+  describe('proFormaUtilization', () => {
     const includeFee = (amount: BigNumber) => amount.mul(10000).div(9975)
 
     beforeEach(async () => {
       await tusd.approve(tusdPool.address, includeFee(parseEth(1e5)))
     })
 
-    it('utilization is 0%', async () => {
+    it('proFormaUtilization is 0%', async () => {
       const depositedAmount = parseEth(1e5)
       await tusdPool.join(depositedAmount)
-      expect(await tusdPool.utilization()).to.eq(0)
+      expect(await tusdPool.proFormaUtilization(0)).to.eq(0)
     })
 
-    it('utilization is 100%', async () => {
+    it('proFormaUtilization is 100%', async () => {
       await tusdPool.join(parseEth(1e5))
       const loanForWholePool = await createApprovedLoan(
         rater, tru,
@@ -992,7 +992,7 @@ describe('TrueFiPool2', () => {
         provider,
       )
       await lender.connect(borrower).fund(loanForWholePool.address)
-      expect(await tusdPool.utilization()).to.eq(100_00)
+      expect(await tusdPool.proFormaUtilization(0)).to.eq(100_00)
     })
 
     it('utilization is 50 %', async () => {
@@ -1006,7 +1006,7 @@ describe('TrueFiPool2', () => {
         provider,
       )
       await lender.connect(borrower).fund(loanForPartOfPool.address)
-      expect(await tusdPool.utilization()).to.eq(50_00)
+      expect(await tusdPool.proFormaUtilization()).to.eq(50_00)
     })
 
     describe('proFormaLiquidRatio', () => {
