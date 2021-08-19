@@ -17,6 +17,8 @@ contract BorrowingRegistry is UpgradeableClaimable {
 
     event BorrowingStatusChanged(address borrower, bool status);
 
+    event AllowedToChangeBorrowingStatus(address allowedAddress, bool isAllowed);
+
     function initialize() external initializer {
         UpgradeableClaimable.initialize(msg.sender);
     }
@@ -27,7 +29,8 @@ contract BorrowingRegistry is UpgradeableClaimable {
         emit BorrowingStatusChanged(borrower, status);
     }
 
-    function allowChangingBorrowingStatus(address allowedAddress) external onlyOwner {
-        canChangeBorrowingStatus[allowedAddress] = true;
+    function allowChangingBorrowingStatus(address allowedAddress, bool isAllowed) external onlyOwner {
+        canChangeBorrowingStatus[allowedAddress] = isAllowed;
+        emit AllowedToChangeBorrowingStatus(allowedAddress, isAllowed);
     }
 }

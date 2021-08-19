@@ -30,23 +30,33 @@ describe('TrueRateAdjuster', () => {
 
   describe('allowChangingBorrowingStatus', () => {
     it('only owner can call', async () => {
-      await expect(registry.connect(manager).allowChangingBorrowingStatus(manager.address))
+      await expect(registry.connect(manager).allowChangingBorrowingStatus(manager.address, true))
         .to.be.revertedWith('Ownable: caller is not the owner')
 
-      await expect(registry.connect(owner).allowChangingBorrowingStatus(manager.address))
+      await expect(registry.connect(owner).allowChangingBorrowingStatus(manager.address, true))
         .not.to.be.reverted
     })
 
     it('changes allowance status', async () => {
       expect(await registry.canChangeBorrowingStatus(manager.address)).to.eq(false)
-      await registry.allowChangingBorrowingStatus(manager.address)
+      await registry.allowChangingBorrowingStatus(manager.address, true)
       expect(await registry.canChangeBorrowingStatus(manager.address)).to.eq(true)
+    })
+
+    it('emits event', async () => {
+      await expect(registry.connect(owner).allowChangingBorrowingStatus(manager.address, true))
+        .to.emit(registry, 'AllowedToChangeBorrowingStatus')
+        .withArgs(manager.address, true)
+
+      await expect(registry.connect(owner).allowChangingBorrowingStatus(manager.address, false))
+        .to.emit(registry, 'AllowedToChangeBorrowingStatus')
+        .withArgs(manager.address, false)
     })
   })
 
   describe('setBorrowingStatus', () => {
     beforeEach(async () => {
-      await registry.allowChangingBorrowingStatus(manager.address)
+      await registry.allowChangingBorrowingStatus(manager.address, true)
     })
 
     it('only allowed addresses can change status', async () => {
