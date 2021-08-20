@@ -4,23 +4,23 @@ import { Wallet } from 'ethers'
 import { setupDeploy } from 'scripts/utils'
 import { beforeEachWithFixture } from 'utils'
 import {
-  BorrowingRegistry,
-  BorrowingRegistry__factory,
+  BorrowingMutex,
+  BorrowingMutex__factory,
 } from 'contracts'
 import { AddressZero } from '@ethersproject/constants'
 
 use(solidity)
 
-describe('BorrowingRegistry', () => {
+describe('BorrowingMutex', () => {
   let owner: Wallet
   let locker: Wallet
   let borrower: Wallet
-  let registry: BorrowingRegistry
+  let registry: BorrowingMutex
 
   beforeEachWithFixture(async (wallets) => {
     [owner, locker, borrower] = wallets
     const deployContract = setupDeploy(owner)
-    registry = await deployContract(BorrowingRegistry__factory)
+    registry = await deployContract(BorrowingMutex__factory)
     await registry.initialize()
     await registry.allowLocker(locker.address, true)
   })
@@ -54,7 +54,7 @@ describe('BorrowingRegistry', () => {
   describe('lock', () => {
     it('sender not in canLock', async () => {
       await expect(registry.connect(owner).lock(borrower.address, owner.address))
-        .to.be.revertedWith('BorrowingRegistry: Sender is not allowed to lock borrowers')
+        .to.be.revertedWith('BorrowingMutex: Sender is not allowed to lock borrowers')
 
       await expect(registry.connect(locker).lock(borrower.address, owner.address))
         .not.to.be.reverted
@@ -79,7 +79,7 @@ describe('BorrowingRegistry', () => {
 
     it('reverts if other caller tries to unlock', async () => {
       await expect(registry.connect(borrower).unlock(borrower.address))
-        .to.be.revertedWith('BorrowingRegistry: Only locker or allowed addresses can unlock')
+        .to.be.revertedWith('BorrowingMutex: Only locker or allowed addresses can unlock')
 
       await expect(registry.connect(owner).unlock(borrower.address))
         .not.to.be.reverted

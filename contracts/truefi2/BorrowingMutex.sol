@@ -3,9 +3,9 @@ pragma solidity 0.6.10;
 
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 
-import {IBorrowingRegistry} from "./interface/IBorrowingRegistry.sol";
+import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
 
-contract BorrowingRegistry is IBorrowingRegistry, UpgradeableClaimable {
+contract BorrowingMutex is IBorrowingMutex, UpgradeableClaimable {
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
     // === STORAGE VARIABLES ARE DECLARED BELOW ==
@@ -34,14 +34,14 @@ contract BorrowingRegistry is IBorrowingRegistry, UpgradeableClaimable {
     }
 
     function lock(address borrower, address _locker) external override {
-        require(canLock[msg.sender], "BorrowingRegistry: Sender is not allowed to lock borrowers");
+        require(canLock[msg.sender], "BorrowingMutex: Sender is not allowed to lock borrowers");
         locker[borrower] = _locker;
         emit BorrowerLocked(borrower, _locker);
     }
 
     function unlock(address borrower) external override {
         address _locker = locker[borrower];
-        require(canLock[msg.sender] || _locker == msg.sender, "BorrowingRegistry: Only locker or allowed addresses can unlock");
+        require(canLock[msg.sender] || _locker == msg.sender, "BorrowingMutex: Only locker or allowed addresses can unlock");
         locker[borrower] = address(0);
         emit BorrowerUnlocked(borrower, _locker);
     }
