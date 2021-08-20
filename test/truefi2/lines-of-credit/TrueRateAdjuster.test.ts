@@ -342,37 +342,45 @@ describe('TrueRateAdjuster', () => {
   })
 
   describe('Borrow limit', () => {
+    let mockPool2: MockContract
+
     beforeEach(async () => {
+      mockPool2 = await deployMockContract(owner, ITrueFiPool2WithDecimalsJson.abi)
       await mockPool.mock.decimals.returns(18)
       await mockPool.mock.poolValue.returns(parseEth(1e7))
+      await mockPool2.mock.decimals.returns(6)
+      await mockPool2.mock.poolValue.returns(parseUSDC(1e7))
+      await rateAdjuster.setTVLPool(mockPool.address, true)
+      await rateAdjuster.setTVLPool(mockPool2.address, true)
     })
 
     it('borrow amount is limited by borrower limit', async () => {
-      expect(await rateAdjuster.borrowLimit(mockPool.address, 191, parseEth(100), parseEth(2e7), 0)).to.equal(parseEth(80.51)) // borrowLimitAdjustment(191)
+      expect(await rateAdjuster.borrowLimit(mockPool.address, 191, parseEth(100), 0)).to.equal(parseEth(80.51)) // borrowLimitAdjustment(191)
     })
 
     it('borrow limit depends on decimal count of the pool', async () => {
-      await mockPool.mock.decimals.returns(6)
-      expect(await rateAdjuster.borrowLimit(mockPool.address, 191, parseEth(100), parseUSDC(2e7), 0)).to.equal(parseUSDC(80.51))
+      expect(await rateAdjuster.borrowLimit(mockPool2.address, 191, parseEth(100), 0)).to.equal(parseUSDC(80.51))
     })
 
     it('borrow amount is limited by total TVL', async () => {
-      const maxTVLLimit = parseEth(10)
-      expect(await rateAdjuster.borrowLimit(mockPool.address, 191, parseEth(100), maxTVLLimit, 0)).to.equal(maxTVLLimit.mul(15).div(100).mul(8051).div(10000))
+      const maxTVLLimit = parseEth(20)
+      await mockPool.mock.poolValue.returns(maxTVLLimit.sub(parseEth(1)))
+      await mockPool2.mock.poolValue.returns(parseUSDC(1))
+      expect(await rateAdjuster.borrowLimit(mockPool.address, 191, parseEth(100), 0)).to.equal(maxTVLLimit.mul(15).div(100).mul(8051).div(10000))
     })
 
     it('borrow amount is limited by a single pool value', async () => {
       await mockPool.mock.poolValue.returns(parseUSDC(100))
       await mockPool.mock.decimals.returns(18)
-      expect(await rateAdjuster.borrowLimit(mockPool.address, 191, parseEth(100), parseEth(2e7), 0)).to.equal(parseUSDC(100).mul(15).div(100))
+      expect(await rateAdjuster.borrowLimit(mockPool.address, 191, parseEth(100), 0)).to.equal(parseUSDC(100).mul(15).div(100))
     })
 
     it('subtracts borrowed amount from credit limit', async () => {
-      expect(await rateAdjuster.borrowLimit(mockPool.address, 191, parseEth(100), parseEth(2e7), 100)).to.equal(parseEth(80.51).sub(100))
+      expect(await rateAdjuster.borrowLimit(mockPool.address, 191, parseEth(100), 100)).to.equal(parseEth(80.51).sub(100))
     })
 
     it('borrow limit is 0 if credit limit is below the borrowed amount', async () => {
-      expect(await rateAdjuster.borrowLimit(mockPool.address, 191, parseEth(100), parseEth(2e7), parseEth(100))).to.equal(0)
+      expect(await rateAdjuster.borrowLimit(mockPool.address, 191, parseEth(100), parseEth(100))).to.equal(0)
     })
   })
 
