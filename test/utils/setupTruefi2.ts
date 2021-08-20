@@ -20,7 +20,7 @@ import {
 import { Wallet } from 'ethers'
 import { parseTRU, timeTravelTo, YEAR } from '.'
 import { deployMockContract, MockProvider } from 'ethereum-waffle'
-import { SpotBaseRateOracleJson } from 'build'
+import { SpotBaseRateOracleJson, TrueRateAdjusterJson } from 'build'
 import { DAY } from './constants'
 
 const weeklyFillBaseRateOracles = async (tusdOracle: TimeAveragedBaseRateOracle, usdcOracle: TimeAveragedBaseRateOracle, provider: MockProvider) => {
@@ -43,6 +43,7 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
   const lender = customDeployed?.lender ? customDeployed.lender : await deployContract(TrueLender2__factory)
   const safu = await deployContract(Safu__factory)
   const rateAdjuster = await deployContract(TrueRateAdjuster__factory)
+  const mockRateAdjuster = await deployMockContract(owner, TrueRateAdjusterJson.abi)
   const creditAgency = await deployContract(TrueCreditAgency__factory)
 
   const poolFactory = await deployContract(PoolFactory__factory)
@@ -65,7 +66,7 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
 
   // ====== SETUP ======
   await liquidator.initialize(stkTru.address, tru.address, loanFactory.address, safu.address)
-  await loanFactory.initialize(poolFactory.address, lender.address, liquidator.address, rateAdjuster.address, creditOracle.address)
+  await loanFactory.initialize(poolFactory.address, lender.address, liquidator.address, mockRateAdjuster.address, creditOracle.address)
   await arbitraryDistributor.initialize(rater.address, tru.address, parseTRU(15e6))
   await rater.initialize(tru.address, stkTru.address, arbitraryDistributor.address, loanFactory.address)
   await lender.initialize(stkTru.address, poolFactory.address, rater.address, customDeployed?.oneInch ? customDeployed.oneInch.address : AddressZero, creditOracle.address, creditAgency.address)
@@ -88,6 +89,9 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
 
   await rateAdjuster.setBaseRateOracle(standardPool.address, standardBaseRateOracle.address)
   await rateAdjuster.setBaseRateOracle(feePool.address, feeBaseRateOracle.address)
+
+  await mockRateAdjuster.mock.rate.returns(0)
+  await mockRateAdjuster.mock.fixedTermLoanAdjustment.returns(0)
 
   await mockSpotOracle.mock.getRate.withArgs(standardToken.address).returns(300)
   await mockSpotOracle.mock.getRate.withArgs(feeToken.address).returns(300)
@@ -132,5 +136,6 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
     standardBaseRateOracle,
     feeBaseRateOracle,
     rateAdjuster,
+    mockRateAdjuster,
   }
 }

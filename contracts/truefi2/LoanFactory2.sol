@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+
 import {Initializable} from "../common/Initializable.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
@@ -17,6 +19,8 @@ import {LoanToken2, IERC20} from "./LoanToken2.sol";
  * LoanTokens adhere to the same contract code, rather than using an interface.
  */
 contract LoanFactory2 is ILoanFactory2, Initializable {
+    using SafeMath for uint256;
+
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
     // === STORAGE VARIABLES ARE DECLARED BELOW ==
@@ -80,29 +84,30 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     function rate(
         ITrueFiPool2 pool,
         address borrower,
-        uint256 amount
+        uint256 amount,
+        uint256 _term
     ) internal view returns (uint256) {
         uint8 borrowerScore = creditOracle.score(borrower);
-        return rateAdjuster.proFormaRate(pool, borrowerScore, amount);
+        uint256 fixedTermLoanAdjustment = rateAdjuster.fixedTermLoanAdjustment(_term);
+        return rateAdjuster.rate(pool, borrowerScore, amount).add(fixedTermLoanAdjustment);
     }
 
     /**
      * @dev Deploy LoanToken with parameters
      * @param _amount Amount to borrow
      * @param _term Length of loan
-     * @param _apy Loan yield
      */
     function createLoanToken(
         ITrueFiPool2 _pool,
         uint256 _amount,
-        uint256 _term,
-        uint256 _apy
+        uint256 _term
     ) external override {
         require(_amount > 0, "LoanFactory: Loans of amount 0, will not be approved");
         require(_term > 0, "LoanFactory: Loans cannot have instantaneous term of repay");
         require(poolFactory.isPool(address(_pool)), "LoanFactory: Pool was not created by PoolFactory");
 
-        address newToken = address(new LoanToken2(_pool, msg.sender, lender, admin, liquidator, _amount, _term, _apy));
+        uint256 apy = rate(_pool, msg.sender, _amount, _term);
+        address newToken = address(new LoanToken2(_pool, msg.sender, lender, admin, liquidator, _amount, _term, apy));
         isLoanToken[newToken] = true;
 
         emit LoanTokenCreated(newToken);

@@ -7,8 +7,7 @@ interface ILoanFactory2 {
     function createLoanToken(
         ITrueFiPool2 _pool,
         uint256 _amount,
-        uint256 _term,
-        uint256 _apy
+        uint256 _term
     ) external;
 
     function isLoanToken(address) external view returns (bool);

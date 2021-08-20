@@ -37,6 +37,9 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     /// @dev precision used for cumulative interest per share
     uint256 constant ADDITIONAL_PRECISION = 1e27;
 
+    /// @dev basis precision: 10000 = 100%
+    uint256 constant BASIS_POINTS = 10_000;
+
     /// @dev total & cumulative interest for borrowers in a bucket
     struct SavedInterest {
         uint256 total;
@@ -239,7 +242,12 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
     /// @dev Get utilization adjustment from rate adjuster
     function utilizationAdjustmentRate(ITrueFiPool2 pool) public view returns (uint256) {
-        return rateAdjuster.utilizationAdjustmentRate(pool);
+        return rateAdjuster.utilizationAdjustmentRate(pool, 0);
+    }
+
+    /// @dev Get pool basic rate from rate adjuster
+    function poolBasicRate(ITrueFiPool2 pool) public view returns (uint256) {
+        return rateAdjuster.poolBasicRate(pool, 0);
     }
 
     /// @dev Get borrow limit adjustment from rate adjuster
@@ -309,7 +317,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
      * @return current rate for `borrower` in `pool`
      */
     function currentRate(ITrueFiPool2 pool, address borrower) external view returns (uint256) {
-        return rateAdjuster.rate(pool, creditScore[pool][borrower]);
+        return rateAdjuster.rate(pool, creditScore[pool][borrower], 0);
     }
 
     /**
@@ -402,7 +410,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         uint256 bitMap = usedBucketsBitmap;
         uint256 timeNow = block.timestamp;
         // get basic pool rate
-        uint256 poolRate = rateAdjuster.poolBasicRate(pool);
+        uint256 poolRate = poolBasicRate(pool);
 
         // loop through scores and poke buckets, ignoring empty buckets
         for (uint16 i = 0; i <= MAX_CREDIT_SCORE; (i++, bitMap >>= 1)) {
@@ -427,7 +435,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     /// @dev Internal function to update state for `bucketNumber` in `pool`
     function pokeSingleBucket(ITrueFiPool2 pool, uint8 bucketNumber) internal {
         uint256 timeNow = block.timestamp;
-        uint256 poolRate = rateAdjuster.poolBasicRate(pool);
+        uint256 poolRate = poolBasicRate(pool);
 
         _pokeSingleBucket(pool, bucketNumber, timeNow, poolRate);
     }
@@ -457,7 +465,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
     /// @dev Calculate new interest per share for `bucket` at `timeNow`
     function _newInterestPerShare(CreditScoreBucket storage bucket, uint256 timeNow) private view returns (uint256) {
-        return bucket.rate.mul(timeNow.sub(bucket.timestamp)).mul(ADDITIONAL_PRECISION / 10_000).div(365 days);
+        return bucket.rate.mul(timeNow.sub(bucket.timestamp)).mul(ADDITIONAL_PRECISION / BASIS_POINTS).div(365 days);
     }
 
     /**

@@ -282,6 +282,22 @@
       "txHash": "0x8ac7a1da80a2fc6dc3b1d334e16f44c6a15fed847139720b82ea344796b72b82",
       "address": "0x893f4Be807fad9BDaFc5fE8929d432B16F279ceF"
     },
+    "trueMultiFarm_LinearTrueDistributor": {
+      "txHash": "0xae74a3dabdf811235fe19450ea235257856c8476687e79d69ca4659f3a8cef09",
+      "address": "0xd60699e69cc36C428b0c0CAccfD9A5cBC24dEa84"
+    },
+    "trueMultiFarm": {
+      "txHash": "0x011c975e0a00f1b1415325b10bdce83051d7c0df245512a69c79776d20420092",
+      "address": "0x47d73e7E00EB70b359db8ED70fE09b8b35fA833B"
+    },
+    "trueMultiFarm_LinearTrueDistributor_proxy": {
+      "txHash": "0x4aa9cde33f8df16fc87c24f49d2b0cc94594d8b9763115a84e5effc739195982",
+      "address": "0xC750F2bd24bE6b8aEa2E2ca25CEbd76308e09C46"
+    },
+    "trueMultiFarm_proxy": {
+      "txHash": "0xff5acf35a0805b830139173851b0df1de8c7241713011ccba90cf80a01cd8fe5",
+      "address": "0x3A97E0F0B08bD8df82d4eDFde136fe3A2507B80f"
+    },
     "tusd_CurveYearnStrategy": {
       "txHash": "0x1d59cd4dc6e3695911e26f182da073ae04b8675eb48ba582dde832e06c537e12",
       "address": "0x0889D6643BBEeffdC670C035989F88Ea52F41CC5"
@@ -515,6 +531,22 @@
     "usdt_CurveYearnStrategy_proxy": {
       "txHash": "0x558cb43809425cebd4152388e4bce489d6b290506ee0b4cb2881b98c85b86c24",
       "address": "0x8D162Caa649e981E2a0b0ba5908A77f2536B11A8"
+    },
+    "trueMultiFarm_LinearTrueDistributor": {
+      "txHash": "0x040a3ef739fb41033a6f338749e071e049681aefaed086011546803b22a06259",
+      "address": "0xA7e89Fff27dE5984eC8544966Ae2a1E0a06173eA"
+    },
+    "trueMultiFarm": {
+      "txHash": "0xc48e691986f5a9c046c72b9e57a58b708303edb3820f19aa1b4a9148a872d40d",
+      "address": "0x848E65ff997c8F582e71cc2e202E160b1c7353f5"
+    },
+    "trueMultiFarm_LinearTrueDistributor_proxy": {
+      "txHash": "0x2dcbbeac9c92217e22ab916a1ac8874441b297d64ea2eb338caf0d4fce651580",
+      "address": "0x8EaA9B19751a29D3f35D9BB976d0D7DE619c50Ce"
+    },
+    "trueMultiFarm_proxy": {
+      "txHash": "0x6f2967bc78f01f48c802f8c35fc4a387096ae2e54989b54ff08dec1180fc218a",
+      "address": "0x678076DC6DD534296641F9D804991bf894cf5728"
     },
     "tusd_CurveYearnStrategy": {
       "txHash": "0xc0f3b8351d232df656312834f60dd046bd81fba6b1f32b768264c4e8ad92fabd",

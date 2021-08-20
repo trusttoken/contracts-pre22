@@ -57,9 +57,7 @@ export const setUtilization = async (
     // loan amount restriction of 15% pool value
     await tusd.mint(owner.address, includeFee(poolValue.mul(9)))
     await tusd.connect(owner).approve(pool.address, includeFee(poolValue.mul(9)))
-    console.log((await pool.poolValue()).toString())
     await pool.connect(owner).join(poolValue.mul(9))
-    console.log((await pool.poolValue()).toString())
 
     await lender.connect(borrower1).fund(loan.address)
 
@@ -67,10 +65,11 @@ export const setUtilization = async (
   }
 
   // fund the second loan to set exact utilization value
-  let loanAmount = BigNumber.from(utilization * 100)
-    .sub(await pool.utilization())
-    .mul(await pool.poolValue())
-    .div(10000)
+  let loanAmount = (await pool.liquidValue()).sub(
+      BigNumber.from((100 - utilization) * 100)
+      .mul(await pool.poolValue())
+      .div(10000)
+    )
   const liquidityLeft = await pool.liquidValue()
   if (loanAmount.gt(liquidityLeft)) {
     loanAmount = liquidityLeft
