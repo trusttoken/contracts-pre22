@@ -11,8 +11,6 @@ import { MockProvider } from 'ethereum-waffle'
 import { DAY } from './constants'
 import { createApprovedLoan as _createApprovedLoan } from './createLoan'
 
-const includeFee = (amount: BigNumber) => amount.mul(10000).div(9975)
-
 // When setting utilization above 30 percent
 // slightly increases pool value
 export const setUtilization = async (
@@ -55,8 +53,8 @@ export const setUtilization = async (
 
     // bump liquidity temporarily to bypass
     // loan amount restriction of 15% pool value
-    await tusd.mint(owner.address, includeFee(poolValue.mul(9)))
-    await tusd.connect(owner).approve(pool.address, includeFee(poolValue.mul(9)))
+    await tusd.mint(owner.address, poolValue.mul(9))
+    await tusd.connect(owner).approve(pool.address, poolValue.mul(9))
     await pool.connect(owner).join(poolValue.mul(9))
 
     await lender.connect(borrower1).fund(loan.address)
