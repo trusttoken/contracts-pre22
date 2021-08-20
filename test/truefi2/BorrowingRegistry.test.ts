@@ -68,9 +68,9 @@ describe('BorrowingRegistry', () => {
       })
     })
 
-    it('changes hasLock', async () => {
+    it('changes locker', async () => {
       await registry.connect(locker).lock(borrower.address)
-      expect(await registry.hasLock(borrower.address)).to.eq(locker.address)
+      expect(await registry.locker(borrower.address)).to.eq(locker.address)
     })
 
     it('emits event', async () => {
@@ -90,10 +90,10 @@ describe('BorrowingRegistry', () => {
         .to.be.revertedWith('BorrowingRegistry: Only address that locked borrower can unlock')
     })
 
-    it('changes hasLock', async () => {
-      expect(await registry.hasLock(borrower.address)).to.eq(locker.address)
+    it('changes locker', async () => {
+      expect(await registry.locker(borrower.address)).to.eq(locker.address)
       await registry.connect(locker).unlock(borrower.address)
-      expect(await registry.hasLock(borrower.address)).to.eq(AddressZero)
+      expect(await registry.locker(borrower.address)).to.eq(AddressZero)
     })
 
     it('emits event', async () => {

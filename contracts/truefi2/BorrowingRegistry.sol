@@ -12,7 +12,7 @@ contract BorrowingRegistry is IBorrowingRegistry, UpgradeableClaimable {
     // REMOVAL OR REORDER OF VARIABLES WILL RESULT
     // ========= IN STORAGE CORRUPTION ===========
 
-    mapping(address => address) public hasLock;
+    mapping(address => address) public locker;
 
     mapping(address => bool) public canLock;
 
@@ -20,29 +20,29 @@ contract BorrowingRegistry is IBorrowingRegistry, UpgradeableClaimable {
 
     event LockerAllowed(address locker, bool isAllowed);
 
-    event BorrowerLocked(address borrower, address lockingContract);
+    event BorrowerLocked(address borrower, address locker);
 
-    event BorrowerUnlocked(address borrower, address unlockingContract);
+    event BorrowerUnlocked(address borrower, address locker);
 
     function initialize() external initializer {
         UpgradeableClaimable.initialize(msg.sender);
     }
 
-    function allowLocker(address locker, bool isAllowed) external onlyOwner {
-        canLock[locker] = isAllowed;
-        emit LockerAllowed(locker, isAllowed);
+    function allowLocker(address _locker, bool isAllowed) external onlyOwner {
+        canLock[_locker] = isAllowed;
+        emit LockerAllowed(_locker, isAllowed);
     }
 
     function lock(address borrower) external override {
         require(canLock[msg.sender], "BorrowingRegistry: Sender is not allowed to lock borrowers");
-        require(hasLock[borrower] == address(0), "BorrowingRegistry: Borrower is already locked");
-        hasLock[borrower] = msg.sender;
+        require(locker[borrower] == address(0), "BorrowingRegistry: Borrower is already locked");
+        locker[borrower] = msg.sender;
         emit BorrowerLocked(borrower, msg.sender);
     }
 
     function unlock(address borrower) external override {
-        require(hasLock[borrower] == msg.sender, "BorrowingRegistry: Only address that locked borrower can unlock");
-        hasLock[borrower] = address(0);
+        require(locker[borrower] == msg.sender, "BorrowingRegistry: Only address that locked borrower can unlock");
+        locker[borrower] = address(0);
         emit BorrowerUnlocked(borrower, msg.sender);
     }
 }
