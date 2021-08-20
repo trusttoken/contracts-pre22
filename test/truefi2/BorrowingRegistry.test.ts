@@ -53,7 +53,7 @@ describe('BorrowingRegistry', () => {
 
   describe('lock', () => {
     describe('reverts if', () => {
-      it('ender not in canLock', async () => {
+      it('sender not in canLock', async () => {
         await expect(registry.connect(owner).lock(borrower.address))
           .to.be.revertedWith('BorrowingRegistry: Sender is not allowed to lock borrowers')
 
