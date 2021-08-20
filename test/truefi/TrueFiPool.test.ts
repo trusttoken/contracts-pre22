@@ -3,6 +3,7 @@ import { BigNumber, constants, Wallet } from 'ethers'
 import { deployMockContract, MockContract, MockProvider, solidity } from 'ethereum-waffle'
 
 import { beforeEachWithFixture, DAY, expectScaledCloseTo, parseEth, parseTRU, timeTravel } from 'utils'
+import { setupCreditAgency } from 'utils/setupCreditAgency'
 
 import {
   ImplementationReference__factory,
@@ -32,11 +33,8 @@ import {
   MockTrueFiPoolOracle__factory,
   Safu,
   Safu__factory,
-  TrueCreditAgency__factory,
-  TrueRateAdjuster__factory,
-  TrueFiCreditOracle__factory,
 } from 'contracts'
-import { ICurveGaugeJson, ICurveMinterJson, TimeAveragedBaseRateOracleJson, TrueRatingAgencyV2Json } from 'build'
+import { ICurveGaugeJson, ICurveMinterJson, TrueRatingAgencyV2Json } from 'build'
 import { AddressZero } from '@ethersproject/constants'
 
 use(solidity)
@@ -497,25 +495,6 @@ describe('TrueFiPool', () => {
     })
   })
 
-  const setupCreditAgency = async () => {
-    const creditAgency = await new TrueCreditAgency__factory(owner).deploy()
-    const rateAdjuster = await new TrueRateAdjuster__factory(owner).deploy()
-    const creditOracle = await new TrueFiCreditOracle__factory(owner).deploy()
-    const mockBaseRateOracle = await deployMockContract(owner, TimeAveragedBaseRateOracleJson.abi)
-    await mockBaseRateOracle.mock.getWeeklyAPY.returns(300)
-
-    await creditAgency.initialize(creditOracle.address, rateAdjuster.address)
-    await rateAdjuster.initialize()
-    await creditOracle.initialize()
-
-    await creditAgency.allowPool(pool.address, true)
-    await rateAdjuster.setBaseRateOracle(pool.address, mockBaseRateOracle.address)
-    await creditOracle.setMaxBorrowerLimit(owner.address, 100_000_000)
-    await creditOracle.setScore(owner.address, 255)
-
-    return creditAgency
-  }
-
   const deployLender2 = async () => {
     const poolImplementation = await new TrueFiPool2__factory(owner).deploy()
     const implementationReference = await new ImplementationReference__factory(owner).deploy(poolImplementation.address)
@@ -523,7 +502,7 @@ describe('TrueFiPool', () => {
     const factory = await new PoolFactory__factory(owner).deploy()
     const lender2 = await new TrueLender2__factory(owner).deploy()
 
-    const creditAgency = await setupCreditAgency()
+    const creditAgency = await setupCreditAgency(owner, pool)
 
     await lender2.initialize(mockStakingPool.address, factory.address, mockRatingAgency.address, AddressZero, AddressZero, creditAgency.address)
     await factory.initialize(implementationReference.address, lender2.address, safu.address)
