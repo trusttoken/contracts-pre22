@@ -22,7 +22,7 @@ describe('BorrowingRegistry', () => {
     const deployContract = setupDeploy(owner)
     registry = await deployContract(BorrowingRegistry__factory)
     await registry.initialize()
-    await registry.allowLocking(locker.address)
+    await registry.allowLocker(locker.address, true)
   })
 
   describe('initializer', () => {
@@ -31,19 +31,23 @@ describe('BorrowingRegistry', () => {
     })
   })
 
-  describe('allowLocking', () => {
+  describe('allowLocker', () => {
     it('only owner can call', async () => {
-      await expect(registry.connect(locker).allowLocking(locker.address))
+      await expect(registry.connect(locker).allowLocker(locker.address, true))
         .to.be.revertedWith('Ownable: caller is not the owner')
 
-      await expect(registry.connect(owner).allowLocking(locker.address))
+      await expect(registry.connect(owner).allowLocker(locker.address, true))
         .not.to.be.reverted
     })
 
     it('changes allowance status', async () => {
       expect(await registry.canLock(owner.address)).to.eq(false)
-      await registry.allowLocking(owner.address)
+
+      await registry.allowLocker(owner.address, true)
       expect(await registry.canLock(owner.address)).to.eq(true)
+
+      await registry.allowLocker(owner.address, false)
+      expect(await registry.canLock(owner.address)).to.eq(false)
     })
   })
 

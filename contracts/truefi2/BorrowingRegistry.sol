@@ -18,6 +18,8 @@ contract BorrowingRegistry is IBorrowingRegistry, UpgradeableClaimable {
 
     // ======= STORAGE DECLARATION END ===========
 
+    event LockerAllowed(address locker, bool isAllowed);
+
     event BorrowerLocked(address borrower, address lockingContract);
 
     event BorrowerUnlocked(address borrower, address unlockingContract);
@@ -26,8 +28,9 @@ contract BorrowingRegistry is IBorrowingRegistry, UpgradeableClaimable {
         UpgradeableClaimable.initialize(msg.sender);
     }
 
-    function allowLocking(address allowedAddress) external onlyOwner {
-        canLock[allowedAddress] = true;
+    function allowLocker(address locker, bool isAllowed) external onlyOwner {
+        canLock[locker] = isAllowed;
+        emit LockerAllowed(locker, isAllowed);
     }
 
     function lock(address borrower) external override {
