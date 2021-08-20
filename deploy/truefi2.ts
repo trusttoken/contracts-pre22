@@ -19,7 +19,9 @@ import {
   TrueLender2,
   TrueRatingAgencyV2,
   TrustToken,
+  ChainlinkTruTusdOracle,
   ChainlinkTruUsdcOracle,
+  ChainlinkTruUsdtOracle,
   SAFU,
 } from '../build/artifacts'
 import { utils, BigNumber } from 'ethers'
@@ -96,7 +98,9 @@ deploy({}, (_, config) => {
   // New bare contracts
   const trueFiPool2 = contract(TrueFiPool2)
   const implementationReference = contract(ImplementationReference, [trueFiPool2])
+  const chainlinkTruTusdOracle = contract(ChainlinkTruTusdOracle)
   const chainlinkTruUsdcOracle = contract(ChainlinkTruUsdcOracle)
+  const chainlinkTruUsdtOracle = contract(ChainlinkTruUsdtOracle)
   const oneInch = isMainnet ? ONE_INCH_EXCHANGE : contract(Mock1InchV3)
 
   // Contract initialization
