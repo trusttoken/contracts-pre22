@@ -89,6 +89,8 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
 
   await rateAdjuster.setBaseRateOracle(standardPool.address, standardBaseRateOracle.address)
   await rateAdjuster.setBaseRateOracle(feePool.address, feeBaseRateOracle.address)
+  await rateAdjuster.setTVLPool(standardPool.address, true)
+  await rateAdjuster.setTVLPool(feePool.address, true)
 
   await mockRateAdjuster.mock.rate.returns(0)
   await mockRateAdjuster.mock.fixedTermLoanAdjustment.returns(0)
