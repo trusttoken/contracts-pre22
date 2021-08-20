@@ -66,10 +66,10 @@ export const setUtilization = async (
 
   // fund the second loan to set exact utilization value
   let loanAmount = (await pool.liquidValue()).sub(
-      BigNumber.from((100 - utilization) * 100)
+    BigNumber.from((100 - utilization) * 100)
       .mul(await pool.poolValue())
-      .div(10000)
-    )
+      .div(10000),
+  )
   const liquidityLeft = await pool.liquidValue()
   if (loanAmount.gt(liquidityLeft)) {
     loanAmount = liquidityLeft
