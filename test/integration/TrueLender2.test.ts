@@ -125,7 +125,7 @@ describe('TrueLender2', () => {
     expect(await usdcFeePool.balanceOf(stkTru.address)).to.gt(utils.parseUnits('100', 6).mul(98).div(100))
   })
 
-  xit('funds tether loan tokens', async () => {
+  it('funds tether loan tokens', async () => {
     const tx = await loanFactory.createLoanToken(usdtLoanPool.address, 10_000_000, DAY * 50)
     const creationEvent = (await tx.wait()).events[0]
     const { contractAddress } = creationEvent.args
