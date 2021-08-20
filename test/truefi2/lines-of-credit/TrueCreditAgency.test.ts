@@ -235,7 +235,7 @@ describe('TrueCreditAgency', () => {
     })
   })
 
-  describe('totalTVL & totalBorrowed', () => {
+  describe('totalBorrowed & poolValue', () => {
     beforeEach(async () => {
       await usdcPool.setCreditAgency(creditAgency.address)
       await creditAgency.allowPool(usdcPool.address, true)
@@ -245,10 +245,6 @@ describe('TrueCreditAgency', () => {
       await usdcPool.join(parseUSDC(2e7))
     })
 
-    it('totalTVL returns sum of poolValues of all pools with 18 decimals precision', async () => {
-      expect(await creditAgency.totalTVL(18)).to.equal(parseEth(3e7))
-    })
-
     it('totalBorrowed returns total borrowed amount across all pools with 18 decimals precision', async () => {
       await creditAgency.allowBorrower(borrower.address, true)
       await creditAgency.connect(borrower).borrow(tusdPool.address, parseEth(100))
@@ -256,19 +252,19 @@ describe('TrueCreditAgency', () => {
       expect(await creditAgency.totalBorrowed(borrower.address, 18)).to.equal(parseEth(600))
     })
 
-    it('totalTVL remains unchanged after borrowing', async () => {
-      expect(await creditAgency.totalTVL(18)).to.equal(parseEth(3e7))
+    it('poolValue remains unchanged after borrowing', async () => {
+      expect(await tusdPool.poolValue()).to.equal(parseEth(1e7))
       await creditAgency.allowBorrower(borrower.address, true)
       await creditAgency.connect(borrower).borrow(tusdPool.address, parseEth(100))
-      expect(await creditAgency.totalTVL(18)).to.equal(parseEth(3e7))
+      expect(await tusdPool.poolValue()).to.equal(parseEth(1e7))
     })
 
-    it('totalTVL scales with credit interest', async () => {
-      expect(await creditAgency.totalTVL(18)).to.equal(parseEth(3e7))
+    it('poolValue scales with credit interest', async () => {
+      expect(await tusdPool.poolValue()).to.equal(parseEth(1e7))
       await creditAgency.allowBorrower(borrower.address, true)
       await creditAgency.connect(borrower).borrow(tusdPool.address, parseEth(100))
       await timeTravel(YEAR)
-      expectScaledCloseTo(await creditAgency.totalTVL(18), parseEth(3e7).add(parseEth(1)))
+      expectScaledCloseTo(await tusdPool.poolValue(), parseEth(1e7).add(parseEth(1)))
     })
   })
 
