@@ -52,54 +52,58 @@ describe('BorrowingRegistry', () => {
   })
 
   describe('lock', () => {
-    describe('reverts if', () => {
-      it('sender not in canLock', async () => {
-        await expect(registry.connect(owner).lock(borrower.address))
-          .to.be.revertedWith('BorrowingRegistry: Sender is not allowed to lock borrowers')
+    it('sender not in canLock', async () => {
+      await expect(registry.connect(owner).lock(borrower.address, owner.address))
+        .to.be.revertedWith('BorrowingRegistry: Sender is not allowed to lock borrowers')
 
-        await expect(registry.connect(locker).lock(borrower.address))
-          .not.to.be.reverted
-      })
-
-      it('borrower is already locked', async () => {
-        await registry.connect(locker).lock(borrower.address)
-        await expect(registry.connect(locker).lock(borrower.address))
-          .to.be.revertedWith('BorrowingRegistry: Borrower is already locked')
-      })
+      await expect(registry.connect(locker).lock(borrower.address, owner.address))
+        .not.to.be.reverted
     })
 
     it('changes locker', async () => {
-      await registry.connect(locker).lock(borrower.address)
-      expect(await registry.locker(borrower.address)).to.eq(locker.address)
+      await registry.connect(locker).lock(borrower.address, owner.address)
+      expect(await registry.locker(borrower.address)).to.eq(owner.address)
     })
 
     it('emits event', async () => {
-      await expect(registry.connect(locker).lock(borrower.address))
+      await expect(registry.connect(locker).lock(borrower.address, owner.address))
         .to.emit(registry, 'BorrowerLocked')
-        .withArgs(borrower.address, locker.address)
+        .withArgs(borrower.address, owner.address)
     })
   })
 
   describe('unlock', () => {
     beforeEach(async () => {
-      await registry.connect(locker).lock(borrower.address)
+      await registry.connect(locker).lock(borrower.address, owner.address)
     })
 
     it('reverts if other caller tries to unlock', async () => {
+      await expect(registry.connect(borrower).unlock(borrower.address))
+        .to.be.revertedWith('BorrowingRegistry: Only locker or allowed addresses can unlock')
+
       await expect(registry.connect(owner).unlock(borrower.address))
-        .to.be.revertedWith('BorrowingRegistry: Only address that locked borrower can unlock')
+        .not.to.be.reverted
+
+      await expect(registry.connect(locker).unlock(borrower.address))
+        .not.to.be.reverted
     })
 
-    it('changes locker', async () => {
-      expect(await registry.locker(borrower.address)).to.eq(locker.address)
+    it('canLock address unlocks', async () => {
+      expect(await registry.locker(borrower.address)).to.eq(owner.address)
       await registry.connect(locker).unlock(borrower.address)
+      expect(await registry.locker(borrower.address)).to.eq(AddressZero)
+    })
+
+    it('locker unlocks', async () => {
+      expect(await registry.locker(borrower.address)).to.eq(owner.address)
+      await registry.connect(owner).unlock(borrower.address)
       expect(await registry.locker(borrower.address)).to.eq(AddressZero)
     })
 
     it('emits event', async () => {
       await expect(registry.connect(locker).unlock(borrower.address))
         .to.emit(registry, 'BorrowerUnlocked')
-        .withArgs(borrower.address, locker.address)
+        .withArgs(borrower.address, owner.address)
     })
   })
 })

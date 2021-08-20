@@ -33,16 +33,16 @@ contract BorrowingRegistry is IBorrowingRegistry, UpgradeableClaimable {
         emit LockerAllowed(_locker, isAllowed);
     }
 
-    function lock(address borrower) external override {
+    function lock(address borrower, address _locker) external override {
         require(canLock[msg.sender], "BorrowingRegistry: Sender is not allowed to lock borrowers");
-        require(locker[borrower] == address(0), "BorrowingRegistry: Borrower is already locked");
-        locker[borrower] = msg.sender;
-        emit BorrowerLocked(borrower, msg.sender);
+        locker[borrower] = _locker;
+        emit BorrowerLocked(borrower, _locker);
     }
 
     function unlock(address borrower) external override {
-        require(locker[borrower] == msg.sender, "BorrowingRegistry: Only address that locked borrower can unlock");
+        address _locker = locker[borrower];
+        require(canLock[msg.sender] || _locker == msg.sender, "BorrowingRegistry: Only locker or allowed addresses can unlock");
         locker[borrower] = address(0);
-        emit BorrowerUnlocked(borrower, msg.sender);
+        emit BorrowerUnlocked(borrower, _locker);
     }
 }
