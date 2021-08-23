@@ -1,32 +1,39 @@
 import { expect, use } from 'chai'
-import { beforeEachWithFixture, createLoan, DAY, parseEth, parseTRU, parseUSDC, setupTruefi2, timeTravel as _timeTravel } from 'utils'
+import {
+  beforeEachWithFixture,
+  createLoan,
+  DAY,
+  parseEth,
+  parseTRU,
+  parseUSDC,
+  setupTruefi2,
+  timeTravel as _timeTravel,
+} from 'utils'
 import { deployContract } from 'scripts/utils/deployContract'
 import {
+  BorrowingMutex,
+  LoanFactory2,
   LoanToken2,
   LoanToken2__factory,
+  Mock1InchV3,
+  Mock1InchV3__factory,
   MockErc20Token,
   MockErc20Token__factory,
-  TrueFiPool2,
-  TrueFiPool2__factory,
-  TestTrueLender,
-  TestTrueLender__factory,
-  TrueRatingAgencyV2,
+  MockTrueCurrency,
+  MockTrueFiPoolOracle,
+  MockUsdc,
   PoolFactory,
   StkTruToken,
-  Mock1InchV3__factory,
-  Mock1InchV3,
-  LoanFactory2,
-  MockTrueFiPoolOracle,
-  MockTrueCurrency,
-  MockUsdc,
+  TestTrueLender,
+  TestTrueLender__factory,
   TrueFiCreditOracle,
   TrueFiCreditOracle__factory,
+  TrueFiPool2,
+  TrueFiPool2__factory,
+  TrueRatingAgencyV2,
 } from 'contracts'
 
-import {
-  Mock1InchV3Json,
-  LoanToken2Json,
-} from 'build'
+import { LoanToken2Json, Mock1InchV3Json } from 'build'
 
 import { deployMockContract, solidity } from 'ethereum-waffle'
 import { AddressZero } from '@ethersproject/constants'
@@ -60,6 +67,7 @@ describe('TrueLender2', () => {
   let tru: MockTrueCurrency
   let usdc: MockUsdc
   let oneInch: Mock1InchV3
+  let borrowingMutex: BorrowingMutex
 
   const YEAR = DAY * 365
 
@@ -72,7 +80,7 @@ describe('TrueLender2', () => {
     lender = await deployContract(owner, TestTrueLender__factory)
     oneInch = await new Mock1InchV3__factory(owner).deploy()
 
-    ;({ loanFactory, feePool, standardTokenOracle: poolOracle, rater, poolFactory, stkTru, tru, feeToken: usdc, lender, creditOracle } = await setupTruefi2(owner, _provider, { lender: lender, oneInch: oneInch }))
+    ;({ loanFactory, feePool, standardTokenOracle: poolOracle, rater, poolFactory, stkTru, tru, feeToken: usdc, lender, creditOracle, borrowingMutex } = await setupTruefi2(owner, _provider, { lender: lender, oneInch: oneInch }))
 
     token1 = await deployContract(owner, MockErc20Token__factory)
     token2 = await deployContract(owner, MockErc20Token__factory)
@@ -305,6 +313,23 @@ describe('TrueLender2', () => {
       })
     })
 
+    describe('setBorrowingMutex', () => {
+      it('changes borrowingMutex', async () => {
+        await lender.setBorrowingMutex(AddressZero)
+        expect(await lender.borrowingMutex()).to.equal(AddressZero)
+      })
+
+      it('emits BorrowingMutexChanged', async () => {
+        await expect(lender.setBorrowingMutex(AddressZero))
+          .to.emit(lender, 'BorrowingMutexChanged').withArgs(AddressZero)
+      })
+
+      it('must be called by owner', async () => {
+        await expect(lender.connect(borrower).setBorrowingMutex(AddressZero))
+          .to.be.revertedWith('Ownable: caller is not the owner')
+      })
+    })
+
     describe('setVotingPeriod', () => {
       it('changes votingPeriod', async () => {
         await lender.setVotingPeriod(DAY * 3)
@@ -421,6 +446,13 @@ describe('TrueLender2', () => {
         await expect(lender.connect(borrower).fund(loan1.address))
           .to.be.revertedWith('TrueLender: Credit score is too low for loan\'s term')
       })
+
+      it('taking new loans is locked by mutex', async () => {
+        await borrowingMutex.allowLocker(owner.address, true)
+        await borrowingMutex.lock(borrower.address, owner.address)
+        await expect(lender.connect(borrower).fund(loan1.address))
+          .to.be.revertedWith('TrueLender: There is an ongoing loan or credit line')
+      })
     })
 
     describe('all requirements are met', () => {
@@ -449,6 +481,11 @@ describe('TrueLender2', () => {
           .and.to.emit(token1, 'Transfer')
           .withArgs(lender.address, loan1.address, 100000)
         expect(await loan1.balance()).to.equal(100000)
+      })
+
+      it('locks borrowing mutex', async () => {
+        await lender.connect(borrower).fund(loan1.address)
+        expect(await borrowingMutex.locker(borrower.address)).to.equal(loan1.address)
       })
 
       it('emits event', async () => {
