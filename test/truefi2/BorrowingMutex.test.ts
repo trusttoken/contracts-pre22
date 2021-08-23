@@ -79,19 +79,13 @@ describe('BorrowingMutex', () => {
 
     it('reverts if other caller tries to unlock', async () => {
       await expect(registry.connect(borrower).unlock(borrower.address))
-        .to.be.revertedWith('BorrowingMutex: Only locker or allowed addresses can unlock')
+        .to.be.revertedWith('BorrowingMutex: Only locker can unlock')
+
+      await expect(registry.connect(locker).unlock(borrower.address))
+        .to.be.revertedWith('BorrowingMutex: Only locker can unlock')
 
       await expect(registry.connect(owner).unlock(borrower.address))
         .not.to.be.reverted
-
-      await expect(registry.connect(locker).unlock(borrower.address))
-        .not.to.be.reverted
-    })
-
-    it('canLock address unlocks', async () => {
-      expect(await registry.locker(borrower.address)).to.eq(owner.address)
-      await registry.connect(locker).unlock(borrower.address)
-      expect(await registry.locker(borrower.address)).to.eq(AddressZero)
     })
 
     it('locker unlocks', async () => {
@@ -101,7 +95,7 @@ describe('BorrowingMutex', () => {
     })
 
     it('emits event', async () => {
-      await expect(registry.connect(locker).unlock(borrower.address))
+      await expect(registry.connect(owner).unlock(borrower.address))
         .to.emit(registry, 'BorrowerUnlocked')
         .withArgs(borrower.address, owner.address)
     })
