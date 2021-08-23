@@ -93,6 +93,7 @@ describe('TrueLender2', () => {
 
     loanFactory = await new LoanFactory2__factory(owner).deploy()
     await loanFactory.initialize(poolFactory.address, lender.address, AddressZero, mockRateAdjuster.address, mockCreditOracle.address, borrowingMutex.address)
+    await borrowingMutex.allowLocker(lender.address, true)
   })
 
   it('[Skip CI] ensure max 1% swap fee slippage', async () => {
