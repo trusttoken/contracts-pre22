@@ -89,8 +89,11 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
 
     // ======= STORAGE DECLARATION END ============
 
-    /// @dev emit `pool` and `isIncluded` when TVL pool inclusion status changes
-    event TVLPool(ITrueFiPool2 pool, bool isIncluded);
+    /// @dev emit `pool` when adding to TVL
+    event AddPoolToTVL(ITrueFiPool2 pool);
+
+    /// @dev emit `pool` when removing from TVL
+    event RemovePoolFromTVL(ITrueFiPool2 pool);
 
     /// @dev Emit `newRate` when risk premium changed
     event RiskPremiumChanged(uint256 newRate);
@@ -128,21 +131,25 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     }
 
     /**
-     * @dev Set whether `pool` is included in TVL calculation
+     * @dev Add `pool` to TVL calculation
      */
-    function setTVLPool(ITrueFiPool2 pool, bool isIncluded) external onlyOwner {
-        if (isIncluded) {
-            tvlPools.push(pool);
-        } else {
-            for (uint256 i = 0; i < tvlPools.length; i++) {
-                if (tvlPools[i] == pool) {
-                    tvlPools[i] = tvlPools[tvlPools.length - 1];
-                    tvlPools.pop();
-                    break;
-                }
+    function addPooltoTVL(ITrueFiPool2 pool) external onlyOwner {
+        tvlPools.push(pool);
+        emit AddPoolToTVL(pool);
+    }
+
+    /**
+     * @dev Remove `pool` from TVL calculation
+     */
+    function removePoolFromTVL(ITrueFiPool2 pool) external onlyOwner {
+        for (uint256 i = 0; i < tvlPools.length; i++) {
+            if (tvlPools[i] == pool) {
+                tvlPools[i] = tvlPools[tvlPools.length - 1];
+                tvlPools.pop();
+                break;
             }
         }
-        emit TVLPool(pool, isIncluded);
+        emit RemovePoolFromTVL(pool);
     }
 
     /// @dev Set risk premium to `newRate`
