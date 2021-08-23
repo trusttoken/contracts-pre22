@@ -18,7 +18,7 @@ import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {ITrueRatingAgency} from "../truefi/interface/ITrueRatingAgency.sol";
 import {IERC20WithDecimals} from "./interface/IERC20WithDecimals.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
-import "./interface/IBorrowingMutex.sol";
+import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
 
 /**
  * @title TrueLender v2.0
@@ -92,6 +92,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
 
     // mutex ensuring there's only one running loan or credit line for borrower
     IBorrowingMutex public borrowingMutex;
+
     // ======= STORAGE DECLARATION END ============
 
     /**

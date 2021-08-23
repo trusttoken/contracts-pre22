@@ -8,6 +8,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import {ERC20} from "../common/UpgradeableERC20.sol";
 import {ILoanToken2, ITrueFiPool2} from "./interface/ILoanToken2.sol";
 import {LoanToken} from "../truefi/LoanToken.sol";
+import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
 
 /**
  * @title LoanToken V2
@@ -62,6 +63,8 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     ERC20 public override token;
 
     ITrueFiPool2 public override pool;
+
+    IBorrowingMutex public override borrowingMutex;
 
     /**
      * @dev Emitted when the loan is funded
@@ -494,7 +497,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     }
 
     function version() external override pure returns (uint8) {
-        return 5;
+        return 6;
     }
 
     function decimals() public override view returns (uint8) {

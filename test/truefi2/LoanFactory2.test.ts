@@ -19,6 +19,7 @@ import {
   MockTrueCurrency,
 } from 'contracts'
 import { solidity } from 'ethereum-waffle'
+import { AddressZero } from '@ethersproject/constants'
 
 use(solidity)
 
@@ -214,6 +215,26 @@ describe('LoanFactory2', () => {
       await expect(loanFactory.setRateAdjuster(fakeRateAdjuster.address))
         .to.emit(loanFactory, 'RateAdjusterChanged')
         .withArgs(fakeRateAdjuster.address)
+    })
+  })
+
+  describe('setBorrowingMutex', () => {
+    it('only admin can call', async () => {
+      await expect(loanFactory.connect(owner).setBorrowingMutex(AddressZero))
+        .not.to.be.reverted
+      await expect(loanFactory.connect(borrower).setBorrowingMutex(AddressZero))
+        .to.be.revertedWith('LoanFactory: Caller is not the admin')
+    })
+
+    it('changes borrowingMutex', async () => {
+      await loanFactory.setBorrowingMutex(AddressZero)
+      expect(await loanFactory.borrowingMutex()).to.eq(AddressZero)
+    })
+
+    it('emits event', async () => {
+      await expect(loanFactory.setBorrowingMutex(AddressZero))
+        .to.emit(loanFactory, 'BorrowingMutexChanged')
+        .withArgs(AddressZero)
     })
   })
 })
