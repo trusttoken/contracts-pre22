@@ -149,10 +149,11 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
             if (tvlPools[i] == pool) {
                 tvlPools[i] = tvlPools[tvlPools.length - 1];
                 tvlPools.pop();
-                break;
+                emit RemovePoolFromTVL(pool);
+                return;
             }
         }
-        emit RemovePoolFromTVL(pool);
+        revert("TrueRateAdjuster: Pool already removed from TVL");
     }
 
     /// @dev Set risk premium to `newRate`
