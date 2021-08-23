@@ -112,7 +112,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         require(poolFactory.isPool(address(_pool)), "LoanFactory: Pool was not created by PoolFactory");
 
         uint256 apy = rate(_pool, msg.sender, _amount, _term);
-        address newToken = address(new LoanToken2(_pool, msg.sender, lender, admin, liquidator, _amount, _term, apy));
+        address newToken = address(new LoanToken2(_pool, borrowingMutex, msg.sender, lender, admin, liquidator, _amount, _term, apy));
         isLoanToken[newToken] = true;
 
         emit LoanTokenCreated(newToken);

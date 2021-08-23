@@ -64,7 +64,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
 
     ITrueFiPool2 public override pool;
 
-    IBorrowingMutex public override borrowingMutex;
+    IBorrowingMutex public borrowingMutex;
 
     /**
      * @dev Emitted when the loan is funded
@@ -143,6 +143,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      */
     constructor(
         ITrueFiPool2 _pool,
+        IBorrowingMutex _mutex,
         address _borrower,
         address _lender,
         address _admin,
@@ -156,6 +157,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
 
         pool = _pool;
         token = _pool.token();
+        borrowingMutex = _mutex;
         borrower = _borrower;
         admin = _admin;
         liquidator = _liquidator;
@@ -346,6 +348,9 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     function settle() public override onlyOngoing {
         require(isRepaid(), "LoanToken2: loan must be repaid to settle");
         status = Status.Settled;
+
+        borrowingMutex.unlock(borrower);
+
         emit Settled(_balance());
     }
 
@@ -356,6 +361,9 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         require(!isRepaid(), "LoanToken2: cannot default a repaid loan");
         require(start.add(term).add(LAST_MINUTE_PAYBACK_DURATION) <= block.timestamp, "LoanToken2: Loan cannot be defaulted yet");
         status = Status.Defaulted;
+
+        borrowingMutex.unlock(borrower);
+
         emit Defaulted(_balance());
     }
 
