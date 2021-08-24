@@ -290,13 +290,14 @@ describe('LoanToken2', () => {
       await expect(loanToken.enterDefault()).to.emit(loanToken, 'Defaulted').withArgs(parseEth(1099))
     })
 
-    it('unlocks the mutex', async () => {
+    it('keeps the mutex locked', async () => {
       await fund()
       await withdraw(borrower)
       await timeTravel(provider, defaultedLoanCloseTime)
       expect(await borrowingMutex.isUnlocked(borrower.address)).to.be.false
       await loanToken.enterDefault()
-      expect(await borrowingMutex.isUnlocked(borrower.address)).to.be.true
+      expect(await borrowingMutex.isUnlocked(borrower.address)).to.be.false
+      expect(await borrowingMutex.locker(borrower.address)).to.equal(loanToken.address)
     })
   })
 
