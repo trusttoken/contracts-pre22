@@ -10,6 +10,7 @@ import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {ITrueCreditAgency} from "./interface/ITrueCreditAgency.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
 import {ITimeAveragedBaseRateOracle} from "./interface/ITimeAveragedBaseRateOracle.sol";
+import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
 
 interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
     function decimals() external view returns (uint8);
@@ -107,6 +108,9 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     /// @dev credit oracle
     ITrueFiCreditOracle public creditOracle;
 
+    // mutex ensuring there's only one running loan or credit line for borrower
+    IBorrowingMutex public borrowingMutex;
+
     /**
      * @dev Buckets Bitmap
      * This bitmap is used to non-empty buckets.
@@ -147,11 +151,12 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     event MinCreditScoreChanged(uint256 newValue);
 
     /// @dev initialize
-    function initialize(ITrueFiCreditOracle _creditOracle, ITrueRateAdjuster _rateAdjuster) public initializer {
+    function initialize(ITrueFiCreditOracle _creditOracle, ITrueRateAdjuster _rateAdjuster, IBorrowingMutex _borrowingMutex) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
         creditOracle = _creditOracle;
         rateAdjuster = _rateAdjuster;
         interestRepaymentPeriod = 31 days;
+        borrowingMutex = _borrowingMutex;
     }
 
     /// @dev modifier for only whitelisted borrowers
@@ -345,6 +350,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, msg.sender);
         require(newScore >= minCreditScore, "TrueCreditAgency: Borrower has credit score below minimum");
         require(amount <= borrowLimit(pool, msg.sender), "TrueCreditAgency: Borrow amount cannot exceed borrow limit");
+
         uint256 currentDebt = borrowed[pool][msg.sender];
 
         if (currentDebt == 0) {

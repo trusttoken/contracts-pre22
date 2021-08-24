@@ -1,5 +1,6 @@
 import { BigNumber, BigNumberish, Wallet } from 'ethers'
 import {
+  BorrowingMutex,
   LoanFactory2,
   MockTrueCurrency,
   MockUsdc,
@@ -49,6 +50,7 @@ describe('TrueCreditAgency', () => {
   let creditOracle: TrueFiCreditOracle
   let tusdBaseRateOracle: TimeAveragedBaseRateOracle
   let mockSpotOracle: MockContract
+  let borrowingMutex: BorrowingMutex
   let timeTravel: (time: number) => void
 
   const MONTH = DAY * 31
@@ -82,6 +84,7 @@ describe('TrueCreditAgency', () => {
       standardBaseRateOracle: tusdBaseRateOracle,
       mockSpotOracle,
       rateAdjuster,
+      borrowingMutex,
     } = await setupTruefi2(owner, provider))
 
     await tusdPool.setCreditAgency(creditAgency.address)
@@ -103,6 +106,10 @@ describe('TrueCreditAgency', () => {
 
     it('sets interestRepaymentPeriod', async () => {
       expect(await creditAgency.interestRepaymentPeriod()).to.equal(MONTH)
+    })
+
+    it('sets borrowingMutex', async () => {
+      expect(await creditAgency.borrowingMutex()).to.equal(borrowingMutex.address)
     })
   })
 
