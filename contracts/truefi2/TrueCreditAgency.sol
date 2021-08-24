@@ -351,6 +351,10 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         require(newScore >= minCreditScore, "TrueCreditAgency: Borrower has credit score below minimum");
         require(amount <= borrowLimit(pool, msg.sender), "TrueCreditAgency: Borrow amount cannot exceed borrow limit");
 
+        if(totalBorrowed(msg.sender, 18) == 0){
+            borrowingMutex.lock(msg.sender, address(this));
+        }
+
         uint256 currentDebt = borrowed[pool][msg.sender];
 
         if (currentDebt == 0) {
@@ -393,9 +397,15 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
             _payInterestWithoutTransfer(pool, accruedInterest);
             _payPrincipalWithoutTransfer(pool, amount.sub(accruedInterest));
         }
+
+        if(totalBorrowed(msg.sender, 18) == 0){
+            borrowingMutex.unlock(msg.sender);
+        }
+
         if (borrowed[pool][msg.sender] == 0) {
             nextInterestRepayTime[pool][msg.sender] = 0;
         }
+
         // transfer token from sender wallets
         _repay(pool, amount);
     }

@@ -424,6 +424,14 @@ describe('TrueCreditAgency', () => {
         .to.be.revertedWith('TrueCreditAgency: Sender has overdue interest in this pool')
     })
 
+    it('fails if borrower mutex is already locked', async () => {
+      await borrowingMutex.allowLocker(owner.address, true)
+      await borrowingMutex.lock(borrower.address, owner.address)
+
+      await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000))
+        .to.be.revertedWith('BorrowingMutex: Borrower is already locked')
+    })
+
     it('cannot borrow from the pool that is not whitelisted', async () => {
       await creditAgency.allowPool(tusdPool.address, false)
       await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000))
@@ -435,6 +443,11 @@ describe('TrueCreditAgency', () => {
       const tx = await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
       const timestamp = BigNumber.from((await provider.getBlock(tx.blockNumber)).timestamp)
       expect(await creditAgency.nextInterestRepayTime(tusdPool.address, borrower.address)).to.eq(timestamp.add(MONTH))
+    })
+
+    it('borrows and check if mutex is locked', async () => {
+      await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
+      expect(await borrowingMutex.locker(borrower.address)).to.eq(creditAgency.address)
     })
 
     it('does not update nextInterestRepayTime on debt increase', async () => {
@@ -697,6 +710,12 @@ describe('TrueCreditAgency', () => {
     it('sets nextInterestRepayTime to 0', async () => {
       await creditAgency.connect(borrower).repayInFull(tusdPool.address)
       expect(await creditAgency.nextInterestRepayTime(tusdPool.address, borrower.address)).to.eq(0)
+    })
+
+    it('sets nextInterestRepayTime to 0', async () => {
+      expect(await borrowingMutex.locker(borrower.address)).to.eq(creditAgency.address)
+      await creditAgency.connect(borrower).repayInFull(tusdPool.address)
+      expect(await borrowingMutex.locker(borrower.address)).to.eq(AddressZero)
     })
 
     it('emits event', async () => {
