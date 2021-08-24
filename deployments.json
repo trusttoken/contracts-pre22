@@ -536,18 +536,6 @@
       "txHash": "0x040a3ef739fb41033a6f338749e071e049681aefaed086011546803b22a06259",
       "address": "0xA7e89Fff27dE5984eC8544966Ae2a1E0a06173eA"
     },
-    "trueMultiFarm": {
-      "txHash": "0xc48e691986f5a9c046c72b9e57a58b708303edb3820f19aa1b4a9148a872d40d",
-      "address": "0x848E65ff997c8F582e71cc2e202E160b1c7353f5"
-    },
-    "trueMultiFarm_LinearTrueDistributor_proxy": {
-      "txHash": "0x2dcbbeac9c92217e22ab916a1ac8874441b297d64ea2eb338caf0d4fce651580",
-      "address": "0x8EaA9B19751a29D3f35D9BB976d0D7DE619c50Ce"
-    },
-    "trueMultiFarm_proxy": {
-      "txHash": "0x6f2967bc78f01f48c802f8c35fc4a387096ae2e54989b54ff08dec1180fc218a",
-      "address": "0x678076DC6DD534296641F9D804991bf894cf5728"
-    },
     "tusd_CurveYearnStrategy": {
       "txHash": "0xc0f3b8351d232df656312834f60dd046bd81fba6b1f32b768264c4e8ad92fabd",
       "address": "0xEBED2Bab4c2cC032aBa89f61D95E7A6f9C00D953"
