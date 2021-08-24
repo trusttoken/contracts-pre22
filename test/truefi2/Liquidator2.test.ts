@@ -1,5 +1,6 @@
 import { expect, use } from 'chai'
 import {
+  BorrowingMutex__factory,
   Liquidator2,
   LoanFactory2,
   LoanToken2,
@@ -16,8 +17,15 @@ import { solidity } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
 import { setupDeploy } from 'scripts/utils'
 import { DAY } from 'utils/constants'
-import { createApprovedLoan, timeTravel as _timeTravel } from 'utils'
-import { beforeEachWithFixture, setupTruefi2, parseEth, parseTRU, parseUSDC } from 'utils'
+import {
+  beforeEachWithFixture,
+  createApprovedLoan,
+  parseEth,
+  parseTRU,
+  parseUSDC,
+  setupTruefi2,
+  timeTravel as _timeTravel,
+} from 'utils'
 
 use(solidity)
 
@@ -191,9 +199,13 @@ describe('Liquidator2', () => {
 
       it('loan was not created via factory', async () => {
         const deployContract = setupDeploy(owner)
-        const fakeLoan = await deployContract(LoanToken2__factory, pool.address, borrower.address, borrower.address, owner.address, liquidator.address, parseUSDC(1000), YEAR, 1000)
+        const borrowingMutex = await deployContract(BorrowingMutex__factory)
+        await borrowingMutex.initialize()
+        await borrowingMutex.allowLocker(owner.address, true)
+        const fakeLoan = await deployContract(LoanToken2__factory, pool.address, borrowingMutex.address, borrower.address, borrower.address, owner.address, liquidator.address, parseUSDC(1000), YEAR, 1000)
         await token.connect(borrower).approve(fakeLoan.address, parseUSDC(1000))
         await fakeLoan.connect(borrower).fund()
+        await borrowingMutex.lock(borrower.address, await fakeLoan.address)
         await timeTravel(defaultedLoanCloseTime)
         await fakeLoan.enterDefault()
 

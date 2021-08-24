@@ -563,6 +563,14 @@
     "sAFU_proxy": {
       "txHash": "0xaa5bbaa6ca71899793cea116bfa42e4b06791c7ab85523e83bf911a4b9e12c42",
       "address": "0x1eA63189eB1F4c109B10Cf6567f328C826AA6151"
+    },
+    "chainlinkTruTusdOracle": {
+      "txHash": "0x92e36f6d79ab495d57a221c3ca3a3eaec93938f562874bc534ed9bca014394d8",
+      "address": "0xe8180B5dba8bFd1f6556c46403faD6Dc03a131A9"
+    },
+    "chainlinkTruUsdtOracle": {
+      "txHash": "0xc3ce64ee9b04b63eded1334e46e95e9048332eaa97cd59ac470d219175a03462",
+      "address": "0xc02E05C671Cad8C27F7e64fD6898e75a8D4CC2B0"
     }
   }
 }
