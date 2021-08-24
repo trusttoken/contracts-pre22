@@ -347,7 +347,7 @@ describe('TrueCreditAgency', () => {
 
     it('borrow amount is limited by total TVL', async () => {
       await usdcPool.liquidExit(parseUSDC(19e6))
-      const maxTVLLimit = (await rateAdjuster.totalTVL(18)).mul(15).div(100)
+      const maxTVLLimit = (await rateAdjuster.tvl(18)).mul(15).div(100)
       expect(await creditAgency.borrowLimit(tusdPool.address, borrower.address)).to.equal(maxTVLLimit.mul(8051).div(10000))
     })
 

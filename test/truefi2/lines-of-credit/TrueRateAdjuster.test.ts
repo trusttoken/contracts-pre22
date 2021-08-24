@@ -423,7 +423,7 @@ describe('TrueRateAdjuster', () => {
     )
   })
 
-  describe('totalTVL', () => {
+  describe('tvl', () => {
     let loan
     let lender
 
@@ -447,23 +447,23 @@ describe('TrueRateAdjuster', () => {
       await mockPool2.mock.poolValue.returns(parseEth(1e7))
     })
 
-    it('totalTVL returns sum of poolValues of all pools with 18 decimals precision', async () => {
-      expect(await rateAdjuster.totalTVL(18)).to.equal(parseEth(3e7))
+    it('tvl returns sum of poolValues of all pools with 18 decimals precision', async () => {
+      expect(await rateAdjuster.tvl(18)).to.equal(parseEth(3e7))
     })
 
-    it('totalTVL remains unchanged after borrowing', async () => {
-      expect(await rateAdjuster.totalTVL(18)).to.equal(parseEth(3e7))
+    it('tvl remains unchanged after borrowing', async () => {
+      expect(await rateAdjuster.tvl(18)).to.equal(parseEth(3e7))
       await lender.connect(borrower).fund(loan.address)
-      expect(await rateAdjuster.totalTVL(18)).to.equal(parseEth(3e7))
+      expect(await rateAdjuster.tvl(18)).to.equal(parseEth(3e7))
     })
 
-    it('totalTVL scales with loan interest', async () => {
-      expect(await rateAdjuster.totalTVL(18)).to.equal(parseEth(3e7))
+    it('tvl scales with loan interest', async () => {
+      expect(await rateAdjuster.tvl(18)).to.equal(parseEth(3e7))
       await lender.connect(borrower).fund(loan.address)
       await timeTravel(provider, YEAR / 2)
-      expectScaledCloseTo(await rateAdjuster.totalTVL(18), parseEth(3e7).add(parseEth(1).div(2)))
+      expectScaledCloseTo(await rateAdjuster.tvl(18), parseEth(3e7).add(parseEth(1).div(2)))
       await timeTravel(provider, YEAR)
-      expectScaledCloseTo(await rateAdjuster.totalTVL(18), parseEth(3e7).add(parseEth(1)))
+      expectScaledCloseTo(await rateAdjuster.tvl(18), parseEth(3e7).add(parseEth(1)))
     })
 
     it('newly added pool correctly effects tvl', async () => {
@@ -471,12 +471,12 @@ describe('TrueRateAdjuster', () => {
       await mockPool3.mock.decimals.returns(18)
       await mockPool3.mock.poolValue.returns(0)
 
-      expect(await rateAdjuster.totalTVL(18)).to.equal(parseEth(3e7))
+      expect(await rateAdjuster.tvl(18)).to.equal(parseEth(3e7))
       await rateAdjuster.addPoolToTVL(mockPool3.address)
-      expect(await rateAdjuster.totalTVL(18)).to.equal(parseEth(3e7))
+      expect(await rateAdjuster.tvl(18)).to.equal(parseEth(3e7))
 
       await mockPool3.mock.poolValue.returns(parseEth(1e7))
-      expect(await rateAdjuster.totalTVL(18)).to.equal(parseEth(4e7))
+      expect(await rateAdjuster.tvl(18)).to.equal(parseEth(4e7))
     })
   })
 
