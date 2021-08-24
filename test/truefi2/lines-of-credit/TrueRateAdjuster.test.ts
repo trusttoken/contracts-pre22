@@ -4,7 +4,7 @@ import { Wallet } from 'ethers'
 import {
   beforeEachWithFixture,
   createApprovedLoan,
-  DAY, expectScaledCloseTo,
+  DAY, YEAR, expectScaledCloseTo,
   parseEth,
   parseUSDC,
   setupTruefi2, timeTravel,
@@ -424,7 +424,6 @@ describe('TrueRateAdjuster', () => {
   })
 
   describe('totalTVL', () => {
-    const YEAR = DAY * 365
     let loan
     let lender
 
@@ -461,8 +460,23 @@ describe('TrueRateAdjuster', () => {
     it('totalTVL scales with loan interest', async () => {
       expect(await rateAdjuster.totalTVL(18)).to.equal(parseEth(3e7))
       await lender.connect(borrower).fund(loan.address)
+      await timeTravel(provider, YEAR / 2)
+      expectScaledCloseTo(await rateAdjuster.totalTVL(18), parseEth(3e7).add(parseEth(1).div(2)))
       await timeTravel(provider, YEAR)
       expectScaledCloseTo(await rateAdjuster.totalTVL(18), parseEth(3e7).add(parseEth(1)))
+    })
+
+    it('newly added pool correctly effects tvl', async () => {
+      const mockPool3 = await deployMockContract(owner, ITrueFiPool2WithDecimalsJson.abi)
+      await mockPool3.mock.decimals.returns(18)
+      await mockPool3.mock.poolValue.returns(0)
+
+      expect(await rateAdjuster.totalTVL(18)).to.equal(parseEth(3e7))
+      await rateAdjuster.addPoolToTVL(mockPool3.address)
+      expect(await rateAdjuster.totalTVL(18)).to.equal(parseEth(3e7))
+
+      await mockPool3.mock.poolValue.returns(parseEth(1e7))
+      expect(await rateAdjuster.totalTVL(18)).to.equal(parseEth(4e7))
     })
   })
 
