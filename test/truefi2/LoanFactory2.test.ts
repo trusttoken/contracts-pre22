@@ -1,7 +1,7 @@
 import { expect, use } from 'chai'
 import { BigNumber, BigNumberish, Wallet } from 'ethers'
 
-import { beforeEachWithFixture, parseEth, setupTruefi2 } from 'utils'
+import { beforeEachWithFixture, MAX_APY, parseEth, setupTruefi2 } from 'utils'
 
 import {
   LoanFactory2,
@@ -40,7 +40,6 @@ describe('LoanFactory2', () => {
   let borrowerCreditScore: number
 
   const DAY = 60 * 60 * 24
-  const MAX_APY = 100000
 
   const createLoan = async (amount: BigNumberish, term: BigNumberish) => {
     const tx = await loanFactory.connect(borrower).createLoanToken(pool.address, amount, term, MAX_APY)

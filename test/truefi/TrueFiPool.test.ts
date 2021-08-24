@@ -2,7 +2,7 @@ import { expect, use } from 'chai'
 import { BigNumber, constants, Wallet } from 'ethers'
 import { deployMockContract, MockContract, MockProvider, solidity } from 'ethereum-waffle'
 
-import { beforeEachWithFixture, DAY, expectScaledCloseTo, parseEth, parseTRU, timeTravel } from 'utils'
+import { beforeEachWithFixture, DAY, expectScaledCloseTo, MAX_APY, parseEth, parseTRU, timeTravel } from 'utils'
 
 import {
   ImplementationReference__factory,
@@ -520,7 +520,7 @@ describe('TrueFiPool', () => {
   }
 
   async function fundLoan (loanFactory2: LoanFactory2, lender2: TrueLender2) {
-    const tx = await (await loanFactory2.createLoanToken(pool.address, 1000, DAY)).wait()
+    const tx = await (await loanFactory2.createLoanToken(pool.address, 1000, DAY, MAX_APY)).wait()
     const newLoanAddress = tx.events[0].args.contractAddress
     const loan = LoanToken2__factory.connect(newLoanAddress, owner)
     await mockRatingAgency.mock.getResults.returns(0, 0, parseEth(100))
