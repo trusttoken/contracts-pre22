@@ -90,10 +90,10 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     // ======= STORAGE DECLARATION END ============
 
     /// @dev emit `pool` when adding to TVL
-    event AddPoolToTVL(ITrueFiPool2 pool);
+    event PoolAddedToTVL(ITrueFiPool2 pool);
 
     /// @dev emit `pool` when removing from TVL
-    event RemovePoolFromTVL(ITrueFiPool2 pool);
+    event PoolRemovedFromTVL(ITrueFiPool2 pool);
 
     /// @dev Emit `newRate` when risk premium changed
     event RiskPremiumChanged(uint256 newRate);
@@ -138,7 +138,7 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
             require(tvlPools[i] != pool, "TrueRateAdjuster: Pool has already been added to TVL");
         }
         tvlPools.push(pool);
-        emit AddPoolToTVL(pool);
+        emit PoolAddedToTVL(pool);
     }
 
     /**
@@ -149,7 +149,7 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
             if (tvlPools[i] == pool) {
                 tvlPools[i] = tvlPools[tvlPools.length - 1];
                 tvlPools.pop();
-                emit RemovePoolFromTVL(pool);
+                emit PoolRemovedFromTVL(pool);
                 return;
             }
         }
