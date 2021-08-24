@@ -35,6 +35,7 @@ contract BorrowingMutex is IBorrowingMutex, UpgradeableClaimable {
 
     function lock(address borrower, address _locker) external override {
         require(canLock[msg.sender], "BorrowingMutex: Sender is not allowed to lock borrowers");
+        require(isUnlocked(borrower), "BorrowingMutex: Borrower is already locked");
         locker[borrower] = _locker;
         emit BorrowerLocked(borrower, _locker);
     }
@@ -46,7 +47,7 @@ contract BorrowingMutex is IBorrowingMutex, UpgradeableClaimable {
         emit BorrowerUnlocked(borrower, _locker);
     }
 
-    function isUnlocked(address borrower) external override view returns (bool) {
+    function isUnlocked(address borrower) public override view returns (bool) {
         return locker[borrower] == address(0);
     }
 }
