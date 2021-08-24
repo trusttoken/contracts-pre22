@@ -441,8 +441,8 @@
       "address": "0x1391D9223E08845e536157995085fE0Cef8Bd393"
     },
     "liquidator2": {
-      "txHash": "0xd49abffbdae1d07ec2cb0b021c3fa75b4d356b0e5b2e30c9254dcca27bce8e04",
-      "address": "0xF0F9365517FcD1C28CC4FfaCED1954816883a731"
+      "txHash": "0x469947a6bb045089dccdee36a1492585bb1d5bc55026c874e5e54ddbdecd7289",
+      "address": "0xC87079dBcC6835ABb3C85C0366122f5fe7C28271"
     },
     "liquidator2_proxy": {
       "txHash": "0x6e5e772f5d64aa07483b79e0b61e4be2815fea50f313312b90eae2c1d86f742c",
