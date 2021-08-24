@@ -1,19 +1,20 @@
 import { forkChain } from './suite'
 import { setupDeploy } from 'scripts/utils'
 import {
-  MockUsdStableCoinOracle__factory,
+  BorrowingMutex, BorrowingMutex__factory,
   Erc20Mock,
   Erc20Mock__factory,
   ImplementationReference__factory,
-  TrueFiPool2,
-  TrueFiPool2__factory,
-  TrueLender2,
-  TrueLender2__factory,
-  PoolFactory__factory,
   LoanFactory2,
   LoanFactory2__factory,
   LoanToken2,
   LoanToken2__factory,
+  MockUsdStableCoinOracle__factory,
+  PoolFactory__factory,
+  TrueFiPool2,
+  TrueFiPool2__factory,
+  TrueLender2,
+  TrueLender2__factory,
 } from 'contracts'
 import { DAY, parseEth, parseTRU } from 'utils'
 import fetch from 'node-fetch'
@@ -50,6 +51,7 @@ describe('TrueLender2', () => {
   let usdc: Erc20Mock
   let usdt: Erc20Mock
   let loan: LoanToken2
+  let borrowingMutex: BorrowingMutex
 
   beforeEach(async () => {
     stkTru = Wallet.createRandom()
@@ -65,8 +67,11 @@ describe('TrueLender2', () => {
     const mockCreditOracle = await deployMockContract(owner, TrueFiCreditOracleJson.abi)
     await mockCreditOracle.mock.score.returns(255)
 
+    borrowingMutex = await deployContract(BorrowingMutex__factory)
+    await borrowingMutex.initialize()
+
     lender = await deployContract(TrueLender2__factory)
-    await lender.initialize(stkTru.address, poolFactory.address, mockRatingAgency.address, INCH_ADDRESS, AddressZero)
+    await lender.initialize(stkTru.address, poolFactory.address, mockRatingAgency.address, INCH_ADDRESS, AddressZero, borrowingMutex.address)
 
     await poolFactory.initialize(implementationReference.address, lender.address, AddressZero)
 
@@ -87,7 +92,8 @@ describe('TrueLender2', () => {
     usdtLoanPool = TrueFiPool2__factory.connect(await poolFactory.pool(usdt.address), owner)
 
     loanFactory = await new LoanFactory2__factory(owner).deploy()
-    await loanFactory.initialize(poolFactory.address, lender.address, AddressZero, mockRateAdjuster.address, mockCreditOracle.address)
+    await loanFactory.initialize(poolFactory.address, lender.address, AddressZero, mockRateAdjuster.address, mockCreditOracle.address, borrowingMutex.address)
+    await borrowingMutex.allowLocker(lender.address, true)
   })
 
   it('[Skip CI] ensure max 1% swap fee slippage', async () => {

@@ -30,7 +30,7 @@ import {
   TrueLender2__factory,
   TrueLender__factory,
   MockTrueFiPoolOracle__factory, Safu__factory,
-  Safu,
+  Safu, BorrowingMutex__factory,
 } from 'contracts'
 import { ICurveGaugeJson, ICurveMinterJson, TrueRatingAgencyV2Json } from 'build'
 import { AddressZero } from '@ethersproject/constants'
@@ -499,7 +499,10 @@ describe('TrueFiPool', () => {
 
     const factory = await new PoolFactory__factory(owner).deploy()
     const lender2 = await new TrueLender2__factory(owner).deploy()
-    await lender2.initialize(mockStakingPool.address, factory.address, mockRatingAgency.address, AddressZero, AddressZero)
+    const borrowingMutex = await new BorrowingMutex__factory(owner).deploy()
+    await borrowingMutex.initialize()
+    await borrowingMutex.allowLocker(lender2.address, true)
+    await lender2.initialize(mockStakingPool.address, factory.address, mockRatingAgency.address, AddressZero, AddressZero, borrowingMutex.address)
     await factory.initialize(implementationReference.address, lender2.address, safu.address)
     await factory.addLegacyPool(pool.address)
     const usdc = await new MockErc20Token__factory(owner).deploy()
@@ -510,7 +513,7 @@ describe('TrueFiPool', () => {
     await pool.setLender2(lender2.address)
     const loanFactory2 = await new LoanFactory2__factory(owner).deploy()
     const liquidator2 = await new Liquidator2__factory(owner).deploy()
-    await loanFactory2.initialize(factory.address, lender2.address, liquidator2.address, AddressZero, AddressZero)
+    await loanFactory2.initialize(factory.address, lender2.address, liquidator2.address, AddressZero, AddressZero, borrowingMutex.address)
     await liquidator2.initialize(mockStakingPool.address, trustToken.address, loanFactory2.address, owner.address)
 
     return { lender2, loanFactory2, liquidator2 }
