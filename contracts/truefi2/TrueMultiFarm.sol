@@ -175,6 +175,14 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
         }
     }
 
+    /*
+     * What proportional share of rewards get distributed to this token?
+     * The denominator is visible in the public `shares()` view.
+     */
+    function getShare(IERC20 token) external view returns (uint256) {
+        return shares.staked[address(token)];
+    }
+
     /**
      * @dev Set shares for farms
      * Example: setShares([DAI, USDC], [1, 2]) will ensure that 33.(3)% of rewards will go to DAI farm and rest to USDC farm
