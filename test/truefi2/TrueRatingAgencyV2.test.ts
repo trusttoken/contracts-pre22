@@ -67,7 +67,7 @@ describe('TrueRatingAgencyV2', () => {
     gasLimit: 6_000_000,
   }
 
-  let timeTravel: (time: number) => void
+  let timeTravel: (time: number) => Promise<void>
 
   beforeEachWithFixture(async (_wallets, _provider) => {
     [owner, otherWallet] = _wallets
@@ -514,7 +514,7 @@ describe('TrueRatingAgencyV2', () => {
       await trustToken.mint(otherWallet.address, parseTRU(15e7))
       await trustToken.connect(otherWallet).approve(stakedTrustToken.address, parseTRU(15e7))
       await stakedTrustToken.connect(otherWallet).stake(parseTRU(15e7))
-      timeTravel(1)
+      await timeTravel(1)
 
       await rater.setRewardMultiplier(rewardMultiplier)
       await tusd.approve(loanToken.address, parseEth(5e6))

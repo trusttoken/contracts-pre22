@@ -101,23 +101,23 @@ describe('TrueFiCreditOracle', () => {
     it('returns Eligible for borrowers before expiry', async () => {
       await oracle.setEligibleForDuration(borrower.address, 10 * DAY)
       expect(await oracle.status(borrower.address)).to.equal(Status.Eligible)
-      timeTravel(provider, 10 * DAY - 1)
+      await timeTravel(provider, 10 * DAY - 1)
       expect(await oracle.status(borrower.address)).to.equal(Status.Eligible)
     })
 
     it('returns OnHold for borrowers after expiry but before grace period', async () => {
       await oracle.setEligibleForDuration(borrower.address, 10 * DAY)
-      timeTravel(provider, 10 * DAY)
+      await timeTravel(provider, 10 * DAY)
       expect(await oracle.status(borrower.address)).to.equal(Status.OnHold)
-      timeTravel(provider, 3 * DAY - 1)
+      await timeTravel(provider, 3 * DAY - 1)
       expect(await oracle.status(borrower.address)).to.equal(Status.OnHold)
     })
 
     it('returns Ineligible for borrowers after grace period', async () => {
       await oracle.setEligibleForDuration(borrower.address, 10 * DAY)
-      timeTravel(provider, 10 * DAY + 3 * DAY)
+      await timeTravel(provider, 10 * DAY + 3 * DAY)
       expect(await oracle.status(borrower.address)).to.equal(Status.Ineligible)
-      timeTravel(provider, 1_000 * DAY)
+      await timeTravel(provider, 1_000 * DAY)
       expect(await oracle.status(borrower.address)).to.equal(Status.Ineligible)
     })
   })
