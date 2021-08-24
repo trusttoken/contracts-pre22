@@ -308,7 +308,7 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
         uint256 resultPrecision = uint256(10)**decimals;
 
         // loop through pools and sum tvl accounting for precision
-        for (uint8 i = 0; i < tvlPools.length; i++) {
+        for (uint256 i = 0; i < tvlPools.length; i++) {
             uint8 poolDecimals = ITrueFiPool2WithDecimals(address(tvlPools[i])).decimals();
             tvl = tvl.add(tvlPools[i].poolValue().mul(resultPrecision).div(uint256(10)**poolDecimals));
         }
