@@ -16,7 +16,7 @@ import {
   TrueLender2,
   TrueLender2__factory,
 } from 'contracts'
-import { DAY, parseEth, parseTRU } from 'utils'
+import { DAY, MAX_APY, parseEth, parseTRU } from 'utils'
 import fetch from 'node-fetch'
 import { expect, use } from 'chai'
 import { deployMockContract, MockContract, solidity } from 'ethereum-waffle'
@@ -97,7 +97,7 @@ describe('TrueLender2', () => {
   })
 
   it('[Skip CI] ensure max 1% swap fee slippage', async () => {
-    const tx = await loanFactory.createLoanToken(tusdLoanPool.address, parseEth(100000), DAY * 365)
+    const tx = await loanFactory.createLoanToken(tusdLoanPool.address, parseEth(100000), DAY * 365, MAX_APY)
     const creationEvent = (await tx.wait()).events[0]
     const { contractAddress } = creationEvent.args
 
@@ -122,7 +122,7 @@ describe('TrueLender2', () => {
   })
 
   it('funds tether loan tokens', async () => {
-    const tx = await loanFactory.createLoanToken(usdtLoanPool.address, 10_000_000, DAY * 50)
+    const tx = await loanFactory.createLoanToken(usdtLoanPool.address, 10_000_000, DAY * 50, MAX_APY)
     const creationEvent = (await tx.wait()).events[0]
     const { contractAddress } = creationEvent.args
 
