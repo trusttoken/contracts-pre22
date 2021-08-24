@@ -60,6 +60,17 @@ describe('BorrowingMutex', () => {
         .not.to.be.reverted
     })
 
+    it('cannot lock already locked borrower', async () => {
+      await mutex.allowLocker(owner.address, true)
+      await mutex.connect(locker).lock(borrower.address, owner.address)
+
+      await expect(mutex.connect(owner).lock(borrower.address, owner.address))
+        .to.be.revertedWith('BorrowingMutex: Borrower is already locked')
+
+      await expect(mutex.connect(locker).lock(borrower.address, owner.address))
+        .to.be.revertedWith('BorrowingMutex: Borrower is already locked')
+    })
+
     it('changes locker', async () => {
       await mutex.connect(locker).lock(borrower.address, owner.address)
       expect(await mutex.locker(borrower.address)).to.eq(owner.address)
