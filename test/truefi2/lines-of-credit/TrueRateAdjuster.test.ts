@@ -72,6 +72,89 @@ describe('TrueRateAdjuster', () => {
     })
   })
 
+  describe('addPoolToTVL', () => {
+    const pool1 = '0x1111111111111111111111111111111111111111'
+    const pool2 = '0x2222222222222222222222222222222222222222'
+    const pool3 = '0x3333333333333333333333333333333333333333'
+    const pool4 = '0x4444444444444444444444444444444444444444'
+
+    it('reverts if caller is not the owner', async () => {
+      await expect(rateAdjuster.connect(borrower).addPoolToTVL(pool1))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('reverts if pool has already been added', async () => {
+      await rateAdjuster.addPoolToTVL(pool1)
+      await rateAdjuster.addPoolToTVL(pool2)
+      await rateAdjuster.addPoolToTVL(pool3)
+      await rateAdjuster.addPoolToTVL(pool4)
+
+      await expect(rateAdjuster.addPoolToTVL(pool3))
+        .to.be.revertedWith('TrueRateAdjuster: Pool has already been added to TVL')
+    })
+
+    it('adds pools to array', async () => {
+      await rateAdjuster.addPoolToTVL(pool1)
+      await rateAdjuster.addPoolToTVL(pool2)
+      await rateAdjuster.addPoolToTVL(pool3)
+      await rateAdjuster.addPoolToTVL(pool4)
+
+      expect(await rateAdjuster.tvlPools(0)).eq(pool1)
+      expect(await rateAdjuster.tvlPools(1)).eq(pool2)
+      expect(await rateAdjuster.tvlPools(2)).eq(pool3)
+      expect(await rateAdjuster.tvlPools(3)).eq(pool4)
+    })
+
+    it('emits event', async () => {
+      await expect(rateAdjuster.addPoolToTVL(pool1))
+        .to.emit(rateAdjuster, 'PoolAddedToTVL')
+        .withArgs(pool1)
+    })
+  })
+
+  describe('removePoolFromTVL', () => {
+    const pool1 = '0x1111111111111111111111111111111111111111'
+    const pool2 = '0x2222222222222222222222222222222222222222'
+    const pool3 = '0x3333333333333333333333333333333333333333'
+    const pool4 = '0x4444444444444444444444444444444444444444'
+
+    it('reverts if caller is not the owner', async () => {
+      await expect(rateAdjuster.connect(borrower).removePoolFromTVL(pool1))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('reverts if pool not in array', async () => {
+      await rateAdjuster.addPoolToTVL(pool1)
+      await rateAdjuster.addPoolToTVL(pool2)
+      await rateAdjuster.addPoolToTVL(pool4)
+
+      await expect(rateAdjuster.removePoolFromTVL(pool3)).to.be.revertedWith('TrueRateAdjuster: Pool already removed from TVL')
+    })
+
+    it('removes pool from array', async () => {
+      await rateAdjuster.addPoolToTVL(pool1)
+      await rateAdjuster.addPoolToTVL(pool2)
+      await rateAdjuster.addPoolToTVL(pool3)
+      await rateAdjuster.addPoolToTVL(pool4)
+
+      await rateAdjuster.removePoolFromTVL(pool3)
+      expect(await rateAdjuster.tvlPools(0)).eq(pool1)
+      expect(await rateAdjuster.tvlPools(1)).eq(pool2)
+      expect(await rateAdjuster.tvlPools(2)).eq(pool4)
+    })
+
+    it('emits event', async () => {
+      await rateAdjuster.addPoolToTVL(pool1)
+      await rateAdjuster.addPoolToTVL(pool2)
+      await rateAdjuster.addPoolToTVL(pool3)
+      await rateAdjuster.addPoolToTVL(pool4)
+
+      await expect(rateAdjuster.removePoolFromTVL(pool3))
+        .to.emit(rateAdjuster, 'PoolRemovedFromTVL')
+        .withArgs(pool3)
+    })
+  })
+
   describe('setRiskPremium', () => {
     it('reverts if caller is not the owner', async () => {
       await expect(rateAdjuster.connect(borrower).setRiskPremium(0))
