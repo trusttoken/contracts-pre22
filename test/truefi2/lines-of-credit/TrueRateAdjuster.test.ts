@@ -9,7 +9,7 @@ import {
   parseUSDC,
   setupTruefi2, timeTravel,
   timeTravelTo,
-  updateRateOracle
+  updateRateOracle,
 } from 'utils'
 import { setupDeploy } from 'scripts/utils'
 
@@ -429,7 +429,7 @@ describe('TrueRateAdjuster', () => {
     let lender
 
     beforeEach(async () => {
-      const {rater, tru, stkTru, loanFactory, standardPool: pool, lender: _lender, standardToken: tusd} = await setupTruefi2(owner, provider)
+      const { rater, tru, stkTru, loanFactory, standardPool: pool, lender: _lender, standardToken: tusd } = await setupTruefi2(owner, provider)
       loan = await createApprovedLoan(rater, tru, stkTru, loanFactory, borrower, pool, 1_000_000, YEAR, 1000, owner, provider)
       lender = _lender
 
