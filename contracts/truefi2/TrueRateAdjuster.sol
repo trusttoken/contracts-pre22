@@ -133,7 +133,7 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     /**
      * @dev Add `pool` to TVL calculation
      */
-    function addPooltoTVL(ITrueFiPool2 pool) external onlyOwner {
+    function addPoolToTVL(ITrueFiPool2 pool) external onlyOwner {
         for (uint256 i = 0; i < tvlPools.length; i++) {
             require(tvlPools[i] != pool, "TrueRateAdjuster: Pool has already been added to TVL");
         }
