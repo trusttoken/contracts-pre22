@@ -46,4 +46,8 @@ contract BorrowingMutex is IBorrowingMutex, UpgradeableClaimable {
         locker[borrower] = address(0);
         emit BorrowerUnlocked(borrower, _locker);
     }
+
+    function isUnlocked(address borrower) external override view returns (bool) {
+        return locker[borrower] == address(0);
+    }
 }
