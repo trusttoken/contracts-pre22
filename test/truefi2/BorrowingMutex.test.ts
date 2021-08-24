@@ -61,8 +61,10 @@ describe('BorrowingMutex', () => {
     })
 
     it('changes locker', async () => {
+      expect(await mutex.isUnlocked(borrower.address)).to.be.true
       await mutex.connect(locker).lock(borrower.address, owner.address)
       expect(await mutex.locker(borrower.address)).to.eq(owner.address)
+      expect(await mutex.isUnlocked(borrower.address)).to.be.false
     })
 
     it('emits event', async () => {
