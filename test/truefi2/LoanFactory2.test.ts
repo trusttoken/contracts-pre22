@@ -40,9 +40,10 @@ describe('LoanFactory2', () => {
   let borrowerCreditScore: number
 
   const DAY = 60 * 60 * 24
+  const MAX_APY = 100000
 
   const createLoan = async (amount: BigNumberish, term: BigNumberish) => {
-    const tx = await loanFactory.connect(borrower).createLoanToken(pool.address, amount, term)
+    const tx = await loanFactory.connect(borrower).createLoanToken(pool.address, amount, term, MAX_APY)
     const creationEvent = (await tx.wait()).events[0]
     ;({ contractAddress } = creationEvent.args)
     return LoanToken2__factory.connect(contractAddress, owner)
@@ -99,19 +100,27 @@ describe('LoanFactory2', () => {
     })
 
     it('prevents 0 loans', async () => {
-      await expect(loanFactory.connect(borrower).createLoanToken(pool.address, 0, 100))
+      await expect(loanFactory.connect(borrower).createLoanToken(pool.address, 0, 100, MAX_APY))
         .to.be.revertedWith('LoanFactory: Loans of amount 0, will not be approved')
     })
 
     it('prevents 0 time loans', async () => {
-      await expect(loanFactory.connect(borrower).createLoanToken(pool.address, parseEth(123), 0))
+      await expect(loanFactory.connect(borrower).createLoanToken(pool.address, parseEth(123), 0, MAX_APY))
         .to.be.revertedWith('LoanFactory: Loans cannot have instantaneous term of repay')
     })
 
     it('prevents fake pool loans', async () => {
       const fakePool = await new TrueFiPool2__factory(owner).deploy()
-      await expect(loanFactory.connect(borrower).createLoanToken(fakePool.address, parseEth(123), 0))
+      await expect(loanFactory.connect(borrower).createLoanToken(fakePool.address, parseEth(123), 0, MAX_APY))
         .to.be.revertedWith('LoanFactory: Loans cannot have instantaneous term of repay')
+    })
+
+    it('prevents apy higer than limit', async () => {
+      await expect(loanFactory.connect(borrower).createLoanToken(pool.address, parseEth(1_000), 15 * DAY, 510))
+        .to.be.revertedWith('LoanFactory: Calculated apy is higher than max apy')
+
+      await expect(loanFactory.connect(borrower).createLoanToken(pool.address, parseEth(1_000), 15 * DAY, 511))
+        .not.to.be.reverted
     })
 
     describe('apy is set properly', () => {
