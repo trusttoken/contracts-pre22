@@ -350,8 +350,8 @@ describe('TrueRateAdjuster', () => {
       await mockPool.mock.poolValue.returns(parseEth(1e7))
       await mockPool2.mock.decimals.returns(6)
       await mockPool2.mock.poolValue.returns(parseUSDC(1e7))
-      await rateAdjuster.addPooltoTVL(mockPool.address)
-      await rateAdjuster.addPooltoTVL(mockPool2.address)
+      await rateAdjuster.addPoolToTVL(mockPool.address)
+      await rateAdjuster.addPoolToTVL(mockPool2.address)
     })
 
     it('borrow amount is limited by borrower limit', async () => {
