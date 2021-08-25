@@ -9,6 +9,7 @@ import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {ITrueRateAdjuster} from "./interface/ITrueRateAdjuster.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
+import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
 
 import {LoanToken2, IERC20} from "./LoanToken2.sol";
 
@@ -38,7 +39,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
 
     ITrueRateAdjuster public rateAdjuster;
     ITrueFiCreditOracle public creditOracle;
-
+    IBorrowingMutex public borrowingMutex;
     // ======= STORAGE DECLARATION END ============
 
     /**
@@ -51,6 +52,8 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
 
     event RateAdjusterChanged(ITrueRateAdjuster rateAdjuster);
 
+    event BorrowingMutexChanged(IBorrowingMutex borrowingMutex);
+
     /**
      * @dev Initialize this contract and set currency token
      * @param _poolFactory PoolFactory address
@@ -62,7 +65,8 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         address _lender,
         address _liquidator,
         ITrueRateAdjuster _rateAdjuster,
-        ITrueFiCreditOracle _creditOracle
+        ITrueFiCreditOracle _creditOracle,
+        IBorrowingMutex _borrowingMutex
     ) external initializer {
         poolFactory = _poolFactory;
         lender = _lender;
@@ -70,6 +74,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         liquidator = _liquidator;
         rateAdjuster = _rateAdjuster;
         creditOracle = _creditOracle;
+        borrowingMutex = _borrowingMutex;
     }
 
     modifier onlyAdmin() {
@@ -100,14 +105,18 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     function createLoanToken(
         ITrueFiPool2 _pool,
         uint256 _amount,
-        uint256 _term
+        uint256 _term,
+        uint256 _maxApy
     ) external override {
         require(_amount > 0, "LoanFactory: Loans of amount 0, will not be approved");
         require(_term > 0, "LoanFactory: Loans cannot have instantaneous term of repay");
         require(poolFactory.isPool(address(_pool)), "LoanFactory: Pool was not created by PoolFactory");
 
         uint256 apy = rate(_pool, msg.sender, _amount, _term);
-        address newToken = address(new LoanToken2(_pool, msg.sender, lender, admin, liquidator, _amount, _term, apy));
+
+        require(apy <= _maxApy, "LoanFactory: Calculated apy is higher than max apy");
+
+        address newToken = address(new LoanToken2(_pool, borrowingMutex, msg.sender, lender, admin, liquidator, _amount, _term, apy));
         isLoanToken[newToken] = true;
 
         emit LoanTokenCreated(newToken);
@@ -121,5 +130,10 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     function setRateAdjuster(ITrueRateAdjuster _rateAdjuster) external onlyAdmin {
         rateAdjuster = _rateAdjuster;
         emit RateAdjusterChanged(_rateAdjuster);
+    }
+
+    function setBorrowingMutex(IBorrowingMutex _mutex) external onlyAdmin {
+        borrowingMutex = _mutex;
+        emit BorrowingMutexChanged(_mutex);
     }
 }

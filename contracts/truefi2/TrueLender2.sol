@@ -19,6 +19,7 @@ import {ITrueRatingAgency} from "../truefi/interface/ITrueRatingAgency.sol";
 import {IERC20WithDecimals} from "./interface/IERC20WithDecimals.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
 import {ITrueCreditAgency} from "./interface/ITrueCreditAgency.sol";
+import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
 
 /**
  * @title TrueLender v2.0
@@ -91,6 +92,9 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     uint8 public longTermLoanScoreThreshold;
 
     ITrueCreditAgency public creditAgency;
+
+    // mutex ensuring there's only one running loan or credit line for borrower
+    IBorrowingMutex public borrowingMutex;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -169,6 +173,12 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     event Reclaimed(address indexed pool, address loanToken, uint256 amount);
 
     /**
+     * @dev Emitted when borrowingMutex address is changed
+     * @param borrowingMutex new borrowingMutex address
+     */
+    event BorrowingMutexChanged(IBorrowingMutex borrowingMutex);
+
+    /**
      * @dev Can be only called by a pool
      */
     modifier onlyPool() {
@@ -189,7 +199,8 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         ITrueRatingAgency _ratingAgency,
         I1Inch3 __1inch,
         ITrueFiCreditOracle _creditOracle,
-        ITrueCreditAgency _creditAgency
+        ITrueCreditAgency _creditAgency,
+        IBorrowingMutex _borrowingMutex
     ) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
 
@@ -199,6 +210,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         _1inch = __1inch;
         creditOracle = _creditOracle;
         creditAgency = _creditAgency;
+        borrowingMutex = _borrowingMutex;
 
         swapFeeSlippage = 100; // 1%
         minVotes = 15 * (10**6) * (10**8);
@@ -219,6 +231,15 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     function setCreditOracle(ITrueFiCreditOracle _creditOracle) external onlyOwner {
         creditOracle = _creditOracle;
         emit CreditOracleChanged(_creditOracle);
+    }
+
+    /**
+     * @dev set borrowingMutex
+     * @param newMutex borrowing mutex address to be set
+     */
+    function setBorrowingMutex(IBorrowingMutex newMutex) public onlyOwner {
+        borrowingMutex = newMutex;
+        emit BorrowingMutexChanged(newMutex);
     }
 
     /**
@@ -334,6 +355,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         require(factory.isPool(address(pool)), "TrueLender: Pool not created by the factory");
         require(loanToken.token() == pool.token(), "TrueLender: Loan and pool token mismatch");
         require(poolLoans[pool].length < maxLoans, "TrueLender: Loans number has reached the limit");
+        require(borrowingMutex.isUnlocked(msg.sender), "TrueLender: There is an ongoing loan or credit line");
 
         uint256 amount = loanToken.amount();
         (uint256 start, uint256 no, uint256 yes) = ratingAgency.getResults(address(loanToken));
@@ -350,6 +372,8 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         pool.borrow(amount);
         pool.token().safeApprove(address(loanToken), amount);
         loanToken.fund();
+
+        borrowingMutex.lock(msg.sender, address(loanToken));
 
         emit Funded(address(pool), address(loanToken), amount);
     }

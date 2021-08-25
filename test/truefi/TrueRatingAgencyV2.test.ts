@@ -33,7 +33,7 @@ import {
   LoanToken2Deprecated,
   LoanToken2Deprecated__factory,
   TestUsdcToken,
-  TestUsdcToken__factory,
+  TestUsdcToken__factory, BorrowingMutex, BorrowingMutex__factory,
 } from 'contracts'
 
 import {
@@ -58,6 +58,7 @@ describe('TrueRatingAgencyV2', () => {
   let tusd: MockTrueCurrency
   let usdc: TestUsdcToken
   let mockFactory: MockContract
+  let borrowingMutex: BorrowingMutex
 
   const fakeLoanTokenAddress = '0x156b86b8983CC7865076B179804ACC277a1E78C4'
   const stake = parseTRU(1e7)
@@ -70,7 +71,7 @@ describe('TrueRatingAgencyV2', () => {
     gasLimit: 6_000_000,
   }
 
-  let timeTravel: (time: number) => void
+  let timeTravel: (time: number) => Promise<void>
 
   beforeEachWithFixture(async (_wallets, _provider) => {
     [owner, otherWallet, liquidator] = _wallets
@@ -119,6 +120,10 @@ describe('TrueRatingAgencyV2', () => {
     await stakedTrustToken.stake(stake)
 
     await rater.allowChangingAllowances(owner.address, true)
+
+    borrowingMutex = await new BorrowingMutex__factory(owner).deploy()
+    await borrowingMutex.initialize()
+    await borrowingMutex.allowLocker(owner.address, true)
   })
 
   const submit = async (loanTokenAddress: string, wallet = owner) =>
@@ -530,7 +535,7 @@ describe('TrueRatingAgencyV2', () => {
         await trustToken.mint(otherWallet.address, parseTRU(1e8))
         await trustToken.connect(otherWallet).approve(stakedTrustToken.address, parseTRU(1e8))
         await stakedTrustToken.connect(otherWallet).stake(parseTRU(1e8))
-        timeTravel(1)
+        await timeTravel(1)
 
         await rater.setRewardMultiplier(rewardMultiplier)
         await tusd.approve(loanToken.address, parseEth(5e6))
@@ -703,6 +708,7 @@ describe('TrueRatingAgencyV2', () => {
         await usdcPool.initialize(usdc.address, AddressZero, AddressZero, AddressZero)
         loanToken2 = await new LoanToken2__factory(owner).deploy(
           usdcPool.address,
+          borrowingMutex.address,
           owner.address,
           owner.address,
           owner.address,
@@ -711,11 +717,11 @@ describe('TrueRatingAgencyV2', () => {
           yearInSeconds * 2,
           100,
         )
-
+        await borrowingMutex.lock(owner.address, loanToken2.address)
         await trustToken.mint(otherWallet.address, parseTRU(1e8))
         await trustToken.connect(otherWallet).approve(stakedTrustToken.address, parseTRU(1e8))
         await stakedTrustToken.connect(otherWallet).stake(parseTRU(1e8))
-        timeTravel(1)
+        await timeTravel(1)
 
         await rater.setRewardMultiplier(rewardMultiplier)
         await usdc.approve(loanToken2.address, parseEth(5e6))
@@ -900,7 +906,7 @@ describe('TrueRatingAgencyV2', () => {
         await trustToken.mint(otherWallet.address, parseTRU(1e8))
         await trustToken.connect(otherWallet).approve(stakedTrustToken.address, parseTRU(1e8))
         await stakedTrustToken.connect(otherWallet).stake(parseTRU(1e8))
-        timeTravel(1)
+        await timeTravel(1)
 
         await rater.setRewardMultiplier(rewardMultiplier)
         await usdc.approve(loanToken2.address, parseEth(5e6))

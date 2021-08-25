@@ -2,7 +2,7 @@ import { expect, use } from 'chai'
 import { BigNumber, constants, Wallet } from 'ethers'
 import { deployMockContract, MockContract, MockProvider, solidity } from 'ethereum-waffle'
 
-import { beforeEachWithFixture, DAY, expectScaledCloseTo, parseEth, parseTRU, timeTravel } from 'utils'
+import { beforeEachWithFixture, DAY, expectScaledCloseTo, MAX_APY, parseEth, parseTRU, timeTravel } from 'utils'
 import { setupCreditAgency } from 'utils/setupCreditAgency'
 
 import {
@@ -33,6 +33,7 @@ import {
   MockTrueFiPoolOracle__factory,
   Safu,
   Safu__factory,
+  BorrowingMutex__factory,
 } from 'contracts'
 import { ICurveGaugeJson, ICurveMinterJson, TrueRatingAgencyV2Json } from 'build'
 import { AddressZero } from '@ethersproject/constants'
@@ -501,10 +502,11 @@ describe('TrueFiPool', () => {
 
     const factory = await new PoolFactory__factory(owner).deploy()
     const lender2 = await new TrueLender2__factory(owner).deploy()
-
     const creditAgency = await setupCreditAgency(owner, pool)
-
-    await lender2.initialize(mockStakingPool.address, factory.address, mockRatingAgency.address, AddressZero, AddressZero, creditAgency.address)
+    const borrowingMutex = await new BorrowingMutex__factory(owner).deploy()
+    await borrowingMutex.initialize()
+    await borrowingMutex.allowLocker(lender2.address, true)
+    await lender2.initialize(mockStakingPool.address, factory.address, mockRatingAgency.address, AddressZero, AddressZero, creditAgency.address, borrowingMutex.address)
     await factory.initialize(implementationReference.address, lender2.address, safu.address)
     await factory.addLegacyPool(pool.address)
     const usdc = await new MockErc20Token__factory(owner).deploy()
@@ -515,14 +517,14 @@ describe('TrueFiPool', () => {
     await pool.setLender2(lender2.address)
     const loanFactory2 = await new LoanFactory2__factory(owner).deploy()
     const liquidator2 = await new Liquidator2__factory(owner).deploy()
-    await loanFactory2.initialize(factory.address, lender2.address, liquidator2.address, AddressZero, AddressZero)
+    await loanFactory2.initialize(factory.address, lender2.address, liquidator2.address, AddressZero, AddressZero, borrowingMutex.address)
     await liquidator2.initialize(mockStakingPool.address, trustToken.address, loanFactory2.address, owner.address)
 
     return { lender2, loanFactory2, liquidator2 }
   }
 
   async function fundLoan (loanFactory2: LoanFactory2, lender2: TrueLender2) {
-    const tx = await (await loanFactory2.createLoanToken(pool.address, 1000, DAY)).wait()
+    const tx = await (await loanFactory2.createLoanToken(pool.address, 1000, DAY, MAX_APY)).wait()
     const newLoanAddress = tx.events[0].args.contractAddress
     const loan = LoanToken2__factory.connect(newLoanAddress, owner)
     await mockRatingAgency.mock.getResults.returns(0, 0, parseEth(100))

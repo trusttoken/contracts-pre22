@@ -72,7 +72,7 @@ describe('TrueRatingAgencyV2', () => {
     gasLimit: 6_000_000,
   }
 
-  let timeTravel: (time: number) => void
+  let timeTravel: (time: number) => Promise<void>
 
   beforeEachWithFixture(async (_wallets, _provider) => {
     [owner, otherWallet] = _wallets
@@ -298,7 +298,7 @@ describe('TrueRatingAgencyV2', () => {
     })
 
     it('reverts if token was not created with LoanFactory', async () => {
-      const fakeLoanToken = await new LoanToken2__factory(owner).deploy(tusdPool.address, owner.address, owner.address, owner.address, liquidator.address, 5_000_000, yearInSeconds * 2, 1000)
+      const fakeLoanToken = await new LoanToken2__factory(owner).deploy(tusdPool.address, AddressZero, owner.address, owner.address, owner.address, liquidator.address, 5_000_000, yearInSeconds * 2, 1000)
       await expect(submit(fakeLoanToken.address)).to.be.revertedWith('TrueRatingAgencyV2: Only LoanTokens created via LoanFactory are supported')
     })
 
@@ -525,7 +525,7 @@ describe('TrueRatingAgencyV2', () => {
       await trustToken.mint(otherWallet.address, parseTRU(15e7))
       await trustToken.connect(otherWallet).approve(stakedTrustToken.address, parseTRU(15e7))
       await stakedTrustToken.connect(otherWallet).stake(parseTRU(15e7))
-      timeTravel(1)
+      await timeTravel(1)
 
       await rater.setRewardMultiplier(rewardMultiplier)
       await tusd.approve(loanToken.address, parseEth(5e6))

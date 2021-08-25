@@ -321,6 +321,11 @@ describe('TrueMultiFarm', () => {
       await farm.setShares([secondToken.address], [3], txArgs)
     })
 
+    it('getShare shows pool shares', async () => {
+      expect(await farm.getShare(firstToken.address)).to.equal(1)
+      expect(await farm.getShare(secondToken.address)).to.equal(3)
+    })
+
     describe('one staker', () => {
       beforeEach(async () => {
         await timeTravelTo(provider, start)

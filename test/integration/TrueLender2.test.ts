@@ -1,21 +1,22 @@
 import { forkChain } from './suite'
 import { setupDeploy } from 'scripts/utils'
 import {
-  MockUsdStableCoinOracle__factory,
+  BorrowingMutex, BorrowingMutex__factory,
   Erc20Mock,
   Erc20Mock__factory,
   ImplementationReference__factory,
-  TrueFiPool2,
-  TrueFiPool2__factory,
-  TrueLender2,
-  TrueLender2__factory,
-  PoolFactory__factory,
   LoanFactory2,
   LoanFactory2__factory,
   LoanToken2,
   LoanToken2__factory,
+  MockUsdStableCoinOracle__factory,
+  PoolFactory__factory,
+  TrueFiPool2,
+  TrueFiPool2__factory,
+  TrueLender2,
+  TrueLender2__factory,
 } from 'contracts'
-import { DAY, parseEth, parseTRU } from 'utils'
+import { DAY, MAX_APY, parseEth, parseTRU } from 'utils'
 import fetch from 'node-fetch'
 import { expect, use } from 'chai'
 import { deployMockContract, MockContract, solidity } from 'ethereum-waffle'
@@ -56,6 +57,7 @@ describe('TrueLender2', () => {
   let usdc: Erc20Mock
   let usdt: Erc20Mock
   let loan: LoanToken2
+  let borrowingMutex: BorrowingMutex
 
   beforeEach(async () => {
     stkTru = Wallet.createRandom()
@@ -72,8 +74,11 @@ describe('TrueLender2', () => {
     await mockCreditOracle.mock.score.returns(255)
     mockCreditAgency = await deployMockContract(owner, TrueCreditAgencyJson.abi)
 
+    borrowingMutex = await deployContract(BorrowingMutex__factory)
+    await borrowingMutex.initialize()
+
     lender = await deployContract(TrueLender2__factory)
-    await lender.initialize(stkTru.address, poolFactory.address, mockRatingAgency.address, INCH_ADDRESS, AddressZero, mockCreditAgency.address)
+    await lender.initialize(stkTru.address, poolFactory.address, mockRatingAgency.address, INCH_ADDRESS, AddressZero, mockCreditAgency.address, borrowingMutex.address)
 
     await poolFactory.initialize(implementationReference.address, lender.address, AddressZero)
 
@@ -97,11 +102,12 @@ describe('TrueLender2', () => {
     await mockCreditAgency.mock.borrowLimit.withArgs(usdtLoanPool.address, OWNER).returns(parseEth(100_000_000))
 
     loanFactory = await new LoanFactory2__factory(owner).deploy()
-    await loanFactory.initialize(poolFactory.address, lender.address, AddressZero, mockRateAdjuster.address, mockCreditOracle.address)
+    await loanFactory.initialize(poolFactory.address, lender.address, AddressZero, mockRateAdjuster.address, mockCreditOracle.address, borrowingMutex.address)
+    await borrowingMutex.allowLocker(lender.address, true)
   })
 
   it('[Skip CI] ensure max 1% swap fee slippage', async () => {
-    const tx = await loanFactory.createLoanToken(tusdLoanPool.address, parseEth(100000), DAY * 365)
+    const tx = await loanFactory.createLoanToken(tusdLoanPool.address, parseEth(100000), DAY * 365, MAX_APY)
     const creationEvent = (await tx.wait()).events[0]
     const { contractAddress } = creationEvent.args
 
@@ -126,7 +132,7 @@ describe('TrueLender2', () => {
   })
 
   it('funds tether loan tokens', async () => {
-    const tx = await loanFactory.createLoanToken(usdtLoanPool.address, 10_000_000, DAY * 50)
+    const tx = await loanFactory.createLoanToken(usdtLoanPool.address, 10_000_000, DAY * 50, MAX_APY)
     const creationEvent = (await tx.wait()).events[0]
     const { contractAddress } = creationEvent.args
 

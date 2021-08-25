@@ -1,16 +1,22 @@
 import { contract, createProxy, deploy, runIf } from 'ethereum-mars'
 import {
+  BorrowingMutex,
+  ChainlinkTruTusdOracle,
+  ChainlinkTruUsdcOracle,
+  ChainlinkTruUsdtOracle,
   ImplementationReference,
   LinearTrueDistributor,
   Liquidator2,
-  LoanFactory2, Mock1InchV3,
-  TestUSDCToken,
-  TestUSDTToken,
+  LoanFactory2,
+  Mock1InchV3,
   OwnedUpgradeabilityProxy,
   PoolFactory,
+  SAFU,
   StkTruToken,
   TestTrueFiPool,
   TestTrustToken,
+  TestUSDCToken,
+  TestUSDTToken,
   TimeOwnedUpgradeabilityProxy,
   TrueFarm,
   TrueFiCreditOracle,
@@ -19,10 +25,8 @@ import {
   TrueLender2,
   TrueRatingAgencyV2,
   TrustToken,
-  ChainlinkTruUsdcOracle,
-  SAFU,
 } from '../build/artifacts'
-import { utils, BigNumber } from 'ethers'
+import { BigNumber, utils } from 'ethers'
 import { AddressZero } from '@ethersproject/constants'
 
 const DAY = 60 * 60 * 24
@@ -81,6 +85,7 @@ deploy({}, (_, config) => {
   const usdt_TrueFiPool2_LinearTrueDistributor_impl = contract('usdt_TrueFiPool2_LinearTrueDistributor', LinearTrueDistributor)
   const usdt_TrueFiPool2_TrueFarm_impl = contract('usdt_TrueFiPool2_TrueFarm', TrueFarm)
   const trueFiCreditOracle_impl = contract(TrueFiCreditOracle)
+  const borrowingMutex_impl = contract(BorrowingMutex)
 
   // New contract proxies
   const trueLender2 = proxy(trueLender2_impl, () => {})
@@ -93,10 +98,13 @@ deploy({}, (_, config) => {
   const usdt_TrueFiPool2_TrueFarm = proxy(usdt_TrueFiPool2_TrueFarm_impl, () => {})
   const trueFiCreditOracle = proxy(trueFiCreditOracle_impl, () => {})
   const safu = proxy(safu_impl, () => {})
+  const borrowingMutex = proxy(borrowingMutex_impl, () => {})
   // New bare contracts
   const trueFiPool2 = contract(TrueFiPool2)
   const implementationReference = contract(ImplementationReference, [trueFiPool2])
+  const chainlinkTruTusdOracle = contract(ChainlinkTruTusdOracle)
   const chainlinkTruUsdcOracle = contract(ChainlinkTruUsdcOracle)
+  const chainlinkTruUsdtOracle = contract(ChainlinkTruUsdtOracle)
   const oneInch = isMainnet ? ONE_INCH_EXCHANGE : contract(Mock1InchV3)
 
   // Contract initialization
@@ -107,13 +115,13 @@ deploy({}, (_, config) => {
     poolFactory.initialize(implementationReference, trueLender2, safu)
   })
   runIf(trueLender2.isInitialized().not(), () => {
-    trueLender2.initialize(stkTruToken, poolFactory, trueRatingAgencyV2, oneInch, trueFiCreditOracle, AddressZero)
+    trueLender2.initialize(stkTruToken, poolFactory, trueRatingAgencyV2, oneInch, trueFiCreditOracle, AddressZero, borrowingMutex)
   })
   runIf(trueLender2.votingPeriod().equals(deployParams[NETWORK].WITHDRAW_PERIOD).not(), () => {
     trueLender2.setVotingPeriod(deployParams[NETWORK].WITHDRAW_PERIOD)
   })
   runIf(loanFactory2.isInitialized().not(), () => {
-    loanFactory2.initialize(poolFactory, trueLender2, liquidator2, AddressZero, AddressZero)
+    loanFactory2.initialize(poolFactory, trueLender2, liquidator2, AddressZero, trueFiCreditOracle, borrowingMutex)
   })
   runIf(liquidator2.isInitialized().not(), () => {
     liquidator2.initialize(stkTruToken, trustToken, loanFactory2, AddressZero)

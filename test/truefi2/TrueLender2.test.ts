@@ -1,33 +1,40 @@
 import { expect, use } from 'chai'
-import { beforeEachWithFixture, createLoan, DAY, parseEth, parseTRU, parseUSDC, setupTruefi2, timeTravel as _timeTravel } from 'utils'
+import {
+  beforeEachWithFixture,
+  createLoan,
+  DAY,
+  parseEth,
+  parseTRU,
+  parseUSDC,
+  setupTruefi2,
+  timeTravel as _timeTravel,
+} from 'utils'
 import { deployContract } from 'scripts/utils/deployContract'
 import {
+  BorrowingMutex,
+  LoanFactory2,
   LoanToken2,
   LoanToken2__factory,
+  Mock1InchV3,
+  Mock1InchV3__factory,
   MockErc20Token,
   MockErc20Token__factory,
-  TrueFiPool2,
-  TrueFiPool2__factory,
-  TestTrueLender,
-  TestTrueLender__factory,
-  TrueRatingAgencyV2,
+  MockTrueCurrency,
+  MockTrueFiPoolOracle,
+  MockUsdc,
   PoolFactory,
   StkTruToken,
-  Mock1InchV3__factory,
-  Mock1InchV3,
-  LoanFactory2,
-  MockTrueFiPoolOracle,
-  MockTrueCurrency,
-  MockUsdc,
+  TestTrueLender,
+  TestTrueLender__factory,
   TrueFiCreditOracle,
   TrueFiCreditOracle__factory,
   TrueCreditAgency,
+  TrueFiPool2,
+  TrueFiPool2__factory,
+  TrueRatingAgencyV2,
 } from 'contracts'
 
-import {
-  Mock1InchV3Json,
-  LoanToken2Json,
-} from 'build'
+import { BorrowingMutexJson, LoanToken2Json, Mock1InchV3Json } from 'build'
 
 import { deployMockContract, solidity } from 'ethereum-waffle'
 import { AddressZero } from '@ethersproject/constants'
@@ -62,6 +69,7 @@ describe('TrueLender2', () => {
   let tru: MockTrueCurrency
   let usdc: MockUsdc
   let oneInch: Mock1InchV3
+  let borrowingMutex: BorrowingMutex
 
   const YEAR = DAY * 365
 
@@ -86,6 +94,7 @@ describe('TrueLender2', () => {
       lender,
       creditOracle,
       creditAgency,
+      borrowingMutex,
     } = await setupTruefi2(owner, _provider, { lender: lender, oneInch: oneInch }))
 
     token1 = await deployContract(owner, MockErc20Token__factory)
@@ -325,6 +334,23 @@ describe('TrueLender2', () => {
       })
     })
 
+    describe('setBorrowingMutex', () => {
+      it('changes borrowingMutex', async () => {
+        await lender.setBorrowingMutex(AddressZero)
+        expect(await lender.borrowingMutex()).to.equal(AddressZero)
+      })
+
+      it('emits BorrowingMutexChanged', async () => {
+        await expect(lender.setBorrowingMutex(AddressZero))
+          .to.emit(lender, 'BorrowingMutexChanged').withArgs(AddressZero)
+      })
+
+      it('must be called by owner', async () => {
+        await expect(lender.connect(borrower).setBorrowingMutex(AddressZero))
+          .to.be.revertedWith('Ownable: caller is not the owner')
+      })
+    })
+
     describe('setVotingPeriod', () => {
       it('changes votingPeriod', async () => {
         await lender.setVotingPeriod(DAY * 3)
@@ -370,6 +396,7 @@ describe('TrueLender2', () => {
       it('loan was created for unknown pool', async () => {
         const badLoan = await deployContract(owner, LoanToken2__factory, [
           counterfeitPool.address,
+          AddressZero,
           borrower.address,
           lender.address,
           owner.address,
@@ -449,6 +476,13 @@ describe('TrueLender2', () => {
         await expect(lender.connect(borrower).fund(badLoan.address))
           .to.be.revertedWith('TrueLender: Loan amount cannot exceed borrow limit')
       })
+
+      it('taking new loans is locked by mutex', async () => {
+        await borrowingMutex.allowLocker(owner.address, true)
+        await borrowingMutex.lock(borrower.address, owner.address)
+        await expect(lender.connect(borrower).fund(loan1.address))
+          .to.be.revertedWith('TrueLender: There is an ongoing loan or credit line')
+      })
     })
 
     describe('all requirements are met', () => {
@@ -477,6 +511,11 @@ describe('TrueLender2', () => {
           .and.to.emit(token1, 'Transfer')
           .withArgs(lender.address, loan1.address, 100000)
         expect(await loan1.balance()).to.equal(100000)
+      })
+
+      it('locks borrowing mutex', async () => {
+        await lender.connect(borrower).fund(loan1.address)
+        expect(await borrowingMutex.locker(borrower.address)).to.equal(loan1.address)
       })
 
       it('emits event', async () => {
@@ -536,12 +575,15 @@ describe('TrueLender2', () => {
 
   describe('value', () => {
     beforeEach(async () => {
+      const mockMutex = await deployMockContract(owner, BorrowingMutexJson.abi)
+      await lender.setBorrowingMutex(mockMutex.address)
+      await mockMutex.mock.isUnlocked.returns(true)
+      await mockMutex.mock.lock.returns()
       const newLoan1 = await createLoan(loanFactory, borrower, pool1, 100000, DAY, 100)
 
       await approveLoanRating(newLoan1)
       await approveLoanRating(loan1)
       await approveLoanRating(loan2)
-
       await lender.connect(borrower).fund(loan1.address)
       await lender.connect(borrower).fund(newLoan1.address)
       await lender.connect(borrower).fund(loan2.address)
@@ -628,6 +670,13 @@ describe('TrueLender2', () => {
     describe('Removes loan from array', () => {
       let newLoan1: LoanToken2
       beforeEach(async () => {
+        const mockMutex = await deployMockContract(owner, BorrowingMutexJson.abi)
+        await lender.setBorrowingMutex(mockMutex.address)
+        await loanFactory.setBorrowingMutex(mockMutex.address)
+        await mockMutex.mock.isUnlocked.returns(true)
+        await mockMutex.mock.lock.returns()
+        await mockMutex.mock.unlock.returns()
+
         await payBack(token1, loan1)
         await loan1.settle()
 
@@ -665,6 +714,13 @@ describe('TrueLender2', () => {
       let fee: BigNumber
       let newLoan1: LoanToken2
       beforeEach(async () => {
+        const mockMutex = await deployMockContract(owner, BorrowingMutexJson.abi)
+        await lender.setBorrowingMutex(mockMutex.address)
+        await loanFactory.setBorrowingMutex(mockMutex.address)
+        await mockMutex.mock.isUnlocked.returns(true)
+        await mockMutex.mock.lock.returns()
+        await mockMutex.mock.unlock.returns()
+
         newLoan1 = await createLoan(loanFactory, borrower, pool1, parseEth(100000), YEAR, 100)
         await approveLoanRating(newLoan1)
         await lender.connect(borrower).fund(newLoan1.address)
@@ -744,6 +800,13 @@ describe('TrueLender2', () => {
     const loanTokens: LoanToken2[] = []
 
     beforeEach(async () => {
+      const mockMutex = await deployMockContract(owner, BorrowingMutexJson.abi)
+      await lender.setBorrowingMutex(mockMutex.address)
+      await loanFactory.setBorrowingMutex(mockMutex.address)
+      await mockMutex.mock.isUnlocked.returns(true)
+      await mockMutex.mock.lock.returns()
+      await mockMutex.mock.unlock.returns()
+
       for (let i = 0; i < 5; i++) {
         const newLoan1 = await createLoan(loanFactory, borrower, pool1, 100000, DAY, 100)
 

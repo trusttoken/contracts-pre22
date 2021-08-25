@@ -1,7 +1,7 @@
 import { expect, use } from 'chai'
 import { BigNumber, BigNumberish, Wallet } from 'ethers'
 
-import { beforeEachWithFixture, parseEth, setupTruefi2 } from 'utils'
+import { beforeEachWithFixture, DAY, MAX_APY, parseEth, setupTruefi2 } from 'utils'
 
 import {
   LoanFactory2,
@@ -19,6 +19,7 @@ import {
   MockTrueCurrency,
 } from 'contracts'
 import { solidity } from 'ethereum-waffle'
+import { AddressZero } from '@ethersproject/constants'
 
 use(solidity)
 
@@ -38,10 +39,8 @@ describe('LoanFactory2', () => {
   let creditOracle: TrueFiCreditOracle
   let borrowerCreditScore: number
 
-  const DAY = 60 * 60 * 24
-
   const createLoan = async (amount: BigNumberish, term: BigNumberish) => {
-    const tx = await loanFactory.connect(borrower).createLoanToken(pool.address, amount, term)
+    const tx = await loanFactory.connect(borrower).createLoanToken(pool.address, amount, term, MAX_APY)
     const creationEvent = (await tx.wait()).events[0]
     ;({ contractAddress } = creationEvent.args)
     return LoanToken2__factory.connect(contractAddress, owner)
@@ -98,19 +97,27 @@ describe('LoanFactory2', () => {
     })
 
     it('prevents 0 loans', async () => {
-      await expect(loanFactory.connect(borrower).createLoanToken(pool.address, 0, 100))
+      await expect(loanFactory.connect(borrower).createLoanToken(pool.address, 0, 100, MAX_APY))
         .to.be.revertedWith('LoanFactory: Loans of amount 0, will not be approved')
     })
 
     it('prevents 0 time loans', async () => {
-      await expect(loanFactory.connect(borrower).createLoanToken(pool.address, parseEth(123), 0))
+      await expect(loanFactory.connect(borrower).createLoanToken(pool.address, parseEth(123), 0, MAX_APY))
         .to.be.revertedWith('LoanFactory: Loans cannot have instantaneous term of repay')
     })
 
     it('prevents fake pool loans', async () => {
       const fakePool = await new TrueFiPool2__factory(owner).deploy()
-      await expect(loanFactory.connect(borrower).createLoanToken(fakePool.address, parseEth(123), 0))
-        .to.be.revertedWith('LoanFactory: Loans cannot have instantaneous term of repay')
+      await expect(loanFactory.connect(borrower).createLoanToken(fakePool.address, parseEth(123), DAY, MAX_APY))
+        .to.be.revertedWith('LoanFactory: Pool was not created by PoolFactory')
+    })
+
+    it('prevents apy higer than limit', async () => {
+      await expect(loanFactory.connect(borrower).createLoanToken(pool.address, parseEth(1_000), 15 * DAY, 510))
+        .to.be.revertedWith('LoanFactory: Calculated apy is higher than max apy')
+
+      await expect(loanFactory.connect(borrower).createLoanToken(pool.address, parseEth(1_000), 15 * DAY, 511))
+        .not.to.be.reverted
     })
 
     describe('apy is set properly', () => {
@@ -214,6 +221,26 @@ describe('LoanFactory2', () => {
       await expect(loanFactory.setRateAdjuster(fakeRateAdjuster.address))
         .to.emit(loanFactory, 'RateAdjusterChanged')
         .withArgs(fakeRateAdjuster.address)
+    })
+  })
+
+  describe('setBorrowingMutex', () => {
+    it('only admin can call', async () => {
+      await expect(loanFactory.connect(owner).setBorrowingMutex(AddressZero))
+        .not.to.be.reverted
+      await expect(loanFactory.connect(borrower).setBorrowingMutex(AddressZero))
+        .to.be.revertedWith('LoanFactory: Caller is not the admin')
+    })
+
+    it('changes borrowingMutex', async () => {
+      await loanFactory.setBorrowingMutex(AddressZero)
+      expect(await loanFactory.borrowingMutex()).to.eq(AddressZero)
+    })
+
+    it('emits event', async () => {
+      await expect(loanFactory.setBorrowingMutex(AddressZero))
+        .to.emit(loanFactory, 'BorrowingMutexChanged')
+        .withArgs(AddressZero)
     })
   })
 })
