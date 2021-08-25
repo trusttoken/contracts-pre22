@@ -71,7 +71,7 @@ describe('TrueLender2', () => {
     await borrowingMutex.initialize()
 
     lender = await deployContract(TrueLender2__factory)
-    await lender.initialize(stkTru.address, poolFactory.address, mockRatingAgency.address, INCH_ADDRESS, AddressZero, borrowingMutex.address)
+    await lender.initialize(stkTru.address, poolFactory.address, INCH_ADDRESS, AddressZero, borrowingMutex.address)
 
     await poolFactory.initialize(implementationReference.address, lender.address, AddressZero)
 

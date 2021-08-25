@@ -136,18 +136,11 @@ describe('TrueLender2', () => {
       expect(await lender.factory()).to.equal(poolFactory.address)
     })
 
-    it('sets the rating agency address', async () => {
-      expect(await lender.ratingAgency()).to.equal(rater.address)
-    })
-
     it('sets credit oracle address', async () => {
       expect(await lender.creditOracle()).to.equal(creditOracle.address)
     })
 
     it('default params', async () => {
-      expect(await lender.minVotes()).to.equal(parseTRU(15e6))
-      expect(await lender.minRatio()).to.equal(8000)
-      expect(await lender.votingPeriod()).to.equal(DAY * 7)
       expect(await lender.maxLoans()).to.equal(100)
       expect(await lender.maxLoanTerm()).to.equal(YEAR * 10)
       expect(await lender.longTermLoanThreshold()).to.equal(YEAR * 10)
@@ -156,45 +149,6 @@ describe('TrueLender2', () => {
   })
 
   describe('Parameters set up', () => {
-    describe('setMinVotes', () => {
-      it('changes minVotes', async () => {
-        await lender.setMinVotes(1234)
-        expect(await lender.minVotes()).to.equal(1234)
-      })
-
-      it('emits MinVotesChanged', async () => {
-        await expect(lender.setMinVotes(1234))
-          .to.emit(lender, 'MinVotesChanged').withArgs(1234)
-      })
-
-      it('must be called by owner', async () => {
-        await expect(lender.connect(borrower).setMinVotes(1234))
-          .to.be.revertedWith('Ownable: caller is not the owner')
-      })
-    })
-
-    describe('setMinRatio', () => {
-      it('changes minRatio', async () => {
-        await lender.setMinRatio(1234)
-        expect(await lender.minRatio()).to.equal(1234)
-      })
-
-      it('forbids setting above 100%', async () => {
-        await expect(lender.setMinRatio(10001))
-          .to.be.revertedWith('TrueLender: minRatio cannot be more than 100%')
-      })
-
-      it('emits MinRatioChanged', async () => {
-        await expect(lender.setMinRatio(1234))
-          .to.emit(lender, 'MinRatioChanged').withArgs(1234)
-      })
-
-      it('must be called by owner', async () => {
-        await expect(lender.connect(borrower).setMinRatio(1234))
-          .to.be.revertedWith('Ownable: caller is not the owner')
-      })
-    })
-
     describe('setMaxLoanTerm', () => {
       it('changes maxLoanTerm', async () => {
         await lender.setMaxLoanTerm(DAY)
@@ -330,23 +284,6 @@ describe('TrueLender2', () => {
       })
     })
 
-    describe('setVotingPeriod', () => {
-      it('changes votingPeriod', async () => {
-        await lender.setVotingPeriod(DAY * 3)
-        expect(await lender.votingPeriod()).to.equal(DAY * 3)
-      })
-
-      it('emits VotingPeriodChanged', async () => {
-        await expect(lender.setVotingPeriod(DAY * 3))
-          .to.emit(lender, 'VotingPeriodChanged').withArgs(DAY * 3)
-      })
-
-      it('must be called by owner', async () => {
-        await expect(lender.connect(borrower).setVotingPeriod(DAY * 3))
-          .to.be.revertedWith('Ownable: caller is not the owner')
-      })
-    })
-
     describe('Setting loans limit', () => {
       it('reverts when performed by non-owner', async () => {
         await expect(lender.connect(borrower).setLoansLimit(0))
@@ -392,38 +329,6 @@ describe('TrueLender2', () => {
         await approveLoanRating(loan1)
         await lender.connect(borrower).fund(loan1.address)
         await expect(lender.connect(borrower).fund(loan1.address)).to.be.revertedWith('TrueLender: Loans number has reached the limit')
-      })
-
-      it('loan was not long enough under voting', async () => {
-        await rater.connect(borrower).submit(loan1.address)
-        await rater.yes(loan1.address)
-        await timeTravel(6 * DAY)
-
-        await expect(lender.connect(borrower).fund(loan1.address))
-          .to.be.revertedWith('TrueLender: Voting time is below minimum')
-      })
-
-      it('votes threshold has not been reached', async () => {
-        await tru.mint(borrower.address, parseTRU(15e6))
-        await tru.connect(borrower).approve(stkTru.address, parseTRU(15e6))
-        await stkTru.connect(borrower).stake(parseTRU(14e6))
-        await timeTravel(1)
-
-        await rater.connect(borrower).submit(loan1.address)
-        await rater.connect(borrower).yes(loan1.address)
-        await timeTravel(7 * DAY + 1)
-
-        await expect(lender.connect(borrower).fund(loan1.address))
-          .to.be.revertedWith('TrueLender: Not enough votes given for the loan')
-      })
-
-      it('loan is predicted to be too risky', async () => {
-        await rater.connect(borrower).submit(loan1.address)
-        await rater.no(loan1.address)
-        await timeTravel(7 * DAY + 1)
-
-        await expect(lender.connect(borrower).fund(loan1.address))
-          .to.be.revertedWith('TrueLender: Loan risk is too high')
       })
 
       it('loan term exceeds max term', async () => {
@@ -493,53 +398,6 @@ describe('TrueLender2', () => {
         await expect(lender.connect(borrower).fund(loan1.address))
           .to.emit(lender, 'Funded')
           .withArgs(pool1.address, loan1.address, 100000)
-      })
-    })
-
-    describe('complex credibility cases', () => {
-      interface LoanScenario {
-        yesVotes: BigNumber,
-        noVotes: BigNumber,
-      }
-
-      const scenario = (yes: number, no: number) => ({
-        yesVotes: parseTRU(BigNumber.from(yes)),
-        noVotes: parseTRU(BigNumber.from(no)),
-      })
-
-      const loanIsCredible = async (loanScenario: LoanScenario) => {
-        return await lender.loanIsCredible(
-          loanScenario.yesVotes,
-          loanScenario.noVotes,
-        ) && lender.votesThresholdReached(
-          loanScenario.yesVotes.add(loanScenario.noVotes),
-        )
-      }
-
-      describe('approvals', () => {
-        const approvedLoanScenarios = [
-          scenario(40e6, 10e6),
-          scenario(12e6, 3e6),
-        ]
-
-        approvedLoanScenarios.forEach((loanScenario, index) => {
-          it(`approved loan case #${index + 1}`, async () => {
-            expect(await loanIsCredible(loanScenario)).to.be.true
-          })
-        })
-      })
-
-      describe('rejections', () => {
-        const rejectedLoanScenarios = [
-          scenario(40e6, 11e6),
-          scenario(14e6, 9e5),
-        ]
-
-        rejectedLoanScenarios.forEach((loanScenario, index) => {
-          it(`rejected loan case #${index + 1}`, async () => {
-            expect(await loanIsCredible(loanScenario)).to.be.false
-          })
-        })
       })
     })
   })
