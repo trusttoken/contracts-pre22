@@ -3,18 +3,16 @@ import {
   LoanFactory2,
   MockTrueCurrency,
   MockUsdc,
-  StkTruToken,
   TimeAveragedBaseRateOracle,
   TrueCreditAgency,
   TrueFiCreditOracle,
   TrueFiPool2,
   TrueLender2,
   TrueRateAdjuster,
-  TrueRatingAgencyV2,
 } from 'contracts'
 import {
   beforeEachWithFixture,
-  createApprovedLoan,
+  createLoan,
   DAY,
   expectScaledCloseTo,
   parseEth,
@@ -40,10 +38,7 @@ describe('TrueCreditAgency', () => {
   let tusdPool: TrueFiPool2
   let usdc: MockUsdc
   let usdcPool: TrueFiPool2
-  let tru: MockTrueCurrency
-  let stkTru: StkTruToken
   let loanFactory: LoanFactory2
-  let ratingAgency: TrueRatingAgencyV2
   let rateAdjuster: TrueRateAdjuster
   let lender: TrueLender2
   let creditOracle: TrueFiCreditOracle
@@ -73,9 +68,6 @@ describe('TrueCreditAgency', () => {
       feeToken: usdc,
       feePool: usdcPool,
       loanFactory,
-      tru,
-      stkTru,
-      rater: ratingAgency,
       lender,
       creditAgency,
       creditOracle,
@@ -980,11 +972,9 @@ describe('TrueCreditAgency', () => {
         return
       }
       const utilizationAmount = (await pool.poolValue()).mul(utilization).div(100)
-      const loan = await createApprovedLoan(
-        ratingAgency, tru, stkTru,
+      const loan = await createLoan(
         loanFactory, borrower, tusdPool,
         utilizationAmount, DAY, 1,
-        owner, provider,
       )
       await lender.connect(borrower).fund(loan.address)
     }

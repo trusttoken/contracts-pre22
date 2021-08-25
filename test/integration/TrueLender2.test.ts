@@ -16,12 +16,12 @@ import {
   TrueLender2,
   TrueLender2__factory,
 } from 'contracts'
-import { DAY, MAX_APY, parseEth, parseTRU } from 'utils'
+import { DAY, MAX_APY, parseEth } from 'utils'
 import fetch from 'node-fetch'
 import { expect, use } from 'chai'
-import { deployMockContract, MockContract, solidity } from 'ethereum-waffle'
+import { deployMockContract, solidity } from 'ethereum-waffle'
 import { utils, Wallet } from 'ethers'
-import { TrueFiCreditOracleJson, TrueRateAdjusterJson, TrueRatingAgencyV2Json } from 'build'
+import { TrueFiCreditOracleJson, TrueRateAdjusterJson } from 'build'
 import { AddressZero } from '@ethersproject/constants'
 
 use(solidity)

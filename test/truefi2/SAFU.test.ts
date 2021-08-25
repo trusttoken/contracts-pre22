@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { beforeEachWithFixture, createLoan, createApprovedLoan, DAY, parseTRU, parseUSDC, setupTruefi2, timeTravel as _timeTravel } from 'utils'
+import { beforeEachWithFixture, createLoan, DAY, parseTRU, parseUSDC, setupTruefi2, timeTravel as _timeTravel } from 'utils'
 import { BigNumberish, utils, Wallet } from 'ethers'
 import { AddressZero } from '@ethersproject/constants'
 
@@ -18,7 +18,6 @@ import {
   StkTruToken,
   TrueFiPool2,
   TrueLender2,
-  TrueRatingAgencyV2,
 } from 'contracts'
 
 import {
@@ -35,7 +34,6 @@ describe('SAFU', () => {
   let pool: TrueFiPool2
   let lender: TrueLender2
   let oneInch: Mock1InchV3
-  let rater: TrueRatingAgencyV2
   let liquidator: Liquidator2
   let tru: MockTrueCurrency
   let stkTru: StkTruToken
@@ -53,9 +51,9 @@ describe('SAFU', () => {
     timeTravel = (time: number) => _timeTravel(_provider, time)
 
     oneInch = await new Mock1InchV3__factory(owner).deploy()
-    ;({ safu, feeToken: token, feePool: pool, lender, loanFactory, tru, stkTru, rater, liquidator, borrowingMutex } = await setupTruefi2(owner, _provider, { oneInch: oneInch }))
+    ;({ safu, feeToken: token, feePool: pool, lender, loanFactory, tru, stkTru, liquidator, borrowingMutex } = await setupTruefi2(owner, _provider, { oneInch: oneInch }))
 
-    loan = await createApprovedLoan(rater, tru, stkTru, loanFactory, borrower, pool, parseUSDC(1000), YEAR, 1000, voter, _provider)
+    loan = await createLoan(loanFactory, borrower, pool, parseUSDC(1000), YEAR, 1000)
 
     await token.mint(owner.address, parseUSDC(1e7))
     await token.approve(pool.address, parseUSDC(1e7))
