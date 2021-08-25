@@ -18,7 +18,6 @@ import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {ITrueRatingAgency} from "../truefi/interface/ITrueRatingAgency.sol";
 import {IERC20WithDecimals} from "./interface/IERC20WithDecimals.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
-import {ITrueCreditAgency} from "./interface/ITrueCreditAgency.sol";
 import {ITrueRateAdjuster} from "./interface/ITrueRateAdjuster.sol";
 import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
 
@@ -96,12 +95,10 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
 
     uint8 public longTermLoanScoreThreshold;
 
-    ITrueCreditAgency public creditAgency;
+    ITrueRateAdjuster public rateAdjuster;
 
     // mutex ensuring there's only one running loan or credit line for borrower
     IBorrowingMutex public borrowingMutex;
-
-    ITrueRateAdjuster public rateAdjuster;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -206,9 +203,8 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         ITrueRatingAgency _ratingAgency,
         I1Inch3 __1inch,
         ITrueFiCreditOracle _creditOracle,
-        ITrueCreditAgency _creditAgency,
-        IBorrowingMutex _borrowingMutex,
-        ITrueRateAdjuster _rateAdjuster
+        ITrueRateAdjuster _rateAdjuster,
+        IBorrowingMutex _borrowingMutex
     ) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
 
@@ -217,9 +213,8 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         ratingAgency = _ratingAgency;
         _1inch = __1inch;
         creditOracle = _creditOracle;
-        creditAgency = _creditAgency;
-        borrowingMutex = _borrowingMutex;
         rateAdjuster = _rateAdjuster;
+        borrowingMutex = _borrowingMutex;
 
         swapFeeSlippage = 100; // 1%
         minVotes = 15 * (10**6) * (10**8);

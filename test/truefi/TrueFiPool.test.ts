@@ -3,7 +3,6 @@ import { BigNumber, constants, Wallet } from 'ethers'
 import { deployMockContract, MockContract, MockProvider, solidity } from 'ethereum-waffle'
 
 import { beforeEachWithFixture, DAY, expectScaledCloseTo, MAX_APY, parseEth, parseTRU, timeTravel } from 'utils'
-import { setupCreditAgency } from 'utils/setupCreditAgency'
 
 import {
   ImplementationReference__factory,
@@ -33,6 +32,7 @@ import {
   MockTrueFiPoolOracle__factory,
   Safu,
   Safu__factory,
+  TrueRateAdjuster__factory,
   BorrowingMutex__factory,
 } from 'contracts'
 import { ICurveGaugeJson, ICurveMinterJson, TrueRatingAgencyV2Json } from 'build'
@@ -502,11 +502,11 @@ describe('TrueFiPool', () => {
 
     const factory = await new PoolFactory__factory(owner).deploy()
     const lender2 = await new TrueLender2__factory(owner).deploy()
-    const creditAgency = await setupCreditAgency(owner, pool)
+    const rateAdjuster = await new TrueRateAdjuster__factory(owner).deploy()
     const borrowingMutex = await new BorrowingMutex__factory(owner).deploy()
     await borrowingMutex.initialize()
     await borrowingMutex.allowLocker(lender2.address, true)
-    await lender2.initialize(mockStakingPool.address, factory.address, mockRatingAgency.address, AddressZero, AddressZero, creditAgency.address, borrowingMutex.address)
+    await lender2.initialize(mockStakingPool.address, factory.address, mockRatingAgency.address, AddressZero, AddressZero, rateAdjuster.address, borrowingMutex.address)
     await factory.initialize(implementationReference.address, lender2.address, safu.address)
     await factory.addLegacyPool(pool.address)
     const usdc = await new MockErc20Token__factory(owner).deploy()
@@ -514,6 +514,8 @@ describe('TrueFiPool', () => {
     await factory.createPool(usdc.address)
     const feePool = await factory.pool(usdc.address)
     await lender2.setFeePool(feePool)
+    await rateAdjuster.addPoolToTVL(pool.address)
+    await rateAdjuster.addPoolToTVL(feePool)
     await pool.setLender2(lender2.address)
     const loanFactory2 = await new LoanFactory2__factory(owner).deploy()
     const liquidator2 = await new Liquidator2__factory(owner).deploy()

@@ -282,7 +282,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
      * @param borrower Borrower to get borrow limit for
      * @return borrow limit for `borrower` in `pool`
      */
-    function borrowLimit(ITrueFiPool2 pool, address borrower) public override view returns (uint256) {
+    function borrowLimit(ITrueFiPool2 pool, address borrower) public view returns (uint256) {
         uint8 poolDecimals = ITrueFiPool2WithDecimals(address(pool)).decimals();
         return
             rateAdjuster.borrowLimit(

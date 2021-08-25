@@ -28,7 +28,7 @@ import {
   TestTrueLender__factory,
   TrueFiCreditOracle,
   TrueFiCreditOracle__factory,
-  TrueCreditAgency,
+  TrueRateAdjuster,
   TrueFiPool2,
   TrueFiPool2__factory,
   TrueRatingAgencyV2,
@@ -57,7 +57,7 @@ describe('TrueLender2', () => {
   let rater: TrueRatingAgencyV2
   let lender: TestTrueLender
   let creditOracle: TrueFiCreditOracle
-  let creditAgency: TrueCreditAgency
+  let rateAdjuster: TrueRateAdjuster
 
   let counterfeitPool: TrueFiPool2
   let token1: MockErc20Token
@@ -93,7 +93,7 @@ describe('TrueLender2', () => {
       feeToken: usdc,
       lender,
       creditOracle,
-      creditAgency,
+      rateAdjuster,
       borrowingMutex,
     } = await setupTruefi2(owner, _provider, { lender: lender, oneInch: oneInch }))
 
@@ -134,8 +134,8 @@ describe('TrueLender2', () => {
 
     loan2 = await createLoan(loanFactory, borrower, pool2, 500000, YEAR, 1000)
 
-    await creditAgency.allowPool(pool1.address, true)
-    await creditAgency.allowPool(pool2.address, true)
+    await rateAdjuster.addPoolToTVL(pool1.address)
+    await rateAdjuster.addPoolToTVL(pool2.address)
 
     await creditOracle.setScore(borrower.address, 255)
     await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(1e8))
