@@ -23,7 +23,6 @@ import {
   TrueFiPool,
   TrueFiPool2,
   TrueLender2,
-  TrueRatingAgencyV2,
   TrustToken,
 } from '../build/artifacts'
 import { BigNumber, utils } from 'ethers'
@@ -72,7 +71,6 @@ deploy({}, (_, config) => {
   const usdt = isMainnet
     ? deployParams['mainnet'].USDT
     : contract(TestUSDTToken)
-  const trueRatingAgencyV2 = proxy(contract(TrueRatingAgencyV2), () => {})
 
   // New contract impls
   const trueLender2_impl = contract(TrueLender2)
@@ -115,10 +113,8 @@ deploy({}, (_, config) => {
     poolFactory.initialize(implementationReference, trueLender2, safu)
   })
   runIf(trueLender2.isInitialized().not(), () => {
-    trueLender2.initialize(stkTruToken, poolFactory, trueRatingAgencyV2, oneInch, trueFiCreditOracle, borrowingMutex)
+    trueLender2.initialize(stkTruToken, poolFactory, oneInch, trueFiCreditOracle, borrowingMutex)
   })
-  runIf(trueLender2.votingPeriod().equals(deployParams[NETWORK].WITHDRAW_PERIOD).not(), () => {
-    trueLender2.setVotingPeriod(deployParams[NETWORK].WITHDRAW_PERIOD)
   })
   runIf(loanFactory2.isInitialized().not(), () => {
     loanFactory2.initialize(poolFactory, trueLender2, liquidator2, AddressZero, trueFiCreditOracle, borrowingMutex)
