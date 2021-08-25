@@ -28,7 +28,6 @@ interface ITrueRateAdjuster {
         ITrueFiPool2 pool,
         uint8 score,
         uint256 maxBorrowerLimit,
-        uint256 totalTVL,
         uint256 totalBorrowed
     ) external view returns (uint256);
 }
