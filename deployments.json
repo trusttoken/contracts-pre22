@@ -559,6 +559,18 @@
     "chainlinkTruUsdtOracle": {
       "txHash": "0xc3ce64ee9b04b63eded1334e46e95e9048332eaa97cd59ac470d219175a03462",
       "address": "0xc02E05C671Cad8C27F7e64fD6898e75a8D4CC2B0"
+    },
+    "trueMultiFarm": {
+      "txHash": "0xa6431158a0ff7c7f7c1cf94c3f37d23d2f7333a89b9e46fcb01989471439b327",
+      "address": "0x4af280d9e794b5eA6BEe039a6F48a6eAFD865341"
+    },
+    "trueMultiFarm_LinearTrueDistributor_proxy": {
+      "txHash": "0x88ea48522b103959f8383bc3992285676ecfa9d2d354153d3edc146556a7d219",
+      "address": "0xc7AB606e551bebD69f7611CdA1Fc473f8E5b8f70"
+    },
+    "trueMultiFarm_proxy": {
+      "txHash": "0x2469c5c705c1fdb5684e3e011e89004a26a517ae16cc963b95890cc164c17dfd",
+      "address": "0xec6c3FD795D6e6f202825Ddb56E01b3c128b0b10"
     }
   }
 }
