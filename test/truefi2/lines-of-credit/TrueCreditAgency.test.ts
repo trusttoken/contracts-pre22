@@ -445,7 +445,7 @@ describe('TrueCreditAgency', () => {
       expect(await creditAgency.nextInterestRepayTime(tusdPool.address, borrower.address)).to.eq(timestamp.add(MONTH))
     })
 
-    it('borrows and check if mutex is locked', async () => {
+    it('locks mutex', async () => {
       await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
       expect(await borrowingMutex.locker(borrower.address)).to.eq(creditAgency.address)
     })
@@ -712,7 +712,7 @@ describe('TrueCreditAgency', () => {
       expect(await creditAgency.nextInterestRepayTime(tusdPool.address, borrower.address)).to.eq(0)
     })
 
-    it('sets nextInterestRepayTime to 0', async () => {
+    it('unlocks mutex', async () => {
       expect(await borrowingMutex.locker(borrower.address)).to.eq(creditAgency.address)
       await creditAgency.connect(borrower).repayInFull(tusdPool.address)
       expect(await borrowingMutex.locker(borrower.address)).to.eq(AddressZero)
