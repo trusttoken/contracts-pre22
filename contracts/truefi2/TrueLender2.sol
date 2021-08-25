@@ -19,7 +19,12 @@ import {ITrueRatingAgency} from "../truefi/interface/ITrueRatingAgency.sol";
 import {IERC20WithDecimals} from "./interface/IERC20WithDecimals.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
 import {ITrueCreditAgency} from "./interface/ITrueCreditAgency.sol";
+import {ITrueRateAdjuster} from "./interface/ITrueRateAdjuster.sol";
 import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
+
+interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
+    function decimals() external view returns (uint8);
+}
 
 /**
  * @title TrueLender v2.0
@@ -95,6 +100,8 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
 
     // mutex ensuring there's only one running loan or credit line for borrower
     IBorrowingMutex public borrowingMutex;
+
+    ITrueRateAdjuster public rateAdjuster;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -200,7 +207,8 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         I1Inch3 __1inch,
         ITrueFiCreditOracle _creditOracle,
         ITrueCreditAgency _creditAgency,
-        IBorrowingMutex _borrowingMutex
+        IBorrowingMutex _borrowingMutex,
+        ITrueRateAdjuster _rateAdjuster
     ) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
 
@@ -211,6 +219,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         creditOracle = _creditOracle;
         creditAgency = _creditAgency;
         borrowingMutex = _borrowingMutex;
+        rateAdjuster = _rateAdjuster;
 
         swapFeeSlippage = 100; // 1%
         minVotes = 15 * (10**6) * (10**8);
@@ -366,7 +375,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         require(votingLastedLongEnough(start), "TrueLender: Voting time is below minimum");
         require(votesThresholdReached(yes.add(no)), "TrueLender: Not enough votes given for the loan");
         require(loanIsCredible(yes, no), "TrueLender: Loan risk is too high");
-        require(amount <= creditAgency.borrowLimit(pool, loanToken.borrower()), "TrueLender: Loan amount cannot exceed borrow limit");
+        require(amount <= borrowLimit(pool, loanToken.borrower()), "TrueLender: Loan amount cannot exceed borrow limit");
 
         poolLoans[pool].push(loanToken);
         pool.borrow(amount);
@@ -421,6 +430,50 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         // If we reach this, it means loanToken was not present in _loans array
         // This prevents invalid loans from being reclaimed
         revert("TrueLender: This loan has not been funded by the lender");
+    }
+
+    /**
+     * @dev Get total amount borrowed for `borrower` from fixed term loans in USD
+     * @param borrower Borrower to get amount borrowed for
+     * @param decimals Precision to use when calculating total borrowed
+     * @return Total amount borrowed for `borrower` in USD
+     */
+    function totalBorrowed(address borrower, uint8 decimals) public view returns (uint256) {
+        uint256 borrowSum = 0;
+        uint256 resultPrecision = uint256(10)**decimals;
+
+        // loop through loans and sum amount borrowed accounting for precision
+        ITrueFiPool2[] memory tvlPools = rateAdjuster.getTVLPools();
+        for (uint8 i = 0; i < tvlPools.length; i++) {
+            ITrueFiPool2 pool = tvlPools[i];
+            uint256 poolPrecision = uint256(10)**ITrueFiPool2WithDecimals(address(pool)).decimals();
+            ILoanToken2[] memory _loans = poolLoans[pool];
+            for (uint8 j = 0; j < _loans.length; j++) {
+                ILoanToken2 loan = _loans[j];
+                if (address(loan.borrower()) == borrower) {
+                    uint256 loanValue = loan.value(loan.balanceOf(address(this)));
+                    borrowSum = borrowSum.add(loanValue.mul(resultPrecision).div(poolPrecision));
+                }
+            }
+        }
+        return borrowSum;
+    }
+
+    /**
+     * @dev Get borrow limit for `borrower` in `pool` using rate adjuster
+     * @param pool Pool to get borrow limit for
+     * @param borrower Borrower to get borrow limit for
+     * @return borrow limit for `borrower` in `pool`
+     */
+    function borrowLimit(ITrueFiPool2 pool, address borrower) public view returns (uint256) {
+        uint8 poolDecimals = ITrueFiPool2WithDecimals(address(pool)).decimals();
+        return
+            rateAdjuster.borrowLimit(
+                pool,
+                creditOracle.score(borrower),
+                creditOracle.maxBorrowerLimit(borrower),
+                totalBorrowed(borrower, poolDecimals)
+            );
     }
 
     /**

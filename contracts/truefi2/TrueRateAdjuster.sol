@@ -307,7 +307,7 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
      * @param decimals Precision to return
      * @return TVL for all pools
      */
-    function tvl(uint8 decimals) public view returns (uint256) {
+    function tvl(uint8 decimals) public override view returns (uint256) {
         uint256 _tvl = 0;
         uint256 resultPrecision = uint256(10)**decimals;
 
