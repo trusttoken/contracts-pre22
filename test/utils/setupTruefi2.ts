@@ -9,7 +9,7 @@ import {
   LoanFactory2__factory,
   MockTrueCurrency__factory,
   MockTrueFiPoolOracle__factory,
-  MockUsdc__factory,
+  MockUsdc__factory, MockUsdStableCoinOracle__factory,
   PoolFactory__factory,
   Safu__factory,
   StkTruToken__factory, TestTrueLender,
@@ -62,8 +62,8 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
   const feeToken = await deployContract(MockUsdc__factory)
   const standardToken = await deployContract(MockTrueCurrency__factory)
 
-  const feeTokenOracle = await deployContract(MockTrueFiPoolOracle__factory, feeToken.address)
-  const standardTokenOracle = await deployContract(MockTrueFiPoolOracle__factory, standardToken.address)
+  const feeTokenOracle = await deployContract(MockUsdStableCoinOracle__factory)
+  const standardTokenOracle = await deployContract(MockUsdStableCoinOracle__factory)
   const creditOracle = await deployContract(TrueFiCreditOracle__factory)
   const standardBaseRateOracle = await deployContract(TimeAveragedBaseRateOracle__factory)
   const feeBaseRateOracle = await deployContract(TimeAveragedBaseRateOracle__factory)

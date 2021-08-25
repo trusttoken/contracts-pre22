@@ -310,13 +310,12 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     function tvl(uint8 decimals) public override view returns (uint256) {
         uint256 _tvl = 0;
         uint256 resultPrecision = uint256(10)**decimals;
-
-        // loop through pools and sum tvl accounting for precision
+        uint256 oraclePrecision = uint256(10)**18;
+        // loop through pools and sum tvl converted to USD
         for (uint256 i = 0; i < tvlPools.length; i++) {
-            uint8 poolDecimals = ITrueFiPool2WithDecimals(address(tvlPools[i])).decimals();
-            _tvl = _tvl.add(tvlPools[i].poolValue().mul(resultPrecision).div(uint256(10)**poolDecimals));
+            _tvl = _tvl.add(tvlPools[i].oracle().tokenToUsd(tvlPools[i].poolValue()));
         }
-        return _tvl;
+        return _tvl.mul(resultPrecision).div(oraclePrecision);
     }
 
     /**

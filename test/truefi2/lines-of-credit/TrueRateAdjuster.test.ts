@@ -4,33 +4,34 @@ import { Wallet } from 'ethers'
 import {
   beforeEachWithFixture,
   createLoan,
-  DAY, YEAR, expectScaledCloseTo,
+  DAY,
+  expectScaledCloseTo,
   parseEth,
   parseUSDC,
-  setupTruefi2, timeTravel,
+  setupTruefi2,
+  timeTravel,
   timeTravelTo,
   updateRateOracle,
+  YEAR,
 } from 'utils'
 import { setupDeploy } from 'scripts/utils'
 
 import {
-  TrueRateAdjuster,
-  TrueRateAdjuster__factory,
-  TrueFiPool2,
-  TrueFiPool2__factory,
+  LoanToken2,
+  MockErc20Token,
+  MockErc20Token__factory, MockUsdStableCoinOracle,
+  MockUsdStableCoinOracle__factory,
+  TestTimeAveragedBaseRateOracle__factory,
   TimeAveragedBaseRateOracle,
   TimeAveragedBaseRateOracle__factory,
-  MockErc20Token__factory,
-  MockErc20Token,
-  TestTimeAveragedBaseRateOracle__factory,
+  TrueFiPool2,
+  TrueFiPool2__factory, TrueLender2,
+  TrueRateAdjuster,
+  TrueRateAdjuster__factory,
 } from 'contracts'
 
 import { deployMockContract, MockContract, MockProvider, solidity } from 'ethereum-waffle'
-import {
-  ITrueFiPool2WithDecimalsJson,
-  ITimeAveragedBaseRateOracleJson,
-  SpotBaseRateOracleJson,
-} from 'build'
+import { ITimeAveragedBaseRateOracleJson, ITrueFiPool2WithDecimalsJson, SpotBaseRateOracleJson } from 'build'
 
 use(solidity)
 
@@ -424,14 +425,15 @@ describe('TrueRateAdjuster', () => {
   })
 
   describe('tvl', () => {
-    let loan
-    let lender
+    let loan: LoanToken2
+    let lender: TrueLender2
+    let oracle: MockUsdStableCoinOracle
 
     beforeEach(async () => {
-      const { loanFactory, standardPool: pool, lender: _lender, standardToken: tusd, creditOracle } = await setupTruefi2(owner, provider)
+      const { loanFactory, standardPool: pool, lender: _lender, standardToken: tusd, standardTokenOracle, creditOracle } = await setupTruefi2(owner, provider)
       loan = await createLoan(loanFactory, borrower, pool, 1_000_000, YEAR, 1000)
       lender = _lender
-
+      oracle = standardTokenOracle
       const mockPool1 = await deployMockContract(owner, ITrueFiPool2WithDecimalsJson.abi)
       const mockPool2 = await deployMockContract(owner, ITrueFiPool2WithDecimalsJson.abi)
       await rateAdjuster.addPoolToTVL(pool.address)
@@ -445,6 +447,8 @@ describe('TrueRateAdjuster', () => {
       await mockPool1.mock.poolValue.returns(parseEth(1e7))
       await mockPool2.mock.decimals.returns(18)
       await mockPool2.mock.poolValue.returns(parseEth(1e7))
+      await mockPool1.mock.oracle.returns(standardTokenOracle.address)
+      await mockPool2.mock.oracle.returns(standardTokenOracle.address)
 
       await creditOracle.setScore(borrower.address, 255)
       await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
@@ -473,7 +477,7 @@ describe('TrueRateAdjuster', () => {
       const mockPool3 = await deployMockContract(owner, ITrueFiPool2WithDecimalsJson.abi)
       await mockPool3.mock.decimals.returns(18)
       await mockPool3.mock.poolValue.returns(0)
-
+      await mockPool3.mock.oracle.returns(oracle.address)
       expect(await rateAdjuster.tvl(18)).to.equal(parseEth(3e7))
       await rateAdjuster.addPoolToTVL(mockPool3.address)
       expect(await rateAdjuster.tvl(18)).to.equal(parseEth(3e7))
@@ -488,10 +492,15 @@ describe('TrueRateAdjuster', () => {
 
     beforeEach(async () => {
       mockPool2 = await deployMockContract(owner, ITrueFiPool2WithDecimalsJson.abi)
+      const oracle1 = await new MockUsdStableCoinOracle__factory(owner).deploy()
+      const oracle2 = await new MockUsdStableCoinOracle__factory(owner).deploy()
+      await oracle2.setDecimalAdjustment(12)
       await mockPool.mock.decimals.returns(18)
       await mockPool.mock.poolValue.returns(parseEth(1e7))
+      await mockPool.mock.oracle.returns(oracle1.address)
       await mockPool2.mock.decimals.returns(6)
       await mockPool2.mock.poolValue.returns(parseUSDC(1e7))
+      await mockPool2.mock.oracle.returns(oracle2.address)
       await rateAdjuster.addPoolToTVL(mockPool.address)
       await rateAdjuster.addPoolToTVL(mockPool2.address)
     })

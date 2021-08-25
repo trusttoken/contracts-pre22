@@ -269,6 +269,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
      * @param decimals Precision to use when calculating total borrowed
      * @return Total amount borrowed for `borrower` in USD
      */
+    // TODO add oracle here
     function totalBorrowed(address borrower, uint8 decimals) public view returns (uint256) {
         uint256 borrowSum = 0;
         uint256 resultPrecision = uint256(10)**decimals;
