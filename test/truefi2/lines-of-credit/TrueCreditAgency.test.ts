@@ -69,7 +69,7 @@ describe('TrueCreditAgency', () => {
     timeTravel = (time: number) => _timeTravel(_provider, time)
     provider = _provider
 
-    ;({
+    ; ({
       standardToken: tusd,
       standardPool: tusdPool,
       feeToken: usdc,
@@ -429,7 +429,7 @@ describe('TrueCreditAgency', () => {
       await borrowingMutex.lock(borrower.address, owner.address)
 
       await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000))
-        .to.be.revertedWith('BorrowingMutex: Borrower is already locked')
+        .to.be.revertedWith('TrueCreditAgency: Borrower cannot open two parallel debt positions')
     })
 
     it('cannot borrow from the pool that is not whitelisted', async () => {
