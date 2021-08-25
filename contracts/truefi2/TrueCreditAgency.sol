@@ -189,18 +189,6 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         return rateAdjuster.borrowLimitAdjustment(score);
     }
 
-    function totalTVL(uint8 decimals) public view returns (uint256) {
-        uint256 tvl = 0;
-        uint256 resultPrecision = uint256(10)**decimals;
-
-        for (uint8 i = 0; i < pools.length; i++) {
-            tvl = tvl.add(
-                pools[i].poolValue().mul(resultPrecision).div(uint256(10)**(ITrueFiPool2WithDecimals(address(pools[i])).decimals()))
-            );
-        }
-        return tvl;
-    }
-
     function totalBorrowed(address borrower, uint8 decimals) public view returns (uint256) {
         uint256 borrowSum = 0;
         uint256 resultPrecision = uint256(10)**decimals;
@@ -222,7 +210,6 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
                 pool,
                 creditOracle.score(borrower),
                 creditOracle.maxBorrowerLimit(borrower),
-                totalTVL(poolDecimals),
                 totalBorrowed(borrower, poolDecimals)
             );
     }
