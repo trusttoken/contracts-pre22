@@ -22,7 +22,7 @@ const TRU_DECIMALS = 8
 const deployParams = {
   mainnet: {
     DISTRIBUTION_DURATION: 2 * YEAR,
-    DISTRIBUTION_START: 1630000800, // 2021/08/26 1100 PDT
+    DISTRIBUTION_START: 1629997200, // 2021/08/26 1100 PDT
     STAKE_DISTRIBUTION_AMOUNT: utils.parseUnits('282500', TRU_DECIMALS).mul(2 * 365), // 300k - 35k / 2
   },
   testnet: {
