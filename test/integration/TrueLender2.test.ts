@@ -45,7 +45,6 @@ describe('TrueLender2', () => {
   let tusdLoanPool: TrueFiPool2
   let lender: TrueLender2
   let loanFactory: LoanFactory2
-  let mockRatingAgency: MockContract
   let stkTru: Wallet
   let tusd: Erc20Mock
   let usdc: Erc20Mock
@@ -59,8 +58,6 @@ describe('TrueLender2', () => {
     const poolImplementation = await deployContract(TrueFiPool2__factory)
     const implementationReference = await deployContract(ImplementationReference__factory, poolImplementation.address)
 
-    mockRatingAgency = await deployMockContract(owner, TrueRatingAgencyV2Json.abi)
-    await mockRatingAgency.mock.getResults.returns(0, 0, parseTRU(50e6))
     const mockRateAdjuster = await deployMockContract(owner, TrueRateAdjusterJson.abi)
     await mockRateAdjuster.mock.rate.returns(0)
     await mockRateAdjuster.mock.fixedTermLoanAdjustment.returns(1000)
