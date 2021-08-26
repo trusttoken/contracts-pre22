@@ -319,18 +319,18 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     }
 
     /**
-     * @dev Get borrow limit
+     * @dev Get borrow limit in USD
      * @param pool Pool which is being borrowed from
      * @param score Borrower score
      * @param maxBorrowerLimit Borrower maximum borrow limit
-     * @param totalBorrowed Total amount borrowed from all pools
+     * @param totalBorrowedInUsd Total amount borrowed from all pools
      * @return Borrow limit
      */
     function borrowLimit(
         ITrueFiPool2 pool,
         uint8 score,
         uint256 maxBorrowerLimit,
-        uint256 totalBorrowed
+        uint256 totalBorrowedInUsd
     ) public override view returns (uint256) {
         if (score < borrowLimitConfig.scoreFloor) {
             return 0;
@@ -340,8 +340,9 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
         uint256 maxTVLLimit = tvl(poolDecimals).mul(borrowLimitConfig.tvlLimitCoefficient).div(BASIS_POINTS);
         uint256 adjustment = borrowLimitAdjustment(score);
         uint256 creditLimit = min(maxBorrowerLimit, maxTVLLimit).mul(adjustment).div(BASIS_POINTS);
-        uint256 poolBorrowMax = min(pool.poolValue().mul(borrowLimitConfig.poolValueLimitCoefficient).div(BASIS_POINTS), creditLimit);
-        return saturatingSub(poolBorrowMax, totalBorrowed);
+        uint256 poolValueInUsd = pool.oracle().tokenToUsd(pool.poolValue());
+        uint256 poolBorrowMax = min(poolValueInUsd.mul(borrowLimitConfig.poolValueLimitCoefficient).div(BASIS_POINTS), creditLimit);
+        return saturatingSub(poolBorrowMax, totalBorrowedInUsd);
     }
 
     /// @dev Internal helper to calculate saturating sub of `a` - `b`
