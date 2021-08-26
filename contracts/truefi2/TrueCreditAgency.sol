@@ -16,7 +16,6 @@ interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
     function decimals() external view returns (uint8);
 }
 
-// prettier-ignore
 /**
  * @title TrueCreditAgency
  * @dev Manager for Lines of Credit in the TrueFi Protocol
@@ -39,7 +38,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     uint256 constant ADDITIONAL_PRECISION = 1e27;
 
     /// @dev basis precision: 10000 = 100%
-    uint256 constant BASIS_POINTS = 10_000;
+    uint256 constant BASIS_POINTS = 10000;
 
     /// @dev total & cumulative interest for borrowers in a bucket
     struct SavedInterest {
@@ -151,7 +150,11 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     event MinCreditScoreChanged(uint256 newValue);
 
     /// @dev initialize
-    function initialize(ITrueFiCreditOracle _creditOracle, ITrueRateAdjuster _rateAdjuster, IBorrowingMutex _borrowingMutex) public initializer {
+    function initialize(
+        ITrueFiCreditOracle _creditOracle,
+        ITrueRateAdjuster _rateAdjuster,
+        IBorrowingMutex _borrowingMutex
+    ) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
         creditOracle = _creditOracle;
         rateAdjuster = _rateAdjuster;
