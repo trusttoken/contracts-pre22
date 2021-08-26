@@ -269,20 +269,15 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
      * @param decimals Precision to use when calculating total borrowed
      * @return Total amount borrowed for `borrower` in USD
      */
-    // TODO add oracle here
     function totalBorrowed(address borrower, uint8 decimals) public view returns (uint256) {
         uint256 borrowSum = 0;
         uint256 resultPrecision = uint256(10)**decimals;
 
-        // loop through pools and sum amount borrowed accounting for precision
+        // loop through pools and sum amount borrowed converted to USD
         for (uint8 i = 0; i < pools.length; i++) {
-            borrowSum = borrowSum.add(
-                borrowed[pools[i]][borrower].mul(resultPrecision).div(
-                    uint256(10)**(ITrueFiPool2WithDecimals(address(pools[i])).decimals())
-                )
-            );
+            borrowSum = borrowSum.add(pools[i].oracle().tokenToUsd(borrowed[pools[i]][borrower]));
         }
-        return borrowSum;
+        return borrowSum.mul(resultPrecision).div(1 ether);
     }
 
     /**
