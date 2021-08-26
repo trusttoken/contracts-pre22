@@ -57,7 +57,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
 
     IPoolFactory public factory;
 
-    ITrueRatingAgency public ratingAgency;
+    ITrueRatingAgency public DEPRECATED__ratingAgency;
 
     I1Inch3 public _1inch;
 
@@ -73,14 +73,14 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     // ===== Voting parameters =====
 
     // How many votes are needed for a loan to be approved
-    uint256 public minVotes;
+    uint256 public DEPRECATED__minVotes;
 
     // Minimum ratio of yes votes to total votes for a loan to be approved
     // basis precision: 10000 = 100%
-    uint256 public minRatio;
+    uint256 public DEPRECATED__minRatio;
 
     // minimum prediction market voting period
-    uint256 public votingPeriod;
+    uint256 public DEPRECATED__votingPeriod;
 
     ITrueFiCreditOracle public creditOracle;
 
@@ -100,18 +100,6 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
      * @param maxLoans new maximum amount of loans
      */
     event LoansLimitChanged(uint256 maxLoans);
-
-    /**
-     * @dev Emitted when minVotes changed
-     * @param minVotes New minVotes
-     */
-    event MinVotesChanged(uint256 minVotes);
-
-    /**
-     * @dev Emitted when risk aversion changed
-     * @param minRatio New risk aversion factor
-     */
-    event MinRatioChanged(uint256 minRatio);
 
     /**
      * @dev Emitted when max loan term changed
@@ -199,8 +187,6 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         borrowingMutex = _borrowingMutex;
 
         swapFeeSlippage = 100; // 1%
-        minVotes = 15 * (10**6) * (10**8);
-        minRatio = 8000;
         fee = 1000;
         maxLoans = 100;
         maxLoanTerm = 180 days;
@@ -526,5 +512,12 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
 
     function isTermBelowMax(uint256 term) internal view returns (bool) {
         return term <= maxLoanTerm;
+    }
+
+    function deprecate() external {
+        DEPRECATED__ratingAgency = ITrueRatingAgency(0);
+        DEPRECATED__minVotes = uint256(-1);
+        DEPRECATED__minRatio = uint256(-1);
+        DEPRECATED__votingPeriod = uint256(-1);
     }
 }

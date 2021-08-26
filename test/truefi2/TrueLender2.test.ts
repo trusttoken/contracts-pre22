@@ -37,7 +37,7 @@ import { BorrowingMutexJson, LoanToken2Json, Mock1InchV3Json } from 'build'
 
 import { deployMockContract, solidity } from 'ethereum-waffle'
 import { AddressZero } from '@ethersproject/constants'
-import { BigNumber, BigNumberish, utils, Wallet } from 'ethers'
+import { BigNumber, BigNumberish, constants, utils, Wallet } from 'ethers'
 
 use(solidity)
 
@@ -685,6 +685,28 @@ describe('TrueLender2', () => {
       expect(await lender.loans(pool1.address)).to.deep.equal([loan1.address])
       await lender.testTransferAllLoanTokens(loan1.address, owner.address)
       expect(await lender.loans(pool1.address)).to.deep.equal([])
+    })
+  })
+
+  describe('deprecate', () => {
+    beforeEach(async () => {
+      await lender.deprecate()
+    })
+
+    it('sets deprecated ratingAgency to zero address', async () => {
+      expect(await lender.DEPRECATED__ratingAgency()).to.equal(AddressZero)
+    })
+
+    it('sets deprecated minVotes to max value', async () => {
+      expect(await lender.DEPRECATED__minVotes()).to.equal(constants.MaxUint256)
+    })
+
+    it('sets deprecated minRatio to max value', async () => {
+      expect(await lender.DEPRECATED__minRatio()).to.equal(constants.MaxUint256)
+    })
+
+    it('sets deprecated votingPeriod to max value', async () => {
+      expect(await lender.DEPRECATED__votingPeriod()).to.equal(constants.MaxUint256)
     })
   })
 })
