@@ -304,26 +304,21 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
 
     /**
      * @dev Calculate total TVL in USD
-     * @param decimals Precision to return
-     * @return TVL for all pools
+     * @return _tvl TVL for all pools
      */
-    function tvl(uint8 decimals) public override view returns (uint256) {
-        uint256 _tvl = 0;
-        uint256 resultPrecision = uint256(10)**decimals;
-        uint256 oraclePrecision = uint256(10)**18;
+    function tvl() public override view returns (uint256 _tvl) {
         // loop through pools and sum tvl converted to USD
         for (uint256 i = 0; i < tvlPools.length; i++) {
             _tvl = _tvl.add(tvlPools[i].oracle().tokenToUsd(tvlPools[i].poolValue()));
         }
-        return _tvl.mul(resultPrecision).div(oraclePrecision);
     }
 
     /**
-     * @dev Get borrow limit in USD
+     * @dev Get borrow limit in USD with 18 decimal precision
      * @param pool Pool which is being borrowed from
      * @param score Borrower score
-     * @param maxBorrowerLimit Borrower maximum borrow limit
-     * @param totalBorrowedInUsd Total amount borrowed from all pools
+     * @param maxBorrowerLimit Borrower maximum borrow limit, 18 dec precision
+     * @param totalBorrowedInUsd Total amount borrowed from all pools, 18 dec precision
      * @return Borrow limit
      */
     function borrowLimit(
@@ -335,9 +330,7 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
         if (score < borrowLimitConfig.scoreFloor) {
             return 0;
         }
-        uint8 poolDecimals = ITrueFiPool2WithDecimals(address(pool)).decimals();
-        maxBorrowerLimit = maxBorrowerLimit.mul(uint256(10)**poolDecimals).div(1 ether);
-        uint256 maxTVLLimit = tvl(poolDecimals).mul(borrowLimitConfig.tvlLimitCoefficient).div(BASIS_POINTS);
+        uint256 maxTVLLimit = tvl().mul(borrowLimitConfig.tvlLimitCoefficient).div(BASIS_POINTS);
         uint256 adjustment = borrowLimitAdjustment(score);
         uint256 creditLimit = min(maxBorrowerLimit, maxTVLLimit).mul(adjustment).div(BASIS_POINTS);
         uint256 poolValueInUsd = pool.oracle().tokenToUsd(pool.poolValue());

@@ -266,18 +266,13 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     /**
      * @dev Get total amount borrowed for `borrower` from lines of credit in USD
      * @param borrower Borrower to get amount borrowed for
-     * @param decimals Precision to use when calculating total borrowed
-     * @return Total amount borrowed for `borrower` in USD
+     * @return borrowSum Total amount borrowed for `borrower` in USD
      */
-    function totalBorrowed(address borrower, uint8 decimals) public view returns (uint256) {
-        uint256 borrowSum = 0;
-        uint256 resultPrecision = uint256(10)**decimals;
-
+    function totalBorrowed(address borrower) public view returns (uint256 borrowSum) {
         // loop through pools and sum amount borrowed converted to USD
         for (uint8 i = 0; i < pools.length; i++) {
             borrowSum = borrowSum.add(pools[i].oracle().tokenToUsd(borrowed[pools[i]][borrower]));
         }
-        return borrowSum.mul(resultPrecision).div(1 ether);
     }
 
     /**
@@ -287,13 +282,12 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
      * @return borrow limit for `borrower` in `pool`
      */
     function borrowLimit(ITrueFiPool2 pool, address borrower) public view returns (uint256) {
-        uint8 poolDecimals = ITrueFiPool2WithDecimals(address(pool)).decimals();
         return
             rateAdjuster.borrowLimit(
                 pool,
                 creditOracle.score(borrower),
                 creditOracle.maxBorrowerLimit(borrower),
-                totalBorrowed(borrower, poolDecimals)
+                totalBorrowed(borrower)
             );
     }
 
