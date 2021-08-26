@@ -977,11 +977,11 @@ describe('TrueFiPool2', () => {
       await tusdPool.join(parseEth(1e5))
     })
 
-    it('returns 0 if poolValue is 0', async () => {
+    it('returns 0% when pool value is 0', async () => {
       expect(await usdcPool.liquidRatio(100)).to.eq(0)
     })
 
-    it('returns 0 when liquid value is 0', async () => {
+    it('returns 0% when liquid value is 0', async () => {
       const loanForPartOfPool = await createApprovedLoan(
         rater, tru,
         stkTru, loanFactory,
@@ -996,12 +996,12 @@ describe('TrueFiPool2', () => {
       expect(await tusdPool.liquidRatio(0)).to.eq(0)
     })
 
-    it('liquidValue is equal poolValue', async () => {
+    it('returns 100% when liquid value equals poolValue', async () => {
       expect(await tusdPool.liquidValue()).to.eq(await tusdPool.poolValue())
       expect(await tusdPool.liquidRatio(0)).to.eq(100_00)
     })
 
-    it('ratio with afterAmountLent before a loan, equals ratio after the loan', async () => {
+    it('correctly predicts ratio after a loan of `afterAmountLent`', async () => {
       const loanValue = parseEth(100)
       const expectedLiquidRatio = await tusdPool.liquidRatio(loanValue)
 
@@ -1018,7 +1018,7 @@ describe('TrueFiPool2', () => {
       expect(await tusdPool.liquidRatio(0)).to.eq(expectedLiquidRatio)
     })
 
-    it('equals 1 - utilization after lending', async () => {
+    it('equals 100% - utilization after lending', async () => {
       const loanForPartOfPool = await createApprovedLoan(
         rater, tru,
         stkTru, loanFactory,
@@ -1029,7 +1029,9 @@ describe('TrueFiPool2', () => {
       )
       await lender.connect(borrower).fund(loanForPartOfPool.address)
 
-      expect(await tusdPool.liquidRatio(parseEth(1e5).div(2))).to.eq(25_00)
+      const poolUtilization = (await tusdPool.liquidValue()).mul(100_00).div(await tusdPool.poolValue())
+
+      expect(await tusdPool.liquidRatio(parseEth(1e5).div(2))).to.eq(BigNumber.from(100_00).sub(poolUtilization))
     })
   })
 })
