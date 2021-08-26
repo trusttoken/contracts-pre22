@@ -537,16 +537,16 @@
       "address": "0xA7e89Fff27dE5984eC8544966Ae2a1E0a06173eA"
     },
     "trueMultiFarm": {
-      "txHash": "0xc48e691986f5a9c046c72b9e57a58b708303edb3820f19aa1b4a9148a872d40d",
-      "address": "0x848E65ff997c8F582e71cc2e202E160b1c7353f5"
+      "txHash": "0xa6431158a0ff7c7f7c1cf94c3f37d23d2f7333a89b9e46fcb01989471439b327",
+      "address": "0x4af280d9e794b5eA6BEe039a6F48a6eAFD865341"
     },
     "trueMultiFarm_LinearTrueDistributor_proxy": {
-      "txHash": "0x2dcbbeac9c92217e22ab916a1ac8874441b297d64ea2eb338caf0d4fce651580",
-      "address": "0x8EaA9B19751a29D3f35D9BB976d0D7DE619c50Ce"
+      "txHash": "0x88ea48522b103959f8383bc3992285676ecfa9d2d354153d3edc146556a7d219",
+      "address": "0xc7AB606e551bebD69f7611CdA1Fc473f8E5b8f70"
     },
     "trueMultiFarm_proxy": {
-      "txHash": "0x6f2967bc78f01f48c802f8c35fc4a387096ae2e54989b54ff08dec1180fc218a",
-      "address": "0x678076DC6DD534296641F9D804991bf894cf5728"
+      "txHash": "0x2469c5c705c1fdb5684e3e011e89004a26a517ae16cc963b95890cc164c17dfd",
+      "address": "0xec6c3FD795D6e6f202825Ddb56E01b3c128b0b10"
     },
     "tusd_CurveYearnStrategy": {
       "txHash": "0xc0f3b8351d232df656312834f60dd046bd81fba6b1f32b768264c4e8ad92fabd",
