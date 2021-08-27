@@ -951,7 +951,6 @@ describe('TrueFiPool2', () => {
     beforeEach(async () => {
       await tusd.approve(tusdPool.address, includeFee(parseEth(1e5)))
       await tusdPool.join(parseEth(1e5))
-      await setUtilization(25)
     })
 
     it('returns 0% when pool value is 0', async () => {
