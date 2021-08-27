@@ -28,6 +28,7 @@ import {
   TestTrueLender__factory,
   TrueFiCreditOracle,
   TrueFiCreditOracle__factory,
+  TrueRateAdjuster,
   TrueFiPool2,
   TrueFiPool2__factory,
   TrueRatingAgencyV2,
@@ -56,6 +57,7 @@ describe('TrueLender2', () => {
   let rater: TrueRatingAgencyV2
   let lender: TestTrueLender
   let creditOracle: TrueFiCreditOracle
+  let rateAdjuster: TrueRateAdjuster
 
   let counterfeitPool: TrueFiPool2
   let token1: MockErc20Token
@@ -80,7 +82,20 @@ describe('TrueLender2', () => {
     lender = await deployContract(owner, TestTrueLender__factory)
     oneInch = await new Mock1InchV3__factory(owner).deploy()
 
-    ;({ loanFactory, feePool, standardTokenOracle: poolOracle, rater, poolFactory, stkTru, tru, feeToken: usdc, lender, creditOracle, borrowingMutex } = await setupTruefi2(owner, _provider, { lender: lender, oneInch: oneInch }))
+    ;({
+      loanFactory,
+      feePool,
+      standardTokenOracle: poolOracle,
+      rater,
+      poolFactory,
+      stkTru,
+      tru,
+      feeToken: usdc,
+      lender,
+      creditOracle,
+      rateAdjuster,
+      borrowingMutex,
+    } = await setupTruefi2(owner, _provider, { lender: lender, oneInch: oneInch }))
 
     token1 = await deployContract(owner, MockErc20Token__factory)
     token2 = await deployContract(owner, MockErc20Token__factory)
@@ -118,6 +133,12 @@ describe('TrueLender2', () => {
     loan1 = await createLoan(loanFactory, borrower, pool1, 100000, YEAR, 100)
 
     loan2 = await createLoan(loanFactory, borrower, pool2, 500000, YEAR, 1000)
+
+    await rateAdjuster.addPoolToTVL(pool1.address)
+    await rateAdjuster.addPoolToTVL(pool2.address)
+
+    await creditOracle.setScore(borrower.address, 255)
+    await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(1e8))
   })
 
   const approveLoanRating = async function (loan: LoanToken2) {
@@ -446,6 +467,14 @@ describe('TrueLender2', () => {
 
         await expect(lender.connect(borrower).fund(loan1.address))
           .to.be.revertedWith('TrueLender: Credit score is too low for loan\'s term')
+      })
+
+      it('amount to fund exceeds borrow limit', async () => {
+        const amountToFund = parseEth(1e7).mul(15).div(100).add(1) // 15% of pool value + 1
+        const badLoan = await createLoan(loanFactory, borrower, pool1, amountToFund, YEAR, 100)
+        await approveLoanRating(badLoan)
+        await expect(lender.connect(borrower).fund(badLoan.address))
+          .to.be.revertedWith('TrueLender: Loan amount cannot exceed borrow limit')
       })
 
       it('taking new loans is locked by mutex', async () => {

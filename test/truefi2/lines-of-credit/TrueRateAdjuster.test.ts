@@ -428,7 +428,7 @@ describe('TrueRateAdjuster', () => {
     let lender
 
     beforeEach(async () => {
-      const { rater, tru, stkTru, loanFactory, standardPool: pool, lender: _lender, standardToken: tusd } = await setupTruefi2(owner, provider)
+      const { rater, tru, stkTru, loanFactory, standardPool: pool, lender: _lender, standardToken: tusd, creditOracle } = await setupTruefi2(owner, provider)
       loan = await createApprovedLoan(rater, tru, stkTru, loanFactory, borrower, pool, 1_000_000, YEAR, 1000, owner, provider)
       lender = _lender
 
@@ -445,6 +445,9 @@ describe('TrueRateAdjuster', () => {
       await mockPool1.mock.poolValue.returns(parseEth(1e7))
       await mockPool2.mock.decimals.returns(18)
       await mockPool2.mock.poolValue.returns(parseEth(1e7))
+
+      await creditOracle.setScore(borrower.address, 255)
+      await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
     })
 
     it('tvl returns sum of poolValues of all pools with 18 decimals precision', async () => {

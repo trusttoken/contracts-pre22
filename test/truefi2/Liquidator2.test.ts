@@ -11,6 +11,8 @@ import {
   TrueFiPool2,
   TrueLender2,
   TrueRatingAgencyV2,
+  TrueCreditAgency,
+  TrueFiCreditOracle,
 } from 'contracts'
 
 import { solidity } from 'ethereum-waffle'
@@ -47,6 +49,8 @@ describe('Liquidator2', () => {
   let lender: TrueLender2
   let pool: TrueFiPool2
   let loan: LoanToken2
+  let creditAgency: TrueCreditAgency
+  let creditOracle: TrueFiCreditOracle
 
   let timeTravel: (time: number) => void
 
@@ -60,7 +64,18 @@ describe('Liquidator2', () => {
     [owner, otherWallet, borrower, assurance, voter] = _wallets
     timeTravel = (time: number) => _timeTravel(_provider, time)
 
-    ;({ liquidator, loanFactory, feeToken: token, tru, stkTru, lender, feePool: pool, rater } = await setupTruefi2(owner, _provider))
+    ;({
+      liquidator,
+      loanFactory,
+      feeToken: token,
+      tru,
+      stkTru,
+      lender,
+      feePool: pool,
+      rater,
+      creditAgency,
+      creditOracle,
+    } = await setupTruefi2(owner, _provider))
 
     loan = await createApprovedLoan(rater, tru, stkTru, loanFactory, borrower, pool, parseUSDC(1000), YEAR, 1000, voter, _provider)
 
@@ -73,6 +88,10 @@ describe('Liquidator2', () => {
     await tru.mint(otherWallet.address, parseEth(15e6))
     await tru.approve(stkTru.address, parseEth(1e7))
     await tru.connect(otherWallet).approve(stkTru.address, parseEth(1e7))
+
+    await creditAgency.allowPool(pool.address, true)
+    await creditOracle.setScore(borrower.address, 255)
+    await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
   })
 
   describe('Initializer', () => {
