@@ -570,7 +570,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     }
 
     function deprecate() external {
-        DEPRECATED__ratingAgency = ITrueRatingAgency(0);
+        DEPRECATED__ratingAgency = ITrueRatingAgency(address(0));
         DEPRECATED__minVotes = type(uint256).max;
         DEPRECATED__minRatio = type(uint256).max;
         DEPRECATED__votingPeriod = type(uint256).max;
