@@ -17,16 +17,12 @@ import {
   TrueLender2,
   TrueLender2__factory,
 } from 'contracts'
-import { DAY, MAX_APY, parseEth, parseTRU } from 'utils'
+import { DAY, MAX_APY, parseEth } from 'utils'
 import fetch from 'node-fetch'
 import { expect, use } from 'chai'
-import { deployMockContract, MockContract, solidity } from 'ethereum-waffle'
+import { deployMockContract, solidity } from 'ethereum-waffle'
 import { utils, Wallet } from 'ethers'
-import {
-  TrueFiCreditOracleJson,
-  TrueRateAdjusterJson,
-  TrueRatingAgencyV2Json,
-} from 'build'
+import { TrueFiCreditOracleJson, TrueRateAdjusterJson } from 'build'
 import { AddressZero } from '@ethersproject/constants'
 
 use(solidity)
@@ -50,7 +46,6 @@ describe('TrueLender2', () => {
   let tusdLoanPool: TrueFiPool2
   let lender: TrueLender2
   let loanFactory: LoanFactory2
-  let mockRatingAgency: MockContract
   let stkTru: Wallet
   let tusd: Erc20Mock
   let usdc: Erc20Mock
@@ -64,8 +59,6 @@ describe('TrueLender2', () => {
     const poolImplementation = await deployContract(TrueFiPool2__factory)
     const implementationReference = await deployContract(ImplementationReference__factory, poolImplementation.address)
 
-    mockRatingAgency = await deployMockContract(owner, TrueRatingAgencyV2Json.abi)
-    await mockRatingAgency.mock.getResults.returns(0, 0, parseTRU(50e6))
     const mockRateAdjuster = await deployMockContract(owner, TrueRateAdjusterJson.abi)
     await mockRateAdjuster.mock.rate.returns(0)
     await mockRateAdjuster.mock.fixedTermLoanAdjustment.returns(1000)
@@ -77,7 +70,7 @@ describe('TrueLender2', () => {
     await borrowingMutex.initialize()
 
     lender = await deployContract(TrueLender2__factory)
-    await lender.initialize(stkTru.address, poolFactory.address, mockRatingAgency.address, INCH_ADDRESS, mockCreditOracle.address, mockRateAdjuster.address, borrowingMutex.address)
+    await lender.initialize(stkTru.address, poolFactory.address, INCH_ADDRESS, mockCreditOracle.address, mockRateAdjuster.address, borrowingMutex.address)
 
     await poolFactory.initialize(implementationReference.address, lender.address, AddressZero)
 

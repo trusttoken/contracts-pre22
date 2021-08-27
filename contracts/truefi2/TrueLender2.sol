@@ -62,7 +62,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
 
     IPoolFactory public factory;
 
-    ITrueRatingAgency public ratingAgency;
+    ITrueRatingAgency public DEPRECATED__ratingAgency;
 
     I1Inch3 public _1inch;
 
@@ -78,14 +78,14 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     // ===== Voting parameters =====
 
     // How many votes are needed for a loan to be approved
-    uint256 public minVotes;
+    uint256 public DEPRECATED__minVotes;
 
     // Minimum ratio of yes votes to total votes for a loan to be approved
     // basis precision: 10000 = 100%
-    uint256 public minRatio;
+    uint256 public DEPRECATED__minRatio;
 
     // minimum prediction market voting period
-    uint256 public votingPeriod;
+    uint256 public DEPRECATED__votingPeriod;
 
     ITrueFiCreditOracle public creditOracle;
 
@@ -109,18 +109,6 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     event LoansLimitChanged(uint256 maxLoans);
 
     /**
-     * @dev Emitted when minVotes changed
-     * @param minVotes New minVotes
-     */
-    event MinVotesChanged(uint256 minVotes);
-
-    /**
-     * @dev Emitted when risk aversion changed
-     * @param minRatio New risk aversion factor
-     */
-    event MinRatioChanged(uint256 minRatio);
-
-    /**
      * @dev Emitted when max loan term changed
      * @param maxLoanTerm New max loan term
      */
@@ -137,12 +125,6 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
      * @param longTermLoanScoreThreshold New minimal credit score threshold for long term loan
      */
     event LongTermLoanScoreThresholdChanged(uint256 longTermLoanScoreThreshold);
-
-    /**
-     * @dev Emitted when the minimum voting period is changed
-     * @param votingPeriod New voting period
-     */
-    event VotingPeriodChanged(uint256 votingPeriod);
 
     /**
      * @dev Emitted when loan fee is changed
@@ -194,13 +176,11 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
      * @dev Initialize the contract with parameters
      * @param _stakingPool stkTRU address
      * @param _factory PoolFactory address
-     * @param _ratingAgency TrueRatingAgencyV2 address
      * @param __1inch 1Inch exchange address (0x11111112542d85b3ef69ae05771c2dccff4faa26 for mainnet)
      */
     function initialize(
         IStakingPool _stakingPool,
         IPoolFactory _factory,
-        ITrueRatingAgency _ratingAgency,
         I1Inch3 __1inch,
         ITrueFiCreditOracle _creditOracle,
         ITrueRateAdjuster _rateAdjuster,
@@ -210,16 +190,12 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
 
         stakingPool = _stakingPool;
         factory = _factory;
-        ratingAgency = _ratingAgency;
         _1inch = __1inch;
         creditOracle = _creditOracle;
         rateAdjuster = _rateAdjuster;
         borrowingMutex = _borrowingMutex;
 
         swapFeeSlippage = 100; // 1%
-        minVotes = 15 * (10**6) * (10**8);
-        minRatio = 8000;
-        votingPeriod = 7 days;
         fee = 1000;
         maxLoans = 100;
         maxLoanTerm = 180 days;
@@ -244,35 +220,6 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     function setBorrowingMutex(IBorrowingMutex newMutex) public onlyOwner {
         borrowingMutex = newMutex;
         emit BorrowingMutexChanged(newMutex);
-    }
-
-    /**
-     * @dev Set new minimum voting period in credit rating market.
-     * Only owner can change parameters
-     * @param newVotingPeriod new minimum voting period
-     */
-    function setVotingPeriod(uint256 newVotingPeriod) external onlyOwner {
-        votingPeriod = newVotingPeriod;
-        emit VotingPeriodChanged(newVotingPeriod);
-    }
-
-    /**
-     * @dev Set new minimal amount of votes for loan to be approved. Only owner can change parameters.
-     * @param newMinVotes New minVotes.
-     */
-    function setMinVotes(uint256 newMinVotes) external onlyOwner {
-        minVotes = newMinVotes;
-        emit MinVotesChanged(newMinVotes);
-    }
-
-    /**
-     * @dev Set new yes to no votes ratio. Only owner can change parameters.
-     * @param newMinRatio New yes to no votes ratio
-     */
-    function setMinRatio(uint256 newMinRatio) external onlyOwner {
-        require(newMinRatio <= BASIS_RATIO, "TrueLender: minRatio cannot be more than 100%");
-        minRatio = newMinRatio;
-        emit MinRatioChanged(newMinRatio);
     }
 
     /**
@@ -361,15 +308,11 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         require(poolLoans[pool].length < maxLoans, "TrueLender: Loans number has reached the limit");
         require(borrowingMutex.isUnlocked(msg.sender), "TrueLender: There is an ongoing loan or credit line");
 
-        uint256 amount = loanToken.amount();
-        (uint256 start, uint256 no, uint256 yes) = ratingAgency.getResults(address(loanToken));
         uint256 term = loanToken.term();
-
         require(isTermBelowMax(term), "TrueLender: Loan's term is too long");
         require(isCredibleForTerm(term), "TrueLender: Credit score is too low for loan's term");
-        require(votingLastedLongEnough(start), "TrueLender: Voting time is below minimum");
-        require(votesThresholdReached(yes.add(no)), "TrueLender: Not enough votes given for the loan");
-        require(loanIsCredible(yes, no), "TrueLender: Loan risk is too high");
+
+        uint256 amount = loanToken.amount();
         require(amount <= borrowLimit(pool, loanToken.borrower()), "TrueLender: Loan amount cannot exceed borrow limit");
 
         poolLoans[pool].push(loanToken);
@@ -592,34 +535,6 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         revert("TrueLender: This loan has not been funded by the lender");
     }
 
-    /**
-     * @dev Check if a loan has been in the credit market long enough
-     * @param start Timestamp at which rating began
-     * @return Whether a loan has been rated for long enough
-     */
-    function votingLastedLongEnough(uint256 start) public view returns (bool) {
-        return start.add(votingPeriod) <= block.timestamp;
-    }
-
-    /**
-     * @dev Check if a loan has enough votes to be approved
-     * @param votes Total number of votes
-     * @return Whether a loan has reached the required voting threshold
-     */
-    function votesThresholdReached(uint256 votes) public view returns (bool) {
-        return votes >= minVotes;
-    }
-
-    /**
-     * @dev Check if yes to no votes ratio reached the minimum rate
-     * @param yesVotes Number of YES votes in credit market
-     * @param noVotes Number of NO votes in credit market
-     */
-    function loanIsCredible(uint256 yesVotes, uint256 noVotes) public view returns (bool) {
-        uint256 totalVotes = yesVotes.add(noVotes);
-        return yesVotes >= totalVotes.mul(minRatio).div(BASIS_RATIO);
-    }
-
     /// @dev Helper used in tests
     function _distribute(
         address recipient,
@@ -652,5 +567,12 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
 
     function isTermBelowMax(uint256 term) internal view returns (bool) {
         return term <= maxLoanTerm;
+    }
+
+    function deprecate() external {
+        DEPRECATED__ratingAgency = ITrueRatingAgency(address(0));
+        DEPRECATED__minVotes = type(uint256).max;
+        DEPRECATED__minRatio = type(uint256).max;
+        DEPRECATED__votingPeriod = type(uint256).max;
     }
 }

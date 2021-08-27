@@ -10,7 +10,6 @@ import {
   StkTruToken,
   TrueFiPool2,
   TrueLender2,
-  TrueRatingAgencyV2,
   TrueCreditAgency,
   TrueFiCreditOracle,
 } from 'contracts'
@@ -21,7 +20,7 @@ import { setupDeploy } from 'scripts/utils'
 import { DAY } from 'utils/constants'
 import {
   beforeEachWithFixture,
-  createApprovedLoan,
+  createLoan,
   parseEth,
   parseTRU,
   parseUSDC,
@@ -38,11 +37,9 @@ describe('Liquidator2', () => {
   let otherWallet: Wallet
   let assurance: Wallet
   let borrower: Wallet
-  let voter: Wallet
 
   let liquidator: Liquidator2
   let loanFactory: LoanFactory2
-  let rater: TrueRatingAgencyV2
   let token: MockUsdc
   let tru: MockTrueCurrency
   let stkTru: StkTruToken
@@ -61,7 +58,7 @@ describe('Liquidator2', () => {
     loan.connect(wallet).withdraw(beneficiary)
 
   beforeEachWithFixture(async (_wallets, _provider) => {
-    [owner, otherWallet, borrower, assurance, voter] = _wallets
+    [owner, otherWallet, borrower, assurance] = _wallets
     timeTravel = (time: number) => _timeTravel(_provider, time)
 
     ;({
@@ -72,12 +69,11 @@ describe('Liquidator2', () => {
       stkTru,
       lender,
       feePool: pool,
-      rater,
       creditAgency,
       creditOracle,
     } = await setupTruefi2(owner, _provider))
 
-    loan = await createApprovedLoan(rater, tru, stkTru, loanFactory, borrower, pool, parseUSDC(1000), YEAR, 1000, voter, _provider)
+    loan = await createLoan(loanFactory, borrower, pool, parseUSDC(1000), YEAR, 1000)
 
     await liquidator.setAssurance(assurance.address)
 
