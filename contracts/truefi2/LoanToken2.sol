@@ -7,7 +7,6 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 import {ERC20} from "../common/UpgradeableERC20.sol";
 import {ILoanToken2, ITrueFiPool2} from "./interface/ILoanToken2.sol";
-import {LoanToken} from "../truefi/LoanToken.sol";
 import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
 
 /**
