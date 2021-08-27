@@ -14,7 +14,6 @@ import {
 } from 'contracts'
 import {
   beforeEachWithFixture,
-  createApprovedLoan,
   DAY,
   expectScaledCloseTo,
   parseEth,
@@ -24,6 +23,7 @@ import {
   updateRateOracle,
   YEAR,
 } from 'utils'
+import { setUtilization as _setUtilization } from 'utils/setUtilization'
 import { expect, use } from 'chai'
 import { AddressZero } from '@ethersproject/constants'
 import { MockContract, MockProvider, solidity } from 'ethereum-waffle'
@@ -971,22 +971,24 @@ describe('TrueCreditAgency', () => {
   })
 
   describe('rate adjuster integration', () => {
-    const setUtilization = async (pool: TrueFiPool2, utilization: number) => {
-      if (utilization === 0) {
-        return
-      }
-      const utilizationAmount = (await pool.poolValue()).mul(utilization).div(100)
-      const loan = await createApprovedLoan(
-        ratingAgency, tru, stkTru,
-        loanFactory, borrower, tusdPool,
-        utilizationAmount, DAY, 1,
-        owner, provider,
+    beforeEach(async () => {
+      await setupBorrower(owner, 255, 0)
+      await setupBorrower(borrower2, 255, 0)
+    })
+
+    const setUtilization = (pool: TrueFiPool2, utilization: number) => (
+      _setUtilization(
+        provider, ratingAgency,
+        tru, stkTru, tusd,
+        loanFactory,
+        owner, borrower2,
+        lender, owner,
+        tusdPool, utilization,
       )
-      await lender.connect(borrower).fund(loan.address)
-    }
+    )
 
     describe('setUtilization', () => {
-      [0, 20, 50, 80, 100].map((utilization) => {
+      [0, 10, 25, 75, 100].map((utilization) => {
         it(`sets utilization to ${utilization} percent`, async () => {
           await setUtilization(tusdPool, utilization)
           const poolValue = await tusdPool.poolValue()
