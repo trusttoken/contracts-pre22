@@ -7,7 +7,6 @@ import {
   LinearTrueDistributor__factory,
   Liquidator2__factory,
   LoanFactory2__factory,
-  MockBorrowingMutex,
   MockBorrowingMutex__factory,
   MockTrueCurrency__factory,
   MockTrueFiPoolOracle__factory,
@@ -157,6 +156,6 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
     mockRateAdjuster,
     borrowingMutex,
     faultyBorrowingMutex,
-    faultyCreditAgency
+    faultyCreditAgency,
   }
 }
