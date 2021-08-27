@@ -12,7 +12,6 @@ import {
 } from 'contracts'
 import {
   beforeEachWithFixture,
-  createLoan,
   DAY,
   expectScaledCloseTo,
   parseEth,
