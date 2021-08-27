@@ -506,7 +506,7 @@ describe('TrueFiPool', () => {
     const borrowingMutex = await new BorrowingMutex__factory(owner).deploy()
     await borrowingMutex.initialize()
     await borrowingMutex.allowLocker(lender2.address, true)
-    await lender2.initialize(mockStakingPool.address, factory.address, mockRatingAgency.address, AddressZero, AddressZero, rateAdjuster.address, borrowingMutex.address)
+    await lender2.initialize(mockStakingPool.address, factory.address, AddressZero, AddressZero, rateAdjuster.address, borrowingMutex.address)
     await factory.initialize(implementationReference.address, lender2.address, safu.address)
     await factory.addLegacyPool(pool.address)
     const usdc = await new MockErc20Token__factory(owner).deploy()

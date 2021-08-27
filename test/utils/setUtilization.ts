@@ -1,23 +1,16 @@
 import {
   MockTrueCurrency,
-  StkTruToken,
   TrueFiPool2,
-  TrueRatingAgencyV2,
   TrueLender2,
   LoanFactory2,
 } from 'contracts'
 import { BigNumber, Wallet } from 'ethers'
-import { MockProvider } from 'ethereum-waffle'
 import { DAY } from './constants'
-import { createApprovedLoan as _createApprovedLoan } from './createLoan'
+import { createLoan as _createLoan } from './createLoan'
 
 // When setting utilization above 30 percent
 // slightly increases pool value
 export const setUtilization = async (
-  provider: MockProvider,
-  rater: TrueRatingAgencyV2,
-  tru: MockTrueCurrency,
-  stkTru: StkTruToken,
   tusd: MockTrueCurrency,
   loanFactory: LoanFactory2,
   borrower1: Wallet,
@@ -31,25 +24,23 @@ export const setUtilization = async (
     return
   }
 
-  const createApprovedLoan = async (borrower, amount) => _createApprovedLoan(
-    rater, tru, stkTru,
+  const createLoan = async (borrower, amount) => _createLoan(
     loanFactory, borrower, pool,
     amount, DAY, 0,
-    owner, provider,
   )
 
   const poolValue = await pool.poolValue()
   const utilizationAmount = poolValue.mul(utilization).div(100)
   if (utilization <= 15) {
-    const loan = await createApprovedLoan(borrower1, utilizationAmount)
+    const loan = await createLoan(borrower1, utilizationAmount)
     await lender.connect(borrower1).fund(loan.address)
     return
   }
   if (utilization <= 30) {
-    const loan = await createApprovedLoan(borrower1, poolValue.mul(15).div(100))
+    const loan = await createLoan(borrower1, poolValue.mul(15).div(100))
     await lender.connect(borrower1).fund(loan.address)
   } else {
-    const loan = await createApprovedLoan(borrower1, utilizationAmount)
+    const loan = await createLoan(borrower1, utilizationAmount)
 
     // bump liquidity temporarily to bypass
     // loan amount restriction of 15% pool value
@@ -72,6 +63,6 @@ export const setUtilization = async (
   if (loanAmount.gt(liquidityLeft)) {
     loanAmount = liquidityLeft
   }
-  const loan = await createApprovedLoan(borrower2, loanAmount)
+  const loan = await createLoan(borrower2, loanAmount)
   await lender.connect(borrower2).fund(loan.address)
 }

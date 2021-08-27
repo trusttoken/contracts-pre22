@@ -7,9 +7,7 @@ import {
   BadStrategy__factory,
   TrueFiPool2,
   TrueLender2,
-  StkTruToken,
   MockTrueCurrency,
-  TrueRatingAgencyV2,
   LoanFactory2,
   Safu,
   DeficiencyToken__factory,
@@ -24,7 +22,7 @@ import { parseEth } from 'utils/parseEth'
 import { setUtilization as _setUtilization } from 'utils/setUtilization'
 import { AddressZero } from '@ethersproject/constants'
 import {
-  createApprovedLoan,
+  createLoan,
   DAY,
   expectScaledCloseTo,
   setupTruefi2,
@@ -45,13 +43,10 @@ describe('TrueFiPool2', () => {
   let creditAgency: TrueCreditAgency
   let creditOracle: TrueFiCreditOracle
   let tusd: MockTrueCurrency
-  let tru: MockTrueCurrency
-  let stkTru: StkTruToken
   let tusdPool: TrueFiPool2
   let usdcPool: TrueFiPool2
   let loanFactory: LoanFactory2
   let lender: TrueLender2
-  let rater: TrueRatingAgencyV2
   let loan: LoanToken2
   let safu: Safu
   let deployContract: Deployer
@@ -61,7 +56,7 @@ describe('TrueFiPool2', () => {
   let rateAdjuster: TrueRateAdjuster
 
   let timeTravel: (time: number) => void
-  let setUtilization: (pool: TrueFiPool2, utilization: number) => void
+  let setUtilization: (utilization: number) => void
 
   beforeEachWithFixture(async (wallets, _provider) => {
     [owner, borrower, borrower2, borrower3] = wallets
@@ -70,10 +65,7 @@ describe('TrueFiPool2', () => {
     provider = _provider
 
     ;({
-      stkTru,
-      tru,
       standardToken: tusd,
-      rater,
       lender,
       standardPool: tusdPool,
       feePool: usdcPool,
@@ -84,7 +76,7 @@ describe('TrueFiPool2', () => {
       rateAdjuster,
     } = await setupTruefi2(owner, provider))
 
-    loan = await createApprovedLoan(rater, tru, stkTru, loanFactory, borrower, tusdPool, 500000, DAY, 1000, owner, provider)
+    loan = await createLoan(loanFactory, borrower, tusdPool, 500000, DAY, 1000)
 
     poolStrategy1 = await deployContract(MockStrategy__factory, tusd.address, tusdPool.address)
     poolStrategy2 = await deployContract(MockStrategy__factory, tusd.address, tusdPool.address)
@@ -102,14 +94,16 @@ describe('TrueFiPool2', () => {
       await creditAgency.allowBorrower(wallet.address, true)
     }
 
-    setUtilization = (pool: TrueFiPool2, utilization: number) => (
+    setUtilization = (utilization: number) => (
       _setUtilization(
-        provider, rater,
-        tru, stkTru, tusd,
+        tusd,
         loanFactory,
-        borrower2, borrower3,
-        lender, owner,
-        tusdPool, utilization,
+        borrower2,
+        borrower3,
+        lender,
+        owner,
+        tusdPool,
+        utilization,
       )
     )
   })
@@ -472,18 +466,13 @@ describe('TrueFiPool2', () => {
     })
 
     it('mints liquidity tokens proportionally to stake for next users', async () => {
-      const loan1 = await createApprovedLoan(
-        rater,
-        tru,
-        stkTru,
+      const loan1 = await createLoan(
         loanFactory,
         borrower,
         tusdPool,
         parseEth(1e6),
         DAY * 365,
         1000,
-        owner,
-        provider,
       )
 
       await lender.connect(borrower).fund(loan1.address)
@@ -498,18 +487,13 @@ describe('TrueFiPool2', () => {
     describe('two stakers', () => {
       let loan1: LoanToken2, loan2: LoanToken2
       beforeEach(async () => {
-        loan1 = await createApprovedLoan(
-          rater,
-          tru,
-          stkTru,
+        loan1 = await createLoan(
           loanFactory,
           borrower,
           tusdPool,
           parseEth(1e6),
           DAY * 365,
           1000,
-          owner,
-          provider,
         )
 
         await lender.connect(borrower).fund(loan1.address)
@@ -517,18 +501,13 @@ describe('TrueFiPool2', () => {
         // PoolValue is 10.05M USD at the moment
         // After join, owner has around 91% of shares
         await tusdPool.connect(borrower).join(parseEth(1e6))
-        loan2 = await createApprovedLoan(
-          rater,
-          tru,
-          stkTru,
+        loan2 = await createLoan(
           loanFactory,
           borrower,
           tusdPool,
           parseEth(1e6),
           DAY * 365,
           2500,
-          owner,
-          provider,
         )
         await lender.connect(borrower).fund(loan2.address)
       })
@@ -562,18 +541,13 @@ describe('TrueFiPool2', () => {
     })
 
     it('after loan approved, applies a penalty', async () => {
-      const loan1 = await createApprovedLoan(
-        rater,
-        tru,
-        stkTru,
+      const loan1 = await createLoan(
         loanFactory,
         borrower,
         tusdPool,
         amount.div(10),
         DAY * 365,
         1000,
-        owner,
-        provider,
       )
       await lender.connect(borrower).fund(loan1.address)
       expect(await tusdPool.liquidExitPenalty(amount.div(2))).to.equal(9995)
@@ -738,36 +712,26 @@ describe('TrueFiPool2', () => {
     })
 
     it('in order to borrow from pool it has to have liquidity', async () => {
-      await setUtilization(tusdPool, 90)
-      const loan1 = await createApprovedLoan(
-        rater,
-        tru,
-        stkTru,
+      await setUtilization(90)
+      const loan1 = await createLoan(
         loanFactory,
         borrower,
         tusdPool,
         (await tusdPool.poolValue()).div(10).add(1),
         DAY,
         0,
-        owner,
-        provider,
       )
 
       await expect(lender.connect(borrower).fund(loan1.address))
         .to.be.revertedWith('TrueFiPool: Insufficient liquidity')
 
-      const loan2 = await createApprovedLoan(
-        rater,
-        tru,
-        stkTru,
+      const loan2 = await createLoan(
         loanFactory,
         borrower,
         tusdPool,
         500000,
         DAY,
         1000,
-        owner,
-        provider,
       )
 
       await expect(lender.connect(borrower).fund(loan2.address))
@@ -776,19 +740,14 @@ describe('TrueFiPool2', () => {
 
     describe('ensureSufficientLiquidity', () => {
       it('strategy has to return enough funds', async () => {
-        await setUtilization(tusdPool, 90)
-        const loan = await createApprovedLoan(
-          rater,
-          tru,
-          stkTru,
+        await setUtilization(90)
+        const loan = await createLoan(
           loanFactory,
           borrower,
           tusdPool,
           await tusdPool.liquidValue(),
           DAY,
           0,
-          owner,
-          provider,
         )
         await tusdPool.connect(owner).switchStrategy(badPoolStrategy.address)
         await tusdPool.flush(1000)
@@ -815,18 +774,13 @@ describe('TrueFiPool2', () => {
       await tusd.approve(tusdPool.address, parseEth(100))
       await tusdPool.join(parseEth(100))
 
-      loan = await createApprovedLoan(
-        rater,
-        tru,
-        stkTru,
+      loan = await createLoan(
         loanFactory,
         borrower,
         tusdPool,
         100000,
         DAY,
         0,
-        owner,
-        provider,
       )
 
       await lender.connect(borrower).fund(loan.address)
@@ -954,18 +908,13 @@ describe('TrueFiPool2', () => {
       await tusd.approve(tusdPool.address, parseEth(100))
       await tusdPool.join(parseEth(100))
 
-      loan = await createApprovedLoan(
-        rater,
-        tru,
-        stkTru,
+      loan = await createLoan(
         loanFactory,
         borrower,
         tusdPool,
         100000,
         DAY,
         100,
-        owner,
-        provider,
       )
 
       await lender.connect(borrower).fund(loan.address)
@@ -1009,7 +958,7 @@ describe('TrueFiPool2', () => {
     })
 
     it('returns 0% when liquid value is 0', async () => {
-      await setUtilization(tusdPool, 100)
+      await setUtilization(100)
 
       expect(await tusdPool.liquidValue()).to.eq(0)
       expect(await tusdPool.liquidRatio(0)).to.eq(0)
@@ -1024,13 +973,13 @@ describe('TrueFiPool2', () => {
       const loanValue = parseEth(100)
       const expectedLiquidRatio = await tusdPool.liquidRatio(loanValue)
 
-      const loanForPartOfPool = await createApprovedLoan(
-        rater, tru,
-        stkTru, loanFactory,
-        borrower, tusdPool,
-        loanValue, DAY,
-        100, owner,
-        provider,
+      const loanForPartOfPool = await createLoan(
+        loanFactory,
+        borrower,
+        tusdPool,
+        loanValue,
+        DAY,
+        100,
       )
       await lender.connect(borrower).fund(loanForPartOfPool.address)
 
@@ -1038,7 +987,7 @@ describe('TrueFiPool2', () => {
     })
 
     it('equals 100% - utilization after lending', async () => {
-      await setUtilization(tusdPool, 25)
+      await setUtilization(25)
       const poolUtilization = (await tusdPool.liquidValue()).mul(100_00).div(await tusdPool.poolValue())
 
       expect(await tusdPool.liquidRatio(parseEth(1e5).div(2))).to.eq(BigNumber.from(100_00).sub(poolUtilization))

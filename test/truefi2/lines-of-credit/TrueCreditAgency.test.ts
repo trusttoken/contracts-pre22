@@ -3,14 +3,12 @@ import {
   LoanFactory2,
   MockTrueCurrency,
   MockUsdc,
-  StkTruToken,
   TimeAveragedBaseRateOracle,
   TrueCreditAgency,
   TrueFiCreditOracle,
   TrueFiPool2,
   TrueLender2,
   TrueRateAdjuster,
-  TrueRatingAgencyV2,
 } from 'contracts'
 import {
   beforeEachWithFixture,
@@ -40,10 +38,7 @@ describe('TrueCreditAgency', () => {
   let tusdPool: TrueFiPool2
   let usdc: MockUsdc
   let usdcPool: TrueFiPool2
-  let tru: MockTrueCurrency
-  let stkTru: StkTruToken
   let loanFactory: LoanFactory2
-  let ratingAgency: TrueRatingAgencyV2
   let rateAdjuster: TrueRateAdjuster
   let lender: TrueLender2
   let creditOracle: TrueFiCreditOracle
@@ -73,9 +68,6 @@ describe('TrueCreditAgency', () => {
       feeToken: usdc,
       feePool: usdcPool,
       loanFactory,
-      tru,
-      stkTru,
-      rater: ratingAgency,
       lender,
       creditAgency,
       creditOracle,
@@ -976,21 +968,23 @@ describe('TrueCreditAgency', () => {
       await setupBorrower(borrower2, 255, 0)
     })
 
-    const setUtilization = (pool: TrueFiPool2, utilization: number) => (
+    const setUtilization = (utilization: number) => (
       _setUtilization(
-        provider, ratingAgency,
-        tru, stkTru, tusd,
+        tusd,
         loanFactory,
-        owner, borrower2,
-        lender, owner,
-        tusdPool, utilization,
+        owner,
+        borrower2,
+        lender,
+        owner,
+        tusdPool,
+        utilization,
       )
     )
 
     describe('setUtilization', () => {
       [0, 10, 25, 75, 100].map((utilization) => {
         it(`sets utilization to ${utilization} percent`, async () => {
-          await setUtilization(tusdPool, utilization)
+          await setUtilization(utilization)
           const poolValue = await tusdPool.poolValue()
           const liquidValue = await tusdPool.liquidValue()
           const poolUtilization = poolValue.sub(liquidValue).mul(10_000).div(poolValue)
@@ -1000,7 +994,7 @@ describe('TrueCreditAgency', () => {
     })
 
     it('utilizationAdjustmentRate', async () => {
-      await setUtilization(tusdPool, 70)
+      await setUtilization(70)
       expect(await creditAgency.utilizationAdjustmentRate(tusdPool.address)).to.eq(505)
       expect('utilizationAdjustmentRate').to.be.calledOnContractWith(rateAdjuster, [tusdPool.address, 0])
     })
@@ -1009,7 +1003,7 @@ describe('TrueCreditAgency', () => {
       await rateAdjuster.setRiskPremium(100)
       await creditOracle.setScore(borrower.address, 223)
       await creditAgency.updateCreditScore(tusdPool.address, borrower.address)
-      await setUtilization(tusdPool, 50)
+      await setUtilization(50)
       const expectedCurrentRate = 693 // 300 + 100 + 143 + 150
       expect(await creditAgency.currentRate(tusdPool.address, borrower.address)).to.eq(expectedCurrentRate)
       expect('rate').to.be.calledOnContractWith(rateAdjuster, [tusdPool.address, 223, 0])

@@ -3,7 +3,7 @@ import { Wallet } from 'ethers'
 
 import {
   beforeEachWithFixture,
-  createApprovedLoan,
+  createLoan,
   DAY, YEAR, expectScaledCloseTo,
   parseEth,
   parseUSDC,
@@ -428,8 +428,8 @@ describe('TrueRateAdjuster', () => {
     let lender
 
     beforeEach(async () => {
-      const { rater, tru, stkTru, loanFactory, standardPool: pool, lender: _lender, standardToken: tusd, creditOracle } = await setupTruefi2(owner, provider)
-      loan = await createApprovedLoan(rater, tru, stkTru, loanFactory, borrower, pool, 1_000_000, YEAR, 1000, owner, provider)
+      const { loanFactory, standardPool: pool, lender: _lender, standardToken: tusd, creditOracle } = await setupTruefi2(owner, provider)
+      loan = await createLoan(loanFactory, borrower, pool, 1_000_000, YEAR, 1000)
       lender = _lender
 
       const mockPool1 = await deployMockContract(owner, ITrueFiPool2WithDecimalsJson.abi)
