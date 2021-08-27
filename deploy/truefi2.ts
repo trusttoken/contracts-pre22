@@ -113,7 +113,7 @@ deploy({}, (_, config) => {
     poolFactory.initialize(implementationReference, trueLender2, safu)
   })
   runIf(trueLender2.isInitialized().not(), () => {
-    trueLender2.initialize(stkTruToken, poolFactory, oneInch, trueFiCreditOracle, borrowingMutex)
+    trueLender2.initialize(stkTruToken, poolFactory, oneInch, trueFiCreditOracle, AddressZero, borrowingMutex)
   })
   runIf(loanFactory2.isInitialized().not(), () => {
     loanFactory2.initialize(poolFactory, trueLender2, liquidator2, AddressZero, trueFiCreditOracle, borrowingMutex)

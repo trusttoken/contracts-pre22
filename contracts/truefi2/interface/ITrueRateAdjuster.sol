@@ -4,6 +4,8 @@ pragma solidity 0.6.10;
 import {ITrueFiPool2} from "./ITrueFiPool2.sol";
 
 interface ITrueRateAdjuster {
+    function getTVLPools() external view returns (ITrueFiPool2[] memory);
+
     function rate(
         ITrueFiPool2 pool,
         uint8 score,
@@ -24,11 +26,12 @@ interface ITrueRateAdjuster {
 
     function borrowLimitAdjustment(uint8 score) external view returns (uint256);
 
+    function tvl(uint8 decimals) external view returns (uint256);
+
     function borrowLimit(
         ITrueFiPool2 pool,
         uint8 score,
         uint256 maxBorrowerLimit,
-        uint256 totalTVL,
         uint256 totalBorrowed
     ) external view returns (uint256);
 }

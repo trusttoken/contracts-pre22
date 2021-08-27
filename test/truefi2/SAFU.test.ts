@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { beforeEachWithFixture, createLoan, DAY, parseTRU, parseUSDC, setupTruefi2, timeTravel as _timeTravel } from 'utils'
+import { beforeEachWithFixture, createLoan, DAY, parseTRU, parseUSDC, parseEth, setupTruefi2, timeTravel as _timeTravel } from 'utils'
 import { BigNumberish, utils, Wallet } from 'ethers'
 import { AddressZero } from '@ethersproject/constants'
 
@@ -18,6 +18,8 @@ import {
   StkTruToken,
   TrueFiPool2,
   TrueLender2,
+  TrueCreditAgency,
+  TrueFiCreditOracle,
 } from 'contracts'
 
 import {
@@ -37,6 +39,8 @@ describe('SAFU', () => {
   let liquidator: Liquidator2
   let tru: MockTrueCurrency
   let stkTru: StkTruToken
+  let creditAgency: TrueCreditAgency
+  let creditOracle: TrueFiCreditOracle
   let borrowingMutex: BorrowingMutex
 
   let timeTravel: (time: number) => void
@@ -51,13 +55,30 @@ describe('SAFU', () => {
     timeTravel = (time: number) => _timeTravel(_provider, time)
 
     oneInch = await new Mock1InchV3__factory(owner).deploy()
-    ;({ safu, feeToken: token, feePool: pool, lender, loanFactory, tru, stkTru, liquidator, borrowingMutex } = await setupTruefi2(owner, _provider, { oneInch: oneInch }))
+    ;({
+      safu,
+      feeToken: token,
+      feePool: pool,
+      lender,
+      loanFactory,
+      tru,
+      stkTru,
+      liquidator,
+      creditAgency,
+      creditOracle,
+      borrowingMutex,
+    } = await setupTruefi2(owner, _provider, { oneInch: oneInch }))
 
     loan = await createLoan(loanFactory, borrower, pool, parseUSDC(1000), YEAR, 1000)
 
     await token.mint(owner.address, parseUSDC(1e7))
     await token.approve(pool.address, parseUSDC(1e7))
     await pool.connect(owner).join(parseUSDC(1e7))
+
+    await creditAgency.allowPool(pool.address, true)
+    await creditOracle.setScore(borrower.address, 255)
+    await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
+
     await lender.connect(borrower).fund(loan.address)
     await loan.connect(borrower).withdraw(borrower.address)
 

@@ -1,7 +1,16 @@
 import { expect, use } from 'chai'
 import { Wallet } from 'ethers'
 
-import { beforeEachWithFixture, DAY, parseEth, parseUSDC, timeTravelTo, updateRateOracle } from 'utils'
+import {
+  beforeEachWithFixture,
+  createApprovedLoan,
+  DAY, YEAR, expectScaledCloseTo,
+  parseEth,
+  parseUSDC,
+  setupTruefi2, timeTravel,
+  timeTravelTo,
+  updateRateOracle,
+} from 'utils'
 import { setupDeploy } from 'scripts/utils'
 
 import {
@@ -69,6 +78,79 @@ describe('TrueRateAdjuster', () => {
 
     it('sets utilization rate config', async () => {
       expect(await rateAdjuster.utilizationRateConfig()).to.deep.eq([50, 2])
+    })
+  })
+
+  describe('addPoolToTVL', () => {
+    const pool1 = '0x1111111111111111111111111111111111111111'
+    const pool2 = '0x2222222222222222222222222222222222222222'
+    const pool3 = '0x3333333333333333333333333333333333333333'
+    const pool4 = '0x4444444444444444444444444444444444444444'
+
+    beforeEach(async () => {
+      await rateAdjuster.addPoolToTVL(pool1)
+      await rateAdjuster.addPoolToTVL(pool2)
+      await rateAdjuster.addPoolToTVL(pool4)
+    })
+
+    it('reverts if caller is not the owner', async () => {
+      await expect(rateAdjuster.connect(borrower).addPoolToTVL(pool3))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('reverts if pool has already been added', async () => {
+      await expect(rateAdjuster.addPoolToTVL(pool2))
+        .to.be.revertedWith('TrueRateAdjuster: Pool has already been added to TVL')
+    })
+
+    it('adds pools to array', async () => {
+      await rateAdjuster.addPoolToTVL(pool3)
+
+      expect(await rateAdjuster.tvlPools(0)).eq(pool1)
+      expect(await rateAdjuster.tvlPools(1)).eq(pool2)
+      expect(await rateAdjuster.tvlPools(2)).eq(pool4)
+      expect(await rateAdjuster.tvlPools(3)).eq(pool3)
+    })
+
+    it('emits event', async () => {
+      await expect(rateAdjuster.addPoolToTVL(pool3))
+        .to.emit(rateAdjuster, 'PoolAddedToTVL')
+        .withArgs(pool3)
+    })
+  })
+
+  describe('removePoolFromTVL', () => {
+    const pool1 = '0x1111111111111111111111111111111111111111'
+    const pool2 = '0x2222222222222222222222222222222222222222'
+    const pool3 = '0x3333333333333333333333333333333333333333'
+    const pool4 = '0x4444444444444444444444444444444444444444'
+
+    beforeEach(async () => {
+      await rateAdjuster.addPoolToTVL(pool1)
+      await rateAdjuster.addPoolToTVL(pool2)
+      await rateAdjuster.addPoolToTVL(pool4)
+    })
+
+    it('reverts if caller is not the owner', async () => {
+      await expect(rateAdjuster.connect(borrower).removePoolFromTVL(pool2))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('reverts if pool not in array', async () => {
+      await expect(rateAdjuster.removePoolFromTVL(pool3)).to.be.revertedWith('TrueRateAdjuster: Pool already removed from TVL')
+    })
+
+    it('removes pool from array', async () => {
+      await rateAdjuster.removePoolFromTVL(pool2)
+
+      expect(await rateAdjuster.tvlPools(0)).eq(pool1)
+      expect(await rateAdjuster.tvlPools(1)).eq(pool4)
+    })
+
+    it('emits event', async () => {
+      await expect(rateAdjuster.removePoolFromTVL(pool2))
+        .to.emit(rateAdjuster, 'PoolRemovedFromTVL')
+        .withArgs(pool2)
     })
   })
 
@@ -341,38 +423,106 @@ describe('TrueRateAdjuster', () => {
     )
   })
 
-  describe('Borrow limit', () => {
+  describe('tvl', () => {
+    let loan
+    let lender
+
     beforeEach(async () => {
+      const { rater, tru, stkTru, loanFactory, standardPool: pool, lender: _lender, standardToken: tusd, creditOracle } = await setupTruefi2(owner, provider)
+      loan = await createApprovedLoan(rater, tru, stkTru, loanFactory, borrower, pool, 1_000_000, YEAR, 1000, owner, provider)
+      lender = _lender
+
+      const mockPool1 = await deployMockContract(owner, ITrueFiPool2WithDecimalsJson.abi)
+      const mockPool2 = await deployMockContract(owner, ITrueFiPool2WithDecimalsJson.abi)
+      await rateAdjuster.addPoolToTVL(pool.address)
+      await rateAdjuster.addPoolToTVL(mockPool1.address)
+      await rateAdjuster.addPoolToTVL(mockPool2.address)
+
+      await tusd.mint(owner.address, parseEth(1e7))
+      await tusd.approve(pool.address, parseEth(1e7))
+      await pool.join(parseEth(1e7))
+      await mockPool1.mock.decimals.returns(18)
+      await mockPool1.mock.poolValue.returns(parseEth(1e7))
+      await mockPool2.mock.decimals.returns(18)
+      await mockPool2.mock.poolValue.returns(parseEth(1e7))
+
+      await creditOracle.setScore(borrower.address, 255)
+      await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
+    })
+
+    it('tvl returns sum of poolValues of all pools with 18 decimals precision', async () => {
+      expect(await rateAdjuster.tvl(18)).to.equal(parseEth(3e7))
+    })
+
+    it('tvl remains unchanged after borrowing', async () => {
+      expect(await rateAdjuster.tvl(18)).to.equal(parseEth(3e7))
+      await lender.connect(borrower).fund(loan.address)
+      expect(await rateAdjuster.tvl(18)).to.equal(parseEth(3e7))
+    })
+
+    it('tvl scales with loan interest', async () => {
+      expect(await rateAdjuster.tvl(18)).to.equal(parseEth(3e7))
+      await lender.connect(borrower).fund(loan.address)
+      await timeTravel(provider, YEAR / 2)
+      expectScaledCloseTo(await rateAdjuster.tvl(18), parseEth(3e7).add(parseEth(1).div(2)))
+      await timeTravel(provider, YEAR)
+      expectScaledCloseTo(await rateAdjuster.tvl(18), parseEth(3e7).add(parseEth(1)))
+    })
+
+    it('newly added pool correctly effects tvl', async () => {
+      const mockPool3 = await deployMockContract(owner, ITrueFiPool2WithDecimalsJson.abi)
+      await mockPool3.mock.decimals.returns(18)
+      await mockPool3.mock.poolValue.returns(0)
+
+      expect(await rateAdjuster.tvl(18)).to.equal(parseEth(3e7))
+      await rateAdjuster.addPoolToTVL(mockPool3.address)
+      expect(await rateAdjuster.tvl(18)).to.equal(parseEth(3e7))
+
+      await mockPool3.mock.poolValue.returns(parseEth(1e7))
+      expect(await rateAdjuster.tvl(18)).to.equal(parseEth(4e7))
+    })
+  })
+
+  describe('Borrow limit', () => {
+    let mockPool2: MockContract
+
+    beforeEach(async () => {
+      mockPool2 = await deployMockContract(owner, ITrueFiPool2WithDecimalsJson.abi)
       await mockPool.mock.decimals.returns(18)
       await mockPool.mock.poolValue.returns(parseEth(1e7))
+      await mockPool2.mock.decimals.returns(6)
+      await mockPool2.mock.poolValue.returns(parseUSDC(1e7))
+      await rateAdjuster.addPoolToTVL(mockPool.address)
+      await rateAdjuster.addPoolToTVL(mockPool2.address)
     })
 
     it('borrow amount is limited by borrower limit', async () => {
-      expect(await rateAdjuster.borrowLimit(mockPool.address, 191, parseEth(100), parseEth(2e7), 0)).to.equal(parseEth(80.51)) // borrowLimitAdjustment(191)
+      expect(await rateAdjuster.borrowLimit(mockPool.address, 191, parseEth(100), 0)).to.equal(parseEth(80.51)) // borrowLimitAdjustment(191)
     })
 
     it('borrow limit depends on decimal count of the pool', async () => {
-      await mockPool.mock.decimals.returns(6)
-      expect(await rateAdjuster.borrowLimit(mockPool.address, 191, parseEth(100), parseUSDC(2e7), 0)).to.equal(parseUSDC(80.51))
+      expect(await rateAdjuster.borrowLimit(mockPool2.address, 191, parseEth(100), 0)).to.equal(parseUSDC(80.51))
     })
 
     it('borrow amount is limited by total TVL', async () => {
-      const maxTVLLimit = parseEth(10)
-      expect(await rateAdjuster.borrowLimit(mockPool.address, 191, parseEth(100), maxTVLLimit, 0)).to.equal(maxTVLLimit.mul(15).div(100).mul(8051).div(10000))
+      const maxTVLLimit = parseEth(20)
+      await mockPool.mock.poolValue.returns(maxTVLLimit.sub(parseEth(1)))
+      await mockPool2.mock.poolValue.returns(parseUSDC(1))
+      expect(await rateAdjuster.borrowLimit(mockPool.address, 191, parseEth(100), 0)).to.equal(maxTVLLimit.mul(15).div(100).mul(8051).div(10000))
     })
 
     it('borrow amount is limited by a single pool value', async () => {
       await mockPool.mock.poolValue.returns(parseUSDC(100))
       await mockPool.mock.decimals.returns(18)
-      expect(await rateAdjuster.borrowLimit(mockPool.address, 191, parseEth(100), parseEth(2e7), 0)).to.equal(parseUSDC(100).mul(15).div(100))
+      expect(await rateAdjuster.borrowLimit(mockPool.address, 191, parseEth(100), 0)).to.equal(parseUSDC(100).mul(15).div(100))
     })
 
     it('subtracts borrowed amount from credit limit', async () => {
-      expect(await rateAdjuster.borrowLimit(mockPool.address, 191, parseEth(100), parseEth(2e7), 100)).to.equal(parseEth(80.51).sub(100))
+      expect(await rateAdjuster.borrowLimit(mockPool.address, 191, parseEth(100), 100)).to.equal(parseEth(80.51).sub(100))
     })
 
     it('borrow limit is 0 if credit limit is below the borrowed amount', async () => {
-      expect(await rateAdjuster.borrowLimit(mockPool.address, 191, parseEth(100), parseEth(2e7), parseEth(100))).to.equal(0)
+      expect(await rateAdjuster.borrowLimit(mockPool.address, 191, parseEth(100), parseEth(100))).to.equal(0)
     })
   })
 

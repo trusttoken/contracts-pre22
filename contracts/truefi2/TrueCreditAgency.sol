@@ -256,24 +256,6 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     }
 
     /**
-     * @dev Calculate total TVL in USD
-     * @param decimals Precision to return
-     * @return TVL for all pools with lines of credit
-     */
-    function totalTVL(uint8 decimals) public view returns (uint256) {
-        uint256 tvl = 0;
-        uint256 resultPrecision = uint256(10)**decimals;
-
-        // loop through pools and sum tvl accounting for precision
-        for (uint8 i = 0; i < pools.length; i++) {
-            tvl = tvl.add(
-                pools[i].poolValue().mul(resultPrecision).div(uint256(10)**(ITrueFiPool2WithDecimals(address(pools[i])).decimals()))
-            );
-        }
-        return tvl;
-    }
-
-    /**
      * @dev Get total amount borrowed for `borrower` from lines of credit in USD
      * @param borrower Borrower to get amount borrowed for
      * @param decimals Precision to use when calculating total borrowed
@@ -307,7 +289,6 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
                 pool,
                 creditOracle.score(borrower),
                 creditOracle.maxBorrowerLimit(borrower),
-                totalTVL(poolDecimals),
                 totalBorrowed(borrower, poolDecimals)
             );
     }

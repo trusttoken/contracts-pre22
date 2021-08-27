@@ -22,6 +22,7 @@ import {
   updateRateOracle,
   YEAR,
 } from 'utils'
+import { setUtilization as _setUtilization } from 'utils/setUtilization'
 import { expect, use } from 'chai'
 import { AddressZero } from '@ethersproject/constants'
 import { MockContract, MockProvider, solidity } from 'ethereum-waffle'
@@ -227,7 +228,7 @@ describe('TrueCreditAgency', () => {
     })
   })
 
-  describe('totalTVL & totalBorrowed', () => {
+  describe('totalBorrowed & poolValue', () => {
     beforeEach(async () => {
       await usdcPool.setCreditAgency(creditAgency.address)
       await creditAgency.allowPool(usdcPool.address, true)
@@ -237,10 +238,6 @@ describe('TrueCreditAgency', () => {
       await usdcPool.join(parseUSDC(2e7))
     })
 
-    it('totalTVL returns sum of poolValues of all pools with 18 decimals precision', async () => {
-      expect(await creditAgency.totalTVL(18)).to.equal(parseEth(3e7))
-    })
-
     it('totalBorrowed returns total borrowed amount across all pools with 18 decimals precision', async () => {
       await creditAgency.allowBorrower(borrower.address, true)
       await creditAgency.connect(borrower).borrow(tusdPool.address, parseEth(100))
@@ -248,19 +245,19 @@ describe('TrueCreditAgency', () => {
       expect(await creditAgency.totalBorrowed(borrower.address, 18)).to.equal(parseEth(600))
     })
 
-    it('totalTVL remains unchanged after borrowing', async () => {
-      expect(await creditAgency.totalTVL(18)).to.equal(parseEth(3e7))
+    it('poolValue remains unchanged after borrowing', async () => {
+      expect(await tusdPool.poolValue()).to.equal(parseEth(1e7))
       await creditAgency.allowBorrower(borrower.address, true)
       await creditAgency.connect(borrower).borrow(tusdPool.address, parseEth(100))
-      expect(await creditAgency.totalTVL(18)).to.equal(parseEth(3e7))
+      expect(await tusdPool.poolValue()).to.equal(parseEth(1e7))
     })
 
-    it('totalTVL scales with credit interest', async () => {
-      expect(await creditAgency.totalTVL(18)).to.equal(parseEth(3e7))
+    it('poolValue scales with credit interest', async () => {
+      expect(await tusdPool.poolValue()).to.equal(parseEth(1e7))
       await creditAgency.allowBorrower(borrower.address, true)
       await creditAgency.connect(borrower).borrow(tusdPool.address, parseEth(100))
       await timeTravel(YEAR)
-      expectScaledCloseTo(await creditAgency.totalTVL(18), parseEth(3e7).add(parseEth(1)))
+      expectScaledCloseTo(await tusdPool.poolValue(), parseEth(1e7).add(parseEth(1)))
     })
   })
 
@@ -343,7 +340,7 @@ describe('TrueCreditAgency', () => {
 
     it('borrow amount is limited by total TVL', async () => {
       await usdcPool.liquidExit(parseUSDC(19e6))
-      const maxTVLLimit = (await creditAgency.totalTVL(18)).mul(15).div(100)
+      const maxTVLLimit = (await rateAdjuster.tvl(18)).mul(15).div(100)
       expect(await creditAgency.borrowLimit(tusdPool.address, borrower.address)).to.equal(maxTVLLimit.mul(8051).div(10000))
     })
 
@@ -967,22 +964,28 @@ describe('TrueCreditAgency', () => {
   })
 
   describe('rate adjuster integration', () => {
-    const setUtilization = async (pool: TrueFiPool2, utilization: number) => {
-      if (utilization === 0) {
-        return
-      }
-      const utilizationAmount = (await pool.poolValue()).mul(utilization).div(100)
-      const loan = await createLoan(
-        loanFactory, borrower, tusdPool,
-        utilizationAmount, DAY, 1,
+    beforeEach(async () => {
+      await setupBorrower(owner, 255, 0)
+      await setupBorrower(borrower2, 255, 0)
+    })
+
+    const setUtilization = (utilization: number) => (
+      _setUtilization(
+        tusd,
+        loanFactory,
+        owner,
+        borrower2,
+        lender,
+        owner,
+        tusdPool,
+        utilization,
       )
-      await lender.connect(borrower).fund(loan.address)
-    }
+    )
 
     describe('setUtilization', () => {
-      [0, 20, 50, 80, 100].map((utilization) => {
+      [0, 10, 25, 75, 100].map((utilization) => {
         it(`sets utilization to ${utilization} percent`, async () => {
-          await setUtilization(tusdPool, utilization)
+          await setUtilization(utilization)
           const poolValue = await tusdPool.poolValue()
           const liquidValue = await tusdPool.liquidValue()
           const poolUtilization = poolValue.sub(liquidValue).mul(10_000).div(poolValue)
@@ -992,7 +995,7 @@ describe('TrueCreditAgency', () => {
     })
 
     it('utilizationAdjustmentRate', async () => {
-      await setUtilization(tusdPool, 70)
+      await setUtilization(70)
       expect(await creditAgency.utilizationAdjustmentRate(tusdPool.address)).to.eq(505)
       expect('utilizationAdjustmentRate').to.be.calledOnContractWith(rateAdjuster, [tusdPool.address, 0])
     })
@@ -1001,7 +1004,7 @@ describe('TrueCreditAgency', () => {
       await rateAdjuster.setRiskPremium(100)
       await creditOracle.setScore(borrower.address, 223)
       await creditAgency.updateCreditScore(tusdPool.address, borrower.address)
-      await setUtilization(tusdPool, 50)
+      await setUtilization(50)
       const expectedCurrentRate = 693 // 300 + 100 + 143 + 150
       expect(await creditAgency.currentRate(tusdPool.address, borrower.address)).to.eq(expectedCurrentRate)
       expect('rate').to.be.calledOnContractWith(rateAdjuster, [tusdPool.address, 223, 0])
