@@ -2,12 +2,13 @@ import { BigNumber, BigNumberish, Wallet } from 'ethers'
 import {
   BorrowingMutex,
   LoanFactory2,
-  MockBorrowingMutex,
+  MockBorrowingMutex__factory,
   MockTrueCurrency,
   MockUsdc,
   StkTruToken,
   TimeAveragedBaseRateOracle,
   TrueCreditAgency,
+  TrueCreditAgency__factory,
   TrueFiCreditOracle,
   TrueFiPool2,
   TrueLender2,
@@ -29,6 +30,7 @@ import {
 import { expect, use } from 'chai'
 import { AddressZero } from '@ethersproject/constants'
 import { MockContract, MockProvider, solidity } from 'ethereum-waffle'
+import { setupDeploy } from 'scripts/utils'
 
 use(solidity)
 
@@ -52,8 +54,6 @@ describe('TrueCreditAgency', () => {
   let tusdBaseRateOracle: TimeAveragedBaseRateOracle
   let mockSpotOracle: MockContract
   let borrowingMutex: BorrowingMutex
-  let faultyBorrowingMutex: MockBorrowingMutex
-  let faultyCreditAgency: TrueCreditAgency
   let timeTravel: (time: number) => void
 
   const MONTH = DAY * 31
@@ -88,8 +88,6 @@ describe('TrueCreditAgency', () => {
       mockSpotOracle,
       rateAdjuster,
       borrowingMutex,
-      faultyBorrowingMutex,
-      faultyCreditAgency,
     } = await setupTruefi2(owner, provider))
 
     await tusdPool.setCreditAgency(creditAgency.address)
@@ -434,11 +432,16 @@ describe('TrueCreditAgency', () => {
     })
 
     it('fails if borrower mutex is already locked and borrower has some debt', async () => {
+      const deployContract = setupDeploy(owner)
+      const faultyCreditAgency = await deployContract(TrueCreditAgency__factory)
+      const faultyBorrowingMutex = await deployContract(MockBorrowingMutex__factory)
+
+      await faultyCreditAgency.initialize(creditOracle.address, rateAdjuster.address, faultyBorrowingMutex.address)
       await tusdPool.setCreditAgency(faultyCreditAgency.address)
       await faultyCreditAgency.allowPool(tusdPool.address, true)
       await faultyCreditAgency.allowBorrower(borrower.address, true)
-      await faultyCreditAgency.connect(borrower).borrow(tusdPool.address, 1000)
 
+      await faultyCreditAgency.connect(borrower).borrow(tusdPool.address, 1000)
       await faultyBorrowingMutex.unlock(borrower.address)
       await faultyBorrowingMutex.lock(borrower.address, owner.address)
 
