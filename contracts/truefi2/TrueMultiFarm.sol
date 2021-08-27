@@ -125,11 +125,11 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
      * @param amount Amount of tokens to stake
      */
     function stake(IERC20 token, uint256 amount) external override hasShares(token) update(token) {
+        stakes[token].staked[msg.sender] = stakes[token].staked[msg.sender].add(amount);
+        stakes[token].totalStaked = stakes[token].totalStaked.add(amount);
         if (stakerRewards[token].claimableReward[msg.sender] > 0) {
             _claim(token);
         }
-        stakes[token].staked[msg.sender] = stakes[token].staked[msg.sender].add(amount);
-        stakes[token].totalStaked = stakes[token].totalStaked.add(amount);
 
         token.safeTransferFrom(msg.sender, address(this), amount);
         emit Stake(token, msg.sender, amount);
@@ -170,8 +170,8 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
             updateRewards(tokens[i]);
         }
         for (uint256 i = 0; i < tokensLength; i++) {
-            _unstake(tokens[i], stakes[tokens[i]].staked[msg.sender]);
             _claim(tokens[i]);
+            _unstake(tokens[i], stakes[tokens[i]].staked[msg.sender]);
         }
     }
 
