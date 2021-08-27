@@ -334,14 +334,15 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, msg.sender);
         require(newScore >= minCreditScore, "TrueCreditAgency: Borrower has credit score below minimum");
         require(amount <= borrowLimit(pool, msg.sender), "TrueCreditAgency: Borrow amount cannot exceed borrow limit");
-        require(
-            borrowingMutex.isUnlocked(msg.sender) || borrowingMutex.locker(msg.sender) == address(this),
-            "TrueCreditAgency: Borrower cannot open two parallel debt positions"
-        );
 
         if (totalBorrowed(msg.sender, 18) == 0) {
             borrowingMutex.lock(msg.sender, address(this));
         }
+
+        require(
+            borrowingMutex.locker(msg.sender) == address(this),
+            "TrueCreditAgency: Borrower cannot open two simultaneous debt positions"
+        );
 
         uint256 currentDebt = borrowed[pool][msg.sender];
 

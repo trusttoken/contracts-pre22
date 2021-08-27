@@ -2,6 +2,7 @@ import { BigNumber, BigNumberish, Wallet } from 'ethers'
 import {
   BorrowingMutex,
   LoanFactory2,
+  MockBorrowingMutex,
   MockTrueCurrency,
   MockUsdc,
   StkTruToken,
@@ -51,12 +52,14 @@ describe('TrueCreditAgency', () => {
   let tusdBaseRateOracle: TimeAveragedBaseRateOracle
   let mockSpotOracle: MockContract
   let borrowingMutex: BorrowingMutex
+  let faultyBorrowingMutex: MockBorrowingMutex
+  let faultyCreditAgency: TrueCreditAgency
   let timeTravel: (time: number) => void
 
   const MONTH = DAY * 31
   const PRECISION = BigNumber.from(10).pow(27)
 
-  async function setupBorrower (borrower: Wallet, score: number, amount: BigNumberish) {
+  async function setupBorrower(borrower: Wallet, score: number, amount: BigNumberish) {
     await creditAgency.allowBorrower(borrower.address, true)
     await creditOracle.setScore(borrower.address, score)
     await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
@@ -69,23 +72,25 @@ describe('TrueCreditAgency', () => {
     timeTravel = (time: number) => _timeTravel(_provider, time)
     provider = _provider
 
-    ; ({
-      standardToken: tusd,
-      standardPool: tusdPool,
-      feeToken: usdc,
-      feePool: usdcPool,
-      loanFactory,
-      tru,
-      stkTru,
-      rater: ratingAgency,
-      lender,
-      creditAgency,
-      creditOracle,
-      standardBaseRateOracle: tusdBaseRateOracle,
-      mockSpotOracle,
-      rateAdjuster,
-      borrowingMutex,
-    } = await setupTruefi2(owner, provider))
+      ; ({
+        standardToken: tusd,
+        standardPool: tusdPool,
+        feeToken: usdc,
+        feePool: usdcPool,
+        loanFactory,
+        tru,
+        stkTru,
+        rater: ratingAgency,
+        lender,
+        creditAgency,
+        creditOracle,
+        standardBaseRateOracle: tusdBaseRateOracle,
+        mockSpotOracle,
+        rateAdjuster,
+        borrowingMutex,
+        faultyBorrowingMutex,
+        faultyCreditAgency
+      } = await setupTruefi2(owner, provider))
 
     await tusdPool.setCreditAgency(creditAgency.address)
     await creditAgency.allowPool(tusdPool.address, true)
@@ -425,7 +430,20 @@ describe('TrueCreditAgency', () => {
       await borrowingMutex.lock(borrower.address, owner.address)
 
       await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000))
-        .to.be.revertedWith('TrueCreditAgency: Borrower cannot open two parallel debt positions')
+        .to.be.revertedWith('BorrowingMutex: Borrower is already locked')
+    })
+
+    it('fails if borrower mutex is already locked and borrower has some debt', async () => {
+      await tusdPool.setCreditAgency(faultyCreditAgency.address)
+      await faultyCreditAgency.allowPool(tusdPool.address, true)
+      await faultyCreditAgency.allowBorrower(borrower.address, true)
+      await faultyCreditAgency.connect(borrower).borrow(tusdPool.address, 1000)
+
+      await faultyBorrowingMutex.unlock(borrower.address)
+      await faultyBorrowingMutex.lock(borrower.address, owner.address)
+
+      await expect(faultyCreditAgency.connect(borrower).borrow(tusdPool.address, 1000))
+        .to.be.revertedWith('TrueCreditAgency: Borrower cannot open two simultaneous debt positions')
     })
 
     it('cannot borrow from the pool that is not whitelisted', async () => {
