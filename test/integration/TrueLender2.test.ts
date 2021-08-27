@@ -1,7 +1,8 @@
 import { forkChain } from './suite'
 import { setupDeploy } from 'scripts/utils'
 import {
-  BorrowingMutex, BorrowingMutex__factory,
+  BorrowingMutex,
+  BorrowingMutex__factory,
   Erc20Mock,
   Erc20Mock__factory,
   ImplementationReference__factory,
@@ -21,7 +22,11 @@ import fetch from 'node-fetch'
 import { expect, use } from 'chai'
 import { deployMockContract, MockContract, solidity } from 'ethereum-waffle'
 import { utils, Wallet } from 'ethers'
-import { TrueFiCreditOracleJson, TrueRateAdjusterJson, TrueRatingAgencyV2Json } from 'build'
+import {
+  TrueFiCreditOracleJson,
+  TrueRateAdjusterJson,
+  TrueRatingAgencyV2Json,
+} from 'build'
 import { AddressZero } from '@ethersproject/constants'
 
 use(solidity)
@@ -66,12 +71,13 @@ describe('TrueLender2', () => {
     await mockRateAdjuster.mock.fixedTermLoanAdjustment.returns(1000)
     const mockCreditOracle = await deployMockContract(owner, TrueFiCreditOracleJson.abi)
     await mockCreditOracle.mock.score.returns(255)
+    await mockCreditOracle.mock.maxBorrowerLimit.withArgs(OWNER).returns(parseEth(100_000_000))
 
     borrowingMutex = await deployContract(BorrowingMutex__factory)
     await borrowingMutex.initialize()
 
     lender = await deployContract(TrueLender2__factory)
-    await lender.initialize(stkTru.address, poolFactory.address, mockRatingAgency.address, INCH_ADDRESS, AddressZero, borrowingMutex.address)
+    await lender.initialize(stkTru.address, poolFactory.address, mockRatingAgency.address, INCH_ADDRESS, mockCreditOracle.address, mockRateAdjuster.address, borrowingMutex.address)
 
     await poolFactory.initialize(implementationReference.address, lender.address, AddressZero)
 
@@ -90,6 +96,10 @@ describe('TrueLender2', () => {
     usdt = Erc20Mock__factory.connect(USDT_ADDRESS, owner)
     await poolFactory.createPool(usdt.address)
     usdtLoanPool = TrueFiPool2__factory.connect(await poolFactory.pool(usdt.address), owner)
+
+    await mockRateAdjuster.mock.getTVLPools.returns([tusdLoanPool.address, usdtLoanPool.address])
+    await mockRateAdjuster.mock.borrowLimit.withArgs(tusdLoanPool.address, 255, parseEth(100_000_000), 0).returns(parseEth(100_000_000))
+    await mockRateAdjuster.mock.borrowLimit.withArgs(usdtLoanPool.address, 255, parseEth(100_000_000), 0).returns(parseEth(100_000_000))
 
     loanFactory = await new LoanFactory2__factory(owner).deploy()
     await loanFactory.initialize(poolFactory.address, lender.address, AddressZero, mockRateAdjuster.address, mockCreditOracle.address, borrowingMutex.address)
