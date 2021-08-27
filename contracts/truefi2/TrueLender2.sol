@@ -311,9 +311,10 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         uint256 term = loanToken.term();
         require(isTermBelowMax(term), "TrueLender: Loan's term is too long");
         require(isCredibleForTerm(term), "TrueLender: Credit score is too low for loan's term");
+        
+        uint256 amount = loanToken.amount();
         require(amount <= borrowLimit(pool, loanToken.borrower()), "TrueLender: Loan amount cannot exceed borrow limit");
 
-        uint256 amount = loanToken.amount();
         poolLoans[pool].push(loanToken);
         pool.borrow(amount);
         pool.token().safeApprove(address(loanToken), amount);
