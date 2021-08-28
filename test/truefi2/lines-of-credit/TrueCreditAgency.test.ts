@@ -1,10 +1,13 @@
 import { BigNumber, BigNumberish, Wallet } from 'ethers'
 import {
+  BorrowingMutex,
   LoanFactory2,
+  MockBorrowingMutex__factory,
   MockTrueCurrency,
   MockUsdc,
   TimeAveragedBaseRateOracle,
   TrueCreditAgency,
+  TrueCreditAgency__factory,
   TrueFiCreditOracle,
   TrueFiPool2,
   TrueLender2,
@@ -25,6 +28,7 @@ import { setUtilization as _setUtilization } from 'utils/setUtilization'
 import { expect, use } from 'chai'
 import { AddressZero } from '@ethersproject/constants'
 import { MockContract, MockProvider, solidity } from 'ethereum-waffle'
+import { setupDeploy } from 'scripts/utils'
 
 use(solidity)
 
@@ -44,6 +48,7 @@ describe('TrueCreditAgency', () => {
   let creditOracle: TrueFiCreditOracle
   let tusdBaseRateOracle: TimeAveragedBaseRateOracle
   let mockSpotOracle: MockContract
+  let borrowingMutex: BorrowingMutex
   let timeTravel: (time: number) => void
 
   const MONTH = DAY * 31
@@ -62,7 +67,7 @@ describe('TrueCreditAgency', () => {
     timeTravel = (time: number) => _timeTravel(_provider, time)
     provider = _provider
 
-    ;({
+    ; ({
       standardToken: tusd,
       standardPool: tusdPool,
       feeToken: usdc,
@@ -74,6 +79,7 @@ describe('TrueCreditAgency', () => {
       standardBaseRateOracle: tusdBaseRateOracle,
       mockSpotOracle,
       rateAdjuster,
+      borrowingMutex,
     } = await setupTruefi2(owner, provider))
 
     await tusdPool.setCreditAgency(creditAgency.address)
@@ -95,6 +101,10 @@ describe('TrueCreditAgency', () => {
 
     it('sets interestRepaymentPeriod', async () => {
       expect(await creditAgency.interestRepaymentPeriod()).to.equal(MONTH)
+    })
+
+    it('sets borrowingMutex', async () => {
+      expect(await creditAgency.borrowingMutex()).to.equal(borrowingMutex.address)
     })
   })
 
@@ -405,6 +415,32 @@ describe('TrueCreditAgency', () => {
         .to.be.revertedWith('TrueCreditAgency: Sender has overdue interest in this pool')
     })
 
+    it('fails if borrower mutex is already locked', async () => {
+      await borrowingMutex.allowLocker(owner.address, true)
+      await borrowingMutex.lock(borrower.address, owner.address)
+
+      await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000))
+        .to.be.revertedWith('BorrowingMutex: Borrower is already locked')
+    })
+
+    it('fails if borrower mutex is already locked and borrower has some debt', async () => {
+      const deployContract = setupDeploy(owner)
+      const faultyCreditAgency = await deployContract(TrueCreditAgency__factory)
+      const faultyBorrowingMutex = await deployContract(MockBorrowingMutex__factory)
+
+      await faultyCreditAgency.initialize(creditOracle.address, rateAdjuster.address, faultyBorrowingMutex.address)
+      await tusdPool.setCreditAgency(faultyCreditAgency.address)
+      await faultyCreditAgency.allowPool(tusdPool.address, true)
+      await faultyCreditAgency.allowBorrower(borrower.address, true)
+
+      await faultyCreditAgency.connect(borrower).borrow(tusdPool.address, 1000)
+      await faultyBorrowingMutex.unlock(borrower.address)
+      await faultyBorrowingMutex.lock(borrower.address, owner.address)
+
+      await expect(faultyCreditAgency.connect(borrower).borrow(tusdPool.address, 1000))
+        .to.be.revertedWith('TrueCreditAgency: Borrower cannot open two simultaneous debt positions')
+    })
+
     it('cannot borrow from the pool that is not whitelisted', async () => {
       await creditAgency.allowPool(tusdPool.address, false)
       await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000))
@@ -416,6 +452,11 @@ describe('TrueCreditAgency', () => {
       const tx = await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
       const timestamp = BigNumber.from((await provider.getBlock(tx.blockNumber)).timestamp)
       expect(await creditAgency.nextInterestRepayTime(tusdPool.address, borrower.address)).to.eq(timestamp.add(MONTH))
+    })
+
+    it('locks mutex', async () => {
+      await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
+      expect(await borrowingMutex.locker(borrower.address)).to.eq(creditAgency.address)
     })
 
     it('does not update nextInterestRepayTime on debt increase', async () => {
@@ -678,6 +719,12 @@ describe('TrueCreditAgency', () => {
     it('sets nextInterestRepayTime to 0', async () => {
       await creditAgency.connect(borrower).repayInFull(tusdPool.address)
       expect(await creditAgency.nextInterestRepayTime(tusdPool.address, borrower.address)).to.eq(0)
+    })
+
+    it('unlocks mutex', async () => {
+      expect(await borrowingMutex.locker(borrower.address)).to.eq(creditAgency.address)
+      await creditAgency.connect(borrower).repayInFull(tusdPool.address)
+      expect(await borrowingMutex.locker(borrower.address)).to.eq(AddressZero)
     })
 
     it('emits event', async () => {
