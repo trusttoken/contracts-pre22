@@ -10,12 +10,12 @@ import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {ITrueCreditAgency} from "./interface/ITrueCreditAgency.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
 import {ITimeAveragedBaseRateOracle} from "./interface/ITimeAveragedBaseRateOracle.sol";
+import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
 
 interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
     function decimals() external view returns (uint8);
 }
 
-// prettier-ignore
 /**
  * @title TrueCreditAgency
  * @dev Manager for Lines of Credit in the TrueFi Protocol
@@ -38,7 +38,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     uint256 constant ADDITIONAL_PRECISION = 1e27;
 
     /// @dev basis precision: 10000 = 100%
-    uint256 constant BASIS_POINTS = 10_000;
+    uint256 constant BASIS_POINTS = 10000;
 
     /// @dev total & cumulative interest for borrowers in a bucket
     struct SavedInterest {
@@ -107,6 +107,9 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     /// @dev credit oracle
     ITrueFiCreditOracle public creditOracle;
 
+    // mutex ensuring there's only one running loan or credit line for borrower
+    IBorrowingMutex public borrowingMutex;
+
     /**
      * @dev Buckets Bitmap
      * This bitmap is used to non-empty buckets.
@@ -147,11 +150,16 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     event MinCreditScoreChanged(uint256 newValue);
 
     /// @dev initialize
-    function initialize(ITrueFiCreditOracle _creditOracle, ITrueRateAdjuster _rateAdjuster) public initializer {
+    function initialize(
+        ITrueFiCreditOracle _creditOracle,
+        ITrueRateAdjuster _rateAdjuster,
+        IBorrowingMutex _borrowingMutex
+    ) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
         creditOracle = _creditOracle;
         rateAdjuster = _rateAdjuster;
         interestRepaymentPeriod = 31 days;
+        borrowingMutex = _borrowingMutex;
     }
 
     /// @dev modifier for only whitelisted borrowers
@@ -326,6 +334,16 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, msg.sender);
         require(newScore >= minCreditScore, "TrueCreditAgency: Borrower has credit score below minimum");
         require(amount <= borrowLimit(pool, msg.sender), "TrueCreditAgency: Borrow amount cannot exceed borrow limit");
+
+        if (totalBorrowed(msg.sender, 18) == 0) {
+            borrowingMutex.lock(msg.sender, address(this));
+        }
+
+        require(
+            borrowingMutex.locker(msg.sender) == address(this),
+            "TrueCreditAgency: Borrower cannot open two simultaneous debt positions"
+        );
+
         uint256 currentDebt = borrowed[pool][msg.sender];
 
         if (currentDebt == 0) {
@@ -368,9 +386,15 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
             _payInterestWithoutTransfer(pool, accruedInterest);
             _payPrincipalWithoutTransfer(pool, amount.sub(accruedInterest));
         }
+
+        if (totalBorrowed(msg.sender, 18) == 0) {
+            borrowingMutex.unlock(msg.sender);
+        }
+
         if (borrowed[pool][msg.sender] == 0) {
             nextInterestRepayTime[pool][msg.sender] = 0;
         }
+
         // transfer token from sender wallets
         _repay(pool, amount);
     }

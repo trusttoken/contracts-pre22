@@ -12,7 +12,7 @@ contract BorrowingMutex is IBorrowingMutex, UpgradeableClaimable {
     // REMOVAL OR REORDER OF VARIABLES WILL RESULT
     // ========= IN STORAGE CORRUPTION ===========
 
-    mapping(address => address) public locker;
+    mapping(address => address) public override locker;
 
     mapping(address => bool) public canLock;
 
