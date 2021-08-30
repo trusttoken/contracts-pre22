@@ -417,6 +417,17 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
     }
 
     /**
+     * @dev DEPRECATED This function will always revert.
+     * DO NOT USE in any new code. Please use liquidExit() instead.
+     *
+     * Exit pool
+     * This function will withdraw a basket of currencies backing the pool value
+     */
+    function exit(uint256) external pure {
+        revert("This function has been deprecated. Please use liquidExit() instead.");
+    }
+
+    /**
      * @dev Exit pool only with liquid tokens
      * This function will withdraw TUSD but with a small penalty
      * Uses the sync() modifier to reduce gas costs of using curve
@@ -440,6 +451,19 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
         require(token.transfer(msg.sender, amountToWithdraw));
 
         emit Exited(msg.sender, amountToWithdraw);
+    }
+
+    /**
+     * @dev DEPRECATED This function always returns a constant 10000 to represent no penalty.
+     * DO NOT USE in any new code. Only here for backward compatibility with existing contracts.
+     *
+     * Penalty (in % * 100) applied if liquid exit is performed with this amount
+     * returns 10000 if no penalty
+     */
+    function liquidExitPenalty(uint256) external pure returns (uint256) {
+        // DEPRECATED This function always returns a constant 10000 to represent no penalty.
+        // DO NOT USE in any new code. Only here for backward compatibility with existing contracts.
+        return 10000;
     }
 
     /**
