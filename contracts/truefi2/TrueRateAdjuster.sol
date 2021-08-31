@@ -304,45 +304,40 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
 
     /**
      * @dev Calculate total TVL in USD
-     * @param decimals Precision to return
-     * @return TVL for all pools
+     * @return _tvl TVL for all pools
      */
-    function tvl(uint8 decimals) public override view returns (uint256) {
+    function tvl() public override view returns (uint256) {
         uint256 _tvl = 0;
-        uint256 resultPrecision = uint256(10)**decimals;
-
-        // loop through pools and sum tvl accounting for precision
+        // loop through pools and sum tvl converted to USD
         for (uint256 i = 0; i < tvlPools.length; i++) {
-            uint8 poolDecimals = ITrueFiPool2WithDecimals(address(tvlPools[i])).decimals();
-            _tvl = _tvl.add(tvlPools[i].poolValue().mul(resultPrecision).div(uint256(10)**poolDecimals));
+            _tvl = _tvl.add(tvlPools[i].oracle().tokenToUsd(tvlPools[i].poolValue()));
         }
         return _tvl;
     }
 
     /**
-     * @dev Get borrow limit
+     * @dev Get borrow limit in USD with 18 decimal precision
      * @param pool Pool which is being borrowed from
      * @param score Borrower score
-     * @param maxBorrowerLimit Borrower maximum borrow limit
-     * @param totalBorrowed Total amount borrowed from all pools
+     * @param maxBorrowerLimit Borrower maximum borrow limit, 18 dec precision
+     * @param totalBorrowedInUsd Total amount borrowed from all pools, 18 dec precision
      * @return Borrow limit
      */
     function borrowLimit(
         ITrueFiPool2 pool,
         uint8 score,
         uint256 maxBorrowerLimit,
-        uint256 totalBorrowed
+        uint256 totalBorrowedInUsd
     ) public override view returns (uint256) {
         if (score < borrowLimitConfig.scoreFloor) {
             return 0;
         }
-        uint8 poolDecimals = ITrueFiPool2WithDecimals(address(pool)).decimals();
-        maxBorrowerLimit = maxBorrowerLimit.mul(uint256(10)**poolDecimals).div(1 ether);
-        uint256 maxTVLLimit = tvl(poolDecimals).mul(borrowLimitConfig.tvlLimitCoefficient).div(BASIS_POINTS);
+        uint256 maxTVLLimit = tvl().mul(borrowLimitConfig.tvlLimitCoefficient).div(BASIS_POINTS);
         uint256 adjustment = borrowLimitAdjustment(score);
         uint256 creditLimit = min(maxBorrowerLimit, maxTVLLimit).mul(adjustment).div(BASIS_POINTS);
-        uint256 poolBorrowMax = min(pool.poolValue().mul(borrowLimitConfig.poolValueLimitCoefficient).div(BASIS_POINTS), creditLimit);
-        return saturatingSub(poolBorrowMax, totalBorrowed);
+        uint256 poolValueInUsd = pool.oracle().tokenToUsd(pool.poolValue());
+        uint256 poolBorrowMax = min(poolValueInUsd.mul(borrowLimitConfig.poolValueLimitCoefficient).div(BASIS_POINTS), creditLimit);
+        return saturatingSub(poolBorrowMax, totalBorrowedInUsd);
     }
 
     /// @dev Internal helper to calculate saturating sub of `a` - `b`

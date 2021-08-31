@@ -28,9 +28,9 @@ import {
   TestTrueLender__factory,
   TrueFiCreditOracle,
   TrueFiCreditOracle__factory,
-  TrueRateAdjuster,
   TrueFiPool2,
   TrueFiPool2__factory,
+  TrueRateAdjuster,
   TrueRatingAgencyV2,
 } from 'contracts'
 
@@ -113,6 +113,7 @@ describe('TrueLender2', () => {
     await counterfeitPool.initialize(token1.address, lender.address, AddressZero, owner.address)
 
     await pool1.setOracle(poolOracle.address)
+    await pool2.setOracle(poolOracle.address)
 
     await lender.setFeePool(feePool.address)
 

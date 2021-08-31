@@ -251,7 +251,7 @@ describe('TrueCreditAgency', () => {
       await creditAgency.allowBorrower(borrower.address, true)
       await creditAgency.connect(borrower).borrow(tusdPool.address, parseEth(100))
       await creditAgency.connect(borrower).borrow(usdcPool.address, parseUSDC(500))
-      expect(await creditAgency.totalBorrowed(borrower.address, 18)).to.equal(parseEth(600))
+      expect(await creditAgency.totalBorrowed(borrower.address)).to.equal(parseEth(600))
     })
 
     it('poolValue remains unchanged after borrowing', async () => {
@@ -344,36 +344,37 @@ describe('TrueCreditAgency', () => {
     it('borrow amount is limited by borrower limit', async () => {
       await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100))
       expect(await creditAgency.borrowLimit(tusdPool.address, borrower.address)).to.equal(parseEth(80.51))
-      expect(await creditAgency.borrowLimit(usdcPool.address, borrower.address)).to.equal(parseUSDC(80.51))
+      expect(await creditAgency.borrowLimit(usdcPool.address, borrower.address)).to.equal(parseEth(80.51))
     })
 
     it('borrow amount is limited by total TVL', async () => {
       await usdcPool.liquidExit(parseUSDC(19e6))
-      const maxTVLLimit = (await rateAdjuster.tvl(18)).mul(15).div(100)
+      const maxTVLLimit = (await rateAdjuster.tvl()).mul(15).div(100)
       expect(await creditAgency.borrowLimit(tusdPool.address, borrower.address)).to.equal(maxTVLLimit.mul(8051).div(10000))
     })
 
     it('borrow amount is limited by a single pool value', async () => {
-      expect(await creditAgency.borrowLimit(usdcPool.address, borrower.address)).to.equal(parseUSDC(2e7).mul(15).div(100))
+      expect(await creditAgency.borrowLimit(usdcPool.address, borrower.address)).to.equal(parseEth(2e7).mul(15).div(100))
     })
 
     it('cannot borrow more than 15% of a single pool in total', async () => {
-      const oneUSDC = Number(parseUSDC(1))
-      expect(await creditAgency.borrowLimit(usdcPool.address, borrower.address)).to.be.closeTo(parseUSDC(3e6), oneUSDC)
+      const expectLimitCloseTo = async (expectedAmount: BigNumber) =>
+        expect(expectedAmount.sub(await creditAgency.borrowLimit(usdcPool.address, borrower.address))).to.be.lte(parseEth(1))
+      await expectLimitCloseTo(parseEth(3e6))
       await creditAgency.connect(borrower).borrow(usdcPool.address, parseUSDC(2e6))
-      expect(await creditAgency.borrowLimit(usdcPool.address, borrower.address)).to.be.closeTo(parseUSDC(1e6), oneUSDC)
+      await expectLimitCloseTo(parseEth(1e6))
       await creditAgency.connect(borrower).borrow(usdcPool.address, parseUSDC(5e5))
-      expect(await creditAgency.borrowLimit(usdcPool.address, borrower.address)).to.be.closeTo(parseUSDC(5e5), oneUSDC)
+      await expectLimitCloseTo(parseEth(5e5))
       await creditAgency.connect(borrower).borrow(usdcPool.address, parseUSDC(5e5))
-      expect(await creditAgency.borrowLimit(usdcPool.address, borrower.address)).to.be.closeTo(parseUSDC(0), oneUSDC)
+      await expectLimitCloseTo(parseEth(0))
     })
 
     it('borrow limit is 0 if credit limit is below the borrowed amount', async () => {
       await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100))
       await creditAgency.connect(borrower).borrow(usdcPool.address, parseUSDC(80))
-      expect(await creditAgency.borrowLimit(usdcPool.address, borrower.address)).to.be.gt(parseUSDC(0))
+      expect(await creditAgency.borrowLimit(usdcPool.address, borrower.address)).to.be.gt(0)
       await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(95))
-      expect(await creditAgency.borrowLimit(usdcPool.address, borrower.address)).to.equal(parseUSDC(0))
+      expect(await creditAgency.borrowLimit(usdcPool.address, borrower.address)).to.equal(0)
     })
   })
 
