@@ -706,7 +706,8 @@ describe('TrueRatingAgencyV2', () => {
         await usdc.mint(owner.address, parseEth(1e20))
         const usdcPool = await new TrueFiPool2__factory(owner).deploy()
         await usdcPool.initialize(usdc.address, AddressZero, AddressZero, AddressZero)
-        loanToken2 = await new LoanToken2__factory(owner).deploy(
+        loanToken2 = await new LoanToken2__factory(owner).deploy()
+        await loanToken2.initialize(
           usdcPool.address,
           borrowingMutex.address,
           owner.address,

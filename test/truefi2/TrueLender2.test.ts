@@ -331,7 +331,8 @@ describe('TrueLender2', () => {
       })
 
       it('loan was created for unknown pool', async () => {
-        const badLoan = await deployContract(owner, LoanToken2__factory, [
+        const badLoan = await deployContract(owner, LoanToken2__factory)
+        await badLoan.initialize(
           counterfeitPool.address,
           AddressZero,
           borrower.address,
@@ -341,7 +342,7 @@ describe('TrueLender2', () => {
           100000,
           DAY,
           100,
-        ])
+        )
         await expect(lender.connect(borrower).fund(badLoan.address)).to.be.revertedWith('TrueLender: Pool not created by the factory')
       })
 
