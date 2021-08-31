@@ -3,6 +3,7 @@ pragma solidity 0.6.10;
 
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
+import {Clones} from "../proxy/Clones.sol";
 import {Initializable} from "../common/Initializable.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
@@ -40,6 +41,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     ITrueRateAdjuster public rateAdjuster;
     ITrueFiCreditOracle public creditOracle;
     IBorrowingMutex public borrowingMutex;
+    address public loanTokenImplementation;
     // ======= STORAGE DECLARATION END ============
 
     /**
@@ -97,6 +99,10 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         return rateAdjuster.rate(pool, borrowerScore, amount).add(fixedTermLoanAdjustment);
     }
 
+    function setLoanTokenImplementation(address newImplementation) external onlyAdmin {
+        loanTokenImplementation = newImplementation;
+    }
+
     /**
      * @dev Deploy LoanToken with parameters
      * @param _amount Amount to borrow
@@ -111,12 +117,24 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         require(_amount > 0, "LoanFactory: Loans of amount 0, will not be approved");
         require(_term > 0, "LoanFactory: Loans cannot have instantaneous term of repay");
         require(poolFactory.isPool(address(_pool)), "LoanFactory: Pool was not created by PoolFactory");
+        require(loanTokenImplementation != address(0), "Loan token implementation should be set");
 
         uint256 apy = rate(_pool, msg.sender, _amount, _term);
 
         require(apy <= _maxApy, "LoanFactory: Calculated apy is higher than max apy");
 
-        address newToken = address(new LoanToken2(_pool, borrowingMutex, msg.sender, lender, admin, liquidator, _amount, _term, apy));
+        // address newToken = address(new LoanToken2(_pool, borrowingMutex, msg.sender, lender, admin, liquidator, _amount, _term, apy));
+        address newToken = Clones.clone(loanTokenImplementation);
+
+        bytes memory data = abi.encodeWithSignature(
+            "initialize(address,address,address,address,address,address,uint256,uint256,uint256)", 
+            address(_pool), address(borrowingMutex), msg.sender, lender, admin, liquidator, _amount, _term, apy
+        );
+
+        // solhint-disable-next-line avoid-low-level-calls
+        (bool success,) = newToken.call(data);
+        require(success, "LoanFactory2: Loan token initialization failed");
+
         isLoanToken[newToken] = true;
 
         emit LoanTokenCreated(newToken);

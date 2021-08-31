@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
+// COPIED FROM https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.3.0/contracts/proxy/Clones.sol
 
-// TF-CHANGE Change compiler version to 0.6.10
-// pragma solidity ^0.8.0;
+// TF-CHANGE Change compiler version from ^0.8.0 to 0.6.10
 pragma solidity 0.6.10;
 
+// prettier-ignore
 /**
  * @dev https://eips.ethereum.org/EIPS/eip-1167[EIP 1167] is a standard for
  * deploying minimal proxy contracts, also known as "clones".

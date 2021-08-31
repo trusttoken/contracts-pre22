@@ -67,6 +67,8 @@ describe('LoanFactory2', () => {
     await poolToken.connect(depositor).approve(pool.address, parseEth(10_000))
     await pool.connect(depositor).join(parseEth(10_000))
 
+    const loanImplementation = await new LoanToken2__factory(owner).deploy()
+    await loanFactory.setLoanTokenImplementation(loanImplementation.address)
     loanToken = await createLoan(parseEth(1_000), 100)
   })
 
