@@ -45,6 +45,9 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
     mapping(address => mapping(address => address)) public singleBorrowerPool;
     mapping(address => bool) public isBorrowerWhitelisted;
 
+    /// @dev array of pools officially supported by TrueFi
+    ITrueFiPool2[] public supportedPools;
+
     // ======= STORAGE DECLARATION END ===========
 
     /**
@@ -61,6 +64,12 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
      * @param pool Address of new pool's proxy
      */
     event SingleBorrowerPoolCreated(address borrower, address token, address pool);
+
+    /// @dev emit `pool` when officially supporting
+    event PoolSupported(ITrueFiPool2 pool);
+
+    /// @dev emit `pool` when officially removing support
+    event PoolUnsupported(ITrueFiPool2 pool);
 
     /**
      * @dev Event to show that token is now allowed/disallowed to have a pool created
@@ -223,6 +232,38 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
     function whitelistBorrower(address borrower, bool status) external onlyOwner {
         isBorrowerWhitelisted[borrower] = status;
         emit BorrowerWhitelistStatusChanged(borrower, status);
+    }
+
+    function getSupportedPools() external override view returns (ITrueFiPool2[] memory) {
+        return supportedPools;
+    }
+
+    /**
+     * @dev Add `_pool` to official support
+     */
+    function supportPool(ITrueFiPool2 _pool) external onlyOwner {
+        require(isPool[address(_pool)], "PoolFactory: Pool not created by factory");
+
+        for (uint256 i = 0; i < supportedPools.length; i++) {
+            require(supportedPools[i] != _pool, "PoolFactory: Pool is already supported");
+        }
+        supportedPools.push(_pool);
+        emit PoolSupported(_pool);
+    }
+
+    /**
+     * @dev Remove `_pool` from official support
+     */
+    function unsupportPool(ITrueFiPool2 _pool) external onlyOwner {
+        for (uint256 i = 0; i < supportedPools.length; i++) {
+            if (supportedPools[i] == _pool) {
+                supportedPools[i] = supportedPools[supportedPools.length - 1];
+                supportedPools.pop();
+                emit PoolUnsupported(_pool);
+                return;
+            }
+        }
+        revert("PoolFactory: Pool already unsupported");
     }
 
     /**

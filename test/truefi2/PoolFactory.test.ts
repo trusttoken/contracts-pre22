@@ -30,6 +30,8 @@ describe('PoolFactory', () => {
   let factory: PoolFactory
   let token1: MockErc20Token
   let token2: MockErc20Token
+  let token3: MockErc20Token
+  let token4: MockErc20Token
   let trueLenderInstance1: TestTrueLender
   let trueLenderInstance2: TestTrueLender
 
@@ -41,6 +43,8 @@ describe('PoolFactory', () => {
     factory = await new PoolFactory__factory(owner).deploy()
     token1 = await new MockErc20Token__factory(owner).deploy()
     token2 = await new MockErc20Token__factory(owner).deploy()
+    token3 = await new MockErc20Token__factory(owner).deploy()
+    token4 = await new MockErc20Token__factory(owner).deploy()
     trueLenderInstance1 = await new TestTrueLender__factory(owner).deploy()
     trueLenderInstance2 = await new TestTrueLender__factory(owner).deploy()
 
@@ -278,6 +282,109 @@ describe('PoolFactory', () => {
       await expect(factory.allowToken(token1.address, false))
         .to.emit(factory, 'AllowedStatusChanged')
         .withArgs(token1.address, false)
+    })
+  })
+
+  describe('supportPool', () => {
+    beforeEach(async () => {
+      await factory.allowToken(token1.address, true)
+      await factory.allowToken(token2.address, true)
+      await factory.allowToken(token3.address, true)
+      await factory.allowToken(token4.address, true)
+      await factory.createPool(token1.address)
+      await factory.createPool(token2.address)
+      await factory.createPool(token3.address)
+      await factory.createPool(token4.address)
+
+      await factory.supportPool((await factory.pool(token1.address)))
+      await factory.supportPool((await factory.pool(token2.address)))
+      await factory.supportPool((await factory.pool(token4.address)))
+    })
+
+    it('reverts if caller is not the owner', async () => {
+      const pool3 = await factory.pool(token3.address)
+      await expect(factory.connect(borrower).supportPool(pool3))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('reverts if pool was not created by factory', async () => {
+      const pool3 = await factory.pool(token3.address)
+      await factory.deprecatePool(pool3)
+      await factory.removePool(pool3)
+
+      await expect(factory.supportPool(pool3))
+        .to.be.revertedWith('PoolFactory: Pool not created by factory')
+    })
+
+    it('reverts if pool has already been added', async () => {
+      const pool2 = await factory.pool(token2.address)
+      await expect(factory.supportPool(pool2))
+        .to.be.revertedWith('PoolFactory: Pool is already supported')
+    })
+
+    it('adds pools to array', async () => {
+      const pool1 = await factory.pool(token1.address)
+      const pool2 = await factory.pool(token2.address)
+      const pool3 = await factory.pool(token3.address)
+      const pool4 = await factory.pool(token4.address)
+      await factory.supportPool(pool3)
+
+      expect(await factory.supportedPools(0)).eq(pool1)
+      expect(await factory.supportedPools(1)).eq(pool2)
+      expect(await factory.supportedPools(2)).eq(pool4)
+      expect(await factory.supportedPools(3)).eq(pool3)
+    })
+
+    it('emits event', async () => {
+      const pool3 = await factory.pool(token3.address)
+      await expect(factory.supportPool(pool3))
+        .to.emit(factory, 'PoolSupported')
+        .withArgs(pool3)
+    })
+  })
+
+  describe('unsupportPool', () => {
+    beforeEach(async () => {
+      await factory.allowToken(token1.address, true)
+      await factory.allowToken(token2.address, true)
+      await factory.allowToken(token3.address, true)
+      await factory.allowToken(token4.address, true)
+      await factory.createPool(token1.address)
+      await factory.createPool(token2.address)
+      await factory.createPool(token3.address)
+      await factory.createPool(token4.address)
+
+      await factory.supportPool((await factory.pool(token1.address)))
+      await factory.supportPool((await factory.pool(token2.address)))
+      await factory.supportPool((await factory.pool(token4.address)))
+    })
+
+    it('reverts if caller is not the owner', async () => {
+      const pool2 = await factory.pool(token2.address)
+      await expect(factory.connect(borrower).unsupportPool(pool2))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('reverts if pool not in array', async () => {
+      const pool3 = await factory.pool(token3.address)
+      await expect(factory.unsupportPool(pool3)).to.be.revertedWith('PoolFactory: Pool already unsupported')
+    })
+
+    it('removes pool from array', async () => {
+      const pool1 = await factory.pool(token1.address)
+      const pool2 = await factory.pool(token2.address)
+      const pool4 = await factory.pool(token4.address)
+      await factory.unsupportPool(pool2)
+
+      expect(await factory.supportedPools(0)).eq(pool1)
+      expect(await factory.supportedPools(1)).eq(pool4)
+    })
+
+    it('emits event', async () => {
+      const pool2 = await factory.pool(token2.address)
+      await expect(factory.unsupportPool(pool2))
+        .to.emit(factory, 'PoolUnsupported')
+        .withArgs(pool2)
     })
   })
 
