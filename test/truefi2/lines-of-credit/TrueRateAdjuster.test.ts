@@ -511,7 +511,7 @@ describe('TrueRateAdjuster', () => {
     })
 
     it('borrow limit depends on decimal count of the pool', async () => {
-      expect(await rateAdjuster.borrowLimit(mockPool2.address, 191, parseEth(100), 0)).to.equal(parseUSDC(80.51))
+      expect(await rateAdjuster.borrowLimit(mockPool2.address, 191, parseEth(100), 0)).to.equal(parseEth(80.51))
     })
 
     it('borrow amount is limited by total TVL', async () => {
