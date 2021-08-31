@@ -1012,7 +1012,9 @@ describe('TrueCreditAgency', () => {
   describe('rate adjuster integration', () => {
     beforeEach(async () => {
       await setupBorrower(owner, 255, 0)
+      await creditAgency.connect(owner).repayInFull(tusdPool.address)
       await setupBorrower(borrower2, 255, 0)
+      await creditAgency.connect(borrower2).repayInFull(tusdPool.address)
     })
 
     const setUtilization = (utilization: number) => (
