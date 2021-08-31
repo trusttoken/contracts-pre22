@@ -266,20 +266,13 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     /**
      * @dev Get total amount borrowed for `borrower` from lines of credit in USD
      * @param borrower Borrower to get amount borrowed for
-     * @param decimals Precision to use when calculating total borrowed
-     * @return Total amount borrowed for `borrower` in USD
+     * @return borrowSum Total amount borrowed for `borrower` in USD
      */
-    function totalBorrowed(address borrower, uint8 decimals) public view returns (uint256) {
+    function totalBorrowed(address borrower) public view returns (uint256) {
         uint256 borrowSum = 0;
-        uint256 resultPrecision = uint256(10)**decimals;
-
-        // loop through pools and sum amount borrowed accounting for precision
+        // loop through pools and sum amount borrowed converted to USD
         for (uint8 i = 0; i < pools.length; i++) {
-            borrowSum = borrowSum.add(
-                borrowed[pools[i]][borrower].mul(resultPrecision).div(
-                    uint256(10)**(ITrueFiPool2WithDecimals(address(pools[i])).decimals())
-                )
-            );
+            borrowSum = borrowSum.add(pools[i].oracle().tokenToUsd(borrowed[pools[i]][borrower]));
         }
         return borrowSum;
     }
@@ -291,13 +284,12 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
      * @return borrow limit for `borrower` in `pool`
      */
     function borrowLimit(ITrueFiPool2 pool, address borrower) public view returns (uint256) {
-        uint8 poolDecimals = ITrueFiPool2WithDecimals(address(pool)).decimals();
         return
             rateAdjuster.borrowLimit(
                 pool,
                 creditOracle.score(borrower),
                 creditOracle.maxBorrowerLimit(borrower),
-                totalBorrowed(borrower, poolDecimals)
+                totalBorrowed(borrower)
             );
     }
 
@@ -333,9 +325,12 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         require(!_hasOverdueInterest(pool, msg.sender), "TrueCreditAgency: Sender has overdue interest in this pool");
         (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, msg.sender);
         require(newScore >= minCreditScore, "TrueCreditAgency: Borrower has credit score below minimum");
-        require(amount <= borrowLimit(pool, msg.sender), "TrueCreditAgency: Borrow amount cannot exceed borrow limit");
+        require(
+            pool.oracle().tokenToUsd(amount) <= borrowLimit(pool, msg.sender),
+            "TrueCreditAgency: Borrow amount cannot exceed borrow limit"
+        );
 
-        if (totalBorrowed(msg.sender, 18) == 0) {
+        if (totalBorrowed(msg.sender) == 0) {
             borrowingMutex.lock(msg.sender, address(this));
         }
 
@@ -343,7 +338,6 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
             borrowingMutex.locker(msg.sender) == address(this),
             "TrueCreditAgency: Borrower cannot open two simultaneous debt positions"
         );
-
         uint256 currentDebt = borrowed[pool][msg.sender];
 
         if (currentDebt == 0) {
@@ -387,7 +381,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
             _payPrincipalWithoutTransfer(pool, amount.sub(accruedInterest));
         }
 
-        if (totalBorrowed(msg.sender, 18) == 0) {
+        if (totalBorrowed(msg.sender) == 0) {
             borrowingMutex.unlock(msg.sender);
         }
 
