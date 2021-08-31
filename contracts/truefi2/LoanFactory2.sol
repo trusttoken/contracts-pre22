@@ -123,16 +123,16 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
 
         require(apy <= _maxApy, "LoanFactory: Calculated apy is higher than max apy");
 
-        // address newToken = address(new LoanToken2(_pool, borrowingMutex, msg.sender, lender, admin, liquidator, _amount, _term, apy));
         address newToken = Clones.clone(loanTokenImplementation);
 
+        // prettier-ignore
         bytes memory data = abi.encodeWithSignature(
             "initialize(address,address,address,address,address,address,uint256,uint256,uint256)", 
             address(_pool), address(borrowingMutex), msg.sender, lender, admin, liquidator, _amount, _term, apy
         );
 
         // solhint-disable-next-line avoid-low-level-calls
-        (bool success,) = newToken.call(data);
+        (bool success, ) = newToken.call(data);
         require(success, "LoanFactory2: Loan token initialization failed");
 
         isLoanToken[newToken] = true;
