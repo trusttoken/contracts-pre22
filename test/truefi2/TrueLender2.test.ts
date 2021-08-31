@@ -20,17 +20,17 @@ import {
   MockErc20Token,
   MockErc20Token__factory,
   MockTrueCurrency,
+  MockTrueFiPoolOracle,
   MockUsdc,
-  MockUsdStableCoinOracle,
   PoolFactory,
   StkTruToken,
   TestTrueLender,
   TestTrueLender__factory,
   TrueFiCreditOracle,
   TrueFiCreditOracle__factory,
-  TrueRateAdjuster,
   TrueFiPool2,
   TrueFiPool2__factory,
+  TrueRateAdjuster,
   TrueRatingAgencyV2,
 } from 'contracts'
 
@@ -52,7 +52,7 @@ describe('TrueLender2', () => {
   let pool1: TrueFiPool2
   let pool2: TrueFiPool2
   let feePool: TrueFiPool2
-  let poolOracle: MockUsdStableCoinOracle
+  let poolOracle: MockTrueFiPoolOracle
 
   let rater: TrueRatingAgencyV2
   let lender: TestTrueLender

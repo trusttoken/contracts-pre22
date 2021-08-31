@@ -19,13 +19,14 @@ import { setupDeploy } from 'scripts/utils'
 import {
   LoanToken2,
   MockErc20Token,
-  MockErc20Token__factory, MockUsdStableCoinOracle,
+  MockErc20Token__factory, MockTrueFiPoolOracle,
   MockUsdStableCoinOracle__factory,
   TestTimeAveragedBaseRateOracle__factory,
   TimeAveragedBaseRateOracle,
   TimeAveragedBaseRateOracle__factory,
   TrueFiPool2,
-  TrueFiPool2__factory, TrueLender2,
+  TrueFiPool2__factory,
+  TrueLender2,
   TrueRateAdjuster,
   TrueRateAdjuster__factory,
 } from 'contracts'
@@ -427,7 +428,7 @@ describe('TrueRateAdjuster', () => {
   describe('tvl', () => {
     let loan: LoanToken2
     let lender: TrueLender2
-    let oracle: MockUsdStableCoinOracle
+    let oracle: MockTrueFiPoolOracle
 
     beforeEach(async () => {
       const { loanFactory, standardPool: pool, lender: _lender, standardToken: tusd, standardTokenOracle, creditOracle } = await setupTruefi2(owner, provider)
