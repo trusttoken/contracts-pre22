@@ -10,7 +10,7 @@ import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {ITrueStrategy} from "./interface/ITrueStrategy.sol";
 import {ITrueFiPool2, ITrueFiPoolOracle} from "./interface/ITrueFiPool2.sol";
 import {ITrueLender2, ILoanToken2} from "./interface/ITrueLender2.sol";
-import {IDebtToken} from "./interface/IDebtToken.sol";
+import {IDebtToken} from "./interface/ILoanToken2.sol";
 import {IPauseableContract} from "../common/interface/IPauseableContract.sol";
 import {ISAFU} from "./interface/ISAFU.sol";
 import {IDeficiencyToken} from "./interface/IDeficiencyToken.sol";
