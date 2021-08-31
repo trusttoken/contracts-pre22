@@ -10,6 +10,7 @@ import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {ITrueStrategy} from "./interface/ITrueStrategy.sol";
 import {ITrueFiPool2, ITrueFiPoolOracle} from "./interface/ITrueFiPool2.sol";
 import {ITrueLender2, ILoanToken2} from "./interface/ITrueLender2.sol";
+import {IDebtToken} from "./interface/IDebtToken.sol";
 import {IPauseableContract} from "../common/interface/IPauseableContract.sol";
 import {ISAFU} from "./interface/ISAFU.sol";
 import {IDeficiencyToken} from "./interface/IDeficiencyToken.sol";
@@ -17,7 +18,6 @@ import {ITrueCreditAgency} from "./interface/ITrueCreditAgency.sol";
 
 import {ABDKMath64x64} from "../truefi/Log.sol";
 import {OneInchExchange} from "./libraries/OneInchExchange.sol";
-import {PoolExtensions} from "./PoolExtensions.sol";
 
 /**
  * @title TrueFiPool2
@@ -572,8 +572,10 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     /**
      * @dev Function called by SAFU when liquidation happens. It will transfer all tokens of this loan the SAFU
      */
-    function liquidate(ILoanToken2 loan) external override {
-        PoolExtensions._liquidate(safu, loan, lender);
+    function liquidate(IDebtToken loan) external override {
+        require(msg.sender == address(safu), "TrueFiPool: Should be called by SAFU");
+        // TODO handle flow for LoC DebtToken
+        lender.transferAllLoanTokens(ILoanToken2(address(loan)), address(safu));
     }
 
     /**

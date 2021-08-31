@@ -11,6 +11,7 @@ import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {IStakingPool} from "../truefi/interface/IStakingPool.sol";
 import {ITrueFiPoolOracle} from "./interface/ITrueFiPoolOracle.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
+import {IDebtToken} from "../truefi2/interface/IDebtToken.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 /**
@@ -66,7 +67,7 @@ contract Liquidator2 is UpgradeableClaimable {
      * @param defaultedValue Remaining loan debt to repay
      * @param withdrawnTru Amount of TRU transferred to compensate defaulted loan
      */
-    event Liquidated(ILoanToken2 loan, uint256 defaultedValue, uint256 withdrawnTru);
+    event Liquidated(IDebtToken loan, uint256 defaultedValue, uint256 withdrawnTru);
 
     /**
      * @dev Emitted when SAFU is changed
@@ -127,10 +128,10 @@ contract Liquidator2 is UpgradeableClaimable {
      * then transfers tru to TrueFiPool as compensation
      * @param loan Loan to be liquidated
      */
-    function liquidate(ILoanToken2 loan) external {
+    function liquidate(IDebtToken loan) external {
         require(msg.sender == SAFU, "Liquidator: Only SAFU contract can liquidate a loan");
         require(loanFactory.isLoanToken(address(loan)), "Liquidator: Unknown loan");
-        require(loan.status() == ILoanToken2.Status.Defaulted, "Liquidator: Loan must be defaulted");
+        require(loan.status() == IDebtToken.Status.Defaulted, "Liquidator: Loan must be defaulted");
         ITrueFiPool2 pool = ITrueFiPool2(loan.pool());
         require(approvedTokens[address(pool.token())], "Liquidator: Token not approved for default protection");
         uint256 defaultedValue = loan.debt().sub(loan.repaid());

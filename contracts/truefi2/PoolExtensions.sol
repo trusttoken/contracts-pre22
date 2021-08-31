@@ -6,7 +6,9 @@ import {ITrueLender2} from "./interface/ITrueLender2.sol";
 import {ISAFU} from "./interface/ISAFU.sol";
 
 /**
+ * Deprecated
  * @dev Library that has shared functions between legacy TrueFi Pool and Pool2
+ * Was created to add common functions to Pool2 and now deprecated legacy pool
  */
 library PoolExtensions {
     function _liquidate(

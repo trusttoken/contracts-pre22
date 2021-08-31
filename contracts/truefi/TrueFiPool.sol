@@ -15,7 +15,8 @@ import {IUniswapRouter} from "./interface/IUniswapRouter.sol";
 import {ABDKMath64x64} from "./Log.sol";
 import {ICrvPriceOracle} from "./interface/ICrvPriceOracle.sol";
 import {IPauseableContract} from "../common/interface/IPauseableContract.sol";
-import {ITrueFiPool2, ITrueFiPoolOracle, ITrueLender2, ILoanToken2, ISAFU} from "../truefi2/interface/ITrueFiPool2.sol";
+import {ITrueFiPool2, ITrueFiPoolOracle, ITrueLender2, ISAFU} from "../truefi2/interface/ITrueFiPool2.sol";
+import {ILoanToken2} from "../truefi2/interface/ILoanToken2.sol";
 import {PoolExtensions} from "../truefi2/PoolExtensions.sol";
 
 /**
