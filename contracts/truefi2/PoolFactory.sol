@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {OwnedProxyWithReference} from "../proxy/OwnedProxyWithReference.sol";
 import {ERC20, IERC20} from "../common/UpgradeableERC20.sol";
@@ -19,6 +21,7 @@ import {ISAFU} from "./interface/ISAFU.sol";
  * Initially created pools hold the same implementation, which can be changed later on individually
  */
 contract PoolFactory is IPoolFactory, UpgradeableClaimable {
+    using SafeMath for uint256;
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
     // === STORAGE VARIABLES ARE DECLARED BELOW ==
@@ -46,7 +49,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
     mapping(address => bool) public isBorrowerWhitelisted;
 
     /// @dev array of pools officially supported by TrueFi
-    ITrueFiPool2[] public supportedPools;
+    ITrueFiPool2[] public supportedPools; //TODO: replace getTVLPools with this
 
     // ======= STORAGE DECLARATION END ===========
 
@@ -251,6 +254,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
      * @dev Add `_pool` to official support
      */
     function supportPool(ITrueFiPool2 _pool) external onlyOwner {
+        //TODO: replace addPoolToTVL with it
         require(isPool[address(_pool)], "PoolFactory: Pool not created by factory");
 
         for (uint256 i = 0; i < supportedPools.length; i++) {
@@ -264,6 +268,8 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
      * @dev Remove `_pool` from official support
      */
     function unsupportPool(ITrueFiPool2 _pool) external onlyOwner {
+        //TODO: replace removePoolFromTVL with it
+
         for (uint256 i = 0; i < supportedPools.length; i++) {
             if (supportedPools[i] == _pool) {
                 supportedPools[i] = supportedPools[supportedPools.length - 1];
@@ -294,5 +300,17 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
         require(address(_safu) != address(0), "PoolFactory: SAFU address cannot be set to 0");
         safu = _safu;
         emit SafuChanged(_safu);
+    }
+
+    /**
+     * @dev Calculate total TVL in USD
+     * @return _tvl TVL for all supported pools
+     */
+    function tvl() public view returns (uint256) {
+        uint256 _tvl = 0;
+        for (uint256 i = 0; i < supportedPools.length; i++) {
+            _tvl = _tvl.add(supportedPools[i].oracle().tokenToUsd(supportedPools[i].poolValue()));
+        }
+        return _tvl;
     }
 }
