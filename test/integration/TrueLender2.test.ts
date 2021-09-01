@@ -65,6 +65,7 @@ describe('TrueLender2', () => {
     const mockCreditOracle = await deployMockContract(owner, TrueFiCreditOracleJson.abi)
     await mockCreditOracle.mock.score.returns(255)
     await mockCreditOracle.mock.maxBorrowerLimit.withArgs(OWNER).returns(parseEth(100_000_000))
+    await mockCreditOracle.mock.status.withArgs(OWNER).returns(0)
 
     borrowingMutex = await deployContract(BorrowingMutex__factory)
     await borrowingMutex.initialize()
