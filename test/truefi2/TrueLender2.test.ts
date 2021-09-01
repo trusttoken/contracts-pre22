@@ -138,6 +138,7 @@ describe('TrueLender2', () => {
 
     loan2 = await createLoan(loanFactory, borrower, pool2, 500000, YEAR, 1000)
 
+    // TODO: remove
     await rateAdjuster.addPoolToTVL(pool1.address)
     await rateAdjuster.addPoolToTVL(pool2.address)
 

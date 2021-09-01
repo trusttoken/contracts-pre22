@@ -383,6 +383,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         uint256 resultPrecision = uint256(10)**decimals;
 
         // loop through loans and sum amount borrowed accounting for precision
+        //TODO: use PoolFactory.supportedPools instead
         ITrueFiPool2[] memory pools = factory.getSupportedPools();
         for (uint8 i = 0; i < pools.length; i++) {
             ITrueFiPool2 pool = pools[i];

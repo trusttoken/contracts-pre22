@@ -514,6 +514,7 @@ describe('TrueFiPool', () => {
     await factory.createPool(usdc.address)
     const feePool = await factory.pool(usdc.address)
     await lender2.setFeePool(feePool)
+    // TODO: remove
     await rateAdjuster.addPoolToTVL(pool.address)
     await rateAdjuster.addPoolToTVL(feePool)
     await pool.setLender2(lender2.address)

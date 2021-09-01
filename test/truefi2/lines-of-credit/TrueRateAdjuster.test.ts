@@ -83,6 +83,7 @@ describe('TrueRateAdjuster', () => {
     })
   })
 
+  // TODO: remove tests for addPoolToTVL & removePoolFromTVL
   describe('addPoolToTVL', () => {
     const pool1 = '0x1111111111111111111111111111111111111111'
     const pool2 = '0x2222222222222222222222222222222222222222'
@@ -455,6 +456,7 @@ describe('TrueRateAdjuster', () => {
       await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
     })
 
+    // TODO: move TVL tests to PoolFactory.test.ts
     it('tvl returns sum of poolValues of all pools with 18 decimals precision', async () => {
       expect(await rateAdjuster.tvl()).to.equal(parseEth(3e7))
     })

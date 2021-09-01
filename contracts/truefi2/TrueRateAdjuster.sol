@@ -89,9 +89,11 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
 
     // ======= STORAGE DECLARATION END ============
 
+    //TODO: remove
     /// @dev emit `pool` when adding to TVL
     event PoolAddedToTVL(ITrueFiPool2 pool);
 
+    //TODO: remove
     /// @dev emit `pool` when removing from TVL
     event PoolRemovedFromTVL(ITrueFiPool2 pool);
 
@@ -134,6 +136,7 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
      * @dev Add `pool` to TVL calculation
      */
     function addPoolToTVL(ITrueFiPool2 pool) external onlyOwner {
+        //TODO: remove, switch to PoolFactory
         for (uint256 i = 0; i < tvlPools.length; i++) {
             require(tvlPools[i] != pool, "TrueRateAdjuster: Pool has already been added to TVL");
         }
@@ -145,10 +148,12 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
      * @dev Remove `pool` from TVL calculation
      */
     function removePoolFromTVL(ITrueFiPool2 pool) external onlyOwner {
+        //TODO: remove, switch to PoolFactory
         for (uint256 i = 0; i < tvlPools.length; i++) {
             if (tvlPools[i] == pool) {
                 tvlPools[i] = tvlPools[tvlPools.length - 1];
                 tvlPools.pop();
+
                 emit PoolRemovedFromTVL(pool);
                 return;
             }
@@ -303,6 +308,7 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
      * @return _tvl TVL for all pools
      */
     function tvl() public override view returns (uint256) {
+        //TODO: remove, switch to PoolFactory
         uint256 _tvl;
         // loop through pools and sum tvl converted to USD
         for (uint256 i = 0; i < tvlPools.length; i++) {
@@ -328,6 +334,7 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
         if (score < borrowLimitConfig.scoreFloor) {
             return 0;
         }
+        //TODO: replace tvl(), pass tvl as function argument instead
         uint256 maxTVLLimit = tvl().mul(borrowLimitConfig.tvlLimitCoefficient).div(BASIS_POINTS);
         uint256 adjustment = borrowLimitAdjustment(score);
         uint256 creditLimit = min(maxBorrowerLimit, maxTVLLimit).mul(adjustment).div(BASIS_POINTS);
