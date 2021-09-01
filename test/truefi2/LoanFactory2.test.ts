@@ -120,6 +120,12 @@ describe('LoanFactory2', () => {
         .not.to.be.reverted
     })
 
+    it('prevents token creation when there is no token implementation', async () => {
+      await loanFactory.connect(owner).setLoanTokenImplementation(AddressZero)
+      await expect(loanFactory.connect(borrower).createLoanToken(pool.address, parseEth(123), 15 * DAY, MAX_APY))
+        .to.be.revertedWith('LoanFactory: Loan token implementation should be set')
+    })
+
     describe('apy is set properly', () => {
       const term = 15 * DAY
 
