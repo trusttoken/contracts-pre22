@@ -501,8 +501,8 @@
       "address": "0x842D486a5d12b3729c89B0E8968C54f68eADba7c"
     },
     "trueFiCreditOracle": {
-      "txHash": "0xa2531264bc36afe917b044be47d0a5f45b858451a801d2a45e9ae598589620c7",
-      "address": "0x13D6494AEF9e65e5614970676Bc67B08820778b7"
+      "txHash": "0xa235b90914ab19b605aa4362d4276368fa1c414607a1beb9e767e502315cf387",
+      "address": "0xf47d06C3E8734B3cc21eD3DD91dD7E100FDAeB06"
     },
     "trueFiCreditOracle_proxy": {
       "txHash": "0xdd6e5f89621e4060cfce40a90b8a0d87e585805377892c827f9b69c3050dde2d",
