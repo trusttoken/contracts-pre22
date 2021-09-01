@@ -10,7 +10,6 @@ import {
   StkTruToken,
   TrueFiPool2,
   TrueLender2,
-  TrueCreditAgency,
   TrueFiCreditOracle,
 } from 'contracts'
 
@@ -46,7 +45,6 @@ describe('Liquidator2', () => {
   let lender: TrueLender2
   let pool: TrueFiPool2
   let loan: LoanToken2
-  let creditAgency: TrueCreditAgency
   let creditOracle: TrueFiCreditOracle
 
   let timeTravel: (time: number) => void
@@ -69,7 +67,6 @@ describe('Liquidator2', () => {
       stkTru,
       lender,
       feePool: pool,
-      creditAgency,
       creditOracle,
     } = await setupTruefi2(owner, _provider))
 

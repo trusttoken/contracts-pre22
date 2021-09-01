@@ -18,7 +18,6 @@ import {
   StkTruToken,
   TrueFiPool2,
   TrueLender2,
-  TrueCreditAgency,
   TrueFiCreditOracle,
 } from 'contracts'
 
@@ -39,7 +38,6 @@ describe('SAFU', () => {
   let liquidator: Liquidator2
   let tru: MockTrueCurrency
   let stkTru: StkTruToken
-  let creditAgency: TrueCreditAgency
   let creditOracle: TrueFiCreditOracle
   let borrowingMutex: BorrowingMutex
 
@@ -64,7 +62,6 @@ describe('SAFU', () => {
       tru,
       stkTru,
       liquidator,
-      creditAgency,
       creditOracle,
       borrowingMutex,
     } = await setupTruefi2(owner, _provider, { oneInch: oneInch }))
