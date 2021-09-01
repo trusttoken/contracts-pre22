@@ -234,6 +234,15 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
         emit BorrowerWhitelistStatusChanged(borrower, status);
     }
 
+    function isSupportedPool(ITrueFiPool2 _pool) external override view returns (bool) {
+        for (uint256 i = 0; i < supportedPools.length; i++) {
+            if (supportedPools[i] == _pool) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     function getSupportedPools() external override view returns (ITrueFiPool2[] memory) {
         return supportedPools;
     }
