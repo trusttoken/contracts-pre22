@@ -17,6 +17,7 @@ import {
   LoanToken2,
   LoanToken2__factory,
   MockTrueCurrency,
+  TestLoanToken__factory,
 } from 'contracts'
 import { solidity } from 'ethereum-waffle'
 import { AddressZero } from '@ethersproject/constants'
@@ -124,6 +125,13 @@ describe('LoanFactory2', () => {
       await loanFactory.connect(owner).setLoanTokenImplementation(AddressZero)
       await expect(loanFactory.connect(borrower).createLoanToken(pool.address, parseEth(123), 15 * DAY, MAX_APY))
         .to.be.revertedWith('LoanFactory: Loan token implementation should be set')
+    })
+
+    it('fails when loan token intitialize signature differs from expected', async () => {
+      const testLoanToken = await new TestLoanToken__factory(owner).deploy()
+      await loanFactory.connect(owner).setLoanTokenImplementation(testLoanToken.address)
+      await expect(loanFactory.connect(borrower).createLoanToken(pool.address, parseEth(123), 15 * DAY, MAX_APY))
+        .to.be.revertedWith('Transaction reverted: function selector was not recognized and there\'s no fallback function')
     })
 
     describe('apy is set properly', () => {
