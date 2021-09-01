@@ -5,6 +5,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import {ERC20, IERC20, SafeMath} from "../common/UpgradeableERC20.sol";
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 
+import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {ITrueRateAdjuster} from "./interface/ITrueRateAdjuster.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {ITrueCreditAgency} from "./interface/ITrueCreditAgency.sol";
@@ -89,12 +90,6 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     /// @dev next payment due time per borrower for each pool
     mapping(ITrueFiPool2 => mapping(address => uint256)) public nextInterestRepayTime;
 
-    /// @dev whitelist for allowing pools to have lines of credit
-    mapping(ITrueFiPool2 => bool) public isPoolAllowed;
-
-    /// @dev array of pools with lines of credit
-    ITrueFiPool2[] public pools;
-
     /// @dev whitelist for allowing borrowers to take lines of credit
     mapping(address => bool) public isBorrowerAllowed;
 
@@ -109,6 +104,8 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
     // mutex ensuring there's only one running loan or credit line for borrower
     IBorrowingMutex public borrowingMutex;
+
+    IPoolFactory public poolFactory;
 
     /**
      * @dev Buckets Bitmap
@@ -153,13 +150,15 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     function initialize(
         ITrueFiCreditOracle _creditOracle,
         ITrueRateAdjuster _rateAdjuster,
-        IBorrowingMutex _borrowingMutex
+        IBorrowingMutex _borrowingMutex,
+        IPoolFactory _poolFactory
     ) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
         creditOracle = _creditOracle;
         rateAdjuster = _rateAdjuster;
         interestRepaymentPeriod = 31 days;
         borrowingMutex = _borrowingMutex;
+        poolFactory = _poolFactory;
     }
 
     /// @dev modifier for only whitelisted borrowers
@@ -191,30 +190,6 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     function allowBorrower(address who, bool isAllowed) external onlyOwner {
         isBorrowerAllowed[who] = isAllowed;
         emit BorrowerAllowed(who, isAllowed);
-    }
-
-    /**
-     * @dev Allow `pool` to be used with lines of credit
-     * Loop through
-     */
-    function allowPool(ITrueFiPool2 pool, bool isAllowed) external onlyOwner {
-        // if allowing new pool, push to pools array
-        if (!isPoolAllowed[pool] && isAllowed) {
-            pools.push(pool);
-        }
-        // if disallowing pool, search for pool and remove from pools array
-        if (isPoolAllowed[pool] && !isAllowed) {
-            for (uint256 i = 0; i < pools.length; i++) {
-                if (pools[i] == pool) {
-                    pools[i] = pools[pools.length - 1];
-                    pools.pop();
-                    break;
-                }
-            }
-        }
-        // set new allowance
-        isPoolAllowed[pool] = isAllowed;
-        emit PoolAllowed(pool, isAllowed);
     }
 
     /**
@@ -271,6 +246,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     function totalBorrowed(address borrower) public view returns (uint256) {
         uint256 borrowSum = 0;
         // loop through pools and sum amount borrowed converted to USD
+        ITrueFiPool2[] memory pools = poolFactory.getSupportedPools();
         for (uint8 i = 0; i < pools.length; i++) {
             borrowSum = borrowSum.add(pools[i].oracle().tokenToUsd(borrowed[pools[i]][borrower]));
         }
@@ -317,7 +293,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
      * @param amount Amount of tokens to borrow
      */
     function borrow(ITrueFiPool2 pool, uint256 amount) external onlyAllowedBorrowers {
-        require(isPoolAllowed[pool], "TrueCreditAgency: The pool is not whitelisted for borrowing");
+        require(poolFactory.isSupportedPool(pool), "TrueCreditAgency: The pool is not supported for borrowing");
         require(
             creditOracle.status(msg.sender) == ITrueFiCreditOracle.Status.Eligible,
             "TrueCreditAgency: Sender not eligible to borrow"
@@ -426,6 +402,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
      */
     function pokeAll() public {
         // loop through pools array and poke
+        ITrueFiPool2[] memory pools = poolFactory.getSupportedPools();
         for (uint256 i = 0; i < pools.length; i++) {
             poke(pools[i]);
         }

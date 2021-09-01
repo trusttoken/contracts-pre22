@@ -85,7 +85,6 @@ describe('Liquidator2', () => {
     await tru.approve(stkTru.address, parseEth(1e7))
     await tru.connect(otherWallet).approve(stkTru.address, parseEth(1e7))
 
-    await creditAgency.allowPool(pool.address, true)
     await creditOracle.setScore(borrower.address, 255)
     await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
   })

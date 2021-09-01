@@ -112,7 +112,6 @@ describe('TrueRatingAgencyV2', () => {
     await tusd.mint(tusdPool.address, parseEth(1e8))
     await usdc.mint(usdcPool.address, parseUSDC(1e7))
 
-    await creditAgency.allowPool(tusdPool.address, true)
     await creditOracle.setScore(owner.address, 255)
     await creditOracle.setMaxBorrowerLimit(owner.address, parseEth(100_000_000))
   })

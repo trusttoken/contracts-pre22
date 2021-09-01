@@ -5,6 +5,7 @@ import {
   MockBorrowingMutex__factory,
   MockTrueCurrency,
   MockUsdc,
+  PoolFactory,
   TimeAveragedBaseRateOracle,
   TrueCreditAgency,
   TrueCreditAgency__factory,
@@ -49,6 +50,7 @@ describe('TrueCreditAgency', () => {
   let tusdBaseRateOracle: TimeAveragedBaseRateOracle
   let mockSpotOracle: MockContract
   let borrowingMutex: BorrowingMutex
+  let poolFactory: PoolFactory
   let timeTravel: (time: number) => void
 
   const MONTH = DAY * 31
@@ -80,10 +82,10 @@ describe('TrueCreditAgency', () => {
       mockSpotOracle,
       rateAdjuster,
       borrowingMutex,
+      poolFactory,
     } = await setupTruefi2(owner, provider))
 
     await tusdPool.setCreditAgency(creditAgency.address)
-    await creditAgency.allowPool(tusdPool.address, true)
 
     await tusd.mint(owner.address, parseEth(1e7))
     await tusd.approve(tusdPool.address, parseEth(1e7))
@@ -105,6 +107,10 @@ describe('TrueCreditAgency', () => {
 
     it('sets borrowingMutex', async () => {
       expect(await creditAgency.borrowingMutex()).to.equal(borrowingMutex.address)
+    })
+
+    it('sets poolFactory', async () => {
+      expect(await creditAgency.poolFactory()).to.equal(poolFactory.address)
     })
   })
 
@@ -178,69 +184,9 @@ describe('TrueCreditAgency', () => {
     })
   })
 
-  describe('Setting pool allowance', () => {
-    const expectNotLongerThan = async (length: number) => {
-      try {
-        await creditAgency.pools(length)
-      } catch (err) {
-        expect(err.message).to.contain('invalid opcode')
-      }
-    }
-    it('can only be called by the owner', async () => {
-      await expect(creditAgency.connect(borrower).allowPool(tusdPool.address, true)).to.be.revertedWith('Ownable: caller is not the owner')
-    })
-
-    it('changes pool allowance status', async () => {
-      await creditAgency.allowPool(tusdPool.address, false)
-      expect(await creditAgency.isPoolAllowed(tusdPool.address)).to.be.false
-      await creditAgency.allowPool(tusdPool.address, true)
-      expect(await creditAgency.isPoolAllowed(tusdPool.address)).to.be.true
-    })
-
-    it('emits event', async () => {
-      await expect(creditAgency.allowPool(tusdPool.address, false)).to.emit(creditAgency, 'PoolAllowed')
-        .withArgs(tusdPool.address, false)
-    })
-
-    it('adds allowed pool to the pools list', async () => {
-      expect(await creditAgency.pools(0)).to.equal(tusdPool.address)
-      const newPool = Wallet.createRandom().address
-      await creditAgency.allowPool(newPool, true)
-      expect(await creditAgency.pools(0)).to.equal(tusdPool.address)
-      expect(await creditAgency.pools(1)).to.equal(newPool)
-      await expectNotLongerThan(2)
-    })
-
-    it('removes pool from list when it is dewhitelisted', async () => {
-      const newPool1 = Wallet.createRandom().address
-      const newPool2 = Wallet.createRandom().address
-      await creditAgency.allowPool(newPool1, true)
-      await creditAgency.allowPool(newPool2, true)
-      await creditAgency.allowPool(newPool1, false)
-      expect(await creditAgency.pools(0)).to.equal(tusdPool.address)
-      expect(await creditAgency.pools(1)).to.equal(newPool2)
-      await expectNotLongerThan(2)
-      await creditAgency.allowPool(tusdPool.address, false)
-      expect(await creditAgency.pools(0)).to.equal(newPool2)
-      await expectNotLongerThan(1)
-      await creditAgency.allowPool(newPool2, false)
-      await expectNotLongerThan(0)
-    })
-
-    it('does not revert when whitelisting whitelisted pool', async () => {
-      await expect(creditAgency.allowPool(tusdPool.address, true)).to.not.be.reverted
-    })
-
-    it('does not revert when dewhitelising not whitelisted pool', async () => {
-      await creditAgency.allowPool(tusdPool.address, true)
-      await expect(creditAgency.allowPool(tusdPool.address, false)).to.not.be.reverted
-    })
-  })
-
   describe('totalBorrowed & poolValue', () => {
     beforeEach(async () => {
       await usdcPool.setCreditAgency(creditAgency.address)
-      await creditAgency.allowPool(usdcPool.address, true)
 
       await usdc.mint(owner.address, parseUSDC(2e7))
       await usdc.approve(usdcPool.address, parseUSDC(2e7))
@@ -334,7 +280,6 @@ describe('TrueCreditAgency', () => {
       await creditAgency.allowBorrower(borrower.address, true)
 
       await usdcPool.setCreditAgency(creditAgency.address)
-      await creditAgency.allowPool(usdcPool.address, true)
 
       await usdc.mint(owner.address, parseUSDC(2e7))
       await usdc.approve(usdcPool.address, parseUSDC(2e7))
@@ -429,9 +374,8 @@ describe('TrueCreditAgency', () => {
       const faultyCreditAgency = await deployContract(TrueCreditAgency__factory)
       const faultyBorrowingMutex = await deployContract(MockBorrowingMutex__factory)
 
-      await faultyCreditAgency.initialize(creditOracle.address, rateAdjuster.address, faultyBorrowingMutex.address)
+      await faultyCreditAgency.initialize(creditOracle.address, rateAdjuster.address, faultyBorrowingMutex.address, poolFactory.address)
       await tusdPool.setCreditAgency(faultyCreditAgency.address)
-      await faultyCreditAgency.allowPool(tusdPool.address, true)
       await faultyCreditAgency.allowBorrower(borrower.address, true)
 
       await faultyCreditAgency.connect(borrower).borrow(tusdPool.address, 1000)
@@ -443,9 +387,9 @@ describe('TrueCreditAgency', () => {
     })
 
     it('cannot borrow from the pool that is not whitelisted', async () => {
-      await creditAgency.allowPool(tusdPool.address, false)
+      await poolFactory.unsupportPool(tusdPool.address)
       await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000))
-        .to.be.revertedWith('TrueCreditAgency: The pool is not whitelisted for borrowing')
+        .to.be.revertedWith('TrueCreditAgency: The pool is not supported for borrowing')
     })
 
     it('updates nextInterestRepayTime', async () => {

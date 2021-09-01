@@ -75,7 +75,6 @@ describe('SAFU', () => {
     await token.approve(pool.address, parseUSDC(1e7))
     await pool.connect(owner).join(parseUSDC(1e7))
 
-    await creditAgency.allowPool(pool.address, true)
     await creditOracle.setScore(borrower.address, 255)
     await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
 
