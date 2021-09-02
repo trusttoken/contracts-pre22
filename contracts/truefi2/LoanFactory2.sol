@@ -6,6 +6,7 @@ import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 
 import {Initializable} from "../common/Initializable.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
+import {ILoanToken2} from "./interface/ILoanToken2.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {ITrueRateAdjuster} from "./interface/ITrueRateAdjuster.sol";
@@ -41,7 +42,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     ITrueRateAdjuster public rateAdjuster;
     ITrueFiCreditOracle public creditOracle;
     IBorrowingMutex public borrowingMutex;
-    address public loanTokenImplementation;
+    ILoanToken2 public loanTokenImplementation;
     // ======= STORAGE DECLARATION END ============
 
     /**
@@ -99,7 +100,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         return rateAdjuster.rate(pool, borrowerScore, amount).add(fixedTermLoanAdjustment);
     }
 
-    function setLoanTokenImplementation(address newImplementation) external onlyAdmin {
+    function setLoanTokenImplementation(ILoanToken2 newImplementation) external onlyAdmin {
         loanTokenImplementation = newImplementation;
     }
 
@@ -117,13 +118,15 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         require(_amount > 0, "LoanFactory: Loans of amount 0, will not be approved");
         require(_term > 0, "LoanFactory: Loans cannot have instantaneous term of repay");
         require(poolFactory.isPool(address(_pool)), "LoanFactory: Pool was not created by PoolFactory");
-        require(loanTokenImplementation != address(0), "LoanFactory: Loan token implementation should be set");
+
+        address ltImplementationAddress = address(loanTokenImplementation);
+        require(ltImplementationAddress != address(0), "LoanFactory: Loan token implementation should be set");
 
         uint256 apy = rate(_pool, msg.sender, _amount, _term);
 
         require(apy <= _maxApy, "LoanFactory: Calculated apy is higher than max apy");
 
-        address newToken = Clones.clone(loanTokenImplementation);
+        address newToken = Clones.clone(ltImplementationAddress);
         LoanToken2(newToken).initialize(_pool, borrowingMutex, msg.sender, lender, admin, liquidator, _amount, _term, apy);
         isLoanToken[newToken] = true;
 
