@@ -6,6 +6,7 @@ import {
 } from 'contracts'
 import { MockProvider, solidity } from 'ethereum-waffle'
 import { BigNumber, Wallet } from 'ethers'
+import { AddressZero } from '@ethersproject/constants'
 
 use(solidity)
 
@@ -33,6 +34,11 @@ describe('TrueFiCreditOracle', () => {
         .to.be.revertedWith('Ownable: caller is not the owner')
       await expect(oracle.connect(borrower).setManager(borrower.address))
         .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('cannot be set to address(0)', async () => {
+      await expect(oracle.setManager(AddressZero))
+        .to.be.revertedWith('TrueFiCreditOracle: Cannot set new manager to address(0)')
     })
 
     it('manager is properly set', async () => {
