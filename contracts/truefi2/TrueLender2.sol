@@ -376,7 +376,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
      * @dev Get total amount borrowed for `borrower` from fixed term loans in USD
      * @param borrower Borrower to get amount borrowed for
      * @param decimals Precision to use when calculating total borrowed
-     * @return Total amount borrowed for `borrower` in USD
+     * @return borrowSum Total amount borrowed for `borrower` in USD
      */
     function totalBorrowed(address borrower, uint8 decimals) public view returns (uint256 borrowSum) {
         uint256 resultPrecision = uint256(10)**decimals;
