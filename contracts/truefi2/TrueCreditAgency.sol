@@ -193,9 +193,10 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         }
         // if disallowing pool, search for pool and remove from pools array
         if (isPoolAllowed[pool] && !isAllowed) {
-            for (uint256 i = 0; i < pools.length; i++) {
+            uint256 poolsCount = pools.length;
+            for (uint256 i = 0; i < poolsCount; i++) {
                 if (pools[i] == pool) {
-                    pools[i] = pools[pools.length - 1];
+                    pools[i] = pools[poolsCount - 1];
                     pools.pop();
                     break;
                 }
@@ -257,7 +258,8 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         uint256 resultPrecision = uint256(10)**decimals;
 
         // loop through pools and sum tvl accounting for precision
-        for (uint8 i = 0; i < pools.length; i++) {
+        uint256 poolsCount = pools.length;
+        for (uint8 i = 0; i < poolsCount; i++) {
             tvl = tvl.add(
                 pools[i].poolValue().mul(resultPrecision).div(uint256(10)**(ITrueFiPool2WithDecimals(address(pools[i])).decimals()))
             );
@@ -276,7 +278,8 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         uint256 resultPrecision = uint256(10)**decimals;
 
         // loop through pools and sum amount borrowed accounting for precision
-        for (uint8 i = 0; i < pools.length; i++) {
+        uint256 poolsCount = pools.length;
+        for (uint8 i = 0; i < poolsCount; i++) {
             borrowSum = borrowSum.add(
                 borrowed[pools[i]][borrower].mul(resultPrecision).div(
                     uint256(10)**(ITrueFiPool2WithDecimals(address(pools[i])).decimals())
@@ -418,8 +421,9 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
      * @dev Update state for all pools
      */
     function pokeAll() public {
+        uint256 poolsCount = pools.length;
         // loop through pools array and poke
-        for (uint256 i = 0; i < pools.length; i++) {
+        for (uint256 i = 0; i < poolsCount; i++) {
             poke(pools[i]);
         }
     }
@@ -600,7 +604,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     }
 
     /**
-     * @dev Internal function to calculate interest for a single pool 
+     * @dev Internal function to calculate interest for a single pool
      * @param pool Pool to calculate interest for
      * @param bucket Bucket data
      * @param borrower Borrower to get total interest for
