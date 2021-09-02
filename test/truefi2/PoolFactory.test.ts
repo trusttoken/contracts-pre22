@@ -330,7 +330,7 @@ describe('PoolFactory', () => {
 
       expect(await factory.isSupportedPool(pool3)).to.be.false
       await factory.supportPool(pool3)
-      expect(await factory.isSupportedPool(pool3))
+      expect(await factory.isSupportedPool(pool3)).to.be.true
 
       expect(await factory.getSupportedPools()).to.deep.eq([pool1, pool2, pool4, pool3])
     })
@@ -375,7 +375,7 @@ describe('PoolFactory', () => {
       const pool2 = await factory.pool(token2.address)
       const pool4 = await factory.pool(token4.address)
 
-      expect(await factory.isSupportedPool(pool2))
+      expect(await factory.isSupportedPool(pool2)).to.be.true
       await factory.unsupportPool(pool2)
       expect(await factory.isSupportedPool(pool2)).to.be.false
 
