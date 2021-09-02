@@ -115,11 +115,13 @@ contract LoanFactory3 is ILoanFactory3, Initializable {
     }
 
     function setCreditOracle(ITrueFiCreditOracle _creditOracle) external onlyAdmin {
+        require(address(_creditOracle) != address(0), "LoanFactory3: Cannot set credit oracle to address(0)");
         creditOracle = _creditOracle;
         emit CreditOracleChanged(_creditOracle);
     }
 
     function setRateAdjuster(ITrueRateAdjuster _rateAdjuster) external onlyAdmin {
+        require(address(_rateAdjuster) != address(0), "LoanFactory3: Cannot set rate adjuster to address(0)");
         rateAdjuster = _rateAdjuster;
         emit RateAdjusterChanged(_rateAdjuster);
     }
