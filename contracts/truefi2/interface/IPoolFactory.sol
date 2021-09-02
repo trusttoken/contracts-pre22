@@ -7,4 +7,6 @@ interface IPoolFactory {
     function isSupportedPool(ITrueFiPool2 pool) external view returns (bool);
 
     function getSupportedPools() external view returns (ITrueFiPool2[] memory);
+
+    function tvl() external view returns (uint256);
 }
