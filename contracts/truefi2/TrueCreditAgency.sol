@@ -271,7 +271,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     function totalBorrowed(address borrower) public view returns (uint256) {
         uint256 borrowSum = 0;
         // loop through pools and sum amount borrowed converted to USD
-        for (uint8 i = 0; i < pools.length; i++) {
+        for (uint256 i = 0; i < pools.length; i++) {
             borrowSum = borrowSum.add(pools[i].oracle().tokenToUsd(borrowed[pools[i]][borrower]));
         }
         return borrowSum;
@@ -412,7 +412,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         uint256 poolRate = poolBasicRate(pool);
 
         // loop through scores and poke buckets, ignoring empty buckets
-        for (uint16 i = 0; i <= MAX_CREDIT_SCORE; (i++, bitMap >>= 1)) {
+        for (uint256 i = 0; i <= MAX_CREDIT_SCORE; (i++, bitMap >>= 1)) {
             if (bitMap & 1 == 0) {
                 continue;
             }
@@ -479,7 +479,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         uint256 bucketSum = 0;
 
         // loop through buckets and sum total borrowed ignoring empty buckets
-        for (uint16 i = 0; i <= MAX_CREDIT_SCORE; (i++, bitMap >>= 1)) {
+        for (uint256 i = 0; i <= MAX_CREDIT_SCORE; (i++, bitMap >>= 1)) {
             if (bitMap & 1 == 0) {
                 continue;
             }
