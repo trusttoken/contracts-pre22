@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import "hardhat/console.sol";
-
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
@@ -131,30 +129,8 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
         factory = _factory;
     }
 
-    /**
-     * @dev Add `pool` to TVL calculation
-     */
-    function addPoolToTVL(ITrueFiPool2 pool) external onlyOwner {
-        //TODO: remove, switch to PoolFactory
-        for (uint256 i = 0; i < tvlPools.length; i++) {
-            require(tvlPools[i] != pool, "TrueRateAdjuster: Pool has already been added to TVL");
-        }
-        tvlPools.push(pool);
-    }
-
-    /**
-     * @dev Remove `pool` from TVL calculation
-     */
-    function removePoolFromTVL(ITrueFiPool2 pool) external onlyOwner {
-        //TODO: remove, switch to PoolFactory
-        for (uint256 i = 0; i < tvlPools.length; i++) {
-            if (tvlPools[i] == pool) {
-                tvlPools[i] = tvlPools[tvlPools.length - 1];
-                tvlPools.pop();
-                return;
-            }
-        }
-        revert("TrueRateAdjuster: Pool already removed from TVL");
+    function getTVLPools() external override view returns (ITrueFiPool2[] memory) {
+        return tvlPools;
     }
 
     /// @dev Set risk premium to `newRate`

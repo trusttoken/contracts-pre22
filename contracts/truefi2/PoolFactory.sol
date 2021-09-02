@@ -254,7 +254,6 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
      * @dev Add `_pool` to official support
      */
     function supportPool(ITrueFiPool2 _pool) external onlyOwner {
-        //TODO: replace addPoolToTVL with it
         require(isPool[address(_pool)], "PoolFactory: Pool not created by factory");
 
         for (uint256 i = 0; i < supportedPools.length; i++) {
@@ -268,8 +267,6 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
      * @dev Remove `_pool` from official support
      */
     function unsupportPool(ITrueFiPool2 _pool) external onlyOwner {
-        //TODO: replace removePoolFromTVL with it
-
         for (uint256 i = 0; i < supportedPools.length; i++) {
             if (supportedPools[i] == _pool) {
                 supportedPools[i] = supportedPools[supportedPools.length - 1];
