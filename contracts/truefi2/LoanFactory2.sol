@@ -2,8 +2,8 @@
 pragma solidity 0.6.10;
 
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 
-import {Clones} from "../proxy/Clones.sol";
 import {Initializable} from "../common/Initializable.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
