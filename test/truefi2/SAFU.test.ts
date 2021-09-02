@@ -84,8 +84,6 @@ describe('SAFU', () => {
 
     await tru.mint(owner.address, parseTRU(1e7))
     await tru.approve(stkTru.address, parseTRU(1e7))
-
-    await liquidator.setTokenApproval(token.address, true)
   })
 
   describe('initializer', () => {

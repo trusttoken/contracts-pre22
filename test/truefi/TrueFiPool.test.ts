@@ -520,7 +520,7 @@ describe('TrueFiPool', () => {
     const loanFactory2 = await new LoanFactory2__factory(owner).deploy()
     const liquidator2 = await new Liquidator2__factory(owner).deploy()
     await loanFactory2.initialize(factory.address, lender2.address, liquidator2.address, AddressZero, AddressZero, borrowingMutex.address)
-    await liquidator2.initialize(mockStakingPool.address, trustToken.address, loanFactory2.address, owner.address)
+    await liquidator2.initialize(mockStakingPool.address, trustToken.address, loanFactory2.address, AddressZero, owner.address)
 
     return { lender2, loanFactory2, liquidator2 }
   }
