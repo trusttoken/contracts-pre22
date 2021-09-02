@@ -308,6 +308,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         require(loanToken.token() == pool.token(), "TrueLender: Loan and pool token mismatch");
         require(poolLoans[pool].length < maxLoans, "TrueLender: Loans number has reached the limit");
         require(borrowingMutex.isUnlocked(msg.sender), "TrueLender: There is an ongoing loan or credit line");
+        require(creditOracle.status(msg.sender) == ITrueFiCreditOracle.Status.Eligible, "TrueLender: Sender is not eligible for loan");
 
         uint256 term = loanToken.term();
         require(isTermBelowMax(term), "TrueLender: Loan's term is too long");

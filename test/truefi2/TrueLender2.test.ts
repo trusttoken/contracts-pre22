@@ -138,6 +138,7 @@ describe('TrueLender2', () => {
     await rateAdjuster.addPoolToTVL(pool1.address)
     await rateAdjuster.addPoolToTVL(pool2.address)
 
+    await creditOracle.setCreditUpdatePeriod(YEAR)
     await creditOracle.setScore(borrower.address, 255)
     await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(1e8))
   })
@@ -389,6 +390,15 @@ describe('TrueLender2', () => {
         await borrowingMutex.lock(borrower.address, owner.address)
         await expect(lender.connect(borrower).fund(loan1.address))
           .to.be.revertedWith('TrueLender: There is an ongoing loan or credit line')
+      })
+
+      it('borrower is not eligible', async () => {
+        await creditOracle.setIneligible(borrower.address)
+        await expect(lender.connect(borrower).fund(loan1.address))
+          .to.be.revertedWith('TrueLender: Sender is not eligible for loan')
+        await creditOracle.setOnHold(borrower.address)
+        await expect(lender.connect(borrower).fund(loan1.address))
+          .to.be.revertedWith('TrueLender: Sender is not eligible for loan')
       })
     })
 
