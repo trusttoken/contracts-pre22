@@ -89,6 +89,7 @@ describe('TrueLender2', () => {
     usdt = Erc20Mock__factory.connect(USDT_ADDRESS, owner)
     await poolFactory.createPool(usdt.address)
     usdtLoanPool = TrueFiPool2__factory.connect(await poolFactory.pool(usdt.address), owner)
+    await poolFactory.supportPool(usdtLoanPool.address)
 
     await mockRateAdjuster.mock.getTVLPools.returns([tusdLoanPool.address, usdtLoanPool.address])
     await mockRateAdjuster.mock.borrowLimit.withArgs(tusdLoanPool.address, 255, parseEth(100_000_000), 0).returns(parseEth(100_000_000))
