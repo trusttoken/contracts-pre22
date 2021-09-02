@@ -250,7 +250,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     /**
      * @dev Calculate total TVL in USD
      * @param decimals Precision to return
-     * @return TVL for all pools with lines of credit
+     * @return tvl TVL for all pools with lines of credit
      */
     function totalTVL(uint8 decimals) public view returns (uint256 tvl) {
         uint256 resultPrecision = uint256(10)**decimals;
@@ -267,7 +267,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
      * @dev Get total amount borrowed for `borrower` from lines of credit in USD
      * @param borrower Borrower to get amount borrowed for
      * @param decimals Precision to use when calculating total borrowed
-     * @return Total amount borrowed for `borrower` in USD
+     * @return borrowSum Total amount borrowed for `borrower` in USD
      */
     function totalBorrowed(address borrower, uint8 decimals) public view returns (uint256 borrowSum) {
         uint256 resultPrecision = uint256(10)**decimals;
