@@ -85,6 +85,10 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         _;
     }
 
+    /**
+     * @dev This function must be called once to set admin to the hardcoded address
+     * The address is hardcoded because there was no owner of the contract previously
+     */
     function setAdmin() external {
         admin = 0x16cEa306506c387713C70b9C1205fd5aC997E78E;
     }
