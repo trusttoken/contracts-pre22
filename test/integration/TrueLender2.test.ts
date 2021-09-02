@@ -94,8 +94,10 @@ describe('TrueLender2', () => {
     await mockRateAdjuster.mock.borrowLimit.withArgs(tusdLoanPool.address, 255, parseEth(100_000_000), 0).returns(parseEth(100_000_000))
     await mockRateAdjuster.mock.borrowLimit.withArgs(usdtLoanPool.address, 255, parseEth(100_000_000), 0).returns(parseEth(100_000_000))
 
+    const loanTokenImplementation = await new LoanToken2__factory(owner).deploy()
     loanFactory = await new LoanFactory2__factory(owner).deploy()
     await loanFactory.initialize(poolFactory.address, lender.address, AddressZero, mockRateAdjuster.address, mockCreditOracle.address, borrowingMutex.address)
+    await loanFactory.setLoanTokenImplementation(loanTokenImplementation.address)
     await borrowingMutex.allowLocker(lender.address, true)
   })
 
