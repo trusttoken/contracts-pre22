@@ -2,9 +2,11 @@
 pragma solidity 0.6.10;
 
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 
 import {Initializable} from "../common/Initializable.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
+import {ILoanToken2} from "./interface/ILoanToken2.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {ITrueRateAdjuster} from "./interface/ITrueRateAdjuster.sol";
@@ -40,6 +42,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     ITrueRateAdjuster public rateAdjuster;
     ITrueFiCreditOracle public creditOracle;
     IBorrowingMutex public borrowingMutex;
+    ILoanToken2 public loanTokenImplementation;
     // ======= STORAGE DECLARATION END ============
 
     /**
@@ -97,6 +100,10 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         return rateAdjuster.rate(pool, borrowerScore, amount).add(fixedTermLoanAdjustment);
     }
 
+    function setLoanTokenImplementation(ILoanToken2 newImplementation) external onlyAdmin {
+        loanTokenImplementation = newImplementation;
+    }
+
     /**
      * @dev Deploy LoanToken with parameters
      * @param _amount Amount to borrow
@@ -112,11 +119,15 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         require(_term > 0, "LoanFactory: Loans cannot have instantaneous term of repay");
         require(poolFactory.isPool(address(_pool)), "LoanFactory: Pool was not created by PoolFactory");
 
+        address ltImplementationAddress = address(loanTokenImplementation);
+        require(ltImplementationAddress != address(0), "LoanFactory: Loan token implementation should be set");
+
         uint256 apy = rate(_pool, msg.sender, _amount, _term);
 
         require(apy <= _maxApy, "LoanFactory: Calculated apy is higher than max apy");
 
-        address newToken = address(new LoanToken2(_pool, borrowingMutex, msg.sender, lender, admin, liquidator, _amount, _term, apy));
+        address newToken = Clones.clone(ltImplementationAddress);
+        LoanToken2(newToken).initialize(_pool, borrowingMutex, msg.sender, lender, admin, liquidator, _amount, _term, apy);
         isLoanToken[newToken] = true;
 
         emit LoanTokenCreated(newToken);
