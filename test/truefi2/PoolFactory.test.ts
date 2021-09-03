@@ -327,12 +327,12 @@ describe('PoolFactory', () => {
       const pool2 = await factory.pool(token2.address)
       const pool3 = await factory.pool(token3.address)
       const pool4 = await factory.pool(token4.address)
-      await factory.supportPool(pool3)
 
-      expect(await factory.supportedPools(0)).eq(pool1)
-      expect(await factory.supportedPools(1)).eq(pool2)
-      expect(await factory.supportedPools(2)).eq(pool4)
-      expect(await factory.supportedPools(3)).eq(pool3)
+      expect(await factory.isSupportedPool(pool3)).to.be.false
+      await factory.supportPool(pool3)
+      expect(await factory.isSupportedPool(pool3)).to.be.true
+
+      expect(await factory.getSupportedPools()).to.deep.eq([pool1, pool2, pool4, pool3])
     })
 
     it('emits event', async () => {
@@ -374,10 +374,12 @@ describe('PoolFactory', () => {
       const pool1 = await factory.pool(token1.address)
       const pool2 = await factory.pool(token2.address)
       const pool4 = await factory.pool(token4.address)
-      await factory.unsupportPool(pool2)
 
-      expect(await factory.supportedPools(0)).eq(pool1)
-      expect(await factory.supportedPools(1)).eq(pool4)
+      expect(await factory.isSupportedPool(pool2)).to.be.true
+      await factory.unsupportPool(pool2)
+      expect(await factory.isSupportedPool(pool2)).to.be.false
+
+      expect(await factory.getSupportedPools()).to.deep.eq([pool1, pool4])
     })
 
     it('emits event', async () => {
