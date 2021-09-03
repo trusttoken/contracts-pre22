@@ -1,5 +1,6 @@
 import { expect, use } from 'chai'
 import { BigNumber, BigNumberish, Wallet } from 'ethers'
+import { AddressZero } from '@ethersproject/constants'
 
 import { beforeEachWithFixture, parseEth, setupTruefi2WithLoanFactory3 } from 'utils'
 
@@ -179,6 +180,11 @@ describe('LoanFactory3', () => {
         .to.be.revertedWith('LoanFactory: Caller is not the admin')
     })
 
+    it('cannot be set to address(0)', async () => {
+      await expect(loanFactory.setCreditOracle(AddressZero))
+        .to.be.revertedWith('LoanFactory3: Cannot set credit oracle to address(0)')
+    })
+
     it('changes creditOracle', async () => {
       await loanFactory.setCreditOracle(fakeCreditOracle.address)
       expect(await loanFactory.creditOracle()).to.eq(fakeCreditOracle.address)
@@ -203,6 +209,11 @@ describe('LoanFactory3', () => {
         .not.to.be.reverted
       await expect(loanFactory.connect(borrower).setRateAdjuster(fakeRateAdjuster.address))
         .to.be.revertedWith('LoanFactory: Caller is not the admin')
+    })
+
+    it('cannot be set to address(0)', async () => {
+      await expect(loanFactory.setRateAdjuster(AddressZero))
+        .to.be.revertedWith('LoanFactory3: Cannot set rate adjuster to address(0)')
     })
 
     it('changes rateAdjuster', async () => {
