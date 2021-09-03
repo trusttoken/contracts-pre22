@@ -307,7 +307,7 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
      * @return _tvl TVL for all pools
      */
     function tvl() public override view returns (uint256) {
-        uint256 _tvl = 0;
+        uint256 _tvl;
         // loop through pools and sum tvl converted to USD
         for (uint256 i = 0; i < tvlPools.length; i++) {
             _tvl = _tvl.add(tvlPools[i].oracle().tokenToUsd(tvlPools[i].poolValue()));
