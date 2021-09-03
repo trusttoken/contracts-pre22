@@ -112,7 +112,13 @@ describe('LoanFactory2', () => {
     it('prevents fake pool loans', async () => {
       const fakePool = await new TrueFiPool2__factory(owner).deploy()
       await expect(loanFactory.connect(borrower).createLoanToken(fakePool.address, parseEth(123), DAY, MAX_APY))
-        .to.be.revertedWith('LoanFactory: Pool was not created by PoolFactory')
+        .to.be.revertedWith('LoanFactory: Pool is not supported by PoolFactory')
+    })
+
+    it('prevents unsupported pool loans', async () => {
+      await poolFactory.unsupportPool(pool.address)
+      await expect(loanFactory.connect(borrower).createLoanToken(pool.address, parseEth(123), DAY, MAX_APY))
+        .to.be.revertedWith('LoanFactory: Pool is not supported by PoolFactory')
     })
 
     it('prevents apy higer than limit', async () => {

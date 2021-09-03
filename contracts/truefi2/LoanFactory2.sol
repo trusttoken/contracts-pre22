@@ -121,7 +121,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     ) external override {
         require(_amount > 0, "LoanFactory: Loans of amount 0, will not be approved");
         require(_term > 0, "LoanFactory: Loans cannot have instantaneous term of repay");
-        require(poolFactory.isPool(address(_pool)), "LoanFactory: Pool was not created by PoolFactory");
+        require(poolFactory.isSupportedPool(_pool), "LoanFactory: Pool is not supported by PoolFactory");
 
         address ltImplementationAddress = address(loanTokenImplementation);
         require(ltImplementationAddress != address(0), "LoanFactory: Loan token implementation should be set");
