@@ -271,7 +271,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     function totalBorrowed(address borrower) public view returns (uint256) {
         uint256 borrowSum = 0;
         // loop through pools and sum amount borrowed converted to USD
-        for (uint8 i = 0; i < pools.length; i++) {
+        for (uint256 i = 0; i < pools.length; i++) {
             borrowSum = borrowSum.add(pools[i].oracle().tokenToUsd(borrowed[pools[i]][borrower]));
         }
         return borrowSum;
