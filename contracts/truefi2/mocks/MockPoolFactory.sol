@@ -14,6 +14,10 @@ contract MockPoolFactory is IPoolFactory {
         return supportedPools;
     }
 
+    function isSupportedPool(ITrueFiPool2 pool) external override view returns (bool) {
+        return address(pool) != address(0);
+    }
+
     function supportPool(ITrueFiPool2 _pool) external {
         supportedPools.push(_pool);
     }
