@@ -3,36 +3,36 @@ import { Wallet } from 'ethers'
 
 import {
   beforeEachWithFixture,
-  createLoan,
   DAY,
-  expectScaledCloseTo,
   parseEth,
   parseUSDC,
-  setupTruefi2,
-  timeTravel,
   timeTravelTo,
   updateRateOracle,
-  YEAR,
 } from 'utils'
 import { setupDeploy } from 'scripts/utils'
 
 import {
-  LoanToken2,
+  IPoolFactory,
   MockErc20Token,
-  MockErc20Token__factory, MockTrueFiPoolOracle,
+  MockErc20Token__factory,
   MockUsdStableCoinOracle__factory,
   TestTimeAveragedBaseRateOracle__factory,
   TimeAveragedBaseRateOracle,
   TimeAveragedBaseRateOracle__factory,
   TrueFiPool2,
   TrueFiPool2__factory,
-  TrueLender2,
   TrueRateAdjuster,
   TrueRateAdjuster__factory,
 } from 'contracts'
 
 import { deployMockContract, MockContract, MockProvider, solidity } from 'ethereum-waffle'
-import { ITimeAveragedBaseRateOracleJson, ITrueFiPool2WithDecimalsJson, SpotBaseRateOracleJson } from 'build'
+import {
+  ITimeAveragedBaseRateOracleJson,
+  ITrueFiPool2WithDecimalsJson,
+  SpotBaseRateOracleJson,
+} from 'build'
+
+import { MockPoolFactory__factory } from 'build/types/factories/MockPoolFactory__factory'
 
 use(solidity)
 
@@ -45,6 +45,7 @@ describe('TrueRateAdjuster', () => {
   let asset: MockErc20Token
   let mockSpotOracle: MockContract
   let oracle: TimeAveragedBaseRateOracle
+  let mockFactory: IPoolFactory
 
   beforeEachWithFixture(async (wallets, _provider) => {
     [owner, borrower] = wallets
@@ -62,7 +63,8 @@ describe('TrueRateAdjuster', () => {
     oracle = await new TestTimeAveragedBaseRateOracle__factory(owner).deploy()
     await oracle.initialize(mockSpotOracle.address, asset.address, DAY)
 
-    await rateAdjuster.initialize()
+    mockFactory = await deployContract(MockPoolFactory__factory)
+    await rateAdjuster.initialize(mockFactory.address)
   })
 
   describe('initializer', () => {
@@ -366,6 +368,8 @@ describe('TrueRateAdjuster', () => {
       await mockPool2.mock.decimals.returns(6)
       await mockPool2.mock.poolValue.returns(parseUSDC(1e7))
       await mockPool2.mock.oracle.returns(oracle2.address)
+      await mockFactory.supportPool(mockPool.address)
+      await mockFactory.supportPool(mockPool2.address)
     })
 
     it('borrow amount is limited by borrower limit', async () => {
