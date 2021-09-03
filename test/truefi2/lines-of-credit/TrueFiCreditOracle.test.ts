@@ -38,7 +38,7 @@ describe('TrueFiCreditOracle', () => {
 
     it('cannot be set to address(0)', async () => {
       await expect(oracle.setManager(AddressZero))
-        .to.be.revertedWith('TrueFiCreditOracle: Cannot set new manager to address(0)')
+        .to.be.revertedWith('TrueFiCreditOracle: Cannot set new manager to zero address')
     })
 
     it('manager is properly set', async () => {
