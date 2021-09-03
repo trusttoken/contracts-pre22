@@ -257,7 +257,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         uint256 resultPrecision = uint256(10)**decimals;
 
         // loop through pools and sum tvl accounting for precision
-        for (uint8 i = 0; i < pools.length; i++) {
+        for (uint256 i = 0; i < pools.length; i++) {
             tvl = tvl.add(
                 pools[i].poolValue().mul(resultPrecision).div(uint256(10)**(ITrueFiPool2WithDecimals(address(pools[i])).decimals()))
             );
@@ -276,7 +276,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         uint256 resultPrecision = uint256(10)**decimals;
 
         // loop through pools and sum amount borrowed accounting for precision
-        for (uint8 i = 0; i < pools.length; i++) {
+        for (uint256 i = 0; i < pools.length; i++) {
             borrowSum = borrowSum.add(
                 borrowed[pools[i]][borrower].mul(resultPrecision).div(
                     uint256(10)**(ITrueFiPool2WithDecimals(address(pools[i])).decimals())
@@ -405,7 +405,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         uint256 poolRate = rateAdjuster.poolBasicRate(pool);
 
         // loop through scores and poke buckets, ignoring empty buckets
-        for (uint16 i = 0; i <= MAX_CREDIT_SCORE; (i++, bitMap >>= 1)) {
+        for (uint256 i = 0; i <= MAX_CREDIT_SCORE; (i++, bitMap >>= 1)) {
             if (bitMap & 1 == 0) {
                 continue;
             }
@@ -472,7 +472,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         uint256 bucketSum = 0;
 
         // loop through buckets and sum total borrowed ignoring empty buckets
-        for (uint16 i = 0; i <= MAX_CREDIT_SCORE; (i++, bitMap >>= 1)) {
+        for (uint256 i = 0; i <= MAX_CREDIT_SCORE; (i++, bitMap >>= 1)) {
             if (bitMap & 1 == 0) {
                 continue;
             }
