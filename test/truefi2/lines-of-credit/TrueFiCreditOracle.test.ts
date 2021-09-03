@@ -36,7 +36,7 @@ describe('TrueFiCreditOracle', () => {
         .to.be.revertedWith('Ownable: caller is not the owner')
     })
 
-    it('cannot be set to address(0)', async () => {
+    it('cannot be set to zero address', async () => {
       await expect(oracle.setManager(AddressZero))
         .to.be.revertedWith('TrueFiCreditOracle: Cannot set new manager to zero address')
     })
