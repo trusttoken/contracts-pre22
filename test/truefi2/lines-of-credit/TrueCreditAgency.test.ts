@@ -34,7 +34,7 @@ import { setupDeploy } from 'scripts/utils'
 
 use(solidity)
 
-describe.only('TrueCreditAgency', () => {
+describe('TrueCreditAgency', () => {
   let provider: MockProvider
   let owner: Wallet
   let borrower: Wallet
