@@ -304,7 +304,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         require(msg.sender == loanToken.borrower(), "TrueLender: Sender is not borrower");
         ITrueFiPool2 pool = loanToken.pool();
 
-        require(factory.isPool(address(pool)), "TrueLender: Pool not created by the factory");
+        require(factory.isSupportedPool(pool), "TrueLender: Pool not supported by the factory");
         require(loanToken.token() == pool.token(), "TrueLender: Loan and pool token mismatch");
         require(poolLoans[pool].length < maxLoans, "TrueLender: Loans number has reached the limit");
         require(borrowingMutex.isUnlocked(msg.sender), "TrueLender: There is an ongoing loan or credit line");

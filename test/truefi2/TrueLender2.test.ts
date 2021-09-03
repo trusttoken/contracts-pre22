@@ -109,6 +109,9 @@ describe('TrueLender2', () => {
     pool1 = TrueFiPool2__factory.connect(await poolFactory.pool(token1.address), owner)
     pool2 = TrueFiPool2__factory.connect(await poolFactory.pool(token2.address), owner)
 
+    await poolFactory.supportPool(pool1.address)
+    await poolFactory.supportPool(pool2.address)
+
     counterfeitPool = await deployContract(owner, TrueFiPool2__factory)
     await counterfeitPool.initialize(token1.address, lender.address, AddressZero, owner.address)
 
@@ -345,7 +348,12 @@ describe('TrueLender2', () => {
           DAY,
           100,
         )
-        await expect(lender.connect(borrower).fund(badLoan.address)).to.be.revertedWith('TrueLender: Pool not created by the factory')
+        await expect(lender.connect(borrower).fund(badLoan.address)).to.be.revertedWith('TrueLender: Pool not supported by the factory')
+      })
+
+      it('loan was created for unsupported pool', async () => {
+        await poolFactory.unsupportPool(pool1.address)
+        await expect(lender.connect(borrower).fund(loan1.address)).to.be.revertedWith('TrueLender: Pool not supported by the factory')
       })
 
       it('there are too many loans for given pool', async () => {
