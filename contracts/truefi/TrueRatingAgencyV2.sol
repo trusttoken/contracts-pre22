@@ -392,7 +392,8 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
         // Update total and rater's TRU rewards for a loan
         uint256 totalReward = 0;
         uint256 ratersReward = 0;
-        if (loans[id].reward == 0) {
+        // This should fix bug with old decimals on old UDSC loan rewards
+        if (loans[id].reward < 5) {
             uint256 interest = ILoanToken2(id).profit();
 
             // This method of calculation might be erased in the future
