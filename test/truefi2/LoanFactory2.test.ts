@@ -12,6 +12,7 @@ import {
   TrueLender2,
   Liquidator2,
   PoolFactory,
+  LoanFactory2__factory,
   TrueFiCreditOracle,
   TrueFiCreditOracle__factory,
   TrueRateAdjuster,
@@ -21,7 +22,8 @@ import {
   MockTrueCurrency,
   TestLoanToken__factory,
 } from 'contracts'
-import { solidity } from 'ethereum-waffle'
+import { PoolFactoryJson } from 'build'
+import { deployMockContract, solidity } from 'ethereum-waffle'
 import { AddressZero } from '@ethersproject/constants'
 
 use(solidity)
@@ -124,8 +126,14 @@ describe('LoanFactory2', () => {
     })
 
     it('prevents token creation when there is no token implementation', async () => {
-      await loanFactory.connect(owner).setLoanTokenImplementation(AddressZero)
-      await expect(loanFactory.connect(borrower).createLoanToken(pool.address, parseEth(123), 15 * DAY, MAX_APY))
+      const factory = await new LoanFactory2__factory(owner).deploy()
+      const mockPoolFactory = await deployMockContract(owner, PoolFactoryJson.abi)
+      await factory.initialize(
+        mockPoolFactory.address,
+        AddressZero, AddressZero, AddressZero, AddressZero, AddressZero,
+      )
+      await mockPoolFactory.mock.isPool.withArgs(AddressZero).returns(true)
+      await expect(factory.connect(borrower).createLoanToken(AddressZero, parseEth(123), 15 * DAY, MAX_APY))
         .to.be.revertedWith('LoanFactory: Loan token implementation should be set')
     })
 
@@ -278,6 +286,36 @@ describe('LoanFactory2', () => {
       await expect(loanFactory.setBorrowingMutex(fakeBorrowingMutex.address))
         .to.emit(loanFactory, 'BorrowingMutexChanged')
         .withArgs(fakeBorrowingMutex.address)
+    })
+  })
+
+  describe('setLoanTokenImplementation', () => {
+    let implementation: LoanToken2
+    beforeEach(async () => {
+      implementation = await new LoanToken2__factory(owner).deploy()
+    })
+
+    it('only admin can call', async () => {
+      await expect(loanFactory.connect(owner).setLoanTokenImplementation(implementation.address))
+        .not.to.be.reverted
+      await expect(loanFactory.connect(borrower).setLoanTokenImplementation(implementation.address))
+        .to.be.revertedWith('LoanFactory: Caller is not the admin')
+    })
+
+    it('cannot be set to address(0)', async () => {
+      await expect(loanFactory.setLoanTokenImplementation(AddressZero))
+        .to.be.revertedWith('LoanFactory: Cannot set loan token implementation to address(0)')
+    })
+
+    it('changes loanTokenImplementation', async () => {
+      await loanFactory.setLoanTokenImplementation(implementation.address)
+      expect(await loanFactory.loanTokenImplementation()).to.eq(implementation.address)
+    })
+
+    it('emits event', async () => {
+      await expect(loanFactory.setLoanTokenImplementation(implementation.address))
+        .to.emit(loanFactory, 'LoanTokenImplementationChanged')
+        .withArgs(implementation.address)
     })
   })
 })
