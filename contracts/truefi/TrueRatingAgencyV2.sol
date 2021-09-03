@@ -392,7 +392,9 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
         // Update total and rater's TRU rewards for a loan
         uint256 totalReward = 0;
         uint256 ratersReward = 0;
-        if (loans[id].reward == 0) {
+        // TODO remove this special case logic after the 3 old USDC loans mentioned in PR #932 have been fixed.
+        // Rewards on these loans were from 1 to 4 due to a bug with decimal conversion fixed in PR #685.
+        if (loans[id].reward < 5) {
             uint256 interest = ILoanToken2(id).profit();
 
             // This method of calculation might be erased in the future
