@@ -49,7 +49,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
     mapping(address => bool) public isBorrowerWhitelisted;
 
     /// @dev array of pools officially supported by TrueFi
-    ITrueFiPool2[] public supportedPools; //TODO: replace getTVLPools with this
+    ITrueFiPool2[] public supportedPools;
 
     // ======= STORAGE DECLARATION END ===========
 

@@ -129,10 +129,6 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
         factory = _factory;
     }
 
-    function getTVLPools() external override view returns (ITrueFiPool2[] memory) {
-        return tvlPools;
-    }
-
     /// @dev Set risk premium to `newRate`
     function setRiskPremium(uint256 newRate) external onlyOwner {
         riskPremium = newRate;
