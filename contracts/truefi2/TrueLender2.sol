@@ -379,7 +379,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
      * @return Total amount borrowed for `borrower` in USD
      */
     function totalBorrowed(address borrower, uint8 decimals) public view returns (uint256) {
-        uint256 borrowSum = 0;
+        uint256 borrowSum;
         uint256 resultPrecision = uint256(10)**decimals;
 
         // loop through loans and sum amount borrowed accounting for precision
@@ -434,7 +434,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         // gets reclaimed amount and pays back to pool
         uint256 fundsReclaimed = balanceAfter.sub(balanceBefore);
 
-        uint256 feeAmount = 0;
+        uint256 feeAmount;
         if (address(feeToken) != address(0)) {
             // swap fee for feeToken
             feeAmount = _swapFee(pool, loanToken, data);
