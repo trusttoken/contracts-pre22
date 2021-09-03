@@ -4,12 +4,15 @@ import { BigNumber, BigNumberish, Wallet } from 'ethers'
 import { beforeEachWithFixture, DAY, MAX_APY, parseEth, setupTruefi2 } from 'utils'
 
 import {
+  BorrowingMutex,
+  BorrowingMutex__factory,
   LoanFactory2,
   TrueFiPool2,
   TrueFiPool2__factory,
   TrueLender2,
   Liquidator2,
   PoolFactory,
+  LoanFactory2__factory,
   TrueFiCreditOracle,
   TrueFiCreditOracle__factory,
   TrueRateAdjuster,
@@ -17,8 +20,10 @@ import {
   LoanToken2,
   LoanToken2__factory,
   MockTrueCurrency,
+  TestLoanToken__factory,
 } from 'contracts'
-import { solidity } from 'ethereum-waffle'
+import { PoolFactoryJson } from 'build'
+import { deployMockContract, solidity } from 'ethereum-waffle'
 import { AddressZero } from '@ethersproject/constants'
 
 use(solidity)
@@ -120,6 +125,25 @@ describe('LoanFactory2', () => {
         .not.to.be.reverted
     })
 
+    it('prevents token creation when there is no token implementation', async () => {
+      const factory = await new LoanFactory2__factory(owner).deploy()
+      const mockPoolFactory = await deployMockContract(owner, PoolFactoryJson.abi)
+      await factory.initialize(
+        mockPoolFactory.address,
+        AddressZero, AddressZero, AddressZero, AddressZero, AddressZero,
+      )
+      await mockPoolFactory.mock.isPool.withArgs(AddressZero).returns(true)
+      await expect(factory.connect(borrower).createLoanToken(AddressZero, parseEth(123), 15 * DAY, MAX_APY))
+        .to.be.revertedWith('LoanFactory: Loan token implementation should be set')
+    })
+
+    it('fails when loan token intitialize signature differs from expected', async () => {
+      const testLoanToken = await new TestLoanToken__factory(owner).deploy()
+      await loanFactory.connect(owner).setLoanTokenImplementation(testLoanToken.address)
+      await expect(loanFactory.connect(borrower).createLoanToken(pool.address, parseEth(123), 15 * DAY, MAX_APY))
+        .to.be.revertedWith('Transaction reverted: function selector was not recognized and there\'s no fallback function')
+    })
+
     describe('apy is set properly', () => {
       const term = 15 * DAY
 
@@ -186,6 +210,11 @@ describe('LoanFactory2', () => {
         .to.be.revertedWith('LoanFactory: Caller is not the admin')
     })
 
+    it('cannot be set to address(0)', async () => {
+      await expect(loanFactory.setCreditOracle(AddressZero))
+        .to.be.revertedWith('LoanFactory: Cannot set credit oracle to address(0)')
+    })
+
     it('changes creditOracle', async () => {
       await loanFactory.setCreditOracle(fakeCreditOracle.address)
       expect(await loanFactory.creditOracle()).to.eq(fakeCreditOracle.address)
@@ -212,6 +241,11 @@ describe('LoanFactory2', () => {
         .to.be.revertedWith('LoanFactory: Caller is not the admin')
     })
 
+    it('cannot be set to address(0)', async () => {
+      await expect(loanFactory.setRateAdjuster(AddressZero))
+        .to.be.revertedWith('LoanFactory: Cannot set rate adjuster to address(0)')
+    })
+
     it('changes rateAdjuster', async () => {
       await loanFactory.setRateAdjuster(fakeRateAdjuster.address)
       expect(await loanFactory.rateAdjuster()).to.eq(fakeRateAdjuster.address)
@@ -225,22 +259,63 @@ describe('LoanFactory2', () => {
   })
 
   describe('setBorrowingMutex', () => {
+    let fakeBorrowingMutex: BorrowingMutex
+    beforeEach(async () => {
+      fakeBorrowingMutex = await new BorrowingMutex__factory(owner).deploy()
+      await fakeBorrowingMutex.initialize()
+    })
+
     it('only admin can call', async () => {
-      await expect(loanFactory.connect(owner).setBorrowingMutex(AddressZero))
+      await expect(loanFactory.connect(owner).setBorrowingMutex(fakeBorrowingMutex.address))
         .not.to.be.reverted
-      await expect(loanFactory.connect(borrower).setBorrowingMutex(AddressZero))
+      await expect(loanFactory.connect(borrower).setBorrowingMutex(fakeBorrowingMutex.address))
         .to.be.revertedWith('LoanFactory: Caller is not the admin')
     })
 
+    it('cannot be set to address(0)', async () => {
+      await expect(loanFactory.setBorrowingMutex(AddressZero))
+        .to.be.revertedWith('LoanFactory: Cannot set borrowing mutex to address(0)')
+    })
+
     it('changes borrowingMutex', async () => {
-      await loanFactory.setBorrowingMutex(AddressZero)
-      expect(await loanFactory.borrowingMutex()).to.eq(AddressZero)
+      await loanFactory.setBorrowingMutex(fakeBorrowingMutex.address)
+      expect(await loanFactory.borrowingMutex()).to.eq(fakeBorrowingMutex.address)
     })
 
     it('emits event', async () => {
-      await expect(loanFactory.setBorrowingMutex(AddressZero))
+      await expect(loanFactory.setBorrowingMutex(fakeBorrowingMutex.address))
         .to.emit(loanFactory, 'BorrowingMutexChanged')
-        .withArgs(AddressZero)
+        .withArgs(fakeBorrowingMutex.address)
+    })
+  })
+
+  describe('setLoanTokenImplementation', () => {
+    let implementation: LoanToken2
+    beforeEach(async () => {
+      implementation = await new LoanToken2__factory(owner).deploy()
+    })
+
+    it('only admin can call', async () => {
+      await expect(loanFactory.connect(owner).setLoanTokenImplementation(implementation.address))
+        .not.to.be.reverted
+      await expect(loanFactory.connect(borrower).setLoanTokenImplementation(implementation.address))
+        .to.be.revertedWith('LoanFactory: Caller is not the admin')
+    })
+
+    it('cannot be set to address(0)', async () => {
+      await expect(loanFactory.setLoanTokenImplementation(AddressZero))
+        .to.be.revertedWith('LoanFactory: Cannot set loan token implementation to address(0)')
+    })
+
+    it('changes loanTokenImplementation', async () => {
+      await loanFactory.setLoanTokenImplementation(implementation.address)
+      expect(await loanFactory.loanTokenImplementation()).to.eq(implementation.address)
+    })
+
+    it('emits event', async () => {
+      await expect(loanFactory.setLoanTokenImplementation(implementation.address))
+        .to.emit(loanFactory, 'LoanTokenImplementationChanged')
+        .withArgs(implementation.address)
     })
   })
 })

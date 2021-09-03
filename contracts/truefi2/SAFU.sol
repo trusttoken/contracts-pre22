@@ -10,7 +10,7 @@ import {ERC20} from "../common/UpgradeableERC20.sol";
 import {DeficiencyToken} from "./DeficiencyToken.sol";
 import {IDeficiencyToken} from "./interface/IDeficiencyToken.sol";
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
-import {ILoanToken2} from "./interface/ILoanToken2.sol";
+import {IDebtToken} from "../truefi2/interface/ILoanToken2.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
 import {ILiquidator2} from "./interface/ILiquidator2.sol";
@@ -35,7 +35,7 @@ contract SAFU is ISAFU, UpgradeableClaimable {
     ILiquidator2 public liquidator;
     I1Inch3 public _1Inch;
 
-    mapping(ILoanToken2 => IDeficiencyToken) public override deficiencyToken;
+    mapping(IDebtToken => IDeficiencyToken) public override deficiencyToken;
     mapping(address => uint256) public override poolDeficit;
 
     // ======= STORAGE DECLARATION END ============
@@ -46,7 +46,7 @@ contract SAFU is ISAFU, UpgradeableClaimable {
      * @param burnedAmount Amount of loan tokens that were burned
      * @param redeemedAmount Amount of tokens that were received
      */
-    event Redeemed(ILoanToken2 loan, uint256 burnedAmount, uint256 redeemedAmount);
+    event Redeemed(IDebtToken loan, uint256 burnedAmount, uint256 redeemedAmount);
 
     /**
      * @dev Emitted when a loan gets liquidated
@@ -55,14 +55,14 @@ contract SAFU is ISAFU, UpgradeableClaimable {
      * @param deficiencyToken Deficiency token representing a deficit that is owed to the pool by SAFU
      * @param deficit Deficit amount that SAFU still owes the pool
      */
-    event Liquidated(ILoanToken2 loan, uint256 repaid, IDeficiencyToken deficiencyToken, uint256 deficit);
+    event Liquidated(IDebtToken loan, uint256 repaid, IDeficiencyToken deficiencyToken, uint256 deficit);
 
     /**
      * @dev Emitted when a loan deficit is reclaimed
      * @param loan Defaulted loan, which deficit was reclaimed
      * @param reclaimed Amount reclaimed by the pool
      */
-    event Reclaimed(ILoanToken2 loan, uint256 reclaimed);
+    event Reclaimed(IDebtToken loan, uint256 reclaimed);
 
     /**
      * @dev Emitted when SAFU swaps assets
@@ -86,9 +86,9 @@ contract SAFU is ISAFU, UpgradeableClaimable {
      * If SAFU does not have enough funds, deficit is saved to be redeemed later
      * @param loan Loan to be liquidated
      */
-    function liquidate(ILoanToken2 loan) external {
+    function liquidate(IDebtToken loan) external {
         require(loanFactory.isLoanToken(address(loan)), "SAFU: Unknown loan");
-        require(loan.status() == ILoanToken2.Status.Defaulted, "SAFU: Loan is not defaulted");
+        require(loan.status() == IDebtToken.Status.Defaulted, "SAFU: Loan is not defaulted");
 
         ITrueFiPool2 pool = ITrueFiPool2(loan.pool());
         IERC20 token = IERC20(pool.token());
@@ -122,7 +122,7 @@ contract SAFU is ISAFU, UpgradeableClaimable {
      * @dev Redeems a loan for underlying repaid debt
      * @param loan Loan token to be redeemed
      */
-    function redeem(ILoanToken2 loan) public onlyOwner {
+    function redeem(IDebtToken loan) public onlyOwner {
         require(loanFactory.isLoanToken(address(loan)), "SAFU: Unknown loan");
         uint256 amountToBurn = tokenBalance(loan);
         uint256 balanceBeforeRedeem = tokenBalance(loan.token());
@@ -136,7 +136,7 @@ contract SAFU is ISAFU, UpgradeableClaimable {
      * @param loan Loan with a deficit to be reclaimed
      * @param amount Amount of deficiency tokens to be reclaimed
      */
-    function reclaim(ILoanToken2 loan, uint256 amount) external override {
+    function reclaim(IDebtToken loan, uint256 amount) external override {
         require(loanFactory.isLoanToken(address(loan)), "SAFU: Unknown loan");
         address poolAddress = address(loan.pool());
         require(msg.sender == poolAddress, "SAFU: caller is not the loan's pool");

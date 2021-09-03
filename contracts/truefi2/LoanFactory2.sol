@@ -2,9 +2,11 @@
 pragma solidity 0.6.10;
 
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 
 import {Initializable} from "../common/Initializable.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
+import {ILoanToken2} from "./interface/ILoanToken2.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {ITrueRateAdjuster} from "./interface/ITrueRateAdjuster.sol";
@@ -40,6 +42,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     ITrueRateAdjuster public rateAdjuster;
     ITrueFiCreditOracle public creditOracle;
     IBorrowingMutex public borrowingMutex;
+    ILoanToken2 public loanTokenImplementation;
     // ======= STORAGE DECLARATION END ============
 
     /**
@@ -53,6 +56,8 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     event RateAdjusterChanged(ITrueRateAdjuster rateAdjuster);
 
     event BorrowingMutexChanged(IBorrowingMutex borrowingMutex);
+
+    event LoanTokenImplementationChanged(ILoanToken2 loanTokenImplementation);
 
     /**
      * @dev Initialize this contract and set currency token
@@ -82,6 +87,10 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         _;
     }
 
+    /**
+     * @dev This function must be called once to set admin to the hardcoded address
+     * The address is hardcoded because there was no owner of the contract previously
+     */
     function setAdmin() external {
         admin = 0x16cEa306506c387713C70b9C1205fd5aC997E78E;
     }
@@ -112,28 +121,41 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         require(_term > 0, "LoanFactory: Loans cannot have instantaneous term of repay");
         require(poolFactory.isPool(address(_pool)), "LoanFactory: Pool was not created by PoolFactory");
 
+        address ltImplementationAddress = address(loanTokenImplementation);
+        require(ltImplementationAddress != address(0), "LoanFactory: Loan token implementation should be set");
+
         uint256 apy = rate(_pool, msg.sender, _amount, _term);
 
         require(apy <= _maxApy, "LoanFactory: Calculated apy is higher than max apy");
 
-        address newToken = address(new LoanToken2(_pool, borrowingMutex, msg.sender, lender, admin, liquidator, _amount, _term, apy));
+        address newToken = Clones.clone(ltImplementationAddress);
+        LoanToken2(newToken).initialize(_pool, borrowingMutex, msg.sender, lender, admin, liquidator, _amount, _term, apy);
         isLoanToken[newToken] = true;
 
         emit LoanTokenCreated(newToken);
     }
 
     function setCreditOracle(ITrueFiCreditOracle _creditOracle) external onlyAdmin {
+        require(address(_creditOracle) != address(0), "LoanFactory: Cannot set credit oracle to address(0)");
         creditOracle = _creditOracle;
         emit CreditOracleChanged(_creditOracle);
     }
 
     function setRateAdjuster(ITrueRateAdjuster _rateAdjuster) external onlyAdmin {
+        require(address(_rateAdjuster) != address(0), "LoanFactory: Cannot set rate adjuster to address(0)");
         rateAdjuster = _rateAdjuster;
         emit RateAdjusterChanged(_rateAdjuster);
     }
 
     function setBorrowingMutex(IBorrowingMutex _mutex) external onlyAdmin {
+        require(address(_mutex) != address(0), "LoanFactory: Cannot set borrowing mutex to address(0)");
         borrowingMutex = _mutex;
         emit BorrowingMutexChanged(_mutex);
+    }
+
+    function setLoanTokenImplementation(ILoanToken2 _implementation) external onlyAdmin {
+        require(address(_implementation) != address(0), "LoanFactory: Cannot set loan token implementation to address(0)");
+        loanTokenImplementation = _implementation;
+        emit LoanTokenImplementationChanged(_implementation);
     }
 }

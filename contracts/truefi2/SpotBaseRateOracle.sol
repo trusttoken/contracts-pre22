@@ -12,7 +12,7 @@ contract SpotBaseRateOracle {
     using SafeMath for uint256;
 
     /// @dev Aave lending pool contract
-    IAaveLendingPool public aaveLendingPool;
+    IAaveLendingPool public immutable aaveLendingPool;
 
     /// @dev constructor which sets aave pool to `_aaveLendingPool`
     constructor(IAaveLendingPool _aaveLendingPool) public {

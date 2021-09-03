@@ -11,7 +11,7 @@ import {IVoteTokenWithERC20} from "../governance/interface/IVoteToken.sol";
 import {Ownable} from "../common/UpgradeableOwnable.sol";
 import {IArbitraryDistributor} from "./interface/IArbitraryDistributor.sol";
 import {ILoanFactory} from "./interface/ILoanFactory.sol";
-import {ILoanToken2} from "../truefi2/interface/ILoanToken2.sol";
+import {ILoanToken2, IDebtToken} from "../truefi2/interface/ILoanToken2.sol";
 import {ITrueFiPool} from "./interface/ITrueFiPool.sol";
 import {ITrueRatingAgencyV2} from "./interface/ITrueRatingAgencyV2.sol";
 
@@ -392,7 +392,9 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
         // Update total and rater's TRU rewards for a loan
         uint256 totalReward = 0;
         uint256 ratersReward = 0;
-        if (loans[id].reward == 0) {
+        // TODO remove this special case logic after the 3 old USDC loans mentioned in PR #932 have been fixed.
+        // Rewards on these loans were from 1 to 4 due to a bug with decimal conversion fixed in PR #685.
+        if (loans[id].reward < 5) {
             uint256 interest = ILoanToken2(id).profit();
 
             // This method of calculation might be erased in the future
@@ -479,22 +481,22 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
             return LoanStatus.Retracted;
         }
         // get internal status
-        ILoanToken2.Status loanInternalStatus = ILoanToken2(id).status();
+        IDebtToken.Status loanInternalStatus = ILoanToken2(id).status();
 
         // Running is Funded || Withdrawn
-        if (loanInternalStatus == ILoanToken2.Status.Funded || loanInternalStatus == ILoanToken2.Status.Withdrawn) {
+        if (loanInternalStatus == IDebtToken.Status.Funded || loanInternalStatus == IDebtToken.Status.Withdrawn) {
             return LoanStatus.Running;
         }
         // Settled has been paid back in full and past term
-        if (loanInternalStatus == ILoanToken2.Status.Settled) {
+        if (loanInternalStatus == IDebtToken.Status.Settled) {
             return LoanStatus.Settled;
         }
         // Defaulted has not been paid back in full and past term
-        if (loanInternalStatus == ILoanToken2.Status.Defaulted) {
+        if (loanInternalStatus == IDebtToken.Status.Defaulted) {
             return LoanStatus.Defaulted;
         }
         // Liquidated is same as defaulted and stakers have been liquidated
-        if (loanInternalStatus == ILoanToken2.Status.Liquidated) {
+        if (loanInternalStatus == IDebtToken.Status.Liquidated) {
             return LoanStatus.Liquidated;
         }
         // otherwise return Pending

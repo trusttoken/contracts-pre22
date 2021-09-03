@@ -341,8 +341,8 @@
       "address": "0x23696914Ca9737466D8553a2d619948f548Ee424"
     },
     "trueFiPool": {
-      "txHash": "0x18fec82e53138dc1284f456eb2816f3b16a1bc64302a0fe6be0118b4d1d53d88",
-      "address": "0xefB7AEb1dc47c6834a2A30A698fa5fFA2A91f9aa"
+      "txHash": "0xdd0e1975c82c8ff1c19b2cc5bb81e5e0ebc92af2e5f12b3f825ff2829f7c8cbd",
+      "address": "0x50c78aAD22337993CF2f8328894C1FB744A53a5F"
     },
     "trueFiPool_proxy": {
       "txHash": "0xe2420b341397151bf2790d3b7e7c77f511830c882393ed81d8b4ffcd9f8f6541",
