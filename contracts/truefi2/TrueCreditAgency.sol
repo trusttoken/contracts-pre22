@@ -244,10 +244,10 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
      * @return borrowSum Total amount borrowed for `borrower` in USD
      */
     function totalBorrowed(address borrower) public view returns (uint256) {
-        uint256 borrowSum = 0;
+        uint256 borrowSum;
         // loop through pools and sum amount borrowed converted to USD
         ITrueFiPool2[] memory pools = poolFactory.getSupportedPools();
-        for (uint8 i = 0; i < pools.length; i++) {
+        for (uint256 i = 0; i < pools.length; i++) {
             borrowSum = borrowSum.add(pools[i].oracle().tokenToUsd(borrowed[pools[i]][borrower]));
         }
         return borrowSum;
@@ -388,7 +388,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         uint256 poolRate = poolBasicRate(pool);
 
         // loop through scores and poke buckets, ignoring empty buckets
-        for (uint16 i = 0; i <= MAX_CREDIT_SCORE; (i++, bitMap >>= 1)) {
+        for (uint256 i = 0; i <= MAX_CREDIT_SCORE; (i++, bitMap >>= 1)) {
             if (bitMap & 1 == 0) {
                 continue;
             }
@@ -453,10 +453,10 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         uint256 bitMap = usedBucketsBitmap;
         CreditScoreBucket[256] storage creditScoreBuckets = buckets[pool];
         uint256 timeNow = block.timestamp;
-        uint256 bucketSum = 0;
+        uint256 bucketSum;
 
         // loop through buckets and sum total borrowed ignoring empty buckets
-        for (uint16 i = 0; i <= MAX_CREDIT_SCORE; (i++, bitMap >>= 1)) {
+        for (uint256 i = 0; i <= MAX_CREDIT_SCORE; (i++, bitMap >>= 1)) {
             if (bitMap & 1 == 0) {
                 continue;
             }

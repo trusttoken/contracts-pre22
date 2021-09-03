@@ -6,7 +6,8 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 import {ERC20} from "../common/UpgradeableERC20.sol";
-import {ILoanToken2, ITrueFiPool2} from "./interface/ILoanToken2.sol";
+import {ILoanToken2} from "./interface/ILoanToken2.sol";
+import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
 
 /**
@@ -140,7 +141,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @param _term Loan length
      * @param _apy Loan APY
      */
-    constructor(
+    function initialize(
         ITrueFiPool2 _pool,
         IBorrowingMutex _mutex,
         address _borrower,
@@ -150,7 +151,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         uint256 _amount,
         uint256 _term,
         uint256 _apy
-    ) public {
+    ) external initializer {
         require(_lender != address(0), "LoanToken2: Lender is not set");
         ERC20.__ERC20_initialize("TrueFi Loan Token", "LOAN");
 

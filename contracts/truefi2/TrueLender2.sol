@@ -11,6 +11,7 @@ import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {OneInchExchange} from "./libraries/OneInchExchange.sol";
 
 import {ILoanToken2} from "./interface/ILoanToken2.sol";
+import {IDebtToken} from "../truefi2/interface/ILoanToken2.sol";
 import {IStakingPool} from "../truefi/interface/IStakingPool.sol";
 import {ITrueLender2} from "./interface/ITrueLender2.sol";
 import {ITrueFiPool2, ITrueFiPoolOracle, I1Inch3} from "./interface/ITrueFiPool2.sol";
@@ -303,10 +304,11 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         require(msg.sender == loanToken.borrower(), "TrueLender: Sender is not borrower");
         ITrueFiPool2 pool = loanToken.pool();
 
-        require(factory.isPool(address(pool)), "TrueLender: Pool not created by the factory");
+        require(factory.isSupportedPool(pool), "TrueLender: Pool not supported by the factory");
         require(loanToken.token() == pool.token(), "TrueLender: Loan and pool token mismatch");
         require(poolLoans[pool].length < maxLoans, "TrueLender: Loans number has reached the limit");
         require(borrowingMutex.isUnlocked(msg.sender), "TrueLender: There is an ongoing loan or credit line");
+        require(creditOracle.status(msg.sender) == ITrueFiCreditOracle.Status.Eligible, "TrueLender: Sender is not eligible for loan");
 
         uint256 term = loanToken.term();
         require(isTermBelowMax(term), "TrueLender: Loan's term is too long");
@@ -346,10 +348,10 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
      */
     function reclaim(ILoanToken2 loanToken, bytes calldata data) external {
         ITrueFiPool2 pool = loanToken.pool();
-        ILoanToken2.Status status = loanToken.status();
-        require(status >= ILoanToken2.Status.Settled, "TrueLender: LoanToken is not closed yet");
+        IDebtToken.Status status = loanToken.status();
+        require(status >= IDebtToken.Status.Settled, "TrueLender: LoanToken is not closed yet");
 
-        if (status != ILoanToken2.Status.Settled) {
+        if (status != IDebtToken.Status.Settled) {
             require(msg.sender == owner(), "TrueLender: Only owner can reclaim from defaulted loan");
         }
 
@@ -377,7 +379,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
      * @return Total amount borrowed for `borrower` in USD
      */
     function totalBorrowed(address borrower, uint8 decimals) public view returns (uint256) {
-        uint256 borrowSum = 0;
+        uint256 borrowSum;
         uint256 resultPrecision = uint256(10)**decimals;
 
         // loop through loans and sum amount borrowed accounting for precision
@@ -432,7 +434,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         // gets reclaimed amount and pays back to pool
         uint256 fundsReclaimed = balanceAfter.sub(balanceBefore);
 
-        uint256 feeAmount = 0;
+        uint256 feeAmount;
         if (address(feeToken) != address(0)) {
             // swap fee for feeToken
             feeAmount = _swapFee(pool, loanToken, data);
