@@ -138,7 +138,7 @@ describe('LoanFactory2', () => {
         mockPoolFactory.address,
         AddressZero, AddressZero, AddressZero, AddressZero, AddressZero,
       )
-      await mockPoolFactory.mock.isPool.withArgs(AddressZero).returns(true)
+      await mockPoolFactory.mock.isSupportedPool.withArgs(AddressZero).returns(true)
       await expect(factory.connect(borrower).createLoanToken(AddressZero, parseEth(123), 15 * DAY, MAX_APY))
         .to.be.revertedWith('LoanFactory: Loan token implementation should be set')
     })
