@@ -131,6 +131,7 @@ contract TrueFiCreditOracle is ITrueFiCreditOracle, UpgradeableClaimable {
      * @dev Set new manager for updating scores
      */
     function setManager(address newManager) public onlyOwner {
+        require(newManager != address(0), "TrueFiCreditOracle: Cannot set new manager to zero address");
         manager = newManager;
         emit ManagerChanged(newManager);
     }
