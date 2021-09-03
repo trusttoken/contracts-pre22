@@ -114,7 +114,13 @@ describe('LoanFactory2', () => {
     it('prevents fake pool loans', async () => {
       const fakePool = await new TrueFiPool2__factory(owner).deploy()
       await expect(loanFactory.connect(borrower).createLoanToken(fakePool.address, parseEth(123), DAY, MAX_APY))
-        .to.be.revertedWith('LoanFactory: Pool was not created by PoolFactory')
+        .to.be.revertedWith('LoanFactory: Pool is not supported by PoolFactory')
+    })
+
+    it('prevents unsupported pool loans', async () => {
+      await poolFactory.unsupportPool(pool.address)
+      await expect(loanFactory.connect(borrower).createLoanToken(pool.address, parseEth(123), DAY, MAX_APY))
+        .to.be.revertedWith('LoanFactory: Pool is not supported by PoolFactory')
     })
 
     it('prevents apy higer than limit', async () => {
@@ -132,7 +138,7 @@ describe('LoanFactory2', () => {
         mockPoolFactory.address,
         AddressZero, AddressZero, AddressZero, AddressZero, AddressZero,
       )
-      await mockPoolFactory.mock.isPool.withArgs(AddressZero).returns(true)
+      await mockPoolFactory.mock.isSupportedPool.withArgs(AddressZero).returns(true)
       await expect(factory.connect(borrower).createLoanToken(AddressZero, parseEth(123), 15 * DAY, MAX_APY))
         .to.be.revertedWith('LoanFactory: Loan token implementation should be set')
     })
