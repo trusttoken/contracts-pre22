@@ -1,6 +1,7 @@
 import { BigNumber, BigNumberish, Wallet } from 'ethers'
 import {
   BorrowingMutex,
+  IPoolFactory,
   LoanFactory2,
   MockBorrowingMutex__factory,
   MockTrueCurrency,
@@ -33,7 +34,7 @@ import { setupDeploy } from 'scripts/utils'
 
 use(solidity)
 
-describe('TrueCreditAgency', () => {
+describe.only('TrueCreditAgency', () => {
   let provider: MockProvider
   let owner: Wallet
   let borrower: Wallet
@@ -317,8 +318,7 @@ describe('TrueCreditAgency', () => {
 
     it('borrow amount is limited by total TVL', async () => {
       await usdcPool.liquidExit(parseUSDC(19e6))
-      // TODO: use poolFactory in place of rateAdjuster
-      const maxTVLLimit = (await rateAdjuster.tvl()).mul(15).div(100)
+      const maxTVLLimit = (await poolFactory.tvl()).mul(15).div(100)
       expect(await creditAgency.borrowLimit(tusdPool.address, borrower.address)).to.equal(maxTVLLimit.mul(8051).div(10000))
     })
 

@@ -24,9 +24,6 @@ interface ITrueRateAdjuster {
 
     function borrowLimitAdjustment(uint8 score) external view returns (uint256);
 
-    //TODO: remove
-    function tvl() external view returns (uint256);
-
     function borrowLimit(
         ITrueFiPool2 pool,
         uint8 score,
