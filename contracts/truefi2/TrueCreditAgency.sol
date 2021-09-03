@@ -253,7 +253,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
      * @return TVL for all pools with lines of credit
      */
     function totalTVL(uint8 decimals) public view returns (uint256) {
-        uint256 tvl = 0;
+        uint256 tvl;
         uint256 resultPrecision = uint256(10)**decimals;
 
         // loop through pools and sum tvl accounting for precision
@@ -272,7 +272,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
      * @return Total amount borrowed for `borrower` in USD
      */
     function totalBorrowed(address borrower, uint8 decimals) public view returns (uint256) {
-        uint256 borrowSum = 0;
+        uint256 borrowSum;
         uint256 resultPrecision = uint256(10)**decimals;
 
         // loop through pools and sum amount borrowed accounting for precision
