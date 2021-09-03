@@ -154,6 +154,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     }
 
     function setLoanTokenImplementation(ILoanToken2 _implementation) external onlyAdmin {
+        require(address(_implementation) != address(0), "LoanFactory: Cannot set loan token implementation to address(0)");
         loanTokenImplementation = _implementation;
         emit LoanTokenImplementationChanged(_implementation);
     }
