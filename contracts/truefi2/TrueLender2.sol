@@ -383,9 +383,9 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         uint256 resultPrecision = uint256(10)**decimals;
 
         // loop through loans and sum amount borrowed accounting for precision
-        ITrueFiPool2[] memory tvlPools = rateAdjuster.getTVLPools();
-        for (uint8 i = 0; i < tvlPools.length; i++) {
-            ITrueFiPool2 pool = tvlPools[i];
+        ITrueFiPool2[] memory pools = factory.getSupportedPools();
+        for (uint8 i = 0; i < pools.length; i++) {
+            ITrueFiPool2 pool = pools[i];
             uint256 poolPrecision = uint256(10)**ITrueFiPool2WithDecimals(address(pool)).decimals();
             ILoanToken2[] memory _loans = poolLoans[pool];
             for (uint8 j = 0; j < _loans.length; j++) {
