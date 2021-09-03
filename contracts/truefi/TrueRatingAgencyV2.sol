@@ -11,7 +11,7 @@ import {IVoteTokenWithERC20} from "../governance/interface/IVoteToken.sol";
 import {Ownable} from "../common/UpgradeableOwnable.sol";
 import {IArbitraryDistributor} from "./interface/IArbitraryDistributor.sol";
 import {ILoanFactory} from "./interface/ILoanFactory.sol";
-import {ILoanToken2} from "../truefi2/interface/ILoanToken2.sol";
+import {ILoanToken2, IDebtToken} from "../truefi2/interface/ILoanToken2.sol";
 import {ITrueFiPool} from "./interface/ITrueFiPool.sol";
 import {ITrueRatingAgencyV2} from "./interface/ITrueRatingAgencyV2.sol";
 
@@ -479,22 +479,22 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
             return LoanStatus.Retracted;
         }
         // get internal status
-        ILoanToken2.Status loanInternalStatus = ILoanToken2(id).status();
+        IDebtToken.Status loanInternalStatus = ILoanToken2(id).status();
 
         // Running is Funded || Withdrawn
-        if (loanInternalStatus == ILoanToken2.Status.Funded || loanInternalStatus == ILoanToken2.Status.Withdrawn) {
+        if (loanInternalStatus == IDebtToken.Status.Funded || loanInternalStatus == IDebtToken.Status.Withdrawn) {
             return LoanStatus.Running;
         }
         // Settled has been paid back in full and past term
-        if (loanInternalStatus == ILoanToken2.Status.Settled) {
+        if (loanInternalStatus == IDebtToken.Status.Settled) {
             return LoanStatus.Settled;
         }
         // Defaulted has not been paid back in full and past term
-        if (loanInternalStatus == ILoanToken2.Status.Defaulted) {
+        if (loanInternalStatus == IDebtToken.Status.Defaulted) {
             return LoanStatus.Defaulted;
         }
         // Liquidated is same as defaulted and stakers have been liquidated
-        if (loanInternalStatus == ILoanToken2.Status.Liquidated) {
+        if (loanInternalStatus == IDebtToken.Status.Liquidated) {
             return LoanStatus.Liquidated;
         }
         // otherwise return Pending

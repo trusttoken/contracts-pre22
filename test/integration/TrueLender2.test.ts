@@ -65,6 +65,7 @@ describe('TrueLender2', () => {
     const mockCreditOracle = await deployMockContract(owner, TrueFiCreditOracleJson.abi)
     await mockCreditOracle.mock.score.returns(255)
     await mockCreditOracle.mock.maxBorrowerLimit.withArgs(OWNER).returns(parseEth(100_000_000))
+    await mockCreditOracle.mock.status.withArgs(OWNER).returns(0)
 
     borrowingMutex = await deployContract(BorrowingMutex__factory)
     await borrowingMutex.initialize()
@@ -95,8 +96,10 @@ describe('TrueLender2', () => {
     await mockRateAdjuster.mock.borrowLimit.withArgs(tusdLoanPool.address, 255, parseEth(100_000_000), 0).returns(parseEth(100_000_000))
     await mockRateAdjuster.mock.borrowLimit.withArgs(usdtLoanPool.address, 255, parseEth(100_000_000), 0).returns(parseEth(100_000_000))
 
+    const loanTokenImplementation = await new LoanToken2__factory(owner).deploy()
     loanFactory = await new LoanFactory2__factory(owner).deploy()
     await loanFactory.initialize(poolFactory.address, lender.address, AddressZero, mockRateAdjuster.address, mockCreditOracle.address, borrowingMutex.address)
+    await loanFactory.setLoanTokenImplementation(loanTokenImplementation.address)
     await borrowingMutex.allowLocker(lender.address, true)
   })
 
