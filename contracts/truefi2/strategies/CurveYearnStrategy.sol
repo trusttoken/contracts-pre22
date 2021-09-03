@@ -125,7 +125,7 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
         amounts[tokenIndex] = totalAmount;
 
         token.safeApprove(address(curvePool), totalAmount);
-        uint256 conservativeMinAmount = calcTokenAmount(totalAmount).mul(999).div(1000);
+        uint256 conservativeMinAmount = calcTokenAmount(totalAmount, true).mul(999).div(1000);
         curvePool.add_liquidity(amounts, conservativeMinAmount);
 
         // stake yCurve tokens in gauge
@@ -143,7 +143,7 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
      */
     function withdraw(uint256 minAmount) external override onlyPool {
         // get rough estimate of how much yCRV we should sell
-        uint256 roughCurveTokenAmount = calcTokenAmount(minAmount);
+        uint256 roughCurveTokenAmount = calcTokenAmount(minAmount, false);
         uint256 yBalance = yTokenBalance();
         require(roughCurveTokenAmount <= yBalance, "CurveYearnStrategy: Not enough Curve liquidity tokens in pool to cover borrow");
         // Try to withdraw a bit more to be safe, but not above the total balance
@@ -246,15 +246,16 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
     }
 
     /**
-     * @dev Expected amount of minted Curve.fi yDAI/yUSDC/yUSDT/yTUSD tokens.
+     * @dev Expected amount of minted or burnt Curve.fi yDAI/yUSDC/yUSDT/yTUSD tokens.
      * @param currencyAmount amount to calculate for
+     * @param forDeposit true for deposits=mint, false for withdrawals=burn
      * @return expected amount minted given currency amount
      */
-    function calcTokenAmount(uint256 currencyAmount) public view returns (uint256) {
+    function calcTokenAmount(uint256 currencyAmount, bool forDeposit) public view returns (uint256) {
         uint256 yTokenAmount = currencyAmount.mul(1e18).div(curvePool.coins(tokenIndex).getPricePerFullShare());
         uint256[N_TOKENS] memory yAmounts = [uint256(0), 0, 0, 0];
         yAmounts[tokenIndex] = yTokenAmount;
-        return curvePool.curve().calc_token_amount(yAmounts, true);
+        return curvePool.curve().calc_token_amount(yAmounts, forDeposit);
     }
 
     /**
