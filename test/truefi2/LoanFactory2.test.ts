@@ -280,4 +280,34 @@ describe('LoanFactory2', () => {
         .withArgs(fakeBorrowingMutex.address)
     })
   })
+
+  describe('setLoanTokenImplementation', () => {
+    let implementation: LoanToken2
+    beforeEach(async () => {
+      implementation = await new LoanToken2__factory(owner).deploy()
+    })
+
+    it('only admin can call', async () => {
+      await expect(loanFactory.connect(owner).setLoanTokenImplementation(implementation.address))
+        .not.to.be.reverted
+      await expect(loanFactory.connect(borrower).setLoanTokenImplementation(implementation.address))
+        .to.be.revertedWith('LoanFactory: Caller is not the admin')
+    })
+
+    it('cannot be set to address(0)', async () => {
+      await expect(loanFactory.setLoanTokenImplementation(AddressZero))
+        .to.be.revertedWith('LoanFactory: Cannot set loan token implementation to address(0)')
+    })
+
+    it('changes loanTokenImplementation', async () => {
+      await loanFactory.setLoanTokenImplementation(implementation.address)
+      expect(await loanFactory.loanTokenImplementation()).to.eq(implementation.address)
+    })
+
+    it('emits event', async () => {
+      await expect(loanFactory.setLoanTokenImplementation(implementation.address))
+        .to.emit(loanFactory, 'LoanTokenImplementationChanged')
+        .withArgs(implementation.address)
+    })
+  })
 })
