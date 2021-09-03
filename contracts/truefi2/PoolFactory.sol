@@ -27,7 +27,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
 
     // @dev Mapping of ERC20 token's addresses to its pool's addresses
     mapping(address => address) public pool;
-    mapping(address => bool) public override isPool;
+    mapping(address => bool) public isPool;
 
     // @dev Whitelist for tokens, which can have pools created
     mapping(address => bool) public isAllowed;
