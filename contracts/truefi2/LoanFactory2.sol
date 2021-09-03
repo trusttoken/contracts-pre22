@@ -57,6 +57,8 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
 
     event BorrowingMutexChanged(IBorrowingMutex borrowingMutex);
 
+    event LoanTokenImplementationChanged(ILoanToken2 loanTokenImplementation);
+
     /**
      * @dev Initialize this contract and set currency token
      * @param _poolFactory PoolFactory address
@@ -104,10 +106,6 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         return rateAdjuster.rate(pool, borrowerScore, amount).add(fixedTermLoanAdjustment);
     }
 
-    function setLoanTokenImplementation(ILoanToken2 newImplementation) external onlyAdmin {
-        loanTokenImplementation = newImplementation;
-    }
-
     /**
      * @dev Deploy LoanToken with parameters
      * @param _amount Amount to borrow
@@ -153,5 +151,10 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         require(address(_mutex) != address(0), "LoanFactory: Cannot set borrowing mutex to address(0)");
         borrowingMutex = _mutex;
         emit BorrowingMutexChanged(_mutex);
+    }
+
+    function setLoanTokenImplementation(ILoanToken2 _implementation) external onlyAdmin {
+        loanTokenImplementation = _implementation;
+        emit LoanTokenImplementationChanged(_implementation);
     }
 }
