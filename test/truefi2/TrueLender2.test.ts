@@ -709,7 +709,7 @@ describe('TrueLender2', () => {
     })
 
     it('reverts if not called by the pool', async () => {
-      await expect(lender.distribute(borrower.address, 2, 5)).to.be.revertedWith('TrueLender: Pool not created by the factory')
+      await expect(lender.distribute(borrower.address, 2, 5)).to.be.revertedWith('TrueLender: Pool not supported by the factory')
     })
   })
 
@@ -721,7 +721,7 @@ describe('TrueLender2', () => {
     })
 
     it('can only be called by the pool', async () => {
-      await expect(lender.transferAllLoanTokens(loan1.address, owner.address)).to.be.revertedWith('TrueLender: Pool not created by the factory')
+      await expect(lender.transferAllLoanTokens(loan1.address, owner.address)).to.be.revertedWith('TrueLender: Pool not supported by the factory')
     })
 
     it('transfers whole LT balance to the recipient', async () => {
