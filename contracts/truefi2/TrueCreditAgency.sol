@@ -132,6 +132,9 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     /// @dev emit `newRateAdjuster` when rate adjuster changed
     event TrueRateAdjusterChanged(ITrueRateAdjuster newRateAdjuster);
 
+    /// @dev emit `newPoolFactory` when pool factory changed
+    event PoolFactoryChanged(IPoolFactory newPoolFactory);
+
     /// @dev emit `who` and `isAllowed` when borrower allowance changes
     event BorrowerAllowed(address indexed who, bool isAllowed);
 
@@ -176,6 +179,13 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         rateAdjuster = newRateAdjuster;
         pokeAll();
         emit TrueRateAdjusterChanged(newRateAdjuster);
+    }
+
+    /// @dev Set poolFactory to `newPoolFactory` and update state
+    function setPoolFactory(IPoolFactory newPoolFactory) external onlyOwner {
+        require(address(newPoolFactory) != address(0), "TrueCreditAgency: PoolFactory cannot be set to zero address");
+        poolFactory = newPoolFactory;
+        emit PoolFactoryChanged(newPoolFactory);
     }
 
     /// @dev set interestRepaymentPeriod to `newPeriod`

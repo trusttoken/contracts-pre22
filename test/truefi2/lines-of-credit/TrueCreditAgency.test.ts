@@ -129,6 +129,29 @@ describe('TrueCreditAgency', () => {
     })
   })
 
+  describe('setPoolFactory', () => {
+    it('only owner can set pool factory', async () => {
+      await expect(creditAgency.connect(borrower).setPoolFactory(poolFactory.address))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('cannot be set to zero address', async () => {
+      await expect(creditAgency.setPoolFactory(AddressZero))
+        .to.be.revertedWith('TrueCreditAgency: PoolFactory cannot be set to zero address')
+    })
+
+    it('pool factory is properly set', async () => {
+      await creditAgency.setPoolFactory(poolFactory.address)
+      expect(await creditAgency.poolFactory()).to.equal(poolFactory.address)
+    })
+
+    it('emits a proper event', async () => {
+      await expect(creditAgency.setPoolFactory(poolFactory.address))
+        .to.emit(creditAgency, 'PoolFactoryChanged')
+        .withArgs(poolFactory.address)
+    })
+  })
+
   describe('setInterestRepaymentPeriod', () => {
     it('only owner can set repayment period', async () => {
       await expect(creditAgency.connect(borrower).setInterestRepaymentPeriod(0))
