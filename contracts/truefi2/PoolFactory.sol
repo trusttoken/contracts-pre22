@@ -304,7 +304,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
      * @return _tvl TVL for all supported pools
      */
     function tvl() public override view returns (uint256) {
-        uint256 _tvl = 0;
+        uint256 _tvl;
         for (uint256 i = 0; i < supportedPools.length; i++) {
             _tvl = _tvl.add(supportedPools[i].oracle().tokenToUsd(supportedPools[i].poolValue()));
         }

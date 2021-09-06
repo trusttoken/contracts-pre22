@@ -151,7 +151,6 @@ describe('TrueLender2', () => {
 
   describe('Initializer', () => {
     it('sets the staking pool address', async () => {
-      // TODO: fix
       expect(await lender.stakingPool()).to.equal(stkTru.address)
     })
 
