@@ -109,8 +109,6 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     // mutex ensuring there's only one running loan or credit line for borrower
     IBorrowingMutex public borrowingMutex;
 
-    IPoolFactory public poolFactory;
-
     /**
      * @dev Buckets Bitmap
      * This bitmap is used to non-empty buckets.
@@ -123,6 +121,8 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
     /// @dev minimum credit score required to use lines of credit
     uint256 public minCreditScore;
+
+    IPoolFactory public poolFactory;
 
     // ======= STORAGE DECLARATION END ============
 
