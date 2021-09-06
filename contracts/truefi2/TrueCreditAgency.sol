@@ -90,9 +90,9 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     /// @dev next payment due time per borrower for each pool
     mapping(ITrueFiPool2 => mapping(address => uint256)) public nextInterestRepayTime;
 
-    mapping(address => bool) private isPoolAllowed_DEPRECATED;
+    mapping(address => bool) private DEPRECATED__isPoolAllowed;
 
-    address[] private pools_DEPRECATED;
+    address[] private DEPRECATED__pools;
 
     /// @dev whitelist for allowing borrowers to take lines of credit
     mapping(address => bool) public isBorrowerAllowed;
