@@ -37,7 +37,7 @@ contract Liquidator2 is UpgradeableClaimable {
     IERC20 public tru;
     ILoanFactory2 public loanFactory;
 
-    mapping(address => bool) private approvedTokens_DEPRECATED;
+    mapping(address => bool) private DEPRECATED__approvedTokens;
 
     // max share of tru to be taken from staking pool during liquidation
     // 1000 -> 10%
