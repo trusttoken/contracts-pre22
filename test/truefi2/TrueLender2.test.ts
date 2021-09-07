@@ -134,9 +134,6 @@ describe('TrueLender2', () => {
 
     loan2 = await createLoan(loanFactory, borrower, pool2, 500000, YEAR, 1000)
 
-    await poolFactory.supportPool(pool1.address)
-    await poolFactory.supportPool(pool2.address)
-
     await creditOracle.setCreditUpdatePeriod(YEAR)
     await creditOracle.setScore(borrower.address, 255)
     await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(1e8))
