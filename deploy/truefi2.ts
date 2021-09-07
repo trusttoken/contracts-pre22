@@ -119,7 +119,7 @@ deploy({}, (_, config) => {
     loanFactory2.initialize(poolFactory, trueLender2, liquidator2, AddressZero, trueFiCreditOracle, borrowingMutex)
   })
   runIf(liquidator2.isInitialized().not(), () => {
-    liquidator2.initialize(stkTruToken, trustToken, loanFactory2, AddressZero)
+    liquidator2.initialize(stkTruToken, trustToken, loanFactory2, poolFactory, AddressZero)
   })
   runIf(poolFactory.pool(usdc).equals(AddressZero), () => {
     poolFactory.allowToken(usdc, true)
