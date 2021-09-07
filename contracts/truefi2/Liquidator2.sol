@@ -71,6 +71,12 @@ contract Liquidator2 is UpgradeableClaimable {
     event AssuranceChanged(address SAFU);
 
     /**
+     * @dev Emitted when pool factory is changed
+     * @param poolFactory New pool factory address
+     */
+    event PoolFactoryChanged(IPoolFactory poolFactory);
+
+    /**
      * @dev Initialize this contract
      */
     function initialize(
@@ -97,6 +103,16 @@ contract Liquidator2 is UpgradeableClaimable {
     function setAssurance(address _SAFU) external onlyOwner {
         SAFU = _SAFU;
         emit AssuranceChanged(_SAFU);
+    }
+
+    /**
+     * @dev Set a new pool factory address
+     * @param _poolFactory Address to be set as pool factory
+     */
+    function setPoolFactory(IPoolFactory _poolFactory) external onlyOwner {
+        require(address(_poolFactory) != address(0), "Liquidator: Pool factory address cannot be set to 0");
+        poolFactory = _poolFactory;
+        emit PoolFactoryChanged(_poolFactory);
     }
 
     /**
