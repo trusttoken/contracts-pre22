@@ -57,6 +57,9 @@ contract DebtToken is IDebtToken, ERC20 {
      * @param _amount amount to redeem
      */
     function redeem(uint256 _amount) external override {
+        // TODO remove the require checks when Awaiting/Funded/Withdrawn enum values are removed from IDebtToken
+        require(status >= Status.Defaulted, "DebtToken: The debt has not defaulted yet");
+
         uint256 amountToReturn = _amount.mul(_balance()).div(totalSupply());
         redeemed = redeemed.add(amountToReturn);
         _burn(msg.sender, _amount);
