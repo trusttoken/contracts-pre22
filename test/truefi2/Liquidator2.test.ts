@@ -28,6 +28,7 @@ import {
   setupTruefi2,
   timeTravel as _timeTravel,
 } from 'utils'
+import { AddressZero } from '@ethersproject/constants'
 
 use(solidity)
 
@@ -125,6 +126,11 @@ describe('Liquidator2', () => {
     it('only owner', async () => {
       await expect(liquidator.connect(otherWallet).setPoolFactory(fakePoolFactory.address))
         .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('cannot be set to 0 address', async () => {
+      await expect(liquidator.setPoolFactory(AddressZero))
+        .to.be.revertedWith('Liquidator: Pool factory address cannot be set to 0')
     })
 
     it('sets new poolFactory address', async () => {

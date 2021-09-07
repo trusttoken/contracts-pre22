@@ -110,6 +110,7 @@ contract Liquidator2 is UpgradeableClaimable {
      * @param _poolFactory Address to be set as pool factory
      */
     function setPoolFactory(IPoolFactory _poolFactory) external onlyOwner {
+        require(address(_poolFactory) != address(0), "Liquidator: Pool factory address cannot be set to 0");
         poolFactory = _poolFactory;
         emit PoolFactoryChanged(_poolFactory);
     }
