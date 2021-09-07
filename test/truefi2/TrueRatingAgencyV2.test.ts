@@ -29,7 +29,6 @@ import {
   TrueFiPool2,
   TrueLender2,
   Liquidator2,
-  TrueCreditAgency,
   TrueFiCreditOracle,
 } from 'contracts'
 
@@ -49,7 +48,6 @@ describe('TrueRatingAgencyV2', () => {
   let trustToken: MockTrueCurrency
   let stakedTrustToken: StkTruToken
   let arbitraryDistributor: ArbitraryDistributor
-  let creditAgency: TrueCreditAgency
   let creditOracle: TrueFiCreditOracle
 
   let tusd: MockTrueCurrency
@@ -89,7 +87,6 @@ describe('TrueRatingAgencyV2', () => {
       loanFactory,
       feePool: usdcPool,
       standardPool: tusdPool,
-      creditAgency,
       creditOracle,
     } = await setupTruefi2(owner, _provider))
 
@@ -112,7 +109,6 @@ describe('TrueRatingAgencyV2', () => {
     await tusd.mint(tusdPool.address, parseEth(1e8))
     await usdc.mint(usdcPool.address, parseUSDC(1e7))
 
-    await creditAgency.allowPool(tusdPool.address, true)
     await creditOracle.setScore(owner.address, 255)
     await creditOracle.setMaxBorrowerLimit(owner.address, parseEth(100_000_000))
   })

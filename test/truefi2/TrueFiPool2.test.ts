@@ -85,7 +85,6 @@ describe('TrueFiPool2', () => {
     await tusd.mint(owner.address, parseEth(1e7))
 
     await tusdPool.setCreditAgency(creditAgency.address)
-    await creditAgency.allowPool(tusdPool.address, true)
     await rateAdjuster.setRiskPremium(700)
 
     for (const wallet of [borrower, borrower2, borrower3]) {
