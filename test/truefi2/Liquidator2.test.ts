@@ -131,6 +131,12 @@ describe('Liquidator2', () => {
       await liquidator.setPoolFactory(fakePoolFactory.address)
       expect(await liquidator.poolFactory()).to.eq(fakePoolFactory.address)
     })
+
+    it('emits event', async () => {
+      await expect(liquidator.setPoolFactory(fakePoolFactory.address))
+        .to.emit(liquidator, 'PoolFactoryChanged')
+        .withArgs(fakePoolFactory.address)
+    })
   })
 
   describe('setAssurance', () => {
