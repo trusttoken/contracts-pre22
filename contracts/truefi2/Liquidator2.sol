@@ -100,6 +100,14 @@ contract Liquidator2 is UpgradeableClaimable {
     }
 
     /**
+     * @dev Set a new pool factory address
+     * @param _poolFactory Address to be set as pool factory
+     */
+    function setPoolFactory(IPoolFactory _poolFactory) external onlyOwner {
+        poolFactory = _poolFactory;
+    }
+
+    /**
      * @dev Set new max fetch share
      * @param newShare New share to be set
      */

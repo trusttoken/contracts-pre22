@@ -12,6 +12,7 @@ import {
   TrueFiPool2,
   TrueLender2,
   TrueFiCreditOracle,
+  PoolFactory__factory,
 } from 'contracts'
 
 import { solidity } from 'ethereum-waffle'
@@ -61,7 +62,7 @@ describe('Liquidator2', () => {
     [owner, otherWallet, borrower, assurance] = _wallets
     timeTravel = (time: number) => _timeTravel(_provider, time)
 
-    ;({
+    ; ({
       liquidator,
       loanFactory,
       poolFactory,
@@ -112,6 +113,23 @@ describe('Liquidator2', () => {
 
     it('sets assurance correctly', async () => {
       expect(await liquidator.SAFU()).to.equal(assurance.address)
+    })
+  })
+
+  describe('setPoolFactory', () => {
+    let fakePoolFactory: PoolFactory
+    beforeEach(async () => {
+      fakePoolFactory = await new PoolFactory__factory(owner).deploy()
+    })
+
+    it('only owner', async () => {
+      await expect(liquidator.connect(otherWallet).setPoolFactory(fakePoolFactory.address))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('sets new poolFactory address', async () => {
+      await liquidator.setPoolFactory(fakePoolFactory.address)
+      expect(await liquidator.poolFactory()).to.eq(fakePoolFactory.address)
     })
   })
 
