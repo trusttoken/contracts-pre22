@@ -130,10 +130,6 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
         borrowLimitConfig = BorrowLimitConfig(40, 7500, 1500, 1500);
     }
 
-    function getTVLPools() external override view returns (ITrueFiPool2[] memory) {
-        return tvlPools;
-    }
-
     /**
      * @dev Add `pool` to TVL calculation
      */
