@@ -9,7 +9,7 @@ import { DebtToken, DebtToken__factory, MockTrueCurrency, MockTrueCurrency__fact
 use(solidity)
 
 describe('DebtToken', () => {
-  enum LoanTokenStatus {
+  enum DebtTokenStatus {
     Defaulted = 4,
     Liquidated
   }
@@ -61,7 +61,7 @@ describe('DebtToken', () => {
     })
 
     it('sets status to Defaulted', async () => {
-      expect(await debtToken.status()).to.equal(LoanTokenStatus.Defaulted)
+      expect(await debtToken.status()).to.equal(DebtTokenStatus.Defaulted)
     })
   })
 
@@ -79,7 +79,7 @@ describe('DebtToken', () => {
 
     it('sets status to liquidated', async () => {
       await debtToken.connect(safu).liquidate()
-      expect(await debtToken.status()).to.equal(LoanTokenStatus.Liquidated)
+      expect(await debtToken.status()).to.equal(DebtTokenStatus.Liquidated)
     })
   })
 
@@ -155,7 +155,7 @@ describe('DebtToken', () => {
       })
 
       it('status is still DEFAULTED', async () => {
-        expect(await debtToken.status()).to.equal(LoanTokenStatus.Defaulted)
+        expect(await debtToken.status()).to.equal(DebtTokenStatus.Defaulted)
       })
     })
   })
