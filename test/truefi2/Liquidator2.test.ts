@@ -7,6 +7,7 @@ import {
   LoanToken2__factory,
   MockTrueCurrency,
   MockUsdc,
+  PoolFactory,
   StkTruToken,
   TrueFiPool2,
   TrueLender2,
@@ -39,6 +40,7 @@ describe('Liquidator2', () => {
 
   let liquidator: Liquidator2
   let loanFactory: LoanFactory2
+  let poolFactory: PoolFactory
   let token: MockUsdc
   let tru: MockTrueCurrency
   let stkTru: StkTruToken
@@ -62,6 +64,7 @@ describe('Liquidator2', () => {
     ;({
       liquidator,
       loanFactory,
+      poolFactory,
       feeToken: token,
       tru,
       stkTru,
@@ -97,6 +100,10 @@ describe('Liquidator2', () => {
 
     it('sets loanFactory address correctly', async () => {
       expect(await liquidator.loanFactory()).to.equal(loanFactory.address)
+    })
+
+    it('sets poolFactory address correctly', async () => {
+      expect(await liquidator.poolFactory()).to.equal(poolFactory.address)
     })
 
     it('sets fetchMaxShare correctly', async () => {
@@ -154,37 +161,11 @@ describe('Liquidator2', () => {
     })
   })
 
-  describe('setTokenApproval', () => {
-    it('only owner can set token approval', async () => {
-      await expect(liquidator.connect(otherWallet).setTokenApproval(token.address, true))
-        .to.be.revertedWith('Ownable: caller is not the owner')
-    })
-
-    it('changes whitelist status', async () => {
-      await liquidator.setTokenApproval(token.address, true)
-      expect(await liquidator.approvedTokens(token.address)).to.eq(true)
-
-      await liquidator.setTokenApproval(token.address, false)
-      expect(await liquidator.approvedTokens(token.address)).to.eq(false)
-    })
-
-    it('emits event', async () => {
-      await expect(liquidator.setTokenApproval(token.address, true))
-        .to.emit(liquidator, 'WhitelistStatusChanged')
-        .withArgs(token.address, true)
-
-      await expect(liquidator.setTokenApproval(token.address, false))
-        .to.emit(liquidator, 'WhitelistStatusChanged')
-        .withArgs(token.address, false)
-    })
-  })
-
   describe('liquidate', () => {
     beforeEach(async () => {
       await pool.connect(owner).join(parseUSDC(1e7))
       await lender.connect(borrower).fund(loan.address)
       await withdraw(borrower)
-      await liquidator.setTokenApproval(token.address, true)
     })
 
     it('anyone can call it', async () => {
@@ -225,12 +206,12 @@ describe('Liquidator2', () => {
           .to.be.revertedWith('Liquidator: Unknown loan')
       })
 
-      it('token is not whitelisted', async () => {
-        await liquidator.setTokenApproval(token.address, false)
+      it('pool is not supported', async () => {
+        await poolFactory.unsupportPool(pool.address)
         await timeTravel(defaultedLoanCloseTime)
         await loan.enterDefault()
         await expect(liquidator.connect(assurance).liquidate(loan.address))
-          .to.be.revertedWith('Liquidator: Token not approved for default protection')
+          .to.be.revertedWith('Liquidator: Pool not supported for default protection')
       })
     })
 

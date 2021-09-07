@@ -74,7 +74,7 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
   const arbitraryDistributor = await deployContract(ArbitraryDistributor__factory)
 
   // ====== SETUP ======
-  await liquidator.initialize(stkTru.address, tru.address, loanFactory.address, safu.address)
+  await liquidator.initialize(stkTru.address, tru.address, loanFactory.address, poolFactory.address, safu.address)
   await loanFactory.initialize(poolFactory.address, lender.address, liquidator.address, mockRateAdjuster.address, creditOracle.address, borrowingMutex.address)
   const loanImplementation = await new LoanToken2__factory(owner).deploy()
   await loanFactory.setLoanTokenImplementation(loanImplementation.address)
@@ -115,9 +115,6 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
   await mockSpotOracle.mock.getRate.withArgs(standardToken.address).returns(300)
   await mockSpotOracle.mock.getRate.withArgs(feeToken.address).returns(300)
   await weeklyFillBaseRateOracles(standardBaseRateOracle, feeBaseRateOracle, provider)
-
-  await liquidator.setTokenApproval(feeToken.address, true)
-  await liquidator.setTokenApproval(standardToken.address, true)
 
   await creditOracle.initialize()
   await creditOracle.setManager(owner.address)
