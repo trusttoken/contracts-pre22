@@ -8,5 +8,5 @@ interface IPoolFactory {
 
     function getSupportedPools() external view returns (ITrueFiPool2[] memory);
 
-    function tvl() external view returns (uint256);
+    function supportedPoolsTVL() external view returns (uint256);
 }

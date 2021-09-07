@@ -1,20 +1,14 @@
 import { expect, use } from 'chai'
 import { Wallet } from 'ethers'
 
-import {
-  beforeEachWithFixture,
-  DAY,
-  parseEth,
-  parseUSDC,
-  timeTravelTo,
-  updateRateOracle,
-} from 'utils'
+import { beforeEachWithFixture, DAY, parseEth, parseUSDC, timeTravelTo, updateRateOracle } from 'utils'
 import { setupDeploy } from 'scripts/utils'
 
 import {
   IPoolFactory,
   MockErc20Token,
   MockErc20Token__factory,
+  MockPoolFactory__factory,
   MockUsdStableCoinOracle__factory,
   TestTimeAveragedBaseRateOracle__factory,
   TimeAveragedBaseRateOracle,
@@ -26,13 +20,7 @@ import {
 } from 'contracts'
 
 import { deployMockContract, MockContract, MockProvider, solidity } from 'ethereum-waffle'
-import {
-  ITimeAveragedBaseRateOracleJson,
-  ITrueFiPool2WithDecimalsJson,
-  SpotBaseRateOracleJson,
-} from 'build'
-
-import { MockPoolFactory__factory } from 'build/types/factories/MockPoolFactory__factory'
+import { ITimeAveragedBaseRateOracleJson, ITrueFiPool2WithDecimalsJson, SpotBaseRateOracleJson } from 'build'
 
 use(solidity)
 

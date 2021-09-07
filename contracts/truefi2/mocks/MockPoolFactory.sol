@@ -7,7 +7,6 @@ import {ITrueFiPool2} from "../interface/ITrueFiPool2.sol";
 
 contract MockPoolFactory is IPoolFactory {
     using SafeMath for uint256;
-    mapping(address => bool) public override isPool;
     ITrueFiPool2[] public supportedPools;
 
     function getSupportedPools() external override view returns (ITrueFiPool2[] memory) {
@@ -22,11 +21,11 @@ contract MockPoolFactory is IPoolFactory {
         supportedPools.push(_pool);
     }
 
-    function tvl() public override view returns (uint256) {
-        uint256 _tvl;
+    function supportedPoolsTVL() public override view returns (uint256) {
+        uint256 tvl;
         for (uint256 i = 0; i < supportedPools.length; i++) {
-            _tvl = _tvl.add(supportedPools[i].oracle().tokenToUsd(supportedPools[i].poolValue()));
+            tvl = tvl.add(supportedPools[i].oracle().tokenToUsd(supportedPools[i].poolValue()));
         }
-        return _tvl;
+        return tvl;
     }
 }

@@ -303,11 +303,11 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
      * @dev Calculate total TVL in USD
      * @return _tvl TVL for all supported pools
      */
-    function tvl() public override view returns (uint256) {
-        uint256 _tvl;
+    function supportedPoolsTVL() public override view returns (uint256) {
+        uint256 tvl;
         for (uint256 i = 0; i < supportedPools.length; i++) {
-            _tvl = _tvl.add(supportedPools[i].oracle().tokenToUsd(supportedPools[i].poolValue()));
+            tvl = tvl.add(supportedPools[i].oracle().tokenToUsd(supportedPools[i].poolValue()));
         }
-        return _tvl;
+        return tvl;
     }
 }

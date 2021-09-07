@@ -85,11 +85,8 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     /// @dev store borrow limit configuration
     BorrowLimitConfig public borrowLimitConfig;
 
-    /// @dev array of pools used to calculate TrueFi TVL
-    ITrueFiPool2[] public tvlPools;
-
     /// @dev used for TVL calculations
-    IPoolFactory public factory;
+    IPoolFactory public poolFactory;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -119,14 +116,14 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     );
 
     /// @dev initializer
-    function initialize(IPoolFactory _factory) public initializer {
+    function initialize(IPoolFactory _poolFactory) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
         riskPremium = 200;
         utilizationRateConfig = UtilizationRateConfig(50, 2);
         creditScoreRateConfig = CreditScoreRateConfig(1000, 1);
         fixedTermLoanAdjustmentCoefficient = 25;
         borrowLimitConfig = BorrowLimitConfig(40, 7500, 1500, 1500);
-        factory = _factory;
+        poolFactory = _poolFactory;
     }
 
     /// @dev Set risk premium to `newRate`
@@ -288,7 +285,7 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
         if (score < borrowLimitConfig.scoreFloor) {
             return 0;
         }
-        uint256 maxTVLLimit = factory.tvl().mul(borrowLimitConfig.tvlLimitCoefficient).div(BASIS_POINTS);
+        uint256 maxTVLLimit = poolFactory.supportedPoolsTVL().mul(borrowLimitConfig.tvlLimitCoefficient).div(BASIS_POINTS);
         uint256 adjustment = borrowLimitAdjustment(score);
         uint256 creditLimit = min(maxBorrowerLimit, maxTVLLimit).mul(adjustment).div(BASIS_POINTS);
         uint256 poolValueInUsd = pool.oracle().tokenToUsd(pool.poolValue());
