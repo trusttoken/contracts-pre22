@@ -16,7 +16,6 @@ contract DebtToken is IDebtToken, ERC20 {
 
     address public liquidator;
     ITrueFiPool2 public override pool;
-    ERC20 public override token;
 
     uint256 public redeemed;
 
@@ -32,9 +31,8 @@ contract DebtToken is IDebtToken, ERC20 {
 
     /**
      * @dev Emitted when loan gets liquidated
-     * @param status Final loan status
      */
-    event Liquidated(Status status);
+    event Liquidated();
 
     function initialize(
         ITrueFiPool2 _pool,
@@ -46,7 +44,6 @@ contract DebtToken is IDebtToken, ERC20 {
         ERC20.__ERC20_initialize("TrueFi Debt Token", "DEBT");
 
         pool = _pool;
-        token = _pool.token();
         borrower = _borrower;
         liquidator = _liquidator;
         debt = _debt;
@@ -63,7 +60,7 @@ contract DebtToken is IDebtToken, ERC20 {
         uint256 amountToReturn = _amount.mul(_balance()).div(totalSupply());
         redeemed = redeemed.add(amountToReturn);
         _burn(msg.sender, _amount);
-        token.safeTransfer(msg.sender, amountToReturn);
+        token().safeTransfer(msg.sender, amountToReturn);
 
         emit Redeemed(msg.sender, _amount, amountToReturn);
     }
@@ -77,7 +74,7 @@ contract DebtToken is IDebtToken, ERC20 {
 
         status = Status.Liquidated;
 
-        emit Liquidated(status);
+        emit Liquidated();
     }
 
     /**
@@ -97,6 +94,14 @@ contract DebtToken is IDebtToken, ERC20 {
         return _balance();
     }
 
+    function token() public override view returns (ERC20) {
+        return pool.token();
+    }
+
+    function decimals() public override view returns (uint8) {
+        return token().decimals();
+    }
+
     function version() external override pure returns (uint8) {
         return 1;
     }
@@ -106,6 +111,6 @@ contract DebtToken is IDebtToken, ERC20 {
      * @return token balance of this contract
      */
     function _balance() internal view returns (uint256) {
-        return token.balanceOf(address(this));
+        return token().balanceOf(address(this));
     }
 }

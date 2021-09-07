@@ -49,6 +49,10 @@ describe('DebtToken', () => {
       expect(await debtToken.debt()).to.equal(debt)
     })
 
+    it('sets borrower', async () => {
+      expect(await debtToken.borrower()).to.equal(borrower.address)
+    })
+
     it('sets erc20 params', async () => {
       expect(await debtToken.name()).to.equal('TrueFi Debt Token')
       expect(await debtToken.symbol()).to.equal('DEBT')
@@ -80,6 +84,10 @@ describe('DebtToken', () => {
     it('sets status to liquidated', async () => {
       await debtToken.connect(safu).liquidate()
       expect(await debtToken.status()).to.equal(DebtTokenStatus.Liquidated)
+    })
+
+    it('emits event', async () => {
+      await expect(debtToken.connect(safu).liquidate()).to.emit(debtToken, 'Liquidated')
     })
   })
 
