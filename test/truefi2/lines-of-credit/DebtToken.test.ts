@@ -5,6 +5,7 @@ import { BigNumberish, Wallet } from 'ethers'
 import { beforeEachWithFixture, parseEth, setupTruefi2 } from 'utils'
 
 import { DebtToken, DebtToken__factory, MockTrueCurrency, MockTrueCurrency__factory } from 'contracts'
+import { Zero } from '@ethersproject/constants'
 
 use(solidity)
 
@@ -15,7 +16,7 @@ describe('DebtToken', () => {
   }
 
   const payback = async (wallet: Wallet, amount: BigNumberish) => token.mint(debtToken.address, amount)
-  const debt = parseEth(1)
+  const debt = parseEth(1000)
 
   let lender: Wallet
   let borrower: Wallet
@@ -92,79 +93,42 @@ describe('DebtToken', () => {
   })
 
   describe('Redeem', () => {
-    beforeEach(async () => {
-      await token.mint(borrower.address, parseEth(100))
+    it('reverts if redeeming more than own balance', async () => {
+      await payback(borrower, debt.add(1))
+      await expect(debtToken.redeem(debt.add(1))).to.be.revertedWith('ERC20: burn amount exceeds balance')
     })
 
-    it('reverts if redeeming more than own balance', async () => {
+    it('reverts if trying to redeem more tokens than there were repaid', async () => {
+      await payback(borrower, parseEth(99))
+      await expect(debtToken.redeem(parseEth(100))).to.be.revertedWith('DebtToken: Insufficient repaid amount')
+    })
+
+    it('sends back same amount of tokens as were burnt', async () => {
       await payback(borrower, parseEth(100))
-      await expect(debtToken.redeem(debt.add(1))).to.be.revertedWith('ERC20: burn amount exceeds balance')
+      await expect(() => debtToken.redeem(parseEth(100))).to.changeTokenBalances(
+        token,
+        [debtToken, lender],
+        [parseEth(-100), parseEth(100)],
+      )
+    })
+
+    describe('When debt has been overpaid', () => {
+      beforeEach(async () => {
+        await payback(borrower, debt.add(parseEth(1)))
+      })
+
+      it('when not the whole amount is redeemed, works normally', async () => {
+        await expect(() => debtToken.redeem(parseEth(10))).to.changeTokenBalance(token, lender, parseEth(10))
+      })
+
+      it('when whole amount, sends whole balance to the sender', async () => {
+        await expect(() => debtToken.redeem(debt)).to.changeTokenBalance(token, lender, debt.add(parseEth(1)))
+      })
     })
 
     it('emits event', async () => {
       await payback(borrower, parseEth(100))
-      await expect(debtToken.redeem(debt)).to.emit(debtToken, 'Redeemed').withArgs(lender.address, debt, parseEth(100))
-    })
-
-    describe('Simple case: whole debt paid back, redeem all', () => {
-      beforeEach(async () => {
-        await payback(borrower, debt)
-        await expect(() => debtToken.redeem(debt)).to.changeTokenBalance(token, lender, debt)
-      })
-
-      it('burns loan tokens', async () => {
-        expect(await debtToken.totalSupply()).to.equal(0)
-        expect(await debtToken.balanceOf(lender.address)).to.equal(0)
-      })
-
-      it('repaid amount does not change', async () => {
-        expect(await debtToken.repaid()).to.equal(debt)
-      })
-    })
-
-    describe('3/4 paid back, redeem all', () => {
-      const repaid = debt.mul(3).div(4)
-
-      beforeEach(async () => {
-        await payback(borrower, repaid)
-        await expect(() => debtToken.redeem(debt)).to.changeTokenBalance(token, lender, repaid)
-      })
-
-      it('burns debt tokens', async () => {
-        expect(await debtToken.totalSupply()).to.equal(0)
-        expect(await debtToken.balanceOf(lender.address)).to.equal(0)
-      })
-
-      it('repaid amount does not change', async () => {
-        expect(await debtToken.repaid()).to.equal(repaid)
-      })
-    })
-
-    describe('1/2 paid back redeem half, then rest is paid back, redeem rest', () => {
-      beforeEach(async () => {
-        await payback(borrower, debt.div(2))
-        await debtToken.redeem(debt.div(2))
-        expect(await token.balanceOf(lender.address)).to.equal(debt.div(4))
-        await payback(borrower, debt.div(2))
-        await debtToken.redeem(debt.div(2))
-      })
-
-      it('transfers all tokens to the lender', async () => {
-        expect(await token.balanceOf(lender.address)).to.equal(debt)
-      })
-
-      it('burns loan tokens', async () => {
-        expect(await debtToken.totalSupply()).to.equal(0)
-        expect(await debtToken.balanceOf(lender.address)).to.equal(0)
-      })
-
-      it('repaid is total paid back amount', async () => {
-        expect(await debtToken.repaid()).to.equal(debt)
-      })
-
-      it('status is still DEFAULTED', async () => {
-        expect(await debtToken.status()).to.equal(DebtTokenStatus.Defaulted)
-      })
+      await expect(debtToken.redeem(parseEth(100))).to.emit(debtToken, 'Redeemed').withArgs(lender.address, parseEth(100), parseEth(100))
     })
   })
 
