@@ -46,7 +46,7 @@ contract TrueFiCreditOracle is ITrueFiCreditOracle, UpgradeableClaimable {
     uint256 public creditUpdatePeriod;
 
     // @dev Grace period in seconds before OnHold transitions to Ineligible
-    uint256 public gracePeriod;
+    uint256 public override gracePeriod;
 
     // ======= STORAGE DECLARATION END ============
 

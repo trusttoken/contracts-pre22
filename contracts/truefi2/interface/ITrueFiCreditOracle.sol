@@ -9,4 +9,6 @@ interface ITrueFiCreditOracle {
     function score(address account) external view returns (uint8);
 
     function maxBorrowerLimit(address account) external view returns (uint256);
+
+    function gracePeriod() external view returns (uint256);
 }

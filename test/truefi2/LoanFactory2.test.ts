@@ -226,7 +226,7 @@ describe('LoanFactory2', () => {
 
   describe('createDebtToken', () => {
     it('reverts if caller is not TCA', async () => {
-      await expect(loanFactory.connect(borrower).createDebtToken())
+      await expect(loanFactory.connect(borrower).createDebtToken(pool.address, borrower.address, parseEth(1)))
         .to.be.revertedWith('LoanFactory: Caller is not the credit agency')
     })
   })

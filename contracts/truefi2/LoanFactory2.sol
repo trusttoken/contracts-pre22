@@ -154,11 +154,15 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         emit LoanTokenCreated(newToken);
     }
 
-    function createDebtToken() external onlyTCA {
+    function createDebtToken(
+        ITrueFiPool2 _pool,
+        address _borrower,
+        uint256 _debt
+    ) external onlyTCA {
         address newToken = address(new DebtToken());
         isDebtToken[newToken] = true;
 
-        DebtToken(newToken).initialize();
+        DebtToken(newToken).initialize(_pool, lender, _borrower, liquidator, _debt);
 
         emit DebtTokenCreated(newToken);
     }
