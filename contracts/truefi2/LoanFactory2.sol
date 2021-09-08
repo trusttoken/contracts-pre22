@@ -12,8 +12,10 @@ import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {ITrueRateAdjuster} from "./interface/ITrueRateAdjuster.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
 import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
+import {ITrueCreditAgency} from "./interface/ITrueCreditAgency.sol";
 
 import {LoanToken2, IERC20} from "./LoanToken2.sol";
+import {DebtToken} from "./DebtToken.sol";
 
 /**
  * @title LoanFactory2
@@ -33,6 +35,9 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     // @dev Track Valid LoanTokens
     mapping(address => bool) public override isLoanToken;
 
+    // @dev Track valid debtTokens
+    mapping(address => bool) public isDebtToken;
+
     IPoolFactory public poolFactory;
     address public lender;
     address public liquidator;
@@ -43,6 +48,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     ITrueFiCreditOracle public creditOracle;
     IBorrowingMutex public borrowingMutex;
     ILoanToken2 public loanTokenImplementation;
+    ITrueCreditAgency public creditAgency;
     // ======= STORAGE DECLARATION END ============
 
     /**
@@ -51,6 +57,12 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
      */
     event LoanTokenCreated(address contractAddress);
 
+    /**
+     * @dev Emitted when a DebtToken is created
+     * @param contractAddress DebtToken contract address
+     */
+    event DebtTokenCreated(address contractAddress);
+
     event CreditOracleChanged(ITrueFiCreditOracle creditOracle);
 
     event RateAdjusterChanged(ITrueRateAdjuster rateAdjuster);
@@ -58,6 +70,8 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     event BorrowingMutexChanged(IBorrowingMutex borrowingMutex);
 
     event LoanTokenImplementationChanged(ILoanToken2 loanTokenImplementation);
+
+    event CreditAgencyChanged(ITrueCreditAgency creditAgency);
 
     /**
      * @dev Initialize this contract and set currency token
@@ -71,7 +85,8 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         address _liquidator,
         ITrueRateAdjuster _rateAdjuster,
         ITrueFiCreditOracle _creditOracle,
-        IBorrowingMutex _borrowingMutex
+        IBorrowingMutex _borrowingMutex,
+        ITrueCreditAgency _creditAgency
     ) external initializer {
         poolFactory = _poolFactory;
         lender = _lender;
@@ -80,10 +95,16 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         rateAdjuster = _rateAdjuster;
         creditOracle = _creditOracle;
         borrowingMutex = _borrowingMutex;
+        creditAgency = _creditAgency;
     }
 
     modifier onlyAdmin() {
         require(msg.sender == admin, "LoanFactory: Caller is not the admin");
+        _;
+    }
+
+    modifier onlyTCA() {
+        require(msg.sender == address(creditAgency), "LoanFactory: Caller is not the credit agency");
         _;
     }
 
@@ -135,6 +156,18 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         emit LoanTokenCreated(newToken);
     }
 
+    function createDebtToken(
+        ITrueFiPool2 _pool,
+        address _borrower,
+        uint256 _debt
+    ) external onlyTCA {
+        address newToken = address(new DebtToken());
+        DebtToken(newToken).initialize(_pool, lender, _borrower, liquidator, _debt);
+        isDebtToken[newToken] = true;
+
+        emit DebtTokenCreated(newToken);
+    }
+
     function setCreditOracle(ITrueFiCreditOracle _creditOracle) external onlyAdmin {
         require(address(_creditOracle) != address(0), "LoanFactory: Cannot set credit oracle to address(0)");
         creditOracle = _creditOracle;
@@ -157,5 +190,11 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         require(address(_implementation) != address(0), "LoanFactory: Cannot set loan token implementation to address(0)");
         loanTokenImplementation = _implementation;
         emit LoanTokenImplementationChanged(_implementation);
+    }
+
+    function setCreditAgency(ITrueCreditAgency _creditAgency) external onlyAdmin {
+        require(address(_creditAgency) != address(0), "LoanFactory: Cannot set credit agency to address(0)");
+        creditAgency = _creditAgency;
+        emit CreditAgencyChanged(_creditAgency);
     }
 }
