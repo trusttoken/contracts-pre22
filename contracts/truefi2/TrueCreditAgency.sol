@@ -428,8 +428,9 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
             (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, borrower);
             _rebucket(pool, borrower, oldScore, newScore, 0);
 
-            borrowerTotalPaidInterest[pool][borrower] = borrowerTotalPaidInterest[pool][borrower].add(interest(pool, borrower));
-            poolTotalPaidInterest[pool] = poolTotalPaidInterest[pool].add(interest(pool, borrower));
+            uint256 _interest = interest(pool, borrower);
+            borrowerTotalPaidInterest[pool][borrower] = borrowerTotalPaidInterest[pool][borrower].add(_interest);
+            poolTotalPaidInterest[pool] = poolTotalPaidInterest[pool].add(_interest);
         }
         borrowingMutex.unlock(borrower);
         // TODO lock borrower to a new DebtToken. This placeholder currently locks borrower to an inaccessible locker address.
