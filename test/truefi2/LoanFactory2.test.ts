@@ -21,6 +21,7 @@ import {
   LoanToken2__factory,
   MockTrueCurrency,
   TestLoanToken__factory,
+  TrueCreditAgency,
 } from 'contracts'
 import { PoolFactoryJson } from 'build'
 import { deployMockContract, solidity } from 'ethereum-waffle'
@@ -43,6 +44,8 @@ describe('LoanFactory2', () => {
   let rateAdjuster: TrueRateAdjuster
   let creditOracle: TrueFiCreditOracle
   let borrowerCreditScore: number
+  let borrowingMutex: BorrowingMutex
+  let creditAgency: TrueCreditAgency
 
   const createLoan = async (amount: BigNumberish, term: BigNumberish) => {
     const tx = await loanFactory.connect(borrower).createLoanToken(pool.address, amount, term, MAX_APY)
@@ -63,6 +66,8 @@ describe('LoanFactory2', () => {
       poolFactory,
       rateAdjuster,
       creditOracle,
+      borrowingMutex,
+      creditAgency,
     } = await setupTruefi2(owner, _provider))
     await loanFactory.setRateAdjuster(rateAdjuster.address)
     await creditOracle.setScore(borrower.address, 255)
@@ -86,6 +91,22 @@ describe('LoanFactory2', () => {
 
     it('sets liquidator', async () => {
       expect(await loanFactory.liquidator()).to.eq(liquidator.address)
+    })
+
+    it('sets rateAdjuster', async () => {
+      expect(await loanFactory.rateAdjuster()).to.eq(rateAdjuster.address)
+    })
+
+    it('sets creditOracle', async () => {
+      expect(await loanFactory.creditOracle()).to.eq(creditOracle.address)
+    })
+
+    it('sets borrowingMutex', async () => {
+      expect(await loanFactory.borrowingMutex()).to.eq(borrowingMutex.address)
+    })
+
+    it('sets creditAgency', async () => {
+      expect(await loanFactory.creditAgency()).to.eq(creditAgency.address)
     })
   })
 
