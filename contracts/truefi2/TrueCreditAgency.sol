@@ -395,10 +395,19 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
      * @dev Enter default for a certain borrower's line of credit
      */
     function enterDefault(address borrower) external onlyOwner {
+        require(
+            borrowingMutex.locker(borrower) == address(this),
+            "TrueCreditAgency: Cannot default a borrower with no open debt position"
+        );
+
         ITrueFiPool2[] memory pools = poolFactory.getSupportedPools();
         for (uint256 i = 0; i < pools.length; i++) {
             _enterDefault(pools[i], borrower);
         }
+
+        borrowingMutex.unlock(borrower);
+        // TODO lock borrower to a new DebtToken. This placeholder currently locks borrower to an inaccessible locker address.
+        borrowingMutex.lock(borrower, address(1));
     }
 
     function _enterDefault(ITrueFiPool2 pool, address borrower) private {
