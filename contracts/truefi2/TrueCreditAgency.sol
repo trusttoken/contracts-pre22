@@ -399,6 +399,10 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
             borrowingMutex.locker(borrower) == address(this),
             "TrueCreditAgency: Cannot default a borrower with no open debt position"
         );
+        bool defaulted;
+        if (creditOracle.status(borrower) == ITrueFiCreditOracle.Status.Ineligible) {
+            defaulted = true;
+        }
 
         ITrueFiPool2[] memory pools = poolFactory.getSupportedPools();
         for (uint256 i = 0; i < pools.length; i++) {
@@ -407,18 +411,16 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
                 continue;
             }
 
-            require(
-                block.timestamp >= nextInterestRepayTime[pool][borrower].add(creditOracle.gracePeriod()),
-                "TrueCreditAgency: Borrower can still repay the debt"
-            );
-            require(
-                creditOracle.status(borrower) == ITrueFiCreditOracle.Status.Ineligible,
-                "TrueCreditAgency: Borrower status has to be ineligible to default"
-            );
-
-            _enterDefault(pool, borrower);
+            if (block.timestamp >= nextInterestRepayTime[pool][borrower].add(creditOracle.gracePeriod())) {
+                defaulted = true;
+                break;
+            }
         }
 
+        require(defaulted, "TrueCreditAgency: Borrower cannot enter default at this time")
+        for (uint256 i = 0; i < pools.length; i++) {
+            _enterDefault(pool, borrower);
+        }
         borrowingMutex.unlock(borrower);
         // TODO lock borrower to a new DebtToken. This placeholder currently locks borrower to an inaccessible locker address.
         borrowingMutex.lock(borrower, address(1));
