@@ -136,7 +136,7 @@ describe('LoanFactory2', () => {
       const mockPoolFactory = await deployMockContract(owner, PoolFactoryJson.abi)
       await factory.initialize(
         mockPoolFactory.address,
-        AddressZero, AddressZero, AddressZero, AddressZero, AddressZero,
+        AddressZero, AddressZero, AddressZero, AddressZero, AddressZero, AddressZero,
       )
       await mockPoolFactory.mock.isSupportedPool.withArgs(AddressZero).returns(true)
       await expect(factory.connect(borrower).createLoanToken(AddressZero, parseEth(123), 15 * DAY, MAX_APY))

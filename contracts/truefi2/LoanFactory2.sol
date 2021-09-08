@@ -12,6 +12,7 @@ import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {ITrueRateAdjuster} from "./interface/ITrueRateAdjuster.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
 import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
+import {ITrueCreditAgency} from "./interface/ITrueCreditAgency.sol";
 
 import {LoanToken2, IERC20} from "./LoanToken2.sol";
 
@@ -43,6 +44,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     ITrueFiCreditOracle public creditOracle;
     IBorrowingMutex public borrowingMutex;
     ILoanToken2 public loanTokenImplementation;
+    ITrueCreditAgency public creditAgency;
     // ======= STORAGE DECLARATION END ============
 
     /**
@@ -71,7 +73,8 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         address _liquidator,
         ITrueRateAdjuster _rateAdjuster,
         ITrueFiCreditOracle _creditOracle,
-        IBorrowingMutex _borrowingMutex
+        IBorrowingMutex _borrowingMutex,
+        ITrueCreditAgency _creditAgency
     ) external initializer {
         poolFactory = _poolFactory;
         lender = _lender;
@@ -80,6 +83,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         rateAdjuster = _rateAdjuster;
         creditOracle = _creditOracle;
         borrowingMutex = _borrowingMutex;
+        creditAgency = _creditAgency;
     }
 
     modifier onlyAdmin() {

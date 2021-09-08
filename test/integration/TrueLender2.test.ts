@@ -97,7 +97,7 @@ describe('TrueLender2', () => {
 
     const loanTokenImplementation = await new LoanToken2__factory(owner).deploy()
     loanFactory = await new LoanFactory2__factory(owner).deploy()
-    await loanFactory.initialize(poolFactory.address, lender.address, AddressZero, mockRateAdjuster.address, mockCreditOracle.address, borrowingMutex.address)
+    await loanFactory.initialize(poolFactory.address, lender.address, AddressZero, mockRateAdjuster.address, mockCreditOracle.address, borrowingMutex.address, AddressZero)
     await loanFactory.setLoanTokenImplementation(loanTokenImplementation.address)
     await borrowingMutex.allowLocker(lender.address, true)
   })
