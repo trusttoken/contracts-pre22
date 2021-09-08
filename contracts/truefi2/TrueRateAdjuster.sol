@@ -7,6 +7,7 @@ import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {ITimeAveragedBaseRateOracle} from "./interface/ITimeAveragedBaseRateOracle.sol";
 import {ITrueRateAdjuster} from "./interface/ITrueRateAdjuster.sol";
+import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {TrueFiFixed64x64} from "./libraries/TrueFiFixed64x64.sol";
 
 interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
@@ -84,16 +85,10 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     /// @dev store borrow limit configuration
     BorrowLimitConfig public borrowLimitConfig;
 
-    /// @dev array of pools used to calculate TrueFi TVL
-    ITrueFiPool2[] public tvlPools;
+    /// @dev used for TVL calculations
+    IPoolFactory public poolFactory;
 
     // ======= STORAGE DECLARATION END ============
-
-    /// @dev emit `pool` when adding to TVL
-    event PoolAddedToTVL(ITrueFiPool2 pool);
-
-    /// @dev emit `pool` when removing from TVL
-    event PoolRemovedFromTVL(ITrueFiPool2 pool);
 
     /// @dev Emit `newRate` when risk premium changed
     event RiskPremiumChanged(uint256 newRate);
@@ -121,39 +116,14 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     );
 
     /// @dev initializer
-    function initialize() public initializer {
+    function initialize(IPoolFactory _poolFactory) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
         riskPremium = 200;
         utilizationRateConfig = UtilizationRateConfig(50, 2);
         creditScoreRateConfig = CreditScoreRateConfig(1000, 1);
         fixedTermLoanAdjustmentCoefficient = 25;
         borrowLimitConfig = BorrowLimitConfig(40, 7500, 1500, 1500);
-    }
-
-    /**
-     * @dev Add `pool` to TVL calculation
-     */
-    function addPoolToTVL(ITrueFiPool2 pool) external onlyOwner {
-        for (uint256 i = 0; i < tvlPools.length; i++) {
-            require(tvlPools[i] != pool, "TrueRateAdjuster: Pool has already been added to TVL");
-        }
-        tvlPools.push(pool);
-        emit PoolAddedToTVL(pool);
-    }
-
-    /**
-     * @dev Remove `pool` from TVL calculation
-     */
-    function removePoolFromTVL(ITrueFiPool2 pool) external onlyOwner {
-        for (uint256 i = 0; i < tvlPools.length; i++) {
-            if (tvlPools[i] == pool) {
-                tvlPools[i] = tvlPools[tvlPools.length - 1];
-                tvlPools.pop();
-                emit PoolRemovedFromTVL(pool);
-                return;
-            }
-        }
-        revert("TrueRateAdjuster: Pool already removed from TVL");
+        poolFactory = _poolFactory;
     }
 
     /// @dev Set risk premium to `newRate`
@@ -299,19 +269,6 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
     }
 
     /**
-     * @dev Calculate total TVL in USD
-     * @return _tvl TVL for all pools
-     */
-    function tvl() public override view returns (uint256) {
-        uint256 _tvl;
-        // loop through pools and sum tvl converted to USD
-        for (uint256 i = 0; i < tvlPools.length; i++) {
-            _tvl = _tvl.add(tvlPools[i].oracle().tokenToUsd(tvlPools[i].poolValue()));
-        }
-        return _tvl;
-    }
-
-    /**
      * @dev Get borrow limit in USD with 18 decimal precision
      * @param pool Pool which is being borrowed from
      * @param score Borrower score
@@ -328,7 +285,7 @@ contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
         if (score < borrowLimitConfig.scoreFloor) {
             return 0;
         }
-        uint256 maxTVLLimit = tvl().mul(borrowLimitConfig.tvlLimitCoefficient).div(BASIS_POINTS);
+        uint256 maxTVLLimit = poolFactory.supportedPoolsTVL().mul(borrowLimitConfig.tvlLimitCoefficient).div(BASIS_POINTS);
         uint256 adjustment = borrowLimitAdjustment(score);
         uint256 creditLimit = min(maxBorrowerLimit, maxTVLLimit).mul(adjustment).div(BASIS_POINTS);
         uint256 poolValueInUsd = pool.oracle().tokenToUsd(pool.poolValue());

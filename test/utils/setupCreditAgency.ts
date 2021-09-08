@@ -10,6 +10,7 @@ import {
   TrueRateAdjuster__factory,
 } from 'contracts'
 import { TimeAveragedBaseRateOracleJson } from 'build'
+import { AddressZero } from '@ethersproject/constants'
 
 export const setupCreditAgency = async (owner: Wallet, poolFactory: PoolFactory, pool: TrueFiPool2 | TestTrueFiPool) => {
   const borrowingMutex = await new BorrowingMutex__factory(owner).deploy()
@@ -20,7 +21,7 @@ export const setupCreditAgency = async (owner: Wallet, poolFactory: PoolFactory,
   await mockBaseRateOracle.mock.getWeeklyAPY.returns(300)
 
   await creditAgency.initialize(creditOracle.address, rateAdjuster.address, borrowingMutex.address, poolFactory.address)
-  await rateAdjuster.initialize()
+  await rateAdjuster.initialize(AddressZero)
   await creditOracle.initialize()
 
   await poolFactory.supportPool(pool.address)

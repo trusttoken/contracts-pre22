@@ -237,7 +237,7 @@ describe('LoanFactory2', () => {
     let fakeRateAdjuster: TrueRateAdjuster
     beforeEach(async () => {
       fakeRateAdjuster = await new TrueRateAdjuster__factory(owner).deploy()
-      await fakeRateAdjuster.initialize()
+      await fakeRateAdjuster.initialize(AddressZero)
     })
 
     it('only admin can call', async () => {

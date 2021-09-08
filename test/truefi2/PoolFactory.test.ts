@@ -12,11 +12,13 @@ import {
   PoolFactory__factory,
   TrueFiPool2,
   TrueFiPool2__factory,
+  MockUsdStableCoinOracle__factory, Safu__factory, Safu,
 } from 'contracts'
 import { solidity } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
 import { beforeEachWithFixture } from 'utils/beforeEachWithFixture'
 import { AddressZero } from '@ethersproject/constants'
+import { parseEth, parseUSDC } from 'utils'
 
 use(solidity)
 
@@ -24,7 +26,7 @@ describe('PoolFactory', () => {
   let owner: Wallet
   let otherWallet: Wallet
   let borrower: Wallet
-  let safu: Wallet
+  let safu: Safu
   let poolImplementation: TrueFiPool2
   let implementationReference: ImplementationReference
   let factory: PoolFactory
@@ -36,7 +38,7 @@ describe('PoolFactory', () => {
   let trueLenderInstance2: TestTrueLender
 
   beforeEachWithFixture(async (wallets) => {
-    [owner, otherWallet, safu, borrower] = wallets
+    [owner, otherWallet, borrower] = wallets
     poolImplementation = await new TrueFiPool2__factory(owner).deploy()
     implementationReference = await new ImplementationReference__factory(owner).deploy(poolImplementation.address)
 
@@ -47,7 +49,7 @@ describe('PoolFactory', () => {
     token4 = await new MockErc20Token__factory(owner).deploy()
     trueLenderInstance1 = await new TestTrueLender__factory(owner).deploy()
     trueLenderInstance2 = await new TestTrueLender__factory(owner).deploy()
-
+    safu = await new Safu__factory(owner).deploy()
     await factory.initialize(
       implementationReference.address,
       trueLenderInstance1.address,
@@ -488,6 +490,48 @@ describe('PoolFactory', () => {
       await expect(factory.setSafuAddress(otherWallet.address))
         .to.emit(factory, 'SafuChanged')
         .withArgs(otherWallet.address)
+    })
+  })
+
+  describe('supportedPoolsTVL', () => {
+    let pool1: TrueFiPool2
+    let pool2: TrueFiPool2
+
+    beforeEach(async () => {
+      await factory.allowToken(token1.address, true)
+      await factory.allowToken(token2.address, true)
+      await factory.createPool(token1.address)
+      await factory.createPool(token2.address)
+      pool1 = TrueFiPool2__factory.connect(await factory.pool(token1.address), owner)
+      pool2 = TrueFiPool2__factory.connect(await factory.pool(token2.address), owner)
+      const oracle1 = await new MockUsdStableCoinOracle__factory(owner).deploy()
+      const oracle2 = await new MockUsdStableCoinOracle__factory(owner).deploy()
+      await oracle2.setDecimalAdjustment(12)
+      await pool1.setOracle(oracle1.address)
+      await pool2.setOracle(oracle2.address)
+      await token1.mint(owner.address, parseEth(1000))
+      await token2.mint(owner.address, parseUSDC(2000))
+      await token1.approve(pool1.address, parseEth(1000))
+      await token2.approve(pool2.address, parseUSDC(2000))
+      await pool1.join(parseEth(1000))
+      await pool2.join(parseUSDC(2000))
+      await factory.supportPool(pool1.address)
+      await factory.supportPool(pool2.address)
+    })
+
+    it('TVL returns sum of poolValues of supported pools', async () => {
+      expect(await factory.supportedPoolsTVL()).to.equal(parseEth(3000))
+    })
+
+    it('removing pools from supported list reduces TVL', async () => {
+      await factory.unsupportPool(pool2.address)
+      expect(await factory.supportedPoolsTVL()).to.equal(parseEth(1000))
+    })
+
+    it('adding pools to supported list increases TVL', async () => {
+      await factory.unsupportPool(pool2.address)
+      await factory.supportPool(pool2.address)
+      expect(await factory.supportedPoolsTVL()).to.equal(parseEth(3000))
     })
   })
 })
