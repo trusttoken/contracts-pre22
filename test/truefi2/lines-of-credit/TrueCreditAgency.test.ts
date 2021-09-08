@@ -939,7 +939,7 @@ describe('TrueCreditAgency', () => {
         await timeTravel(MONTH + DAY * 3 + 1)
       })
 
-      it('reduces principal debt', async () => {
+      it('reduces principal debt to 0', async () => {
         expect(await creditAgency.borrowed(tusdPool.address, borrower.address)).to.eq(1000)
         await creditAgency.enterDefault(tusdPool.address, borrower.address)
         expect(await creditAgency.borrowed(tusdPool.address, borrower.address)).to.eq(0)
