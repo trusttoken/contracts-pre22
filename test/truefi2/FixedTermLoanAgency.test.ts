@@ -24,8 +24,8 @@ import {
   MockUsdc,
   PoolFactory,
   StkTruToken,
-  TestTrueLender,
-  TestTrueLender__factory,
+  TestFixedTermLoanAgency,
+  TestFixedTermLoanAgency__factory,
   TrueFiCreditOracle,
   TrueFiCreditOracle__factory,
   TrueFiPool2,
@@ -55,7 +55,7 @@ describe('FixedTermLoanAgency', () => {
   let poolOracle: MockTrueFiPoolOracle
 
   let rater: TrueRatingAgencyV2
-  let lender: TestTrueLender
+  let lender: TestFixedTermLoanAgency
   let creditOracle: TrueFiCreditOracle
   let rateAdjuster: TrueRateAdjuster
 
@@ -79,7 +79,7 @@ describe('FixedTermLoanAgency', () => {
     ([owner, borrower] = wallets)
     timeTravel = (time: number) => _timeTravel(_provider, time)
 
-    lender = await deployContract(owner, TestTrueLender__factory)
+    lender = await deployContract(owner, TestFixedTermLoanAgency__factory)
     oneInch = await new Mock1InchV3__factory(owner).deploy()
 
     ;({
