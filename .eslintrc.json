@@ -8,6 +8,9 @@
   "parserOptions": {
     "sourceType": "module"
   },
+  "plugins": [
+    "no-only-tests"
+  ],
   "rules": {
     "accessor-pairs": "error",
     "array-bracket-spacing": [
@@ -125,6 +128,7 @@
       }
     ],
     "new-parens": "error",
+    "no-only-tests/no-only-tests": ["error", {"fix": true}],
     "no-array-constructor": "error",
     "no-async-promise-executor": "error",
     "no-caller": "error",
