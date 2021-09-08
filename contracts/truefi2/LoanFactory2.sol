@@ -158,6 +158,8 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         address newToken = address(new DebtToken());
         isDebtToken[newToken] = true;
 
+        DebtToken(newToken).initialize();
+
         emit DebtTokenCreated(newToken);
     }
 

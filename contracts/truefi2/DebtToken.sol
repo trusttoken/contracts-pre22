@@ -6,6 +6,8 @@ import {IDebtToken} from "./interface/ILoanToken2.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 
 contract DebtToken is IDebtToken, ERC20 {
+    function initialize() external initializer {}
+
     function borrower() external override view returns (address) {}
 
     function amount() external override view returns (uint256) {}
