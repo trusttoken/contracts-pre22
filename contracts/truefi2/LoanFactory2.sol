@@ -15,6 +15,7 @@ import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
 import {ITrueCreditAgency} from "./interface/ITrueCreditAgency.sol";
 
 import {LoanToken2, IERC20} from "./LoanToken2.sol";
+import {DebtToken} from "./DebtToken.sol";
 
 /**
  * @title LoanFactory2
@@ -53,6 +54,12 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
      */
     event LoanTokenCreated(address contractAddress);
 
+    /**
+     * @dev Emitted when a DebtToken is created
+     * @param contractAddress DebtToken contract address
+     */
+    event DebtTokenCreated(address contractAddress);
+
     event CreditOracleChanged(ITrueFiCreditOracle creditOracle);
 
     event RateAdjusterChanged(ITrueRateAdjuster rateAdjuster);
@@ -88,6 +95,11 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
 
     modifier onlyAdmin() {
         require(msg.sender == admin, "LoanFactory: Caller is not the admin");
+        _;
+    }
+
+    modifier onlyTCA() {
+        require(msg.sender == address(creditAgency), "LoanFactory: Caller is not the credit agency");
         _;
     }
 
@@ -137,6 +149,11 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         isLoanToken[newToken] = true;
 
         emit LoanTokenCreated(newToken);
+    }
+
+    function createDebtToken() external onlyTCA {
+        address newToken = address(new DebtToken());
+        emit DebtTokenCreated(newToken);
     }
 
     function setCreditOracle(ITrueFiCreditOracle _creditOracle) external onlyAdmin {

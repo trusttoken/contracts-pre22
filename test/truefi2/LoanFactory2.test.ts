@@ -224,6 +224,13 @@ describe('LoanFactory2', () => {
     })
   })
 
+  describe('createDebtToken', () => {
+    it('reverts if caller is not TCA', async () => {
+      await expect(loanFactory.connect(borrower).createDebtToken())
+        .to.be.revertedWith('LoanFactory: Caller is not the credit agency')
+    })
+  })
+
   describe('setCreditOracle', () => {
     let fakeCreditOracle: TrueFiCreditOracle
     beforeEach(async () => {
