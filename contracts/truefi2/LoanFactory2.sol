@@ -162,9 +162,8 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         uint256 _debt
     ) external onlyTCA {
         address newToken = address(new DebtToken());
-        isDebtToken[newToken] = true;
-
         DebtToken(newToken).initialize(_pool, lender, _borrower, liquidator, _debt);
+        isDebtToken[newToken] = true;
 
         emit DebtTokenCreated(newToken);
     }
