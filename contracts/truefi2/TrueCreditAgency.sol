@@ -399,6 +399,9 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
             borrowingMutex.locker(borrower) == address(this),
             "TrueCreditAgency: Cannot default a borrower with no open debt position"
         );
+        if (!isBorrowerAllowed[borrower]) {
+            _enterDefault(borrower);
+        }
         if (creditOracle.status(borrower) == ITrueFiCreditOracle.Status.Ineligible) {
             _enterDefault(borrower);
         }
