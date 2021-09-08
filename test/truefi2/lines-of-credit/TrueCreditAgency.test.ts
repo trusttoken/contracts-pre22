@@ -906,6 +906,53 @@ describe('TrueCreditAgency', () => {
     })
   })
 
+  describe('enterDefault', () => {
+    beforeEach(async () => {
+      await creditAgency.allowBorrower(borrower.address, true)
+      await rateAdjuster.setRiskPremium(700)
+      await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
+      await tusd.connect(borrower).approve(creditAgency.address, 2000)
+    })
+
+    describe('reverts if', () => {
+      it('borrower has no debt', async () => {
+        await creditAgency.connect(borrower).repayInFull(tusdPool.address)
+        await expect(creditAgency.enterDefault(tusdPool.address, borrower.address))
+          .to.be.revertedWith('TrueCreditAgency: Borrower does not have any debt in pool')
+      })
+
+      it('borrower can still repay', async () => {
+        await expect(creditAgency.enterDefault(tusdPool.address, borrower.address))
+          .to.be.revertedWith('TrueCreditAgency: Borrower can still repay the debt')
+      })
+
+      it('borrower is not ineligible', async () => {
+        await creditOracle.setEligibleForDuration(borrower.address, 2 * MONTH)
+        await timeTravel(MONTH + DAY * 3 + 1)
+        await expect(creditAgency.enterDefault(tusdPool.address, borrower.address))
+          .to.be.revertedWith('TrueCreditAgency: Borrower status has to be ineligible to default')
+      })
+    })
+
+    describe('makes LoC repaid from TCA point of view', () => {
+      beforeEach(async () => {
+        await timeTravel(MONTH + DAY * 3 + 1)
+      })
+
+      it('reduces principal debt to 0', async () => {
+        expect(await creditAgency.borrowed(tusdPool.address, borrower.address)).to.eq(1000)
+        await creditAgency.enterDefault(tusdPool.address, borrower.address)
+        expect(await creditAgency.borrowed(tusdPool.address, borrower.address)).to.eq(0)
+      })
+
+      it('reduces interest to 0', async () => {
+        expect(await creditAgency.interest(tusdPool.address, borrower.address)).to.be.gt(0)
+        await creditAgency.enterDefault(tusdPool.address, borrower.address)
+        expect(await creditAgency.interest(tusdPool.address, borrower.address)).to.eq(0)
+      })
+    })
+  })
+
   describe('poolCreditValue', () => {
     beforeEach(async () => {
       await creditAgency.allowBorrower(borrower.address, true)
