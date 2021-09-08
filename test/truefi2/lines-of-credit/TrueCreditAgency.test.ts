@@ -945,7 +945,7 @@ describe('TrueCreditAgency', () => {
         expect(await creditAgency.borrowed(tusdPool.address, borrower.address)).to.eq(0)
       })
 
-      it('reduces interest', async () => {
+      it('reduces interest to 0', async () => {
         expect(await creditAgency.interest(tusdPool.address, borrower.address)).to.be.gt(0)
         await creditAgency.enterDefault(tusdPool.address, borrower.address)
         expect(await creditAgency.interest(tusdPool.address, borrower.address)).to.eq(0)
