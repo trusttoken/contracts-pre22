@@ -392,6 +392,27 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     }
 
     /**
+     * @dev Enter default for a certain borrower's line of credit
+     */
+    function enterDefault(ITrueFiPool2 pool, address borrower) external {
+        require(borrowed[pool][borrower] > 0, "TrueCreditAgency: Borrower does not have any debt in pool");
+        require(
+            block.timestamp >= nextInterestRepayTime[pool][borrower].add(creditOracle.gracePeriod()),
+            "TrueCreditAgency: Borrower can still repay the debt"
+        );
+        require(
+            creditOracle.status(borrower) == ITrueFiCreditOracle.Status.Ineligible,
+            "TrueCreditAgency: Borrower status has to be ineligible to default"
+        );
+
+        (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, borrower);
+        _rebucket(pool, borrower, oldScore, newScore, 0);
+
+        borrowerTotalPaidInterest[pool][borrower] = borrowerTotalPaidInterest[pool][borrower].add(interest(pool, borrower));
+        poolTotalPaidInterest[pool] = poolTotalPaidInterest[pool].add(interest(pool, borrower));
+    }
+
+    /**
      * @dev Update state for a pool
      * @param pool Pool to update state for
      */
