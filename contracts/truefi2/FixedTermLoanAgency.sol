@@ -308,7 +308,10 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
         require(loanToken.token() == pool.token(), "FixedTermLoanAgency: Loan and pool token mismatch");
         require(poolLoans[pool].length < maxLoans, "FixedTermLoanAgency: Loans number has reached the limit");
         require(borrowingMutex.isUnlocked(msg.sender), "FixedTermLoanAgency: There is an ongoing loan or credit line");
-        require(creditOracle.status(msg.sender) == ITrueFiCreditOracle.Status.Eligible, "FixedTermLoanAgency: Sender is not eligible for loan");
+        require(
+            creditOracle.status(msg.sender) == ITrueFiCreditOracle.Status.Eligible,
+            "FixedTermLoanAgency: Sender is not eligible for loan"
+        );
 
         uint256 term = loanToken.term();
         require(isTermBelowMax(term), "FixedTermLoanAgency: Loan's term is too long");
