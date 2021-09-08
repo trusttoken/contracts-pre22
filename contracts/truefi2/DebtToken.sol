@@ -59,8 +59,12 @@ contract DebtToken is IDebtToken, ERC20 {
     function redeem(uint256 _amount) external override {
         // TODO remove the require checks when Awaiting/Funded/Withdrawn enum values are removed from IDebtToken
         require(status >= Status.Defaulted, "DebtToken: The debt has not defaulted yet");
+        require(_amount <= _balance(), "DebtToken: Insufficient repaid amount");
 
-        uint256 amountToReturn = _amount.mul(_balance()).div(totalSupply());
+        uint256 amountToReturn = _amount;
+        if (_amount == totalSupply() && repaid() > debt) {
+            amountToReturn = _balance();
+        }
         redeemed = redeemed.add(amountToReturn);
         _burn(msg.sender, _amount);
         token().safeTransfer(msg.sender, amountToReturn);
@@ -85,7 +89,7 @@ contract DebtToken is IDebtToken, ERC20 {
      * Funds stored on the contract's address plus funds already redeemed by lenders
      * @return Uint256 representing what value was already repaid
      */
-    function repaid() external override view returns (uint256) {
+    function repaid() public override view returns (uint256) {
         return _balance().add(redeemed);
     }
 
