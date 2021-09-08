@@ -11,8 +11,6 @@ interface IDebtToken is IERC20 {
 
     function borrower() external view returns (address);
 
-    function amount() external view returns (uint256);
-
     function debt() external view returns (uint256);
 
     function pool() external view returns (ITrueFiPool2);
@@ -21,21 +19,11 @@ interface IDebtToken is IERC20 {
 
     function redeem(uint256 _amount) external;
 
-    function repay(address _sender, uint256 _amount) external;
-
-    function repayInFull(address _sender) external;
-
-    function reclaim() external;
-
     function liquidate() external;
 
     function repaid() external view returns (uint256);
 
-    function isRepaid() external view returns (bool);
-
     function balance() external view returns (uint256);
-
-    function value(uint256 _balance) external view returns (uint256);
 
     function token() external view returns (ERC20);
 
@@ -47,11 +35,19 @@ interface ILoanToken2 is IDebtToken {
 
     function apy() external view returns (uint256);
 
+    function amount() external view returns (uint256);
+
     function start() external view returns (uint256);
 
     function lender() external view returns (address);
 
     function profit() external view returns (uint256);
+
+    function repay(address _sender, uint256 _amount) external;
+
+    function repayInFull(address _sender) external;
+
+    function value(uint256 _balance) external view returns (uint256);
 
     function getParameters()
         external
@@ -69,6 +65,10 @@ interface ILoanToken2 is IDebtToken {
     function settle() external;
 
     function enterDefault() external;
+
+    function reclaim() external;
+
+    function isRepaid() external view returns (bool);
 
     function allowTransfer(address account, bool _status) external;
 }
