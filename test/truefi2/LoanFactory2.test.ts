@@ -21,6 +21,7 @@ import {
   LoanToken2__factory,
   MockTrueCurrency,
   TestLoanToken__factory,
+  TrueCreditAgency,
 } from 'contracts'
 import { PoolFactoryJson } from 'build'
 import { deployMockContract, solidity } from 'ethereum-waffle'
@@ -32,6 +33,7 @@ describe('LoanFactory2', () => {
   let owner: Wallet
   let borrower: Wallet
   let depositor: Wallet
+  let tca: Wallet
   let lender: TrueLender2
   let liquidator: Liquidator2
   let pool: TrueFiPool2
@@ -43,6 +45,8 @@ describe('LoanFactory2', () => {
   let rateAdjuster: TrueRateAdjuster
   let creditOracle: TrueFiCreditOracle
   let borrowerCreditScore: number
+  let borrowingMutex: BorrowingMutex
+  let creditAgency: TrueCreditAgency
 
   const createLoan = async (amount: BigNumberish, term: BigNumberish) => {
     const tx = await loanFactory.connect(borrower).createLoanToken(pool.address, amount, term, MAX_APY)
@@ -51,8 +55,16 @@ describe('LoanFactory2', () => {
     return LoanToken2__factory.connect(contractAddress, owner)
   }
 
+  const createDebtToken = async (pool: TrueFiPool2, borrower: Wallet, debt: BigNumberish) => {
+    await loanFactory.setCreditAgency(tca.address)
+    const tx = await loanFactory.connect(tca).createDebtToken(pool.address, borrower.address, debt)
+    const creationEvent = (await tx.wait()).events[1]
+    ;({ contractAddress } = creationEvent.args)
+    return LoanToken2__factory.connect(contractAddress, owner)
+  }
+
   beforeEachWithFixture(async (wallets, _provider) => {
-    [owner, borrower, depositor] = wallets
+    [owner, borrower, depositor, tca] = wallets
 
     ;({
       standardPool: pool,
@@ -63,6 +75,8 @@ describe('LoanFactory2', () => {
       poolFactory,
       rateAdjuster,
       creditOracle,
+      borrowingMutex,
+      creditAgency,
     } = await setupTruefi2(owner, _provider))
     await loanFactory.setRateAdjuster(rateAdjuster.address)
     await creditOracle.setScore(borrower.address, 255)
@@ -86,6 +100,22 @@ describe('LoanFactory2', () => {
 
     it('sets liquidator', async () => {
       expect(await loanFactory.liquidator()).to.eq(liquidator.address)
+    })
+
+    it('sets rateAdjuster', async () => {
+      expect(await loanFactory.rateAdjuster()).to.eq(rateAdjuster.address)
+    })
+
+    it('sets creditOracle', async () => {
+      expect(await loanFactory.creditOracle()).to.eq(creditOracle.address)
+    })
+
+    it('sets borrowingMutex', async () => {
+      expect(await loanFactory.borrowingMutex()).to.eq(borrowingMutex.address)
+    })
+
+    it('sets creditAgency', async () => {
+      expect(await loanFactory.creditAgency()).to.eq(creditAgency.address)
     })
   })
 
@@ -136,7 +166,7 @@ describe('LoanFactory2', () => {
       const mockPoolFactory = await deployMockContract(owner, PoolFactoryJson.abi)
       await factory.initialize(
         mockPoolFactory.address,
-        AddressZero, AddressZero, AddressZero, AddressZero, AddressZero,
+        AddressZero, AddressZero, AddressZero, AddressZero, AddressZero, AddressZero,
       )
       await mockPoolFactory.mock.isSupportedPool.withArgs(AddressZero).returns(true)
       await expect(factory.connect(borrower).createLoanToken(AddressZero, parseEth(123), 15 * DAY, MAX_APY))
@@ -200,6 +230,34 @@ describe('LoanFactory2', () => {
             .to.equal(rateWithoutFixedTermLoanAdjustment.add((fixedTermLoanAdjustmentCoefficient.mul(6))))
         })
       })
+    })
+  })
+
+  describe('createDebtToken', () => {
+    let debtToken
+
+    beforeEach(async () => {
+      debtToken = await createDebtToken(pool, borrower, parseEth(1))
+    })
+
+    it('reverts if caller is not TCA', async () => {
+      await expect(loanFactory.connect(borrower).createDebtToken(pool.address, borrower.address, parseEth(1)))
+        .to.be.revertedWith('LoanFactory: Caller is not the credit agency')
+    })
+
+    it('deploys debt token contract', async () => {
+      enum Status {Awaiting, Funded, Withdrawn, Settled, Defaulted, Liquidated}
+
+      expect(await debtToken.pool()).to.eq(pool.address)
+      expect(await debtToken.borrower()).to.eq(borrower.address)
+      expect(await debtToken.liquidator()).to.eq(liquidator.address)
+      expect(await debtToken.debt()).to.eq(parseEth(1))
+      expect(await debtToken.status()).to.eq(Status.Defaulted)
+      expect(await debtToken.balanceOf(lender.address)).to.eq(parseEth(1))
+    })
+
+    it('marks deployed contract as debt token', async () => {
+      expect(await loanFactory.isDebtToken(debtToken.address)).to.be.true
     })
   })
 
@@ -322,6 +380,31 @@ describe('LoanFactory2', () => {
       await expect(loanFactory.setLoanTokenImplementation(implementation.address))
         .to.emit(loanFactory, 'LoanTokenImplementationChanged')
         .withArgs(implementation.address)
+    })
+  })
+
+  describe('setCreditAgency', () => {
+    it('only admin can call', async () => {
+      await expect(loanFactory.connect(owner).setCreditAgency(creditAgency.address))
+        .not.to.be.reverted
+      await expect(loanFactory.connect(borrower).setCreditAgency(creditAgency.address))
+        .to.be.revertedWith('LoanFactory: Caller is not the admin')
+    })
+
+    it('cannot be set to address(0)', async () => {
+      await expect(loanFactory.setCreditAgency(AddressZero))
+        .to.be.revertedWith('LoanFactory: Cannot set credit agency to address(0)')
+    })
+
+    it('changes creditAgency', async () => {
+      await loanFactory.setCreditAgency(creditAgency.address)
+      expect(await loanFactory.creditAgency()).to.eq(creditAgency.address)
+    })
+
+    it('emits event', async () => {
+      await expect(loanFactory.setCreditAgency(creditAgency.address))
+        .to.emit(loanFactory, 'CreditAgencyChanged')
+        .withArgs(creditAgency.address)
     })
   })
 })
