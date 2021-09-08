@@ -352,4 +352,29 @@ describe('LoanFactory2', () => {
         .withArgs(implementation.address)
     })
   })
+
+  describe('setCreditAgency', () => {
+    it('only admin can call', async () => {
+      await expect(loanFactory.connect(owner).setCreditAgency(creditAgency.address))
+        .not.to.be.reverted
+      await expect(loanFactory.connect(borrower).setCreditAgency(creditAgency.address))
+        .to.be.revertedWith('LoanFactory: Caller is not the admin')
+    })
+
+    it('cannot be set to address(0)', async () => {
+      await expect(loanFactory.setCreditAgency(AddressZero))
+        .to.be.revertedWith('LoanFactory: Cannot set credit agency to address(0)')
+    })
+
+    it('changes creditAgency', async () => {
+      await loanFactory.setCreditAgency(creditAgency.address)
+      expect(await loanFactory.creditAgency()).to.eq(creditAgency.address)
+    })
+
+    it('emits event', async () => {
+      await expect(loanFactory.setCreditAgency(creditAgency.address))
+        .to.emit(loanFactory, 'CreditAgencyChanged')
+        .withArgs(creditAgency.address)
+    })
+  })
 })

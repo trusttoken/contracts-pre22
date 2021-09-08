@@ -71,6 +71,8 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
 
     event LoanTokenImplementationChanged(ILoanToken2 loanTokenImplementation);
 
+    event CreditAgencyChanged(ITrueCreditAgency creditAgency);
+
     /**
      * @dev Initialize this contract and set currency token
      * @param _poolFactory PoolFactory address
@@ -189,5 +191,11 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         require(address(_implementation) != address(0), "LoanFactory: Cannot set loan token implementation to address(0)");
         loanTokenImplementation = _implementation;
         emit LoanTokenImplementationChanged(_implementation);
+    }
+
+    function setCreditAgency(ITrueCreditAgency _creditAgency) external onlyAdmin {
+        require(address(_creditAgency) != address(0), "LoanFactory: Cannot set credit agency to address(0)");
+        creditAgency = _creditAgency;
+        emit CreditAgencyChanged(_creditAgency);
     }
 }
