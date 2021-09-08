@@ -906,7 +906,7 @@ describe('TrueCreditAgency', () => {
     })
   })
 
-  describe.only('enterDefault', () => {
+  describe('enterDefault', () => {
     beforeEach(async () => {
       await creditAgency.allowBorrower(borrower.address, true)
       await rateAdjuster.setRiskPremium(700)
