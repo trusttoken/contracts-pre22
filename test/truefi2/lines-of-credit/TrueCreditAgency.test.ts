@@ -906,7 +906,7 @@ describe('TrueCreditAgency', () => {
     })
   })
 
-  describe('enterDefault', () => {
+  describe.only('enterDefault', () => {
     beforeEach(async () => {
       await creditAgency.allowBorrower(borrower.address, true)
       await rateAdjuster.setRiskPremium(700)
@@ -918,19 +918,12 @@ describe('TrueCreditAgency', () => {
       it('borrower has no debt', async () => {
         await creditAgency.connect(borrower).repayInFull(tusdPool.address)
         await expect(creditAgency.enterDefault(borrower.address))
-          .to.be.revertedWith('TrueCreditAgency: Borrower does not have any debt in pool')
+          .to.be.revertedWith('TrueCreditAgency: Cannot default a borrower with no open debt position')
       })
 
-      it('borrower can still repay', async () => {
+      it('borrower has no reason to default', async () => {
         await expect(creditAgency.enterDefault(borrower.address))
-          .to.be.revertedWith('TrueCreditAgency: Borrower can still repay the debt')
-      })
-
-      it('borrower is not ineligible', async () => {
-        await creditOracle.setEligibleForDuration(borrower.address, 2 * MONTH)
-        await timeTravel(MONTH + DAY * 3 + 1)
-        await expect(creditAgency.enterDefault(borrower.address))
-          .to.be.revertedWith('TrueCreditAgency: Borrower status has to be ineligible to default')
+          .to.be.revertedWith('TrueCreditAgency: Borrower has no reason to enter default at this time')
       })
     })
 

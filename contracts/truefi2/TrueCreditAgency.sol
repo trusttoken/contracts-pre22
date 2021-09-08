@@ -415,7 +415,8 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         ITrueFiPool2[] memory pools = poolFactory.getSupportedPools();
         for (uint256 i = 0; i < pools.length; i++) {
             ITrueFiPool2 pool = pools[i];
-            if (defaultTime >= nextInterestRepayTime[pool][borrower]) {
+            uint256 nextInterestRepay = nextInterestRepayTime[pool][borrower];
+            if (nextInterestRepay != 0 && defaultTime >= nextInterestRepay) {
                 _enterDefault(borrower);
                 return;
             }
