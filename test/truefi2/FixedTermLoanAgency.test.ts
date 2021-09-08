@@ -42,7 +42,7 @@ import { BigNumber, BigNumberish, constants, utils, Wallet } from 'ethers'
 
 use(solidity)
 
-describe('TrueLender2', () => {
+describe('FixedTermLoanAgency', () => {
   let owner: Wallet
   let borrower: Wallet
 
@@ -234,7 +234,7 @@ describe('TrueLender2', () => {
 
       it('forbids setting above 100%', async () => {
         await expect(lender.setFee(10001))
-          .to.be.revertedWith('TrueLender: fee cannot be more than 100%')
+          .to.be.revertedWith('FixedTermLoanAgency: fee cannot be more than 100%')
       })
 
       it('emits FeeChanged', async () => {
@@ -332,7 +332,7 @@ describe('TrueLender2', () => {
   describe('Funding', () => {
     describe('reverts if', () => {
       it('transaction not called by the borrower', async () => {
-        await expect(lender.fund(loan1.address)).to.be.revertedWith('TrueLender: Sender is not borrower')
+        await expect(lender.fund(loan1.address)).to.be.revertedWith('FixedTermLoanAgency: Sender is not borrower')
       })
 
       it('loan was created for unknown pool', async () => {
@@ -348,19 +348,19 @@ describe('TrueLender2', () => {
           DAY,
           100,
         )
-        await expect(lender.connect(borrower).fund(badLoan.address)).to.be.revertedWith('TrueLender: Pool not supported by the factory')
+        await expect(lender.connect(borrower).fund(badLoan.address)).to.be.revertedWith('FixedTermLoanAgency: Pool not supported by the factory')
       })
 
       it('loan was created for unsupported pool', async () => {
         await poolFactory.unsupportPool(pool1.address)
-        await expect(lender.connect(borrower).fund(loan1.address)).to.be.revertedWith('TrueLender: Pool not supported by the factory')
+        await expect(lender.connect(borrower).fund(loan1.address)).to.be.revertedWith('FixedTermLoanAgency: Pool not supported by the factory')
       })
 
       it('there are too many loans for given pool', async () => {
         await lender.setLoansLimit(1)
         await approveLoanRating(loan1)
         await lender.connect(borrower).fund(loan1.address)
-        await expect(lender.connect(borrower).fund(loan1.address)).to.be.revertedWith('TrueLender: Loans number has reached the limit')
+        await expect(lender.connect(borrower).fund(loan1.address)).to.be.revertedWith('FixedTermLoanAgency: Loans number has reached the limit')
       })
 
       it('loan term exceeds max term', async () => {
@@ -371,7 +371,7 @@ describe('TrueLender2', () => {
         await lender.setMaxLoanTerm(DAY * 365 - 1)
 
         await expect(lender.connect(borrower).fund(loan1.address))
-          .to.be.revertedWith('TrueLender: Loan\'s term is too long')
+          .to.be.revertedWith('FixedTermLoanAgency: Loan\'s term is too long')
       })
 
       it('borrower has too low score for long term loan', async () => {
@@ -382,7 +382,7 @@ describe('TrueLender2', () => {
         await lender.setLongTermLoanThreshold(DAY)
 
         await expect(lender.connect(borrower).fund(loan1.address))
-          .to.be.revertedWith('TrueLender: Credit score is too low for loan\'s term')
+          .to.be.revertedWith('FixedTermLoanAgency: Credit score is too low for loan\'s term')
       })
 
       it('amount to fund exceeds borrow limit', async () => {
@@ -390,23 +390,23 @@ describe('TrueLender2', () => {
         const badLoan = await createLoan(loanFactory, borrower, pool1, amountToFund, YEAR, 100)
         await approveLoanRating(badLoan)
         await expect(lender.connect(borrower).fund(badLoan.address))
-          .to.be.revertedWith('TrueLender: Loan amount cannot exceed borrow limit')
+          .to.be.revertedWith('FixedTermLoanAgency: Loan amount cannot exceed borrow limit')
       })
 
       it('taking new loans is locked by mutex', async () => {
         await borrowingMutex.allowLocker(owner.address, true)
         await borrowingMutex.lock(borrower.address, owner.address)
         await expect(lender.connect(borrower).fund(loan1.address))
-          .to.be.revertedWith('TrueLender: There is an ongoing loan or credit line')
+          .to.be.revertedWith('FixedTermLoanAgency: There is an ongoing loan or credit line')
       })
 
       it('borrower is not eligible', async () => {
         await creditOracle.setIneligible(borrower.address)
         await expect(lender.connect(borrower).fund(loan1.address))
-          .to.be.revertedWith('TrueLender: Sender is not eligible for loan')
+          .to.be.revertedWith('FixedTermLoanAgency: Sender is not eligible for loan')
         await creditOracle.setOnHold(borrower.address)
         await expect(lender.connect(borrower).fund(loan1.address))
-          .to.be.revertedWith('TrueLender: Sender is not eligible for loan')
+          .to.be.revertedWith('FixedTermLoanAgency: Sender is not eligible for loan')
       })
     })
 
@@ -503,7 +503,7 @@ describe('TrueLender2', () => {
 
     it('works only for closed loans', async () => {
       await expect(lender.reclaim(loan1.address, '0x'))
-        .to.be.revertedWith('TrueLender: LoanToken is not closed yet')
+        .to.be.revertedWith('FixedTermLoanAgency: LoanToken is not closed yet')
     })
 
     it('reverts if loan has not been previously funded', async () => {
@@ -511,7 +511,7 @@ describe('TrueLender2', () => {
       await mockLoanToken.mock.status.returns(3)
       await mockLoanToken.mock.pool.returns(pool1.address)
       await expect(lender.reclaim(mockLoanToken.address, '0x'))
-        .to.be.revertedWith('TrueLender: This loan has not been funded by the lender')
+        .to.be.revertedWith('FixedTermLoanAgency: This loan has not been funded by the lender')
     })
 
     it('redeems funds from loan token', async () => {
@@ -534,7 +534,7 @@ describe('TrueLender2', () => {
       await timeTravel(YEAR * 2)
       await loan1.enterDefault()
       await expect(lender.connect(borrower).reclaim(loan1.address, '0x'))
-        .to.be.revertedWith('TrueLender: Only owner can reclaim from defaulted loan')
+        .to.be.revertedWith('FixedTermLoanAgency: Only owner can reclaim from defaulted loan')
     })
 
     it('emits a proper event', async () => {
@@ -639,28 +639,28 @@ describe('TrueLender2', () => {
       it('reverts on wrong destination token', async () => {
         await token2.mint(lender.address, fee)
         const data = encodeData(token2.address, usdc.address, lender.address, lender.address, fee)
-        await expect(lender.reclaim(newLoan1.address, data)).to.be.revertedWith('TrueLender: Source token is not same as pool\'s token')
+        await expect(lender.reclaim(newLoan1.address, data)).to.be.revertedWith('FixedTermLoanAgency: Source token is not same as pool\'s token')
       })
 
       it('reverts when receiver is not lender', async () => {
         const data = encodeData(token1.address, usdc.address, lender.address, pool1.address, fee)
-        await expect(lender.reclaim(newLoan1.address, data)).to.be.revertedWith('TrueLender: Receiver is not lender')
+        await expect(lender.reclaim(newLoan1.address, data)).to.be.revertedWith('FixedTermLoanAgency: Receiver is not lender')
       })
 
       it('reverts on wrong amount', async () => {
         const data = encodeData(token1.address, usdc.address, lender.address, lender.address, fee.sub(1))
-        await expect(lender.reclaim(newLoan1.address, data)).to.be.revertedWith('TrueLender: Incorrect fee swap amount')
+        await expect(lender.reclaim(newLoan1.address, data)).to.be.revertedWith('FixedTermLoanAgency: Incorrect fee swap amount')
       })
 
       it('reverts if partial fill is allowed', async () => {
         const data = encodeData(token1.address, usdc.address, lender.address, lender.address, fee, 1)
-        await expect(lender.reclaim(newLoan1.address, data)).to.be.revertedWith('TrueLender: Partial fill is not allowed')
+        await expect(lender.reclaim(newLoan1.address, data)).to.be.revertedWith('FixedTermLoanAgency: Partial fill is not allowed')
       })
 
       it('reverts if small USDC amount is returned', async () => {
         await oneInch.setOutputAmount(parseUSDC(24))
         const data = encodeData(token1.address, usdc.address, lender.address, lender.address, fee)
-        await expect(lender.reclaim(newLoan1.address, data)).to.be.revertedWith('TrueLender: Fee returned from swap is too small')
+        await expect(lender.reclaim(newLoan1.address, data)).to.be.revertedWith('FixedTermLoanAgency: Fee returned from swap is too small')
       })
 
       it('puts fee into USDC pool and transfers LP tokens to stakers', async () => {
@@ -709,7 +709,7 @@ describe('TrueLender2', () => {
     })
 
     it('reverts if not called by the pool', async () => {
-      await expect(lender.distribute(borrower.address, 2, 5)).to.be.revertedWith('TrueLender: Pool not supported by the factory')
+      await expect(lender.distribute(borrower.address, 2, 5)).to.be.revertedWith('FixedTermLoanAgency: Pool not supported by the factory')
     })
   })
 
@@ -721,7 +721,7 @@ describe('TrueLender2', () => {
     })
 
     it('can only be called by the pool', async () => {
-      await expect(lender.transferAllLoanTokens(loan1.address, owner.address)).to.be.revertedWith('TrueLender: Pool not supported by the factory')
+      await expect(lender.transferAllLoanTokens(loan1.address, owner.address)).to.be.revertedWith('FixedTermLoanAgency: Pool not supported by the factory')
     })
 
     it('transfers whole LT balance to the recipient', async () => {

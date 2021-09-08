@@ -13,7 +13,7 @@ import {OneInchExchange} from "./libraries/OneInchExchange.sol";
 import {ILoanToken2} from "./interface/ILoanToken2.sol";
 import {IDebtToken} from "../truefi2/interface/ILoanToken2.sol";
 import {IStakingPool} from "../truefi/interface/IStakingPool.sol";
-import {ITrueLender2} from "./interface/ITrueLender2.sol";
+import {IFixedTermLoanAgency} from "./interface/IFixedTermLoanAgency.sol";
 import {ITrueFiPool2, ITrueFiPoolOracle, I1Inch3} from "./interface/ITrueFiPool2.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {ITrueRatingAgency} from "../truefi/interface/ITrueRatingAgency.sol";
@@ -27,12 +27,12 @@ interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
 }
 
 /**
- * @title TrueLender v2.0
+ * @title FixedTermLoanAgency
  * @dev Loans management helper
  * This contract is a bridge that helps to transfer funds from pool to the loans and back
- * TrueLender holds all LoanTokens and may distribute them on pool exits
+ * FixedTermLoanAgency holds all LoanTokens and may distribute them on pool exits
  */
-contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
+contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
     using SafeMath for uint256;
     using SafeERC20 for ERC20;
     using SafeERC20 for IERC20WithDecimals;
@@ -169,7 +169,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
      * @dev Can be only called by a pool
      */
     modifier onlySupportedPool() {
-        require(factory.isSupportedPool(ITrueFiPool2(msg.sender)), "TrueLender: Pool not supported by the factory");
+        require(factory.isSupportedPool(ITrueFiPool2(msg.sender)), "FixedTermLoanAgency: Pool not supported by the factory");
         _;
     }
 
@@ -275,7 +275,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
      * @param newFee New loans limit
      */
     function setFee(uint256 newFee) external onlyOwner {
-        require(newFee <= BASIS_RATIO, "TrueLender: fee cannot be more than 100%");
+        require(newFee <= BASIS_RATIO, "FixedTermLoanAgency: fee cannot be more than 100%");
         fee = newFee;
         emit FeeChanged(newFee);
     }
@@ -301,21 +301,21 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
      * @param loanToken LoanToken to fund
      */
     function fund(ILoanToken2 loanToken) external {
-        require(msg.sender == loanToken.borrower(), "TrueLender: Sender is not borrower");
+        require(msg.sender == loanToken.borrower(), "FixedTermLoanAgency: Sender is not borrower");
         ITrueFiPool2 pool = loanToken.pool();
 
-        require(factory.isSupportedPool(pool), "TrueLender: Pool not supported by the factory");
-        require(loanToken.token() == pool.token(), "TrueLender: Loan and pool token mismatch");
-        require(poolLoans[pool].length < maxLoans, "TrueLender: Loans number has reached the limit");
-        require(borrowingMutex.isUnlocked(msg.sender), "TrueLender: There is an ongoing loan or credit line");
-        require(creditOracle.status(msg.sender) == ITrueFiCreditOracle.Status.Eligible, "TrueLender: Sender is not eligible for loan");
+        require(factory.isSupportedPool(pool), "FixedTermLoanAgency: Pool not supported by the factory");
+        require(loanToken.token() == pool.token(), "FixedTermLoanAgency: Loan and pool token mismatch");
+        require(poolLoans[pool].length < maxLoans, "FixedTermLoanAgency: Loans number has reached the limit");
+        require(borrowingMutex.isUnlocked(msg.sender), "FixedTermLoanAgency: There is an ongoing loan or credit line");
+        require(creditOracle.status(msg.sender) == ITrueFiCreditOracle.Status.Eligible, "FixedTermLoanAgency: Sender is not eligible for loan");
 
         uint256 term = loanToken.term();
-        require(isTermBelowMax(term), "TrueLender: Loan's term is too long");
-        require(isCredibleForTerm(term), "TrueLender: Credit score is too low for loan's term");
+        require(isTermBelowMax(term), "FixedTermLoanAgency: Loan's term is too long");
+        require(isCredibleForTerm(term), "FixedTermLoanAgency: Credit score is too low for loan's term");
 
         uint256 amount = loanToken.amount();
-        require(amount <= borrowLimit(pool, loanToken.borrower()), "TrueLender: Loan amount cannot exceed borrow limit");
+        require(amount <= borrowLimit(pool, loanToken.borrower()), "FixedTermLoanAgency: Loan amount cannot exceed borrow limit");
 
         poolLoans[pool].push(loanToken);
         pool.borrow(amount);
@@ -349,10 +349,10 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     function reclaim(ILoanToken2 loanToken, bytes calldata data) external {
         ITrueFiPool2 pool = loanToken.pool();
         IDebtToken.Status status = loanToken.status();
-        require(status >= IDebtToken.Status.Settled, "TrueLender: LoanToken is not closed yet");
+        require(status >= IDebtToken.Status.Settled, "FixedTermLoanAgency: LoanToken is not closed yet");
 
         if (status != IDebtToken.Status.Settled) {
-            require(msg.sender == owner(), "TrueLender: Only owner can reclaim from defaulted loan");
+            require(msg.sender == owner(), "FixedTermLoanAgency: Only owner can reclaim from defaulted loan");
         }
 
         // find the token, repay loan and remove loan from loan array
@@ -369,7 +369,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         }
         // If we reach this, it means loanToken was not present in _loans array
         // This prevents invalid loans from being reclaimed
-        revert("TrueLender: This loan has not been funded by the lender");
+        revert("FixedTermLoanAgency: This loan has not been funded by the lender");
     }
 
     /**
@@ -467,14 +467,14 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         (I1Inch3.SwapDescription memory swap, uint256 balanceDiff) = _1inch.exchange(data);
         uint256 expectedDiff = pool.oracle().tokenToUsd(feeAmount).mul(10**feeToken.decimals()).div(1 ether);
 
-        require(swap.srcToken == address(token), "TrueLender: Source token is not same as pool's token");
-        require(swap.dstToken == address(feeToken), "TrueLender: Destination token is not fee token");
-        require(swap.dstReceiver == address(this), "TrueLender: Receiver is not lender");
-        require(swap.amount == feeAmount, "TrueLender: Incorrect fee swap amount");
-        require(swap.flags & ONE_INCH_PARTIAL_FILL_FLAG == 0, "TrueLender: Partial fill is not allowed");
+        require(swap.srcToken == address(token), "FixedTermLoanAgency: Source token is not same as pool's token");
+        require(swap.dstToken == address(feeToken), "FixedTermLoanAgency: Destination token is not fee token");
+        require(swap.dstReceiver == address(this), "FixedTermLoanAgency: Receiver is not lender");
+        require(swap.amount == feeAmount, "FixedTermLoanAgency: Incorrect fee swap amount");
+        require(swap.flags & ONE_INCH_PARTIAL_FILL_FLAG == 0, "FixedTermLoanAgency: Partial fill is not allowed");
         require(
             balanceDiff >= expectedDiff.mul(BASIS_RATIO.sub(swapFeeSlippage)).div(BASIS_RATIO),
-            "TrueLender: Fee returned from swap is too small"
+            "FixedTermLoanAgency: Fee returned from swap is too small"
         );
 
         return feeAmount;
@@ -534,7 +534,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         }
         // If we reach this, it means loanToken was not present in _loans array
         // This prevents invalid loans from being reclaimed
-        revert("TrueLender: This loan has not been funded by the lender");
+        revert("FixedTermLoanAgency: This loan has not been funded by the lender");
     }
 
     /// @dev Helper used in tests
