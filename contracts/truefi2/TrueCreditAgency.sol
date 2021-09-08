@@ -401,18 +401,22 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         );
         if (!isBorrowerAllowed[borrower]) {
             _enterDefault(borrower);
+            return;
         }
         if (creditOracle.status(borrower) == ITrueFiCreditOracle.Status.Ineligible) {
             _enterDefault(borrower);
+            return;
         }
         if (creditOracle.score(borrower) < minCreditScore) {
             _enterDefault(borrower);
+            return;
         }
         ITrueFiPool2[] memory pools = poolFactory.getSupportedPools();
         for (uint256 i = 0; i < pools.length; i++) {
             ITrueFiPool2 pool = pools[i];
             if (block.timestamp >= nextInterestRepayTime[pool][borrower].add(creditOracle.gracePeriod())) {
                 _enterDefault(borrower);
+                return;
             }
         }
         revert("TrueCreditAgency: Borrower has no reason to enter default at this time")
