@@ -399,9 +399,8 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
             borrowingMutex.locker(borrower) == address(this),
             "TrueCreditAgency: Cannot default a borrower with no open debt position"
         );
-        bool defaulted;
         if (creditOracle.status(borrower) == ITrueFiCreditOracle.Status.Ineligible) {
-            defaulted = true;
+            _enterDefault(borrower);
         }
 
         ITrueFiPool2[] memory pools = poolFactory.getSupportedPools();
@@ -412,26 +411,24 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
             }
 
             if (block.timestamp >= nextInterestRepayTime[pool][borrower].add(creditOracle.gracePeriod())) {
-                defaulted = true;
-                break;
+                _enterDefault(borrower);
             }
         }
+        revert("TrueCreditAgency: Borrower has no reason to enter default at this time")
+    }
 
-        require(defaulted, "TrueCreditAgency: Borrower cannot enter default at this time")
+    function _enterDefault(address borrower) private {
+        ITrueFiPool2[] memory pools = poolFactory.getSupportedPools();
         for (uint256 i = 0; i < pools.length; i++) {
-            _enterDefault(pool, borrower);
+            (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, borrower);
+            _rebucket(pool, borrower, oldScore, newScore, 0);
+
+            borrowerTotalPaidInterest[pool][borrower] = borrowerTotalPaidInterest[pool][borrower].add(interest(pool, borrower));
+            poolTotalPaidInterest[pool] = poolTotalPaidInterest[pool].add(interest(pool, borrower));
         }
         borrowingMutex.unlock(borrower);
         // TODO lock borrower to a new DebtToken. This placeholder currently locks borrower to an inaccessible locker address.
         borrowingMutex.lock(borrower, address(1));
-    }
-
-    function _enterDefault(ITrueFiPool2 pool, address borrower) private {
-        (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, borrower);
-        _rebucket(pool, borrower, oldScore, newScore, 0);
-
-        borrowerTotalPaidInterest[pool][borrower] = borrowerTotalPaidInterest[pool][borrower].add(interest(pool, borrower));
-        poolTotalPaidInterest[pool] = poolTotalPaidInterest[pool].add(interest(pool, borrower));
     }
 
     /**
