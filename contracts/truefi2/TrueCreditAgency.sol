@@ -408,14 +408,9 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         if (creditOracle.score(borrower) < minCreditScore) {
             _enterDefault(borrower);
         }
-
         ITrueFiPool2[] memory pools = poolFactory.getSupportedPools();
         for (uint256 i = 0; i < pools.length; i++) {
             ITrueFiPool2 pool = pools[i];
-            if (borrowed[pool][borrower] == 0) {
-                continue;
-            }
-
             if (block.timestamp >= nextInterestRepayTime[pool][borrower].add(creditOracle.gracePeriod())) {
                 _enterDefault(borrower);
             }
