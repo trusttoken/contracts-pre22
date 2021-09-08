@@ -420,12 +420,14 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
                 return;
             }
         }
-        revert("TrueCreditAgency: Borrower has no reason to enter default at this time")
+        revert("TrueCreditAgency: Borrower has no reason to enter default at this time");
     }
 
     function _enterDefault(address borrower) private {
         ITrueFiPool2[] memory pools = poolFactory.getSupportedPools();
         for (uint256 i = 0; i < pools.length; i++) {
+            ITrueFiPool2 pool = pools[i];
+
             (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, borrower);
             _rebucket(pool, borrower, oldScore, newScore, 0);
 
