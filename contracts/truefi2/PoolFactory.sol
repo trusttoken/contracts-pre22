@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {OwnedProxyWithReference} from "../proxy/OwnedProxyWithReference.sol";
 import {ERC20, IERC20} from "../common/UpgradeableERC20.sol";
@@ -19,6 +21,7 @@ import {ISAFU} from "./interface/ISAFU.sol";
  * Initially created pools hold the same implementation, which can be changed later on individually
  */
 contract PoolFactory is IPoolFactory, UpgradeableClaimable {
+    using SafeMath for uint256;
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
     // === STORAGE VARIABLES ARE DECLARED BELOW ==
@@ -294,5 +297,17 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
         require(address(_safu) != address(0), "PoolFactory: SAFU address cannot be set to 0");
         safu = _safu;
         emit SafuChanged(_safu);
+    }
+
+    /**
+     * @dev Calculate total TVL in USD
+     * @return _tvl TVL for all supported pools
+     */
+    function supportedPoolsTVL() public override view returns (uint256) {
+        uint256 tvl;
+        for (uint256 i = 0; i < supportedPools.length; i++) {
+            tvl = tvl.add(supportedPools[i].oracle().tokenToUsd(supportedPools[i].poolValue()));
+        }
+        return tvl;
     }
 }

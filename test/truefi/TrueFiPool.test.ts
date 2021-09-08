@@ -514,8 +514,6 @@ describe('TrueFiPool', () => {
     await factory.createPool(usdc.address)
     const feePool = await factory.pool(usdc.address)
     await lender2.setFeePool(feePool)
-    await rateAdjuster.addPoolToTVL(pool.address)
-    await rateAdjuster.addPoolToTVL(feePool)
     await pool.setLender2(lender2.address)
     const loanFactory2 = await new LoanFactory2__factory(owner).deploy()
     const liquidator2 = await new Liquidator2__factory(owner).deploy()
