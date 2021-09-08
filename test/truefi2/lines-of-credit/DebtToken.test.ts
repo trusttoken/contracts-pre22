@@ -5,7 +5,6 @@ import { BigNumberish, Wallet } from 'ethers'
 import { beforeEachWithFixture, parseEth, setupTruefi2 } from 'utils'
 
 import { DebtToken, DebtToken__factory, MockTrueCurrency, MockTrueCurrency__factory } from 'contracts'
-import { Zero } from '@ethersproject/constants'
 
 use(solidity)
 
