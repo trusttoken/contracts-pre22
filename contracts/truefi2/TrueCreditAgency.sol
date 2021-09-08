@@ -403,8 +403,10 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         ITrueFiPool2[] memory pools = poolFactory.getSupportedPools();
         for (uint256 i = 0; i < pools.length; i++) {
             ITrueFiPool2 pool = pools[i];
+            if (borrowed[pool][borrower] == 0) {
+                continue;
+            }
 
-            require(borrowed[pool][borrower] > 0, "TrueCreditAgency: Borrower does not have any debt in pool");
             require(
                 block.timestamp >= nextInterestRepayTime[pool][borrower].add(creditOracle.gracePeriod()),
                 "TrueCreditAgency: Borrower can still repay the debt"
