@@ -411,10 +411,11 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
             _enterDefault(borrower);
             return;
         }
+        uint256 defaultTime = block.timestamp.sub(creditOracle.gracePeriod());
         ITrueFiPool2[] memory pools = poolFactory.getSupportedPools();
         for (uint256 i = 0; i < pools.length; i++) {
             ITrueFiPool2 pool = pools[i];
-            if (block.timestamp >= nextInterestRepayTime[pool][borrower].add(creditOracle.gracePeriod())) {
+            if (defaultTime >= nextInterestRepayTime[pool][borrower]) {
                 _enterDefault(borrower);
                 return;
             }
