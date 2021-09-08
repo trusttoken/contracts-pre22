@@ -35,6 +35,9 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     // @dev Track Valid LoanTokens
     mapping(address => bool) public override isLoanToken;
 
+    // @dev Track valid debtTokens
+    mapping(address => bool) public isDebtToken;
+
     IPoolFactory public poolFactory;
     address public lender;
     address public liquidator;
@@ -153,6 +156,8 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
 
     function createDebtToken() external onlyTCA {
         address newToken = address(new DebtToken());
+        isDebtToken[newToken] = true;
+
         emit DebtTokenCreated(newToken);
     }
 
