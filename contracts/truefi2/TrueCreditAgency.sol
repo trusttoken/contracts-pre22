@@ -394,7 +394,14 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     /**
      * @dev Enter default for a certain borrower's line of credit
      */
-    function enterDefault(ITrueFiPool2 pool, address borrower) external {
+    function enterDefault(address borrower) external onlyOwner {
+        ITrueFiPool2[] memory pools = poolFactory.getSupportedPools();
+        for (uint256 i = 0; i < pools.length; i++) {
+            _enterDefault(pools[i], borrower);
+        }
+    }
+
+    function _enterDefault(ITrueFiPool2 pool, address borrower) private {
         require(borrowed[pool][borrower] > 0, "TrueCreditAgency: Borrower does not have any debt in pool");
         require(
             block.timestamp >= nextInterestRepayTime[pool][borrower].add(creditOracle.gracePeriod()),
