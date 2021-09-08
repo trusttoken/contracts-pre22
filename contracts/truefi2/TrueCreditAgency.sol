@@ -402,7 +402,19 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
         ITrueFiPool2[] memory pools = poolFactory.getSupportedPools();
         for (uint256 i = 0; i < pools.length; i++) {
-            _enterDefault(pools[i], borrower);
+            ITrueFiPool2 pool = pools[i];
+
+            require(borrowed[pool][borrower] > 0, "TrueCreditAgency: Borrower does not have any debt in pool");
+            require(
+                block.timestamp >= nextInterestRepayTime[pool][borrower].add(creditOracle.gracePeriod()),
+                "TrueCreditAgency: Borrower can still repay the debt"
+            );
+            require(
+                creditOracle.status(borrower) == ITrueFiCreditOracle.Status.Ineligible,
+                "TrueCreditAgency: Borrower status has to be ineligible to default"
+            );
+
+            _enterDefault(pool, borrower);
         }
 
         borrowingMutex.unlock(borrower);
@@ -411,16 +423,6 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     }
 
     function _enterDefault(ITrueFiPool2 pool, address borrower) private {
-        require(borrowed[pool][borrower] > 0, "TrueCreditAgency: Borrower does not have any debt in pool");
-        require(
-            block.timestamp >= nextInterestRepayTime[pool][borrower].add(creditOracle.gracePeriod()),
-            "TrueCreditAgency: Borrower can still repay the debt"
-        );
-        require(
-            creditOracle.status(borrower) == ITrueFiCreditOracle.Status.Ineligible,
-            "TrueCreditAgency: Borrower status has to be ineligible to default"
-        );
-
         (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, borrower);
         _rebucket(pool, borrower, oldScore, newScore, 0);
 
