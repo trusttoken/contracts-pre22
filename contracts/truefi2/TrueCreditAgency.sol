@@ -405,6 +405,9 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         if (creditOracle.status(borrower) == ITrueFiCreditOracle.Status.Ineligible) {
             _enterDefault(borrower);
         }
+        if (creditOracle.score(borrower) < minCreditScore) {
+            _enterDefault(borrower);
+        }
 
         ITrueFiPool2[] memory pools = poolFactory.getSupportedPools();
         for (uint256 i = 0; i < pools.length; i++) {
