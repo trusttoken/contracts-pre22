@@ -30,7 +30,6 @@ import {
   TrueFiCreditOracle__factory,
   TrueFiPool2,
   TrueFiPool2__factory,
-  TrueRateAdjuster,
   TrueRatingAgencyV2,
 } from 'contracts'
 
