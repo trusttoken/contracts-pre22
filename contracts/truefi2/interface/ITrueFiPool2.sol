@@ -3,7 +3,7 @@ pragma solidity 0.6.10;
 
 import {ERC20, IERC20} from "../../common/UpgradeableERC20.sol";
 import {ITrueLender2} from "../interface/ITrueLender2.sol";
-import {IDebtToken} from "../interface/ILoanToken2.sol";
+import {IDebtToken, ILoanToken2} from "../interface/ILoanToken2.sol";
 import {ITrueFiPoolOracle} from "./ITrueFiPoolOracle.sol";
 import {I1Inch3} from "./I1Inch3.sol";
 import {ISAFU} from "./ISAFU.sol";
@@ -60,5 +60,10 @@ interface ITrueFiPool2 is IERC20 {
     /**
      * @dev SAFU buys LoanTokens from the pool
      */
-    function liquidate(IDebtToken loan) external;
+    function liquidateLoan(IDebtToken loan) external;
+
+    /**
+     * @dev SAFU buys DebtTokens from the pool
+     */
+    function liquidateDebt(IDebtToken debtToken) external;
 }
