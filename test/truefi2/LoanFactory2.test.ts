@@ -242,41 +242,45 @@ describe('LoanFactory2', () => {
       debtToken = await createDebtToken(pool, borrower, parseEth(1))
     })
 
-    it('reverts if caller is not TCA', async () => {
-      await expect(loanFactory.connect(borrower).createDebtToken(pool.address, borrower.address, parseEth(1)))
-        .to.be.revertedWith('LoanFactory: Caller is not the credit agency')
+    describe('reverts if', () => {
+      it('caller is not TCA', async () => {
+        await expect(loanFactory.connect(borrower).createDebtToken(pool.address, borrower.address, parseEth(1)))
+          .to.be.revertedWith('LoanFactory: Caller is not the credit agency')
+      })
+
+      it('there is no token implementation', async () => {
+        const factory = await new LoanFactory2__factory(owner).deploy()
+        await factory.initialize(
+          AddressZero, AddressZero, AddressZero, AddressZero, AddressZero, AddressZero,
+          tca.address,
+        )
+        await expect(factory.connect(tca).createDebtToken(pool.address, borrower.address, parseEth(1)))
+          .to.be.revertedWith('LoanFactory: Debt token implementation should be set')
+      })
+
+      it('debt token intitialize signature differs from expected', async () => {
+        const testLoanToken = await new TestLoanToken__factory(owner).deploy()
+        await loanFactory.connect(owner).setDebtTokenImplementation(testLoanToken.address)
+        await expect(loanFactory.connect(tca).createDebtToken(pool.address, borrower.address, parseEth(1)))
+          .to.be.revertedWith('Transaction reverted: function selector was not recognized and there\'s no fallback function')
+      })
     })
 
-    it('deploys debt token contract', async () => {
-      enum Status {Awaiting, Funded, Withdrawn, Settled, Defaulted, Liquidated}
+    describe('deploys debt token contract', () => {
+      it('has storage variables set properly', async () => {
+        enum Status {Awaiting, Funded, Withdrawn, Settled, Defaulted, Liquidated}
 
-      expect(await debtToken.pool()).to.eq(pool.address)
-      expect(await debtToken.borrower()).to.eq(borrower.address)
-      expect(await debtToken.liquidator()).to.eq(liquidator.address)
-      expect(await debtToken.debt()).to.eq(parseEth(1))
-      expect(await debtToken.status()).to.eq(Status.Defaulted)
-      expect(await debtToken.balanceOf(lender.address)).to.eq(parseEth(1))
-    })
+        expect(await debtToken.pool()).to.eq(pool.address)
+        expect(await debtToken.borrower()).to.eq(borrower.address)
+        expect(await debtToken.liquidator()).to.eq(liquidator.address)
+        expect(await debtToken.debt()).to.eq(parseEth(1))
+        expect(await debtToken.status()).to.eq(Status.Defaulted)
+        expect(await debtToken.balanceOf(lender.address)).to.eq(parseEth(1))
+      })
 
-    it('marks deployed contract as debt token', async () => {
-      expect(await loanFactory.isDebtToken(debtToken.address)).to.be.true
-    })
-
-    it('prevents token creation when there is no token implementation', async () => {
-      const factory = await new LoanFactory2__factory(owner).deploy()
-      await factory.initialize(
-        AddressZero, AddressZero, AddressZero, AddressZero, AddressZero, AddressZero, 
-        tca.address,
-      )
-      await expect(factory.connect(tca).createDebtToken(pool.address, borrower.address, parseEth(1)))
-        .to.be.revertedWith('LoanFactory: Debt token implementation should be set')
-    })
-
-    it('fails when debt token intitialize signature differs from expected', async () => {
-      const testLoanToken = await new TestLoanToken__factory(owner).deploy()
-      await loanFactory.connect(owner).setDebtTokenImplementation(testLoanToken.address)
-      await expect(loanFactory.connect(tca).createDebtToken(pool.address, borrower.address, parseEth(1)))
-        .to.be.revertedWith('Transaction reverted: function selector was not recognized and there\'s no fallback function')
+      it('marks deployed contract as debt token', async () => {
+        expect(await loanFactory.isDebtToken(debtToken.address)).to.be.true
+      })
     })
   })
 
