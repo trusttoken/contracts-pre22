@@ -87,7 +87,7 @@ contract SAFU is ISAFU, UpgradeableClaimable {
      * @param loan Loan to be liquidated
      */
     function liquidate(IDebtToken loan) external {
-        require(loanFactory.isLoanToken(address(loan)), "SAFU: Unknown loan");
+        require(loanFactory.isCreatedByFactory(address(loan)), "SAFU: Unknown loan");
         require(loan.status() == IDebtToken.Status.Defaulted, "SAFU: Loan is not defaulted");
 
         ITrueFiPool2 pool = ITrueFiPool2(loan.pool());
