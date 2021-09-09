@@ -1,6 +1,7 @@
 import { BigNumber, BigNumberish, Wallet } from 'ethers'
 import {
   BorrowingMutex,
+  DebtToken__factory,
   LoanFactory2,
   MockBorrowingMutex__factory,
   MockTrueCurrency,
@@ -1054,6 +1055,38 @@ describe('TrueCreditAgency', () => {
         expect(await creditAgency.interest(tusdPool.address, borrower.address)).to.be.gt(0)
         await creditAgency.enterDefault(tusdPool.address, borrower.address)
         expect(await creditAgency.interest(tusdPool.address, borrower.address)).to.eq(0)
+      })
+    })
+
+    describe.only('DebtTokens', () => {
+      const collectDebtTokensFromDefault = async (borrower: Wallet) => {
+        const tx = await creditAgency.enterDefault(borrower.address)
+        let debtTokens = []
+        for (let event of (await tx.wait()).events) {
+          console.log('AAAAAAAAAAAAAAAAAAAAAAAA')
+          console.log(event)
+          // ;({ contractAddress } = event.args)
+          // debtTokens.push(await DebtToken__factory.connect(contractAddress, owner))
+        }
+        return debtTokens
+      }
+
+      beforeEach(async () => {
+        await timeTravel(MONTH + DAY * 3 + 1)
+      })
+
+      it('creates DebtToken for borrowed pool', async () => {
+        const debtTokens = await collectDebtTokensFromDefault(borrower)
+        expect(await debtTokens[0].pool()).to.eq(tusdPool.address)
+        expect(await debtTokens[0].borrower()).to.eq(borrower.address)
+        expect(await debtTokens[0].debt()).to.eq(1000)
+      })
+
+      it('does not create any DebtTokens for unused pool', async () => {
+        const debtTokens = await collectDebtTokensFromDefault(borrower)
+        for (let debtToken of debtTokens) {
+          expect(await debtToken.pool()).to.not.eq(usdcPool.address)
+        }
       })
     })
   })
