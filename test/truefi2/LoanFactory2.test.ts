@@ -22,6 +22,8 @@ import {
   MockTrueCurrency,
   TestLoanToken__factory,
   TrueCreditAgency,
+  DebtToken,
+  DebtToken__factory,
 } from 'contracts'
 import { PoolFactoryJson } from 'build'
 import { deployMockContract, solidity } from 'ethereum-waffle'
@@ -405,6 +407,36 @@ describe('LoanFactory2', () => {
       await expect(loanFactory.setCreditAgency(creditAgency.address))
         .to.emit(loanFactory, 'CreditAgencyChanged')
         .withArgs(creditAgency.address)
+    })
+  })
+
+  describe('setDebtTokenImplementation', () => {
+    let implementation: DebtToken
+    beforeEach(async () => {
+      implementation = await new DebtToken__factory(owner).deploy()
+    })
+
+    it('only admin can call', async () => {
+      await expect(loanFactory.connect(owner).setDebtTokenImplementation(implementation.address))
+        .not.to.be.reverted
+      await expect(loanFactory.connect(borrower).setDebtTokenImplementation(implementation.address))
+        .to.be.revertedWith('LoanFactory: Caller is not the admin')
+    })
+
+    it('cannot be set to address(0)', async () => {
+      await expect(loanFactory.setDebtTokenImplementation(AddressZero))
+        .to.be.revertedWith('LoanFactory: Cannot set debt token implementation to address(0)')
+    })
+
+    it('changes debtTokenImplementation', async () => {
+      await loanFactory.setDebtTokenImplementation(implementation.address)
+      expect(await loanFactory.debtTokenImplementation()).to.eq(implementation.address)
+    })
+
+    it('emits event', async () => {
+      await expect(loanFactory.setDebtTokenImplementation(implementation.address))
+        .to.emit(loanFactory, 'DebtTokenImplementationChanged')
+        .withArgs(implementation.address)
     })
   })
 })
