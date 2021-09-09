@@ -32,6 +32,8 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     using SafeERC20 for ERC20;
     using SafeMath for uint256;
 
+    enum DefaultReason {NotAllowed, Ineligible, BelowMinScore, InterestOverdue}
+
     /// @dev credit scores are uint8
     uint8 constant MAX_CREDIT_SCORE = 255;
 
@@ -152,6 +154,8 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
     /// @dev emit `newValue` when minimum credit score is changed
     event MinCreditScoreChanged(uint256 newValue);
+
+    event EnteredDefault(address borrower, DefaultReason reason);
 
     /// @dev initialize
     function initialize(
@@ -400,15 +404,15 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
             "TrueCreditAgency: Cannot default a borrower with no open debt position"
         );
         if (!isBorrowerAllowed[borrower]) {
-            _enterDefault(borrower);
+            _enterDefault(borrower, DefaultReason.NotAllowed);
             return;
         }
         if (creditOracle.status(borrower) == ITrueFiCreditOracle.Status.Ineligible) {
-            _enterDefault(borrower);
+            _enterDefault(borrower, DefaultReason.Ineligible);
             return;
         }
         if (creditOracle.score(borrower) < minCreditScore) {
-            _enterDefault(borrower);
+            _enterDefault(borrower, DefaultReason.BelowMinScore);
             return;
         }
         uint256 defaultTime = block.timestamp.sub(creditOracle.gracePeriod());
@@ -417,14 +421,14 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
             ITrueFiPool2 pool = pools[i];
             uint256 nextInterestRepay = nextInterestRepayTime[pool][borrower];
             if (nextInterestRepay != 0 && defaultTime >= nextInterestRepay) {
-                _enterDefault(borrower);
+                _enterDefault(borrower, DefaultReason.InterestOverdue);
                 return;
             }
         }
         revert("TrueCreditAgency: Borrower has no reason to enter default at this time");
     }
 
-    function _enterDefault(address borrower) private {
+    function _enterDefault(address borrower, DefaultReason reason) private {
         ITrueFiPool2[] memory pools = poolFactory.getSupportedPools();
         for (uint256 i = 0; i < pools.length; i++) {
             ITrueFiPool2 pool = pools[i];
@@ -439,6 +443,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         borrowingMutex.unlock(borrower);
         // TODO lock borrower to a new DebtToken. This placeholder currently locks borrower to an inaccessible locker address.
         borrowingMutex.lock(borrower, address(1));
+        emit EnteredDefault(borrower, reason);
     }
 
     /**
