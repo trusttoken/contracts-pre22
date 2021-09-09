@@ -94,7 +94,7 @@ contract SAFU is ISAFU, UpgradeableClaimable {
         IERC20 token = IERC20(pool.token());
 
         liquidator.liquidate(loan);
-        pool.liquidate(loan);
+        pool.liquidateLoan(loan);
         uint256 owedToPool = loan.debt().mul(tokenBalance(loan)).div(loan.totalSupply());
         uint256 safuTokenBalance = tokenBalance(token);
 

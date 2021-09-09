@@ -13,7 +13,7 @@ import {
   DeficiencyToken__factory,
   DeficiencyToken,
   TrueCreditAgency,
-  TrueFiCreditOracle, TrueRateAdjuster,
+  TrueFiCreditOracle, TrueRateAdjuster, MockTrueCurrency__factory,
 } from 'contracts'
 import { MockProvider, solidity } from 'ethereum-waffle'
 import { BigNumber, Wallet } from 'ethers'
@@ -385,7 +385,17 @@ describe('TrueFiPool2', () => {
         await safu.liquidate(loan.address)
 
         expect(await tusdPool.deficitValue()).to.eq(500136)
-        expect(await expect(await tusdPool.poolValue()).to.equal(joinAmount.add(136)))
+        expect(await tusdPool.poolValue()).to.equal(joinAmount.add(136))
+      })
+
+      it('when pool has debtTokens', async () => {
+        await tusdPool.setCreditAgency(owner.address)
+        const debtToken = await new MockTrueCurrency__factory(owner).deploy()
+        await debtToken.mint(owner.address, 2000)
+        await debtToken.approve(tusdPool.address, 2000)
+        await tusdPool.addDebt(debtToken.address, 2000)
+        await tusdPool.setCreditAgency(creditAgency.address)
+        expect(await tusdPool.poolValue()).to.equal(joinAmount.add(2000))
       })
 
       it('when pool has LoC opened', async () => {
@@ -900,7 +910,7 @@ describe('TrueFiPool2', () => {
     })
   })
 
-  describe('liquidate', () => {
+  describe('liquidateLoan', () => {
     let loan: LoanToken2
 
     beforeEach(async () => {
@@ -920,27 +930,63 @@ describe('TrueFiPool2', () => {
     })
 
     it('can only be performed by the SAFU', async () => {
-      await expect(tusdPool.liquidate(loan.address)).to.be.revertedWith('TrueFiPool: Should be called by SAFU')
+      await expect(tusdPool.liquidateLoan(loan.address)).to.be.revertedWith('TrueFiPool: Should be called by SAFU')
     })
 
-    async function liquidate () {
+    async function liquidateLoan () {
       await timeTravel(DAY * 4)
       await loan.enterDefault()
       await safu.liquidate(loan.address)
     }
 
     it('transfers all LTs to the safu', async () => {
-      await liquidate()
+      await liquidateLoan()
       expect(await loan.balanceOf(safu.address)).to.equal(await loan.totalSupply())
     })
 
     it('liquid exit after liquidation returns correct amount of tokens', async () => {
-      await liquidate()
+      await liquidateLoan()
       const totalValue = await tusdPool.poolValue()
       const totalSupply = await tusdPool.totalSupply()
       const penalty = await tusdPool.liquidExitPenalty(totalSupply.div(2))
       expect(penalty).to.equal(9996)
       await expect(() => tusdPool.liquidExit(totalSupply.div(2))).to.changeTokenBalance(tusd, owner, totalValue.div(2).mul(penalty).div(10000))
+    })
+  })
+
+  describe('liquidateDebt', () => {
+    let debtToken: MockTrueCurrency
+    let mockSafu: Wallet
+    const amount = parseEth(100)
+
+    beforeEach(async () => {
+      debtToken = await new MockTrueCurrency__factory(owner).deploy()
+      await tusd.approve(tusdPool.address, amount)
+      await tusdPool.setCreditAgency(owner.address)
+      await debtToken.mint(owner.address, amount)
+      await debtToken.approve(tusdPool.address, amount)
+      await tusdPool.addDebt(debtToken.address, amount)
+      mockSafu = borrower
+      await tusdPool.setSafuAddress(mockSafu.address)
+    })
+
+    it('can only be performed by the SAFU', async () => {
+      await expect(tusdPool.connect(borrower3).liquidateDebt(debtToken.address)).to.be.revertedWith('TrueFiPool: Should be called by SAFU')
+    })
+
+    it('transfers all DTs to the safu', async () => {
+      await tusdPool.connect(mockSafu).liquidateDebt(debtToken.address)
+      expect(await debtToken.balanceOf(mockSafu.address)).to.equal(await debtToken.totalSupply())
+    })
+
+    it('cannot liquidate debt that the pool does not hold', async () => {
+      await tusdPool.connect(mockSafu).liquidateDebt(debtToken.address)
+      await expect(tusdPool.connect(mockSafu).liquidateDebt(debtToken.address)).to.be.revertedWith('TrueFiPool: Pool doesn\'t hold this debt token')
+    })
+
+    it('decreases debtValue', async () => {
+      await tusdPool.connect(mockSafu).liquidateDebt(debtToken.address)
+      expect(await tusdPool.debtValue()).to.equal(0)
     })
   })
 
@@ -990,6 +1036,39 @@ describe('TrueFiPool2', () => {
       const poolUtilization = (await tusdPool.liquidValue()).mul(100_00).div(await tusdPool.poolValue())
 
       expect(await tusdPool.liquidRatio(parseEth(1e5).div(2))).to.eq(BigNumber.from(100_00).sub(poolUtilization))
+    })
+  })
+
+  describe('addDebt', () => {
+    let mockCreditAgency: Wallet
+    let debtToken: MockTrueCurrency
+    const amount = parseEth(1)
+
+    beforeEach(async () => {
+      mockCreditAgency = owner
+      await tusdPool.setCreditAgency(mockCreditAgency.address)
+      debtToken = await new MockTrueCurrency__factory(owner).deploy()
+      await debtToken.mint(mockCreditAgency.address, amount)
+      await debtToken.approve(tusdPool.address, amount)
+    })
+
+    it('creditAgency transfers DebtToken to the pool', async () => {
+      await expect(() => tusdPool.addDebt(debtToken.address, amount)).to.changeTokenBalance(debtToken, tusdPool, amount)
+    })
+
+    it('increases debtValue', async () => {
+      await tusdPool.addDebt(debtToken.address, amount)
+      expect(await tusdPool.debtValue()).to.equal(amount)
+    })
+
+    it('emits event', async () => {
+      await expect(tusdPool.addDebt(debtToken.address, amount))
+        .to.emit(tusdPool, 'DebtAdded')
+        .withArgs(debtToken.address, amount)
+    })
+
+    it('reverts if not called by creditAgency', async () => {
+      await expect(tusdPool.connect(borrower).addDebt(debtToken.address, amount)).to.be.revertedWith('TruePool: Only TrueCreditAgency can add debtTokens')
     })
   })
 })
