@@ -1,7 +1,6 @@
 import { BigNumber, BigNumberish, Wallet } from 'ethers'
 import {
   BorrowingMutex,
-  DebtToken__factory,
   LoanFactory2,
   MockBorrowingMutex__factory,
   MockTrueCurrency,
@@ -87,10 +86,14 @@ describe('TrueCreditAgency', () => {
     } = await setupTruefi2(owner, provider))
 
     await tusdPool.setCreditAgency(creditAgency.address)
-
     await tusd.mint(owner.address, parseEth(1e7))
     await tusd.approve(tusdPool.address, parseEth(1e7))
     await tusdPool.join(parseEth(1e7))
+
+    await usdcPool.setCreditAgency(creditAgency.address)
+    await usdc.mint(owner.address, parseUSDC(2e7))
+    await usdc.approve(usdcPool.address, parseUSDC(2e7))
+    await usdcPool.join(parseUSDC(2e7))
 
     await creditOracle.setScore(borrower.address, 255)
     await creditOracle.setMaxBorrowerLimit(owner.address, parseEth(100_000_000))
@@ -236,14 +239,6 @@ describe('TrueCreditAgency', () => {
   })
 
   describe('totalBorrowed & poolValue', () => {
-    beforeEach(async () => {
-      await usdcPool.setCreditAgency(creditAgency.address)
-
-      await usdc.mint(owner.address, parseUSDC(2e7))
-      await usdc.approve(usdcPool.address, parseUSDC(2e7))
-      await usdcPool.join(parseUSDC(2e7))
-    })
-
     it('totalBorrowed returns total borrowed amount across all pools with 18 decimals precision', async () => {
       await creditAgency.allowBorrower(borrower.address, true)
       await creditAgency.connect(borrower).borrow(tusdPool.address, parseEth(100))
@@ -329,12 +324,6 @@ describe('TrueCreditAgency', () => {
     beforeEach(async () => {
       await creditOracle.setScore(borrower.address, 191) // adjustment = 0.8051
       await creditAgency.allowBorrower(borrower.address, true)
-
-      await usdcPool.setCreditAgency(creditAgency.address)
-
-      await usdc.mint(owner.address, parseUSDC(2e7))
-      await usdc.approve(usdcPool.address, parseUSDC(2e7))
-      await usdcPool.join(parseUSDC(2e7))
     })
 
     it('borrow amount is limited by borrower limit', async () => {
@@ -968,8 +957,12 @@ describe('TrueCreditAgency', () => {
     beforeEach(async () => {
       await creditAgency.allowBorrower(borrower.address, true)
       await rateAdjuster.setRiskPremium(700)
+
       await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
       await tusd.connect(borrower).approve(creditAgency.address, 2000)
+
+      await creditAgency.connect(borrower).borrow(usdcPool.address, 1000)
+      await usdc.connect(borrower).approve(creditAgency.address, 2000)
     })
 
     describe('reverts if borrower', () => {
@@ -1042,7 +1035,7 @@ describe('TrueCreditAgency', () => {
 
     describe('makes LoC repaid from TCA point of view', () => {
       beforeEach(async () => {
-        await timeTravel(MONTH + DAY * 3 + 1)
+        await creditAgency.allowBorrower(borrower.address, false)
       })
 
       it('reduces principal debt to 0', async () => {
@@ -1058,35 +1051,42 @@ describe('TrueCreditAgency', () => {
       })
     })
 
-    describe.only('DebtTokens', () => {
-      const collectDebtTokensFromDefault = async (borrower: Wallet) => {
-        const tx = await creditAgency.enterDefault(borrower.address)
-        let debtTokens = []
-        for (let event of (await tx.wait()).events) {
-          console.log('AAAAAAAAAAAAAAAAAAAAAAAA')
-          console.log(event)
-          // ;({ contractAddress } = event.args)
-          // debtTokens.push(await DebtToken__factory.connect(contractAddress, owner))
-        }
-        return debtTokens
-      }
-
+    describe('DebtTokens', () => {
       beforeEach(async () => {
-        await timeTravel(MONTH + DAY * 3 + 1)
+        await creditAgency.allowBorrower(borrower.address, false)
       })
 
-      it('creates DebtToken for borrowed pool', async () => {
-        const debtTokens = await collectDebtTokensFromDefault(borrower)
-        expect(await debtTokens[0].pool()).to.eq(tusdPool.address)
-        expect(await debtTokens[0].borrower()).to.eq(borrower.address)
-        expect(await debtTokens[0].debt()).to.eq(1000)
+      it('creates DebtToken with expected params', async () => {
+        // TODO capture debtToken address from tx events
+        const tx = await creditAgency.enterDefault(tusdPool.address, borrower.address)
+        expect(tx).to.emit(loanFactory, 'DebtTokenCreated')
+        // const debtToken = ???
+        // expect(await debtToken.pool()).to.eq(tusdPool.address)
+        // expect(await debtToken.borrower()).to.eq(borrower.address)
+        // expect(await debtToken.debt()).to.eq(1000) // TODO calculate principal + interest
       })
 
-      it('does not create any DebtTokens for unused pool', async () => {
-        const debtTokens = await collectDebtTokensFromDefault(borrower)
-        for (let debtToken of debtTokens) {
-          expect(await debtToken.pool()).to.not.eq(usdcPool.address)
-        }
+      it('locks borrowing mutex to newly created DebtToken', async () => {
+        await creditAgency.enterDefault(tusdPool.address, borrower.address)
+        // TODO return token address from DebtToken so we can pass it to mutex
+        expect(await borrowingMutex.locker(borrower.address))
+          .to.equal('0x0000000000000000000000000000000000000001')
+      })
+
+      it('prevents borrower from withdrawing from same pool', async () => {
+        await creditAgency.enterDefault(tusdPool.address, borrower.address)
+        await creditAgency.allowBorrower(borrower.address, true)
+
+        await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000))
+          .to.be.revertedWith('TrueCreditAgency: Borrower cannot open two simultaneous debt positions')
+      })
+
+      it('prevents borrower from withdrawing from other pools', async () => {
+        await creditAgency.enterDefault(tusdPool.address, borrower.address)
+        await creditAgency.allowBorrower(borrower.address, true)
+
+        await expect(creditAgency.connect(borrower).borrow(usdcPool.address, 1000))
+          .to.be.revertedWith('TrueCreditAgency: Borrower cannot open two simultaneous debt positions')
       })
     })
   })
