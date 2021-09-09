@@ -91,7 +91,6 @@ describe('FixedTermLoanAgency', () => {
       feeToken: usdc,
       lender,
       creditOracle,
-      rateAdjuster,
       borrowingMutex,
     } = await setupTruefi2(owner, _provider, { lender: lender, oneInch: oneInch }))
 
