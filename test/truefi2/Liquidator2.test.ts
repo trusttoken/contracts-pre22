@@ -41,7 +41,6 @@ describe('Liquidator2', () => {
   let otherWallet: Wallet
   let assurance: Wallet
   let borrower: Wallet
-  let agency: Wallet
 
   let liquidator: Liquidator2
   let loanFactory: LoanFactory2
@@ -64,11 +63,11 @@ describe('Liquidator2', () => {
     loan.connect(wallet).withdraw(beneficiary)
 
   const createDebtToken = async (debt: BigNumberish) => {
-    return _createDebtToken(loanFactory, agency, owner, pool, borrower, debt)
+    return _createDebtToken(loanFactory, owner, owner, pool, borrower, debt)
   }
 
   beforeEachWithFixture(async (_wallets, _provider) => {
-    [owner, otherWallet, borrower, assurance, agency] = _wallets
+    [owner, otherWallet, borrower, assurance] = _wallets
     timeTravel = (time: number) => _timeTravel(_provider, time)
 
     ; ({
