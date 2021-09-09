@@ -980,6 +980,7 @@ describe('TrueCreditAgency', () => {
 
       it('has no debt', async () => {
         await creditAgency.connect(borrower).repayInFull(tusdPool.address)
+        await creditAgency.connect(borrower).repayInFull(usdcPool.address)
         await expect(creditAgency.enterDefault(tusdPool.address, borrower.address))
           .to.be.revertedWith('TrueCreditAgency: Cannot default a borrower with no open debt position')
       })
@@ -1045,6 +1046,7 @@ describe('TrueCreditAgency', () => {
       })
 
       it('reduces interest to 0', async () => {
+        timeTravel(MONTH)
         expect(await creditAgency.interest(tusdPool.address, borrower.address)).to.be.gt(0)
         await creditAgency.enterDefault(tusdPool.address, borrower.address)
         expect(await creditAgency.interest(tusdPool.address, borrower.address)).to.eq(0)
