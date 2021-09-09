@@ -57,7 +57,6 @@ describe('FixedTermLoanAgency', () => {
   let rater: TrueRatingAgencyV2
   let lender: TestFixedTermLoanAgency
   let creditOracle: TrueFiCreditOracle
-  let rateAdjuster: TrueRateAdjuster
 
   let counterfeitPool: TrueFiPool2
   let token1: MockErc20Token
