@@ -30,7 +30,6 @@ import {
   TrueFiCreditOracle__factory,
   TrueFiPool2,
   TrueFiPool2__factory,
-  TrueRateAdjuster,
   TrueRatingAgencyV2,
 } from 'contracts'
 
@@ -57,7 +56,6 @@ describe('FixedTermLoanAgency', () => {
   let rater: TrueRatingAgencyV2
   let lender: TestFixedTermLoanAgency
   let creditOracle: TrueFiCreditOracle
-  let rateAdjuster: TrueRateAdjuster
 
   let counterfeitPool: TrueFiPool2
   let token1: MockErc20Token
@@ -93,7 +91,6 @@ describe('FixedTermLoanAgency', () => {
       feeToken: usdc,
       lender,
       creditOracle,
-      rateAdjuster,
       borrowingMutex,
     } = await setupTruefi2(owner, _provider, { lender: lender, oneInch: oneInch }))
 
@@ -137,9 +134,6 @@ describe('FixedTermLoanAgency', () => {
     loan1 = await createLoan(loanFactory, borrower, pool1, 100000, YEAR, 100)
 
     loan2 = await createLoan(loanFactory, borrower, pool2, 500000, YEAR, 1000)
-
-    await rateAdjuster.addPoolToTVL(pool1.address)
-    await rateAdjuster.addPoolToTVL(pool2.address)
 
     await creditOracle.setCreditUpdatePeriod(YEAR)
     await creditOracle.setScore(borrower.address, 255)
