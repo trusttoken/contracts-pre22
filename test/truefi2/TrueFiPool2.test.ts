@@ -979,6 +979,11 @@ describe('TrueFiPool2', () => {
       expect(await debtToken.balanceOf(mockSafu.address)).to.equal(await debtToken.totalSupply())
     })
 
+    it('cannot liquidate debt that the pool does not hold', async () => {
+      await tusdPool.connect(mockSafu).liquidateDebt(debtToken.address)
+      await expect(tusdPool.connect(mockSafu).liquidateDebt(debtToken.address)).to.be.revertedWith('TrueFiPool: Pool doesn\'t hold this debt token')
+    })
+
     it('decreases debtValue', async () => {
       await tusdPool.connect(mockSafu).liquidateDebt(debtToken.address)
       expect(await tusdPool.debtValue()).to.equal(0)
