@@ -1066,6 +1066,14 @@ describe('TrueCreditAgency', () => {
         // expect(await debtToken.debt()).to.eq(1000) // TODO calculate principal + interest
       })
 
+      it('creates multiple DebtTokens for different pools', async () => {
+        const tx = await creditAgency.enterDefault(tusdPool.address, borrower.address)
+        expect(tx).to.emit(loanFactory, 'DebtTokenCreated')
+        // TODO allow multiple defaults with the mutex
+        // tx = await creditAgency.enterDefault(usdcPool.address, borrower.address)
+        // expect(tx).to.emit(loanFactory, 'DebtTokenCreated')
+      })
+
       it('locks borrowing mutex to newly created DebtToken', async () => {
         await creditAgency.enterDefault(tusdPool.address, borrower.address)
         // TODO return token address from DebtToken so we can pass it to mutex
