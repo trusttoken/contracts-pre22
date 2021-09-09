@@ -11,5 +11,7 @@ interface ILoanFactory2 {
         uint256 _maxApy
     ) external;
 
+    function isCreatedByFactory(address) external view returns (bool);
+
     function isLoanToken(address) external view returns (bool);
 }
