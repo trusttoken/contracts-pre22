@@ -261,6 +261,23 @@ describe('LoanFactory2', () => {
     it('marks deployed contract as debt token', async () => {
       expect(await loanFactory.isDebtToken(debtToken.address)).to.be.true
     })
+
+    it('prevents token creation when there is no token implementation', async () => {
+      const factory = await new LoanFactory2__factory(owner).deploy()
+      await factory.initialize(
+        AddressZero, AddressZero, AddressZero, AddressZero, AddressZero, AddressZero, 
+        tca.address,
+      )
+      await expect(factory.connect(tca).createDebtToken(pool.address, borrower.address, parseEth(1)))
+        .to.be.revertedWith('LoanFactory: Debt token implementation should be set')
+    })
+
+    it('fails when debt token intitialize signature differs from expected', async () => {
+      const testLoanToken = await new TestLoanToken__factory(owner).deploy()
+      await loanFactory.connect(owner).setDebtTokenImplementation(testLoanToken.address)
+      await expect(loanFactory.connect(tca).createDebtToken(pool.address, borrower.address, parseEth(1)))
+        .to.be.revertedWith('Transaction reverted: function selector was not recognized and there\'s no fallback function')
+    })
   })
 
   describe('setCreditOracle', () => {

@@ -164,7 +164,10 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         address _borrower,
         uint256 _debt
     ) external onlyTCA {
-        address newToken = address(new DebtToken());
+        address dtImplementationAddress = address(debtTokenImplementation);
+        require(dtImplementationAddress != address(0), "LoanFactory: Debt token implementation should be set");
+
+        address newToken = Clones.clone(dtImplementationAddress);
         DebtToken(newToken).initialize(_pool, lender, _borrower, liquidator, _debt);
         isDebtToken[newToken] = true;
 
