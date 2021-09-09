@@ -462,10 +462,6 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         DefaultReason reason
     ) private {
         uint256 principal = borrowed[pool][borrower];
-        if (principal == 0) {
-            continue;
-        }
-
         (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, borrower);
         _rebucket(pool, borrower, oldScore, newScore, 0);
 
