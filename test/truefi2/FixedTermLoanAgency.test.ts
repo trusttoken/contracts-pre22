@@ -138,9 +138,6 @@ describe('FixedTermLoanAgency', () => {
 
     loan2 = await createLoan(loanFactory, borrower, pool2, 500000, YEAR, 1000)
 
-    await rateAdjuster.addPoolToTVL(pool1.address)
-    await rateAdjuster.addPoolToTVL(pool2.address)
-
     await creditOracle.setCreditUpdatePeriod(YEAR)
     await creditOracle.setScore(borrower.address, 255)
     await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(1e8))
