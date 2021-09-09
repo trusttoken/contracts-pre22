@@ -112,6 +112,10 @@ describe('TrueCreditAgency', () => {
     it('sets poolFactory', async () => {
       expect(await creditAgency.poolFactory()).to.equal(poolFactory.address)
     })
+
+    it('sets loanFactory', async () => {
+      expect(await creditAgency.loanFactory()).to.equal(loanFactory.address)
+    })
   })
 
   describe('Ownership', () => {
@@ -149,6 +153,29 @@ describe('TrueCreditAgency', () => {
       await expect(creditAgency.setPoolFactory(poolFactory.address))
         .to.emit(creditAgency, 'PoolFactoryChanged')
         .withArgs(poolFactory.address)
+    })
+  })
+
+  describe('setLoanFactory', () => {
+    it('only owner can set loan factory', async () => {
+      await expect(creditAgency.connect(borrower).setLoanFactory(loanFactory.address))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('cannot be set to zero address', async () => {
+      await expect(creditAgency.setLoanFactory(AddressZero))
+        .to.be.revertedWith('TrueCreditAgency: LoanFactory cannot be set to zero address')
+    })
+
+    it('loan factory is properly set', async () => {
+      await creditAgency.setLoanFactory(loanFactory.address)
+      expect(await creditAgency.loanFactory()).to.equal(loanFactory.address)
+    })
+
+    it('emits a proper event', async () => {
+      await expect(creditAgency.setLoanFactory(loanFactory.address))
+        .to.emit(creditAgency, 'LoanFactoryChanged')
+        .withArgs(loanFactory.address)
     })
   })
 
@@ -397,7 +424,7 @@ describe('TrueCreditAgency', () => {
       const faultyCreditAgency = await deployContract(TrueCreditAgency__factory)
       const faultyBorrowingMutex = await deployContract(MockBorrowingMutex__factory)
 
-      await faultyCreditAgency.initialize(creditOracle.address, rateAdjuster.address, faultyBorrowingMutex.address, poolFactory.address)
+      await faultyCreditAgency.initialize(creditOracle.address, rateAdjuster.address, faultyBorrowingMutex.address, poolFactory.address, loanFactory.address)
       await tusdPool.setCreditAgency(faultyCreditAgency.address)
       await faultyCreditAgency.allowBorrower(borrower.address, true)
 

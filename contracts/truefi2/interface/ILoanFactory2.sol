@@ -11,5 +11,11 @@ interface ILoanFactory2 {
         uint256 _maxApy
     ) external;
 
+    function createDebtToken(
+        ITrueFiPool2 _pool,
+        address _borrower,
+        uint256 _debt
+    ) external;
+
     function isLoanToken(address) external view returns (bool);
 }
