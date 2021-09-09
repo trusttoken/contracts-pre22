@@ -1,7 +1,7 @@
 import { expect, use } from 'chai'
 import { BigNumber, BigNumberish, Wallet } from 'ethers'
 
-import { beforeEachWithFixture, DAY, MAX_APY, parseEth, setupTruefi2 } from 'utils'
+import { beforeEachWithFixture, DAY, MAX_APY, parseEth, setupTruefi2, createDebtToken as _createDebtToken } from 'utils'
 
 import {
   BorrowingMutex,
@@ -58,11 +58,7 @@ describe('LoanFactory2', () => {
   }
 
   const createDebtToken = async (pool: TrueFiPool2, borrower: Wallet, debt: BigNumberish) => {
-    await loanFactory.setCreditAgency(tca.address)
-    const tx = await loanFactory.connect(tca).createDebtToken(pool.address, borrower.address, debt)
-    const creationEvent = (await tx.wait()).events[1]
-      ; ({ contractAddress } = creationEvent.args)
-    return LoanToken2__factory.connect(contractAddress, owner)
+    return _createDebtToken(loanFactory, tca, owner, pool, borrower, debt)
   }
 
   beforeEachWithFixture(async (wallets, _provider) => {
