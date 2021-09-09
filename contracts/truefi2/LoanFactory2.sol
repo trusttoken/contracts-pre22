@@ -6,7 +6,7 @@ import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 
 import {Initializable} from "../common/Initializable.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
-import {ILoanToken2} from "./interface/ILoanToken2.sol";
+import {ILoanToken2, IDebtToken} from "./interface/ILoanToken2.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {ITrueRateAdjuster} from "./interface/ITrueRateAdjuster.sol";
@@ -49,6 +49,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     IBorrowingMutex public borrowingMutex;
     ILoanToken2 public loanTokenImplementation;
     ITrueCreditAgency public creditAgency;
+    IDebtToken public debtTokenImplementation;
     // ======= STORAGE DECLARATION END ============
 
     /**
@@ -72,6 +73,8 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     event LoanTokenImplementationChanged(ILoanToken2 loanTokenImplementation);
 
     event CreditAgencyChanged(ITrueCreditAgency creditAgency);
+
+    event DebtTokenImplementationChanged(IDebtToken debtTokenImplementation);
 
     /**
      * @dev Initialize this contract and set currency token
@@ -161,7 +164,10 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         address _borrower,
         uint256 _debt
     ) external onlyTCA {
-        address newToken = address(new DebtToken());
+        address dtImplementationAddress = address(debtTokenImplementation);
+        require(dtImplementationAddress != address(0), "LoanFactory: Debt token implementation should be set");
+
+        address newToken = Clones.clone(dtImplementationAddress);
         DebtToken(newToken).initialize(_pool, lender, _borrower, liquidator, _debt);
         isDebtToken[newToken] = true;
 
@@ -196,5 +202,11 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         require(address(_creditAgency) != address(0), "LoanFactory: Cannot set credit agency to address(0)");
         creditAgency = _creditAgency;
         emit CreditAgencyChanged(_creditAgency);
+    }
+
+    function setDebtTokenImplementation(IDebtToken _implementation) external onlyAdmin {
+        require(address(_implementation) != address(0), "LoanFactory: Cannot set debt token implementation to address(0)");
+        debtTokenImplementation = _implementation;
+        emit DebtTokenImplementationChanged(_implementation);
     }
 }
