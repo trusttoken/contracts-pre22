@@ -906,7 +906,7 @@ describe('TrueCreditAgency', () => {
     })
   })
 
-  describe.only('enterDefault', () => {
+  describe('enterDefault', () => {
     beforeEach(async () => {
       await creditAgency.allowBorrower(borrower.address, true)
       await rateAdjuster.setRiskPremium(700)
@@ -924,6 +924,38 @@ describe('TrueCreditAgency', () => {
       it('borrower has no reason to default', async () => {
         await expect(creditAgency.enterDefault(borrower.address))
           .to.be.revertedWith('TrueCreditAgency: Borrower has no reason to enter default at this time')
+      })
+    })
+
+    describe('because', () => {
+      it('borrower is not allowed to use LoCs', async () => {
+        await creditAgency.allowBorrower(borrower.address, false)
+        await expect(creditAgency.enterDefault(borrower.address))
+          .to.emit(creditAgency, 'EnteredDefault')
+          .withArgs(borrower.address, 0 /* DefaultReason.NotAllowed */);
+      })
+
+      it('borrower credit is ineligible', async () => {
+        await creditOracle.setIneligible(borrower.address)
+        await expect(creditAgency.enterDefault(borrower.address))
+          .to.emit(creditAgency, 'EnteredDefault')
+          .withArgs(borrower.address, 1 /* DefaultReason.Ineligible */);
+      })
+
+      it('borrower is below min score', async () => {
+        await creditAgency.setMinCreditScore(191)
+        await creditOracle.setScore(borrower.address, 190)
+        await expect(creditAgency.enterDefault(borrower.address))
+          .to.emit(creditAgency, 'EnteredDefault')
+          .withArgs(borrower.address, 2 /* DefaultReason.BelowMinScore */);
+      })
+
+      it('borrower interest is overdue', async () => {
+        await creditOracle.setEligibleForDuration(borrower.address, YEAR)
+        await timeTravel(MONTH + DAY * 3 + 1)
+        await expect(creditAgency.enterDefault(borrower.address))
+          .to.emit(creditAgency, 'EnteredDefault')
+          .withArgs(borrower.address, 3 /* DefaultReason.InterestOverdue */);
       })
     })
 

@@ -167,9 +167,10 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         UpgradeableClaimable.initialize(msg.sender);
         creditOracle = _creditOracle;
         rateAdjuster = _rateAdjuster;
-        interestRepaymentPeriod = 31 days;
         borrowingMutex = _borrowingMutex;
         poolFactory = _poolFactory;
+        minCreditScore = 191;
+        interestRepaymentPeriod = 31 days;
     }
 
     /// @dev modifier for only whitelisted borrowers
