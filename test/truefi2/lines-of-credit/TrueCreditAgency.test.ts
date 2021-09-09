@@ -771,6 +771,7 @@ describe('TrueCreditAgency', () => {
       await creditOracle.setScore(owner.address, 255)
       await creditOracle.setScore(borrower.address, 255)
       await creditAgency.setInterestRepaymentPeriod(YEAR * 10)
+      await creditAgency.setMinCreditScore(150)
     })
 
     it('interest for single borrower and stable rate', async () => {
@@ -932,14 +933,14 @@ describe('TrueCreditAgency', () => {
         await creditAgency.allowBorrower(borrower.address, false)
         await expect(creditAgency.enterDefault(borrower.address))
           .to.emit(creditAgency, 'EnteredDefault')
-          .withArgs(borrower.address, 0 /* DefaultReason.NotAllowed */);
+          .withArgs(borrower.address, 0 /* DefaultReason.NotAllowed */)
       })
 
       it('borrower credit is ineligible', async () => {
         await creditOracle.setIneligible(borrower.address)
         await expect(creditAgency.enterDefault(borrower.address))
           .to.emit(creditAgency, 'EnteredDefault')
-          .withArgs(borrower.address, 1 /* DefaultReason.Ineligible */);
+          .withArgs(borrower.address, 1 /* DefaultReason.Ineligible */)
       })
 
       it('borrower is below min score', async () => {
@@ -947,7 +948,7 @@ describe('TrueCreditAgency', () => {
         await creditOracle.setScore(borrower.address, 190)
         await expect(creditAgency.enterDefault(borrower.address))
           .to.emit(creditAgency, 'EnteredDefault')
-          .withArgs(borrower.address, 2 /* DefaultReason.BelowMinScore */);
+          .withArgs(borrower.address, 2 /* DefaultReason.BelowMinScore */)
       })
 
       it('borrower interest is overdue', async () => {
@@ -955,7 +956,7 @@ describe('TrueCreditAgency', () => {
         await timeTravel(MONTH + DAY * 3 + 1)
         await expect(creditAgency.enterDefault(borrower.address))
           .to.emit(creditAgency, 'EnteredDefault')
-          .withArgs(borrower.address, 3 /* DefaultReason.InterestOverdue */);
+          .withArgs(borrower.address, 3 /* DefaultReason.InterestOverdue */)
       })
     })
 
