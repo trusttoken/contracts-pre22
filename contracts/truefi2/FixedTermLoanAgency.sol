@@ -289,6 +289,17 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
         result = poolLoans[pool];
     }
 
+    function rate(
+        ITrueFiPool2 pool,
+        address borrower,
+        uint256 amount,
+        uint256 term
+    ) internal view returns (uint256) {
+        uint8 borrowerScore = creditOracle.score(borrower);
+        uint256 fixedTermLoanAdjustment = rateAdjuster.fixedTermLoanAdjustment(term);
+        return rateAdjuster.rate(pool, borrowerScore, amount).add(fixedTermLoanAdjustment);
+    }
+
     /**
      * @dev Fund a loan
      * LoanToken should be created by the LoanFactory over the pool
@@ -301,31 +312,40 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
      * @param loanToken LoanToken to fund
      */
     function fund(ILoanToken2 loanToken) external {
-        require(msg.sender == loanToken.borrower(), "FixedTermLoanAgency: Sender is not borrower");
-        ITrueFiPool2 pool = loanToken.pool();
+        // TODO Replace hardcoded _maxApy value with a param
+        uint256 _maxApy = 10000;
 
+        ITrueFiPool2 pool = loanToken.pool();
         require(factory.isSupportedPool(pool), "FixedTermLoanAgency: Pool not supported by the factory");
         require(loanToken.token() == pool.token(), "FixedTermLoanAgency: Loan and pool token mismatch");
         require(poolLoans[pool].length < maxLoans, "FixedTermLoanAgency: Loans number has reached the limit");
-        require(borrowingMutex.isUnlocked(msg.sender), "FixedTermLoanAgency: There is an ongoing loan or credit line");
+
+        address borrower = loanToken.borrower();
+        require(msg.sender == borrower, "FixedTermLoanAgency: Sender is not borrower");
+        require(borrowingMutex.isUnlocked(borrower), "FixedTermLoanAgency: There is an ongoing loan or credit line");
+        borrowingMutex.lock(borrower, address(loanToken));
         require(
-            creditOracle.status(msg.sender) == ITrueFiCreditOracle.Status.Eligible,
+            creditOracle.status(borrower) == ITrueFiCreditOracle.Status.Eligible,
             "FixedTermLoanAgency: Sender is not eligible for loan"
         );
 
         uint256 term = loanToken.term();
+        require(term > 0, "LoanFactory: Loans cannot have instantaneous term of repay");
         require(isTermBelowMax(term), "FixedTermLoanAgency: Loan's term is too long");
         require(isCredibleForTerm(term), "FixedTermLoanAgency: Credit score is too low for loan's term");
 
         uint256 amount = loanToken.amount();
+        require(amount > 0, "LoanFactory: Loans of amount 0, will not be approved");
         require(amount <= borrowLimit(pool, loanToken.borrower()), "FixedTermLoanAgency: Loan amount cannot exceed borrow limit");
+
+        uint256 apy = rate(pool, borrower, amount, term);
+        apy = loanToken.apy();
+        require(apy <= _maxApy, "LoanFactory: Calculated apy is higher than max apy");
 
         poolLoans[pool].push(loanToken);
         pool.borrow(amount);
         pool.token().safeApprove(address(loanToken), amount);
         loanToken.fund();
-
-        borrowingMutex.lock(msg.sender, address(loanToken));
 
         emit Funded(address(pool), address(loanToken), amount);
     }
