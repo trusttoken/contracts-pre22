@@ -37,7 +37,7 @@ import { BorrowingMutexJson, LoanToken2Json, Mock1InchV3Json } from 'build'
 
 import { deployMockContract, solidity } from 'ethereum-waffle'
 import { AddressZero } from '@ethersproject/constants'
-import { BigNumber, BigNumberish, constants, utils, Wallet } from 'ethers'
+import { BigNumber, BigNumberish, utils, Wallet } from 'ethers'
 
 use(solidity)
 
