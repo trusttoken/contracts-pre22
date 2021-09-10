@@ -30,4 +30,11 @@ interface ITrueRateAdjuster {
         uint256 maxBorrowerLimit,
         uint256 totalBorrowed
     ) external view returns (uint256);
+
+    function isOverLimit(
+        ITrueFiPool2 pool,
+        uint8 score,
+        uint256 maxBorrowerLimit,
+        uint256 totalBorrowed
+    ) external view returns (bool);
 }
