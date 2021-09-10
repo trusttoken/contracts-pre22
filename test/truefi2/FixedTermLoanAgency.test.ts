@@ -4,7 +4,6 @@ import {
   createLoan,
   DAY,
   parseEth,
-  parseTRU,
   parseUSDC,
   setupTruefi2,
   timeTravel as _timeTravel,
@@ -19,7 +18,6 @@ import {
   Mock1InchV3__factory,
   MockErc20Token,
   MockErc20Token__factory,
-  MockTrueCurrency,
   MockTrueFiPoolOracle,
   MockUsdc,
   PoolFactory,
@@ -30,7 +28,6 @@ import {
   TrueFiCreditOracle__factory,
   TrueFiPool2,
   TrueFiPool2__factory,
-  TrueRatingAgencyV2,
 } from 'contracts'
 
 import { BorrowingMutexJson, LoanToken2Json, Mock1InchV3Json } from 'build'
@@ -53,7 +50,6 @@ describe('FixedTermLoanAgency', () => {
   let feePool: TrueFiPool2
   let poolOracle: MockTrueFiPoolOracle
 
-  let rater: TrueRatingAgencyV2
   let ftlAgency: TestFixedTermLoanAgency
   let creditOracle: TrueFiCreditOracle
 
@@ -64,7 +60,6 @@ describe('FixedTermLoanAgency', () => {
   let poolFactory: PoolFactory
 
   let stkTru: StkTruToken
-  let tru: MockTrueCurrency
   let usdc: MockUsdc
   let oneInch: Mock1InchV3
   let borrowingMutex: BorrowingMutex
@@ -84,10 +79,8 @@ describe('FixedTermLoanAgency', () => {
       loanFactory,
       feePool,
       standardTokenOracle: poolOracle,
-      rater,
       poolFactory,
       stkTru,
-      tru,
       feeToken: usdc,
       ftlAgency,
       creditOracle,
@@ -124,13 +117,6 @@ describe('FixedTermLoanAgency', () => {
     await pool1.join(parseEth(1e7))
     await pool2.join(parseEth(1e7))
 
-    await rater.allow(borrower.address, true)
-    await tru.mint(owner.address, parseTRU(15e6))
-
-    await tru.approve(stkTru.address, parseTRU(15e6))
-    await stkTru.stake(parseTRU(15e6))
-    await timeTravel(1)
-
     loan1 = await createLoan(loanFactory, borrower, pool1, 100000, YEAR, 100)
 
     loan2 = await createLoan(loanFactory, borrower, pool2, 500000, YEAR, 1000)
@@ -139,13 +125,6 @@ describe('FixedTermLoanAgency', () => {
     await creditOracle.setScore(borrower.address, 255)
     await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(1e8))
   })
-
-  const approveLoanRating = async function (loan: LoanToken2) {
-    await rater.connect(borrower).submit(loan.address)
-    await rater.yes(loan.address)
-
-    await timeTravel(7 * DAY + 1)
-  }
 
   describe('Initializer', () => {
     it('sets the staking pool address', async () => {
@@ -353,15 +332,11 @@ describe('FixedTermLoanAgency', () => {
 
       it('there are too many loans for given pool', async () => {
         await ftlAgency.setLoansLimit(1)
-        await approveLoanRating(loan1)
         await ftlAgency.connect(borrower).fund(loan1.address)
         await expect(ftlAgency.connect(borrower).fund(loan1.address)).to.be.revertedWith('FixedTermLoanAgency: Loans number has reached the limit')
       })
 
       it('loan term exceeds max term', async () => {
-        await rater.connect(borrower).submit(loan1.address)
-        await rater.yes(loan1.address)
-        await timeTravel(7 * DAY + 1)
         await ftlAgency.setLongTermLoanThreshold(DAY * 365 - 1)
         await ftlAgency.setMaxLoanTerm(DAY * 365 - 1)
 
@@ -370,9 +345,6 @@ describe('FixedTermLoanAgency', () => {
       })
 
       it('borrower has too low score for long term loan', async () => {
-        await rater.connect(borrower).submit(loan1.address)
-        await rater.yes(loan1.address)
-        await timeTravel(7 * DAY + 1)
         await creditOracle.setScore(borrower.address, 199)
         await ftlAgency.setLongTermLoanThreshold(DAY)
 
@@ -383,7 +355,6 @@ describe('FixedTermLoanAgency', () => {
       it('amount to fund exceeds borrow limit', async () => {
         const amountToFund = parseEth(1e7).mul(15).div(100).add(1) // 15% of pool value + 1
         const badLoan = await createLoan(loanFactory, borrower, pool1, amountToFund, YEAR, 100)
-        await approveLoanRating(badLoan)
         await expect(ftlAgency.connect(borrower).fund(badLoan.address))
           .to.be.revertedWith('FixedTermLoanAgency: Loan amount cannot exceed borrow limit')
       })
@@ -406,10 +377,6 @@ describe('FixedTermLoanAgency', () => {
     })
 
     describe('all requirements are met', () => {
-      beforeEach(async () => {
-        await approveLoanRating(loan1)
-      })
-
       it('borrower is allowed to have a long term loan', async () => {
         await creditOracle.setScore(borrower.address, 200)
         await ftlAgency.setLongTermLoanThreshold(DAY)
@@ -454,9 +421,6 @@ describe('FixedTermLoanAgency', () => {
       await mockMutex.mock.lock.returns()
       const newLoan1 = await createLoan(loanFactory, borrower, pool1, 100000, DAY, 100)
 
-      await approveLoanRating(newLoan1)
-      await approveLoanRating(loan1)
-      await approveLoanRating(loan2)
       await ftlAgency.connect(borrower).fund(loan1.address)
       await ftlAgency.connect(borrower).fund(newLoan1.address)
       await ftlAgency.connect(borrower).fund(loan2.address)
@@ -491,7 +455,6 @@ describe('FixedTermLoanAgency', () => {
     }
 
     beforeEach(async () => {
-      await approveLoanRating(loan1)
       await ftlAgency.connect(borrower).fund(loan1.address)
       await ftlAgency.setFee(0)
     })
@@ -555,9 +518,6 @@ describe('FixedTermLoanAgency', () => {
 
         newLoan1 = await createLoan(loanFactory, borrower, pool1, 100000, DAY, 100)
 
-        await approveLoanRating(newLoan1)
-        await approveLoanRating(loan2)
-
         await ftlAgency.connect(borrower).fund(newLoan1.address)
         await ftlAgency.connect(borrower).fund(loan2.address)
       })
@@ -595,7 +555,6 @@ describe('FixedTermLoanAgency', () => {
         await mockMutex.mock.unlock.returns()
 
         newLoan1 = await createLoan(loanFactory, borrower, pool1, parseEth(100000), YEAR, 100)
-        await approveLoanRating(newLoan1)
         await ftlAgency.connect(borrower).fund(newLoan1.address)
 
         await ftlAgency.setFee(1000)
@@ -671,7 +630,6 @@ describe('FixedTermLoanAgency', () => {
 
   describe('transferAllLoanTokens', () => {
     beforeEach(async () => {
-      await approveLoanRating(loan1)
       await ftlAgency.connect(borrower).fund(loan1.address)
       await ftlAgency.setFee(0)
     })
