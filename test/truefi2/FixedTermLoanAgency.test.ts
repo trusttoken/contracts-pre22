@@ -322,6 +322,7 @@ describe('FixedTermLoanAgency', () => {
           counterfeitPool.address,
           AddressZero,
           borrower.address,
+          AddressZero,
           ftlAgency.address,
           owner.address,
           AddressZero,
