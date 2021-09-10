@@ -116,6 +116,7 @@ describe('FixedTermLoanAgency', () => {
     await pool2.setOracle(poolOracle.address)
 
     await ftlAgency.setFeePool(feePool.address)
+    await ftlAgency.allowBorrower(borrower.address)
 
     await token1.mint(owner.address, parseEth(1e7))
     await token2.mint(owner.address, parseEth(1e7))
@@ -351,8 +352,14 @@ describe('FixedTermLoanAgency', () => {
 
   describe('Funding', () => {
     describe('reverts if', () => {
+      it('borrower is not allowed', async () => {
+        await ftlAgency.blockBorrower(borrower.address)
+        await expect(ftlAgency.connect(borrower).fund(loan1.address)).to.be.revertedWith('FixedTermLoanAgency: Sender is not allowed to borrow')
+      })
+
       it('transaction not called by the borrower', async () => {
-        await expect(ftlAgency.fund(loan1.address)).to.be.revertedWith('FixedTermLoanAgency: Sender is not borrower')
+        await ftlAgency.allowBorrower(owner.address)
+        await expect(ftlAgency.connect(owner).fund(loan1.address)).to.be.revertedWith('FixedTermLoanAgency: Sender is not borrower')
       })
 
       it('loan was created for unknown pool', async () => {

@@ -319,7 +319,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
      *
      * @param loanToken LoanToken to fund
      */
-    function fund(ILoanToken2 loanToken) external {
+    function fund(ILoanToken2 loanToken) external onlyAllowedBorrowers {
         require(msg.sender == loanToken.borrower(), "FixedTermLoanAgency: Sender is not borrower");
         ITrueFiPool2 pool = loanToken.pool();
 
