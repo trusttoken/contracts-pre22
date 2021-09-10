@@ -680,7 +680,7 @@ describe('LoanToken2', () => {
     it('non-whitelisted address cannot transfer', async () => {
       await fund()
       await loanToken.transfer(other.address, 10)
-      await expect(loanToken.connect(other).transfer(lender.address, 2)).to.be.revertedWith('LoanToken2: This can be performed only by lender or accounts allowed to transfer')
+      await expect(loanToken.connect(other).transfer(lender.address, 2)).to.be.revertedWith('LoanToken2: This can be performed only by lender, ftlAgency, or accounts allowed to transfer')
     })
 
     it('whitelisted address can transfer', async () => {

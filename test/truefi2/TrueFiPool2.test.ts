@@ -707,7 +707,7 @@ describe('TrueFiPool2', () => {
 
     it('only lender and creditAgency can borrow from pool', async () => {
       await expect(tusdPool.connect(owner.address).borrow(0))
-        .to.be.revertedWith('TrueFiPool: Caller is not the lender or creditAgency')
+        .to.be.revertedWith('TrueFiPool: Caller is not the lender, ftlAgency, or creditAgency')
     })
 
     it('lender can borrow funds', async () => {
@@ -799,7 +799,7 @@ describe('TrueFiPool2', () => {
 
     it('only lender and creditAgency can repay to pool', async () => {
       await expect(tusdPool.connect(owner.address).repay(0))
-        .to.be.revertedWith('TrueFiPool: Caller is not the lender or creditAgency')
+        .to.be.revertedWith('TrueFiPool: Caller is not the lender, ftlAgency, or creditAgency')
     })
 
     it('lender can repay funds', async () => {

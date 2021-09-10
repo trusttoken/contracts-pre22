@@ -639,7 +639,7 @@ describe('FixedTermLoanAgency', () => {
 
       it('reverts when receiver is not ftlAgency', async () => {
         const data = encodeData(token1.address, usdc.address, ftlAgency.address, pool1.address, fee)
-        await expect(ftlAgency.reclaim(newLoan1.address, data)).to.be.revertedWith('FixedTermLoanAgency: Receiver is not ftlAgency')
+        await expect(ftlAgency.reclaim(newLoan1.address, data)).to.be.revertedWith('FixedTermLoanAgency: Receiver is not agency')
       })
 
       it('reverts on wrong amount', async () => {
