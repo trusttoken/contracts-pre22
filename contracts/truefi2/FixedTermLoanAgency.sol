@@ -63,8 +63,6 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
 
     IPoolFactory public factory;
 
-    ITrueRatingAgency public DEPRECATED__ratingAgency;
-
     I1Inch3 public _1inch;
 
     // Loan fees should be swapped for this token, deposited into the feePool
@@ -77,16 +75,6 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
     uint256 public swapFeeSlippage;
 
     // ===== Voting parameters =====
-
-    // How many votes are needed for a loan to be approved
-    uint256 public DEPRECATED__minVotes;
-
-    // Minimum ratio of yes votes to total votes for a loan to be approved
-    // basis precision: 10000 = 100%
-    uint256 public DEPRECATED__minRatio;
-
-    // minimum prediction market voting period
-    uint256 public DEPRECATED__votingPeriod;
 
     ITrueFiCreditOracle public creditOracle;
 
@@ -572,12 +560,5 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
 
     function isTermBelowMax(uint256 term) internal view returns (bool) {
         return term <= maxLoanTerm;
-    }
-
-    function deprecate() external {
-        DEPRECATED__ratingAgency = ITrueRatingAgency(address(0));
-        DEPRECATED__minVotes = type(uint256).max;
-        DEPRECATED__minRatio = type(uint256).max;
-        DEPRECATED__votingPeriod = type(uint256).max;
     }
 }

@@ -731,26 +731,4 @@ describe('FixedTermLoanAgency', () => {
       expect(await ftlAgency.loans(pool1.address)).to.deep.equal([])
     })
   })
-
-  describe('deprecate', () => {
-    beforeEach(async () => {
-      await ftlAgency.deprecate()
-    })
-
-    it('sets deprecated ratingAgency to zero address', async () => {
-      expect(await ftlAgency.DEPRECATED__ratingAgency()).to.equal(AddressZero)
-    })
-
-    it('sets deprecated minVotes to max value', async () => {
-      expect(await ftlAgency.DEPRECATED__minVotes()).to.equal(constants.MaxUint256)
-    })
-
-    it('sets deprecated minRatio to max value', async () => {
-      expect(await ftlAgency.DEPRECATED__minRatio()).to.equal(constants.MaxUint256)
-    })
-
-    it('sets deprecated votingPeriod to max value', async () => {
-      expect(await ftlAgency.DEPRECATED__votingPeriod()).to.equal(constants.MaxUint256)
-    })
-  })
 })
