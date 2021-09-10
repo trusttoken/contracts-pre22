@@ -80,7 +80,7 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
 
   // ====== SETUP ======
   await liquidator.initialize(stkTru.address, tru.address, loanFactory.address, poolFactory.address, safu.address)
-  await loanFactory.initialize(poolFactory.address, lender.address, liquidator.address, mockRateAdjuster.address, creditOracle.address, borrowingMutex.address, creditAgency.address)
+  await loanFactory.initialize(poolFactory.address, lender.address, ftlAgency.address, liquidator.address, mockRateAdjuster.address, creditOracle.address, borrowingMutex.address, creditAgency.address)
   const loanTokenImplementation = await new LoanToken2__factory(owner).deploy()
   const debtTokenImplementation = await new DebtToken__factory(owner).deploy()
   await loanFactory.setLoanTokenImplementation(loanTokenImplementation.address)
@@ -91,7 +91,7 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
   await lender.initialize(stkTru.address, poolFactory.address, customDeployed?.oneInch ? customDeployed.oneInch.address : AddressZero, creditOracle.address, rateAdjuster.address, borrowingMutex.address)
   await ftlAgency.initialize(stkTru.address, poolFactory.address, customDeployed?.oneInch ? customDeployed.oneInch.address : AddressZero, creditOracle.address, rateAdjuster.address, borrowingMutex.address)
   await safu.initialize(loanFactory.address, liquidator.address, customDeployed?.oneInch ? customDeployed.oneInch.address : AddressZero)
-  await poolFactory.initialize(implementationReference.address, lender.address, safu.address)
+  await poolFactory.initialize(implementationReference.address, lender.address, ftlAgency.address, safu.address)
   await rateAdjuster.initialize(poolFactory.address)
   await creditAgency.initialize(creditOracle.address, rateAdjuster.address, borrowingMutex.address, poolFactory.address)
   await standardBaseRateOracle.initialize(mockSpotOracle.address, standardToken.address, DAY)

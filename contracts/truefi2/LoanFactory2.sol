@@ -4,6 +4,7 @@ pragma solidity 0.6.10;
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 
+import {IFixedTermLoanAgency} from "./interface/IFixedTermLoanAgency.sol";
 import {Initializable} from "../common/Initializable.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {ILoanToken2, IDebtToken} from "./interface/ILoanToken2.sol";
@@ -51,6 +52,8 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     // @dev Track valid debtTokens
     mapping(address => bool) public isDebtToken;
 
+    IFixedTermLoanAgency public ftlAgency;
+
     // ======= STORAGE DECLARATION END ============
 
     /**
@@ -77,15 +80,19 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
 
     event DebtTokenImplementationChanged(IDebtToken debtTokenImplementation);
 
+    event FixedTermLoanAgencyChanged(IFixedTermLoanAgency ftlAgency);
+
     /**
      * @dev Initialize this contract and set currency token
      * @param _poolFactory PoolFactory address
      * @param _lender Lender address
+     * @param _ftlAgency FixedTermLoanAgency address
      * @param _liquidator Liquidator address
      */
     function initialize(
         IPoolFactory _poolFactory,
         address _lender,
+        IFixedTermLoanAgency _ftlAgency,
         address _liquidator,
         ITrueRateAdjuster _rateAdjuster,
         ITrueFiCreditOracle _creditOracle,
@@ -94,6 +101,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     ) external initializer {
         poolFactory = _poolFactory;
         lender = _lender;
+        ftlAgency = _ftlAgency;
         admin = msg.sender;
         liquidator = _liquidator;
         rateAdjuster = _rateAdjuster;
@@ -154,7 +162,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         require(apy <= _maxApy, "LoanFactory: Calculated apy is higher than max apy");
 
         address newToken = Clones.clone(ltImplementationAddress);
-        LoanToken2(newToken).initialize(_pool, borrowingMutex, msg.sender, lender, admin, liquidator, _amount, _term, apy);
+        LoanToken2(newToken).initialize(_pool, borrowingMutex, msg.sender, lender, ftlAgency, admin, liquidator, _amount, _term, apy);
         isLoanToken[newToken] = true;
 
         emit LoanTokenCreated(newToken);
@@ -209,5 +217,11 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         require(address(_implementation) != address(0), "LoanFactory: Cannot set debt token implementation to address(0)");
         debtTokenImplementation = _implementation;
         emit DebtTokenImplementationChanged(_implementation);
+    }
+
+    function setFixedTermLoanAgency(IFixedTermLoanAgency _ftlAgency) external onlyAdmin {
+        require(address(_ftlAgency) != address(0), "LoanFactory: Cannot set fixed term loan agency to address(0)");
+        ftlAgency = _ftlAgency;
+        emit FixedTermLoanAgencyChanged(_ftlAgency);
     }
 }

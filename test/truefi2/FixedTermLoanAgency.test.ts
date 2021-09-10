@@ -110,7 +110,7 @@ describe('FixedTermLoanAgency', () => {
     await poolFactory.supportPool(pool2.address)
 
     counterfeitPool = await deployContract(owner, TrueFiPool2__factory)
-    await counterfeitPool.initialize(token1.address, ftlAgency.address, AddressZero, owner.address)
+    await counterfeitPool.initialize(token1.address, AddressZero, ftlAgency.address, AddressZero, owner.address)
 
     await pool1.setOracle(poolOracle.address)
     await pool2.setOracle(poolOracle.address)
@@ -335,6 +335,7 @@ describe('FixedTermLoanAgency', () => {
           counterfeitPool.address,
           AddressZero,
           borrower.address,
+          AddressZero,
           ftlAgency.address,
           owner.address,
           AddressZero,

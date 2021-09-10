@@ -7,6 +7,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import {ERC20} from "../common/UpgradeableERC20.sol";
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 
+import {IFixedTermLoanAgency} from "./interface/IFixedTermLoanAgency.sol";
 import {ITrueStrategy} from "./interface/ITrueStrategy.sol";
 import {ITrueFiPool2, ITrueFiPoolOracle} from "./interface/ITrueFiPool2.sol";
 import {ITrueLender2} from "./interface/ITrueLender2.sol";
@@ -93,6 +94,8 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
 
     uint256 public debtValue;
 
+    IFixedTermLoanAgency public ftlAgency;
+
     // ======= STORAGE DECLARATION END ===========
 
     /**
@@ -108,6 +111,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     function initialize(
         ERC20 _token,
         ITrueLender2 _lender,
+        IFixedTermLoanAgency _ftlAgency,
         ISAFU _safu,
         address __owner
     ) external override initializer {
@@ -116,6 +120,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
 
         token = _token;
         lender = _lender;
+        ftlAgency = _ftlAgency;
         safu = _safu;
     }
 
@@ -125,6 +130,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     function singleBorrowerInitialize(
         ERC20 _token,
         ITrueLender2 _lender,
+        IFixedTermLoanAgency _ftlAgency,
         ISAFU _safu,
         address __owner,
         string memory borrowerName,
@@ -138,6 +144,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
 
         token = _token;
         lender = _lender;
+        ftlAgency = _ftlAgency;
         safu = _safu;
     }
 
@@ -238,6 +245,8 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      */
     event CreditAgencyChanged(ITrueCreditAgency newCreditAgency);
 
+    event FixedTermLoanAgencyChanged(IFixedTermLoanAgency newFTLAgency);
+
     /**
      * @dev Emitted when DebtTokens are added to the pool
      * @param debtToken token address
@@ -246,12 +255,12 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     event DebtAdded(IDebtToken debtToken, uint256 amount);
 
     /**
-     * @dev only TrueLender of CreditAgency can perform borrowing or repaying
+     * @dev only TrueLender, FixedTermLoanAgency, or CreditAgency can perform borrowing or repaying
      */
-    modifier onlyLenderOrTrueCreditAgency() {
+    modifier onlyLenderOrFTLAgencyOrTrueCreditAgency() {
         require(
-            msg.sender == address(lender) || msg.sender == address(creditAgency),
-            "TrueFiPool: Caller is not the lender or creditAgency"
+            msg.sender == address(lender) || msg.sender == address(ftlAgency) || msg.sender == address(creditAgency),
+            "TrueFiPool: Caller is not the lender, ftlAgency, or creditAgency"
         );
         _;
     }
@@ -301,6 +310,11 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     function setCreditAgency(ITrueCreditAgency _creditAgency) external onlyOwner {
         creditAgency = _creditAgency;
         emit CreditAgencyChanged(_creditAgency);
+    }
+
+    function setFixedTermLoanAgency(IFixedTermLoanAgency _ftlAgency) external onlyOwner {
+        ftlAgency = _ftlAgency;
+        emit FixedTermLoanAgencyChanged(_ftlAgency);
     }
 
     /**
@@ -523,7 +537,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      * @dev Remove liquidity from strategy if necessary and transfer to lender
      * @param amount amount for lender to withdraw
      */
-    function borrow(uint256 amount) external override onlyLenderOrTrueCreditAgency {
+    function borrow(uint256 amount) external override onlyLenderOrFTLAgencyOrTrueCreditAgency {
         require(amount <= liquidValue(), "TrueFiPool: Insufficient liquidity");
         if (amount > 0) {
             ensureSufficientLiquidity(amount);
@@ -538,7 +552,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      * @dev repay debt by transferring tokens to the contract
      * @param currencyAmount amount to repay
      */
-    function repay(uint256 currencyAmount) external override onlyLenderOrTrueCreditAgency {
+    function repay(uint256 currencyAmount) external override onlyLenderOrFTLAgencyOrTrueCreditAgency {
         token.safeTransferFrom(msg.sender, address(this), currencyAmount);
         emit Repaid(msg.sender, currencyAmount);
     }
