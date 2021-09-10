@@ -264,6 +264,14 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
     }
 
     /**
+     * @dev DEPRECATED For new code, please determine which of
+     * {calcTokenDepositAmount(), calcTokenWithdrawAmount()} is appropriate.
+     */
+    function calcTokenAmount(uint256 currencyAmount) external view returns (uint256) {
+        return calcTokenDepositAmount(currencyAmount);
+    }
+
+    /**
      * @dev Expected amount of minted or burnt Curve.fi yDAI/yUSDC/yUSDT/yTUSD tokens.
      * @param currencyAmount amount to calculate for
      * @param isDeposit true for deposits=mint, false for withdrawals=burn
