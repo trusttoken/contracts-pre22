@@ -457,6 +457,31 @@ describe('LoanFactory2', () => {
     })
   })
 
+  describe('setLender', () => {
+    it('only admin can call', async () => {
+      await expect(loanFactory.connect(owner).setLender(lender.address))
+        .not.to.be.reverted
+      await expect(loanFactory.connect(borrower).setLender(lender.address))
+        .to.be.revertedWith('LoanFactory: Caller is not the admin')
+    })
+
+    it('cannot be set to address(0)', async () => {
+      await expect(loanFactory.setLender(AddressZero))
+        .to.be.revertedWith('LoanFactory: Cannot set lender to address(0)')
+    })
+
+    it('changes lender', async () => {
+      await loanFactory.setLender(owner.address)
+      expect(await loanFactory.lender()).to.eq(owner.address)
+    })
+
+    it('emits event', async () => {
+      await expect(loanFactory.setLender(owner.address))
+        .to.emit(loanFactory, 'LenderChanged')
+        .withArgs(owner.address)
+    })
+  })
+
   describe('setDebtTokenImplementation', () => {
     let implementation: DebtToken
     beforeEach(async () => {

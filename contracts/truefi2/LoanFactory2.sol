@@ -49,7 +49,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     IDebtToken public debtTokenImplementation;
 
     // @dev Track valid debtTokens
-    mapping(address => bool) public isDebtToken;
+    mapping(address => bool) public override isDebtToken;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -74,6 +74,8 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     event LoanTokenImplementationChanged(ILoanToken2 loanTokenImplementation);
 
     event CreditAgencyChanged(ITrueCreditAgency creditAgency);
+
+    event LenderChanged(address lender);
 
     event DebtTokenImplementationChanged(IDebtToken debtTokenImplementation);
 
@@ -207,6 +209,12 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         require(address(_creditAgency) != address(0), "LoanFactory: Cannot set credit agency to address(0)");
         creditAgency = _creditAgency;
         emit CreditAgencyChanged(_creditAgency);
+    }
+
+    function setLender(address _lender) external onlyAdmin {
+        require(_lender != address(0), "LoanFactory: Cannot set lender to address(0)");
+        lender = _lender;
+        emit LenderChanged(_lender);
     }
 
     function setDebtTokenImplementation(IDebtToken _implementation) external onlyAdmin {

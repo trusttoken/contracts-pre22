@@ -14,4 +14,6 @@ interface ILoanFactory2 {
     function isCreatedByFactory(address) external view returns (bool);
 
     function isLoanToken(address) external view returns (bool);
+
+    function isDebtToken(address) external view returns (bool);
 }
