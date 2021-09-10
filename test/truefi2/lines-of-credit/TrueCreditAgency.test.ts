@@ -935,18 +935,20 @@ describe('TrueCreditAgency', () => {
     })
 
     describe('because', () => {
+      enum DefaultReason {NotAllowed, Ineligible, BelowMinScore, InterestOverdue}
+
       it('borrower is not allowed to use LoCs', async () => {
         await creditAgency.allowBorrower(borrower.address, false)
         await expect(creditAgency.enterDefault(tusdPool.address, borrower.address))
           .to.emit(creditAgency, 'EnteredDefault')
-          .withArgs(borrower.address, 0 /* DefaultReason.NotAllowed */)
+          .withArgs(borrower.address, DefaultReason.NotAllowed)
       })
 
       it('borrower credit is ineligible', async () => {
         await creditOracle.setIneligible(borrower.address)
         await expect(creditAgency.enterDefault(tusdPool.address, borrower.address))
           .to.emit(creditAgency, 'EnteredDefault')
-          .withArgs(borrower.address, 1 /* DefaultReason.Ineligible */)
+          .withArgs(borrower.address, DefaultReason.Ineligible)
       })
 
       it('borrower is below min score', async () => {
@@ -954,7 +956,7 @@ describe('TrueCreditAgency', () => {
         await creditOracle.setScore(borrower.address, 190)
         await expect(creditAgency.enterDefault(tusdPool.address, borrower.address))
           .to.emit(creditAgency, 'EnteredDefault')
-          .withArgs(borrower.address, 2 /* DefaultReason.BelowMinScore */)
+          .withArgs(borrower.address, DefaultReason.BelowMinScore)
       })
 
       it('borrower interest is overdue', async () => {
@@ -962,7 +964,7 @@ describe('TrueCreditAgency', () => {
         await timeTravel(MONTH + DAY * 3 + 1)
         await expect(creditAgency.enterDefault(tusdPool.address, borrower.address))
           .to.emit(creditAgency, 'EnteredDefault')
-          .withArgs(borrower.address, 3 /* DefaultReason.InterestOverdue */)
+          .withArgs(borrower.address, DefaultReason.InterestOverdue)
       })
     })
 
