@@ -32,7 +32,7 @@ interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
  * @title FixedTermLoanAgency
  * @dev Loans management helper
  * This contract is a bridge that helps to transfer funds from pool to the loans and back
- * FixedTermLoanAgency holds all LoanTokens and may distribute them on pool exits
+ * FixedTermLoanAgency holds all LoanTokens
  */
 contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
     using SafeMath for uint256;
@@ -483,26 +483,6 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
     }
 
     /**
-     * @dev Withdraw a basket of tokens held by the pool
-     * Function is expected to be called by the pool
-     * When exiting the pool, the pool contract calls this function
-     * to withdraw a fraction of all the loans held by the pool
-     * Loop through recipient's share of LoanTokens and calculate versus total per loan.
-     * There should never be too many loans in the pool to run out of gas
-     *
-     * @param recipient Recipient of basket
-     * @param numerator Numerator of fraction to withdraw
-     * @param denominator Denominator of fraction to withdraw
-     */
-    function distribute(
-        address recipient,
-        uint256 numerator,
-        uint256 denominator
-    ) external override onlySupportedPool {
-        _distribute(recipient, numerator, denominator, msg.sender);
-    }
-
-    /**
      * @dev Allow pool to transfer all LoanTokens to the SAFU in case of liquidation
      * @param loan LoanToken address
      * @param recipient expected to be SAFU address
@@ -526,19 +506,6 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
         // If we reach this, it means loanToken was not present in _loans array
         // This prevents invalid loans from being reclaimed
         revert("FixedTermLoanAgency: This loan has not been funded by the agency");
-    }
-
-    /// @dev Helper used in tests
-    function _distribute(
-        address recipient,
-        uint256 numerator,
-        uint256 denominator,
-        address pool
-    ) internal {
-        ILoanToken2[] storage _loans = poolLoans[ITrueFiPool2(pool)];
-        for (uint256 index = 0; index < _loans.length; index++) {
-            _transferLoan(_loans[index], recipient, numerator, denominator);
-        }
     }
 
     // @dev Transfer (numerator/denominator)*balance of loan to the recipient

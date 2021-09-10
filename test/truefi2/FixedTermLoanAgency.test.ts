@@ -669,45 +669,6 @@ describe('FixedTermLoanAgency', () => {
     })
   })
 
-  describe('Distribute', () => {
-    const loanTokens: LoanToken2[] = []
-
-    beforeEach(async () => {
-      const mockMutex = await deployMockContract(owner, BorrowingMutexJson.abi)
-      await ftlAgency.setBorrowingMutex(mockMutex.address)
-      await loanFactory.setBorrowingMutex(mockMutex.address)
-      await mockMutex.mock.isUnlocked.returns(true)
-      await mockMutex.mock.lock.returns()
-      await mockMutex.mock.unlock.returns()
-
-      for (let i = 0; i < 5; i++) {
-        const newLoan1 = await createLoan(loanFactory, borrower, pool1, 100000, DAY, 100)
-
-        loanTokens.push(newLoan1)
-        await approveLoanRating(newLoan1)
-        await ftlAgency.connect(borrower).fund(newLoan1.address)
-      }
-    })
-
-    it('sends all loan tokens in the same proportion as numerator/denominator', async () => {
-      await expect(ftlAgency.testDistribute(borrower.address, 2, 5, pool1.address))
-        .to.emit(loanTokens[0], 'Transfer')
-        .withArgs(ftlAgency.address, borrower.address, Math.floor(100002 * 2 / 5))
-        .and.to.emit(loanTokens[1], 'Transfer')
-        .withArgs(ftlAgency.address, borrower.address, Math.floor(100002 * 2 / 5))
-        .and.to.emit(loanTokens[2], 'Transfer')
-        .withArgs(ftlAgency.address, borrower.address, Math.floor(100002 * 2 / 5))
-        .and.to.emit(loanTokens[3], 'Transfer')
-        .withArgs(ftlAgency.address, borrower.address, Math.floor(100002 * 2 / 5))
-        .and.to.emit(loanTokens[4], 'Transfer')
-        .withArgs(ftlAgency.address, borrower.address, Math.floor(100002 * 2 / 5))
-    })
-
-    it('reverts if not called by the pool', async () => {
-      await expect(ftlAgency.distribute(borrower.address, 2, 5)).to.be.revertedWith('FixedTermLoanAgency: Pool not supported by the factory')
-    })
-  })
-
   describe('transferAllLoanTokens', () => {
     beforeEach(async () => {
       await approveLoanRating(loan1)
