@@ -325,26 +325,26 @@ describe('FixedTermLoanAgency', () => {
 
     describe('Borrower allowance', () => {
       it('only owner can allow borrowers', async () => {
-        await expect(lender.connect(borrower).allowBorrower(borrower.address))
+        await expect(ftlAgency.connect(borrower).allowBorrower(borrower.address))
           .to.be.revertedWith('Ownable: caller is not the owner')
-        await expect(lender.connect(borrower).blockBorrower(borrower.address))
+        await expect(ftlAgency.connect(borrower).blockBorrower(borrower.address))
           .to.be.revertedWith('Ownable: caller is not the owner')
       })
 
       it('allowance is properly set', async () => {
-        expect(await lender.isBorrowerAllowed(borrower.address)).to.equal(false)
-        await lender.allowBorrower(borrower.address)
-        expect(await lender.isBorrowerAllowed(borrower.address)).to.equal(true)
-        await lender.blockBorrower(borrower.address)
-        expect(await lender.isBorrowerAllowed(borrower.address)).to.equal(false)
+        expect(await ftlAgency.isBorrowerAllowed(borrower.address)).to.equal(false)
+        await ftlAgency.allowBorrower(borrower.address)
+        expect(await ftlAgency.isBorrowerAllowed(borrower.address)).to.equal(true)
+        await ftlAgency.blockBorrower(borrower.address)
+        expect(await ftlAgency.isBorrowerAllowed(borrower.address)).to.equal(false)
       })
 
       it('emits a proper event', async () => {
-        await expect(lender.allowBorrower(borrower.address))
-          .to.emit(lender, 'BorrowerAllowed')
+        await expect(ftlAgency.allowBorrower(borrower.address))
+          .to.emit(ftlAgency, 'BorrowerAllowed')
           .withArgs(borrower.address)
-        await expect(lender.blockBorrower(borrower.address))
-          .to.emit(lender, 'BorrowerBlocked')
+        await expect(ftlAgency.blockBorrower(borrower.address))
+          .to.emit(ftlAgency, 'BorrowerBlocked')
           .withArgs(borrower.address)
       })
     })
