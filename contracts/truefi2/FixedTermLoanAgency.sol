@@ -339,6 +339,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
         require(amount <= borrowLimit(pool, loanToken.borrower()), "FixedTermLoanAgency: Loan amount cannot exceed borrow limit");
 
         uint256 apy = rate(pool, borrower, amount, term);
+        // TODO use the above apy calculation and delete the below apy when calling LF2.createFTLALoanToken()
         apy = loanToken.apy();
         require(apy <= _maxApy, "LoanFactory: Calculated apy is higher than max apy");
 
