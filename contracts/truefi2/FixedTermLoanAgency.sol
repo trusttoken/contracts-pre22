@@ -101,6 +101,8 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
     // mutex ensuring there's only one running loan or credit line for borrower
     IBorrowingMutex public borrowingMutex;
 
+    mapping(address => bool) public isBorrowerAllowed;
+
     // ======= STORAGE DECLARATION END ============
 
     /**
@@ -165,11 +167,19 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
      */
     event BorrowingMutexChanged(IBorrowingMutex borrowingMutex);
 
+    event BorrowerAllowed(address indexed who);
+    event BorrowerBlocked(address indexed who);
+
     /**
      * @dev Can be only called by a pool
      */
     modifier onlySupportedPool() {
         require(factory.isSupportedPool(ITrueFiPool2(msg.sender)), "FixedTermLoanAgency: Pool not supported by the factory");
+        _;
+    }
+
+    modifier onlyAllowedBorrowers() {
+        require(isBorrowerAllowed[msg.sender], "FixedTermLoanAgency: Sender is not allowed to borrow");
         _;
     }
 
@@ -278,6 +288,15 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
         require(newFee <= BASIS_RATIO, "FixedTermLoanAgency: fee cannot be more than 100%");
         fee = newFee;
         emit FeeChanged(newFee);
+    }
+
+    function allowBorrower(address who) external onlyOwner {
+        isBorrowerAllowed[who] = true;
+        emit BorrowerAllowed(who);
+    }
+    function blockBorrower(address who) external onlyOwner {
+        isBorrowerAllowed[who] = false;
+        emit BorrowerBlocked(who);
     }
 
     /**
