@@ -27,7 +27,7 @@ import {
   DebtToken,
   DebtToken__factory,
 } from 'contracts'
-import { PoolFactoryJson } from 'build'
+import { PoolFactoryJson, TrueFiCreditOracleJson, TrueRateAdjusterJson } from 'build'
 import { deployMockContract, solidity } from 'ethereum-waffle'
 import { AddressZero } from '@ethersproject/constants'
 
@@ -177,11 +177,16 @@ describe('LoanFactory2', () => {
     it('prevents token creation when there is no token implementation', async () => {
       const factory = await new LoanFactory2__factory(owner).deploy()
       const mockPoolFactory = await deployMockContract(owner, PoolFactoryJson.abi)
+      const mockCreditOracle = await deployMockContract(owner, TrueFiCreditOracleJson.abi)
+      const mockRateAdjuster = await deployMockContract(owner, TrueRateAdjusterJson.abi)
       await factory.initialize(
         mockPoolFactory.address,
-        AddressZero, AddressZero, AddressZero, AddressZero, AddressZero, AddressZero, AddressZero,
+        AddressZero, AddressZero, AddressZero, mockRateAdjuster.address, mockCreditOracle.address, AddressZero, AddressZero,
       )
       await mockPoolFactory.mock.isSupportedPool.withArgs(AddressZero).returns(true)
+      await mockCreditOracle.mock.score.withArgs(borrower.address).returns(0)
+      await mockRateAdjuster.mock.fixedTermLoanAdjustment.withArgs(15 * DAY).returns(0)
+      await mockRateAdjuster.mock.rate.withArgs(AddressZero, 0, parseEth(123)).returns(0)
       await expect(factory.connect(borrower).createLoanToken(AddressZero, parseEth(123), 15 * DAY, MAX_APY))
         .to.be.revertedWith('LoanFactory: Loan token implementation should be set')
     })
