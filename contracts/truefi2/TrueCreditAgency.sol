@@ -290,6 +290,16 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
             );
     }
 
+    function isOverLimit(ITrueFiPool2 pool, address borrower) public view returns (bool) {
+        return
+            rateAdjuster.isOverLimit(
+                pool,
+                creditOracle.score(borrower),
+                creditOracle.maxBorrowerLimit(borrower),
+                totalBorrowed(borrower)
+            );
+    }
+
     /**
      * @dev Get current rate for `borrower` in `pool` from rate adjuster
      * @return current rate for `borrower` in `pool`
@@ -450,7 +460,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     }
 
     function pokeBorrowLimitTimer(ITrueFiPool2 pool, address borrower) public {
-        if (borrowLimit(pool, borrower) > 0) {
+        if (!isOverLimit(pool, borrower)) {
             overBorrowLimitTime[pool][borrower] = 0;
             return;
         }
