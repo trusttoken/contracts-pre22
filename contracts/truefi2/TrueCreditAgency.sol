@@ -32,7 +32,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     using SafeERC20 for ERC20;
     using SafeMath for uint256;
 
-    enum DefaultReason {NotAllowed, Ineligible, BelowMinScore, InterestOverdue, LimitExceeded}
+    enum DefaultReason {NotAllowed, Ineligible, BelowMinScore, InterestOverdue, TimeLimitExceeded}
 
     /// @dev credit scores are uint8
     uint8 constant MAX_CREDIT_SCORE = 255;
@@ -425,7 +425,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         }
         uint256 overBorrowLimit = overBorrowLimitTime[pool][borrower];
         if (overBorrowLimit != 0 && defaultTime >= overBorrowLimit) {
-            _enterDefault(pool, borrower, DefaultReason.LimitExceeded);
+            _enterDefault(pool, borrower, DefaultReason.TimeLimitExceeded);
             return;
         }
         revert("TrueCreditAgency: Borrower has no reason to enter default at this time");
