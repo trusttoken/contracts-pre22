@@ -423,6 +423,7 @@ describe('TrueCreditAgency', () => {
     })
 
     it('zeroes out overBorrowLimitTime', async () => {
+      await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
       await creditOracle.setMaxBorrowerLimit(borrower.address, 0)
       const tx = await creditAgency.pokeBorrowLimitTimer(tusdPool.address, borrower.address)
       const timestamp = BigNumber.from((await provider.getBlock(tx.blockNumber)).timestamp)
@@ -630,14 +631,14 @@ describe('TrueCreditAgency', () => {
       const timestamp = BigNumber.from((await provider.getBlock(tx.blockNumber)).timestamp)
 
       expect(await creditAgency.overBorrowLimitTime(tusdPool.address, borrower.address)).to.eq(timestamp)
-      await creditAgency.connect(borrower).repay(tusdPool.address, 401)
+      await creditAgency.connect(borrower).repay(tusdPool.address, 400)
       expect(await creditAgency.overBorrowLimitTime(tusdPool.address, borrower.address)).to.eq(0)
     })
 
     it('sets nonzero overBorrowLimitTime when above limit', async () => {
       await creditOracle.setMaxBorrowerLimit(borrower.address, 600)
       expect(await creditAgency.overBorrowLimitTime(tusdPool.address, borrower.address)).to.eq(0)
-      const tx = await creditAgency.connect(borrower).repay(tusdPool.address, 400)
+      const tx = await creditAgency.connect(borrower).repay(tusdPool.address, 399)
       const timestamp = BigNumber.from((await provider.getBlock(tx.blockNumber)).timestamp)
       expect(await creditAgency.overBorrowLimitTime(tusdPool.address, borrower.address)).to.eq(timestamp)
     })
