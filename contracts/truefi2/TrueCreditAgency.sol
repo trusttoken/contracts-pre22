@@ -423,8 +423,8 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
             _enterDefault(pool, borrower, DefaultReason.InterestOverdue);
             return;
         }
-        uint256 overBorrowLimit = overBorrowLimitTime[pool][borrower];
-        if (overBorrowLimit != 0 && defaultTime >= overBorrowLimit) {
+        uint256 _overBorrowLimitTime = overBorrowLimitTime[pool][borrower];
+        if (_overBorrowLimitTime != 0 && defaultTime >= _overBorrowLimitTime) {
             _enterDefault(pool, borrower, DefaultReason.TimeLimitExceeded);
             return;
         }

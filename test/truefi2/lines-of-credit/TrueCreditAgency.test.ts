@@ -1001,7 +1001,7 @@ describe('TrueCreditAgency', () => {
           .withArgs(borrower.address, DefaultReason.InterestOverdue)
       })
 
-      it('has exceeded borrow limit', async () => {
+      it('has exceeded borrow time limit', async () => {
         await creditOracle.setMaxBorrowerLimit(borrower.address, 0)
         await creditAgency.pokeBorrowLimitTimer(tusdPool.address, borrower.address)
         await timeTravel(DAY * 3 + 1)
