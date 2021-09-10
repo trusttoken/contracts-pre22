@@ -9,8 +9,8 @@ import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 
 import {ITrueStrategy} from "./interface/ITrueStrategy.sol";
 import {ITrueFiPool2, ITrueFiPoolOracle} from "./interface/ITrueFiPool2.sol";
-import {ITrueLender2, ILoanToken2} from "./interface/ITrueLender2.sol";
-import {IDebtToken} from "./interface/ILoanToken2.sol";
+import {ITrueLender2} from "./interface/ITrueLender2.sol";
+import {IDebtToken, ILoanToken2} from "./interface/ILoanToken2.sol";
 import {IPauseableContract} from "../common/interface/IPauseableContract.sol";
 import {ISAFU} from "./interface/ISAFU.sol";
 import {IDeficiencyToken} from "./interface/IDeficiencyToken.sol";
@@ -35,6 +35,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     using SafeMath for uint256;
     using SafeERC20 for ERC20;
     using SafeERC20 for IDeficiencyToken;
+    using SafeERC20 for IDebtToken;
 
     uint256 private constant BASIS_PRECISION = 10000;
 
@@ -89,6 +90,8 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     ISAFU public safu;
 
     ITrueCreditAgency public creditAgency;
+
+    uint256 public debtValue;
 
     // ======= STORAGE DECLARATION END ===========
 
@@ -236,6 +239,13 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     event CreditAgencyChanged(ITrueCreditAgency newCreditAgency);
 
     /**
+     * @dev Emitted when DebtTokens are added to the pool
+     * @param debtToken token address
+     * @param amount token amount
+     */
+    event DebtAdded(IDebtToken debtToken, uint256 amount);
+
+    /**
      * @dev only TrueLender of CreditAgency can perform borrowing or repaying
      */
     modifier onlyLenderOrTrueCreditAgency() {
@@ -330,7 +340,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      */
     function poolValue() public override view returns (uint256) {
         // this assumes defaulted loans are worth their full value
-        return liquidValue().add(loansValue()).add(deficitValue()).add(creditValue());
+        return liquidValue().add(loansValue()).add(deficitValue()).add(creditValue()).add(debtValue);
     }
 
     /**
@@ -572,10 +582,21 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     /**
      * @dev Function called by SAFU when liquidation happens. It will transfer all tokens of this loan the SAFU
      */
-    function liquidate(IDebtToken loan) external override {
+    function liquidateLoan(IDebtToken loan) external override {
         require(msg.sender == address(safu), "TrueFiPool: Should be called by SAFU");
-        // TODO handle flow for LoC DebtToken
         lender.transferAllLoanTokens(ILoanToken2(address(loan)), address(safu));
+    }
+
+    /**
+     * @dev Function called by SAFU when liquidation happens. It will transfer whole balance of the debt token to the SAFU
+     */
+    function liquidateDebt(IDebtToken debtToken) external override {
+        require(msg.sender == address(safu), "TrueFiPool: Should be called by SAFU");
+        uint256 balance = debtToken.balanceOf(address(this));
+        require(balance > 0, "TrueFiPool: Pool doesn't hold this debt token");
+
+        debtValue = debtValue.sub(balance);
+        debtToken.safeTransfer(msg.sender, balance);
     }
 
     /**
@@ -589,6 +610,17 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
         safu.reclaim(loan, deficit);
 
         emit DeficitReclaimed(loan, deficit);
+    }
+
+    /**
+     * @dev CreditAgency transfers DebtToken to the pool
+     */
+    function addDebt(IDebtToken debtToken, uint256 amount) external {
+        require(msg.sender == address(creditAgency), "TruePool: Only TrueCreditAgency can add debtTokens");
+        debtValue = debtValue.add(amount);
+        debtToken.safeTransferFrom(msg.sender, address(this), amount);
+
+        emit DebtAdded(debtToken, amount);
     }
 
     /**

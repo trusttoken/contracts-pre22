@@ -24,6 +24,7 @@ import {
   TrueLender2__factory,
   TrueRateAdjuster__factory,
   TrueRatingAgencyV2__factory,
+  DebtToken__factory,
 } from 'contracts'
 import { Wallet } from 'ethers'
 import { parseTRU, timeTravelTo, YEAR } from '.'
@@ -76,8 +77,10 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
   // ====== SETUP ======
   await liquidator.initialize(stkTru.address, tru.address, loanFactory.address, poolFactory.address, safu.address)
   await loanFactory.initialize(poolFactory.address, lender.address, liquidator.address, mockRateAdjuster.address, creditOracle.address, borrowingMutex.address, creditAgency.address)
-  const loanImplementation = await new LoanToken2__factory(owner).deploy()
-  await loanFactory.setLoanTokenImplementation(loanImplementation.address)
+  const loanTokenImplementation = await new LoanToken2__factory(owner).deploy()
+  const debtTokenImplementation = await new DebtToken__factory(owner).deploy()
+  await loanFactory.setLoanTokenImplementation(loanTokenImplementation.address)
+  await loanFactory.setDebtTokenImplementation(debtTokenImplementation.address)
   await arbitraryDistributor.initialize(rater.address, tru.address, parseTRU(15e6))
   await rater.initialize(tru.address, stkTru.address, arbitraryDistributor.address, loanFactory.address)
   await borrowingMutex.initialize()
