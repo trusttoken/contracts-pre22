@@ -526,7 +526,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
         }
         // If we reach this, it means loanToken was not present in _loans array
         // This prevents invalid loans from being reclaimed
-        revert("FixedTermLoanAgency: This loan has not been funded by the agency");
+        revert("FixedTermLoanAgency: This loan has not been funded by the agency");\
     }
 
     // @dev Transfer (numerator/denominator)*balance of loan to the recipient

@@ -323,7 +323,6 @@ describe('FixedTermLoanAgency', () => {
           AddressZero,
           borrower.address,
           ftlAgency.address,
-          ftlAgency.address,
           owner.address,
           AddressZero,
           100000,
