@@ -76,8 +76,6 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
     // basis precision: 10000 = 100%
     uint256 public swapFeeSlippage;
 
-    // ===== Voting parameters =====
-
     ITrueFiCreditOracle public creditOracle;
 
     uint256 public maxLoanTerm;
