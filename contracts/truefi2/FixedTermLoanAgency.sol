@@ -294,6 +294,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
         isBorrowerAllowed[who] = true;
         emit BorrowerAllowed(who);
     }
+
     function blockBorrower(address who) external onlyOwner {
         isBorrowerAllowed[who] = false;
         emit BorrowerBlocked(who);
