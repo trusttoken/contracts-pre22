@@ -87,14 +87,14 @@ contract SAFU is ISAFU, UpgradeableClaimable {
      * @param loan Loan to be liquidated
      */
     function liquidate(IDebtToken loan) external {
-        require(loanFactory.isLoanToken(address(loan)), "SAFU: Unknown loan");
+        require(loanFactory.isCreatedByFactory(address(loan)), "SAFU: Unknown loan");
         require(loan.status() == IDebtToken.Status.Defaulted, "SAFU: Loan is not defaulted");
 
         ITrueFiPool2 pool = ITrueFiPool2(loan.pool());
         IERC20 token = IERC20(pool.token());
 
         liquidator.liquidate(loan);
-        pool.liquidateLoan(loan);
+        _poolLiquidate(pool, loan);
         uint256 owedToPool = loan.debt().mul(tokenBalance(loan)).div(loan.totalSupply());
         uint256 safuTokenBalance = tokenBalance(token);
 
@@ -161,5 +161,14 @@ contract SAFU is ISAFU, UpgradeableClaimable {
         require(returnAmount >= minReturnAmount, "SAFU: Not enough tokens returned from swap");
 
         emit Swapped(swapResult.amount, swapResult.srcToken, returnAmount, swapResult.dstToken);
+    }
+
+    function _poolLiquidate(ITrueFiPool2 pool, IDebtToken loan) internal {
+        if (loanFactory.isLoanToken(address(loan))) {
+            pool.liquidateLoan(loan);
+        }
+        if (loanFactory.isDebtToken(address(loan))) {
+            pool.liquidateDebt(loan);
+        }
     }
 }
