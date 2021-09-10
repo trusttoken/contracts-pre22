@@ -53,7 +53,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
 
     mapping(ITrueFiPool2 => ILoanToken2[]) public poolLoans;
 
-    // maximum amount of loans lender can handle at once
+    // maximum amount of loans agency can handle at once
     uint256 public maxLoans;
 
     // which part of interest should be paid to the stakers
@@ -295,7 +295,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
      * than was also created by the PoolFactory.
      * Method should be called by the loan borrower
      *
-     * When called, lender takes funds from the pool, gives it to the loan and holds all LoanTokens
+     * When called, agency takes funds from the pool, gives it to the loan and holds all LoanTokens
      * Origination fee is transferred to the stake
      *
      * @param loanToken LoanToken to fund
@@ -372,7 +372,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
         }
         // If we reach this, it means loanToken was not present in _loans array
         // This prevents invalid loans from being reclaimed
-        revert("FixedTermLoanAgency: This loan has not been funded by the lender");
+        revert("FixedTermLoanAgency: This loan has not been funded by the agency");
     }
 
     /**
@@ -472,7 +472,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
 
         require(swap.srcToken == address(token), "FixedTermLoanAgency: Source token is not same as pool's token");
         require(swap.dstToken == address(feeToken), "FixedTermLoanAgency: Destination token is not fee token");
-        require(swap.dstReceiver == address(this), "FixedTermLoanAgency: Receiver is not lender");
+        require(swap.dstReceiver == address(this), "FixedTermLoanAgency: Receiver is not agency");
         require(swap.amount == feeAmount, "FixedTermLoanAgency: Incorrect fee swap amount");
         require(swap.flags & ONE_INCH_PARTIAL_FILL_FLAG == 0, "FixedTermLoanAgency: Partial fill is not allowed");
         require(
@@ -537,7 +537,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
         }
         // If we reach this, it means loanToken was not present in _loans array
         // This prevents invalid loans from being reclaimed
-        revert("FixedTermLoanAgency: This loan has not been funded by the lender");
+        revert("FixedTermLoanAgency: This loan has not been funded by the agency");
     }
 
     /// @dev Helper used in tests
