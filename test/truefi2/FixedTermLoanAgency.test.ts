@@ -323,7 +323,7 @@ describe('FixedTermLoanAgency', () => {
       })
     })
 
-    describe.only('Borrower allowance', () => {
+    describe('Borrower allowance', () => {
       it('only owner can allow borrowers', async () => {
         await expect(ftlAgency.connect(borrower).allowBorrower(borrower.address))
           .to.be.revertedWith('Ownable: caller is not the owner')
