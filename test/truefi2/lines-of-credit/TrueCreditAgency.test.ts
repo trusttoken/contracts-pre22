@@ -771,6 +771,7 @@ describe('TrueCreditAgency', () => {
       await creditOracle.setScore(owner.address, 255)
       await creditOracle.setScore(borrower.address, 255)
       await creditAgency.setInterestRepaymentPeriod(YEAR * 10)
+      await creditAgency.setMinCreditScore(150)
     })
 
     it('interest for single borrower and stable rate', async () => {
@@ -915,22 +916,55 @@ describe('TrueCreditAgency', () => {
     })
 
     describe('reverts if', () => {
+      it('pool is not supported', async () => {
+        await poolFactory.unsupportPool(tusdPool.address)
+        await expect(creditAgency.enterDefault(tusdPool.address, borrower.address))
+          .to.be.revertedWith('TrueCreditAgency: The pool is not supported for borrowing')
+      })
+
       it('borrower has no debt', async () => {
         await creditAgency.connect(borrower).repayInFull(tusdPool.address)
         await expect(creditAgency.enterDefault(tusdPool.address, borrower.address))
-          .to.be.revertedWith('TrueCreditAgency: Borrower does not have any debt in pool')
+          .to.be.revertedWith('TrueCreditAgency: Cannot default a borrower with no open debt position')
       })
 
-      it('borrower can still repay', async () => {
+      it('borrower has no reason to default', async () => {
         await expect(creditAgency.enterDefault(tusdPool.address, borrower.address))
-          .to.be.revertedWith('TrueCreditAgency: Borrower can still repay the debt')
+          .to.be.revertedWith('TrueCreditAgency: Borrower has no reason to enter default at this time')
+      })
+    })
+
+    describe('because', () => {
+      enum DefaultReason {NotAllowed, Ineligible, BelowMinScore, InterestOverdue}
+
+      it('borrower is not allowed to use LoCs', async () => {
+        await creditAgency.allowBorrower(borrower.address, false)
+        await expect(creditAgency.enterDefault(tusdPool.address, borrower.address))
+          .to.emit(creditAgency, 'EnteredDefault')
+          .withArgs(borrower.address, DefaultReason.NotAllowed)
       })
 
-      it('borrower is not ineligible', async () => {
-        await creditOracle.setEligibleForDuration(borrower.address, 2 * MONTH)
+      it('borrower credit is ineligible', async () => {
+        await creditOracle.setIneligible(borrower.address)
+        await expect(creditAgency.enterDefault(tusdPool.address, borrower.address))
+          .to.emit(creditAgency, 'EnteredDefault')
+          .withArgs(borrower.address, DefaultReason.Ineligible)
+      })
+
+      it('borrower is below min score', async () => {
+        await creditAgency.setMinCreditScore(191)
+        await creditOracle.setScore(borrower.address, 190)
+        await expect(creditAgency.enterDefault(tusdPool.address, borrower.address))
+          .to.emit(creditAgency, 'EnteredDefault')
+          .withArgs(borrower.address, DefaultReason.BelowMinScore)
+      })
+
+      it('borrower interest is overdue', async () => {
+        await creditOracle.setEligibleForDuration(borrower.address, YEAR)
         await timeTravel(MONTH + DAY * 3 + 1)
         await expect(creditAgency.enterDefault(tusdPool.address, borrower.address))
-          .to.be.revertedWith('TrueCreditAgency: Borrower status has to be ineligible to default')
+          .to.emit(creditAgency, 'EnteredDefault')
+          .withArgs(borrower.address, DefaultReason.InterestOverdue)
       })
     })
 

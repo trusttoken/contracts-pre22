@@ -32,6 +32,8 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     using SafeERC20 for ERC20;
     using SafeMath for uint256;
 
+    enum DefaultReason {NotAllowed, Ineligible, BelowMinScore, InterestOverdue}
+
     /// @dev credit scores are uint8
     uint8 constant MAX_CREDIT_SCORE = 255;
 
@@ -153,6 +155,8 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     /// @dev emit `newValue` when minimum credit score is changed
     event MinCreditScoreChanged(uint256 newValue);
 
+    event EnteredDefault(address borrower, DefaultReason reason);
+
     /// @dev initialize
     function initialize(
         ITrueFiCreditOracle _creditOracle,
@@ -163,9 +167,10 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         UpgradeableClaimable.initialize(msg.sender);
         creditOracle = _creditOracle;
         rateAdjuster = _rateAdjuster;
-        interestRepaymentPeriod = 31 days;
         borrowingMutex = _borrowingMutex;
         poolFactory = _poolFactory;
+        minCreditScore = 191;
+        interestRepaymentPeriod = 31 days;
     }
 
     /// @dev modifier for only whitelisted borrowers
@@ -394,22 +399,49 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     /**
      * @dev Enter default for a certain borrower's line of credit
      */
-    function enterDefault(ITrueFiPool2 pool, address borrower) external {
-        require(borrowed[pool][borrower] > 0, "TrueCreditAgency: Borrower does not have any debt in pool");
+    function enterDefault(ITrueFiPool2 pool, address borrower) external onlyOwner {
+        require(poolFactory.isSupportedPool(pool), "TrueCreditAgency: The pool is not supported for borrowing");
         require(
-            block.timestamp >= nextInterestRepayTime[pool][borrower].add(creditOracle.gracePeriod()),
-            "TrueCreditAgency: Borrower can still repay the debt"
+            borrowingMutex.locker(borrower) == address(this),
+            "TrueCreditAgency: Cannot default a borrower with no open debt position"
         );
-        require(
-            creditOracle.status(borrower) == ITrueFiCreditOracle.Status.Ineligible,
-            "TrueCreditAgency: Borrower status has to be ineligible to default"
-        );
+        if (!isBorrowerAllowed[borrower]) {
+            _enterDefault(pool, borrower, DefaultReason.NotAllowed);
+            return;
+        }
+        if (creditOracle.status(borrower) == ITrueFiCreditOracle.Status.Ineligible) {
+            _enterDefault(pool, borrower, DefaultReason.Ineligible);
+            return;
+        }
+        if (creditOracle.score(borrower) < minCreditScore) {
+            _enterDefault(pool, borrower, DefaultReason.BelowMinScore);
+            return;
+        }
+        uint256 defaultTime = block.timestamp.sub(creditOracle.gracePeriod());
+        uint256 nextInterestRepay = nextInterestRepayTime[pool][borrower];
+        if (nextInterestRepay != 0 && defaultTime >= nextInterestRepay) {
+            _enterDefault(pool, borrower, DefaultReason.InterestOverdue);
+            return;
+        }
+        revert("TrueCreditAgency: Borrower has no reason to enter default at this time");
+    }
 
+    function _enterDefault(
+        ITrueFiPool2 pool,
+        address borrower,
+        DefaultReason reason
+    ) private {
         (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, borrower);
         _rebucket(pool, borrower, oldScore, newScore, 0);
 
-        borrowerTotalPaidInterest[pool][borrower] = borrowerTotalPaidInterest[pool][borrower].add(interest(pool, borrower));
-        poolTotalPaidInterest[pool] = poolTotalPaidInterest[pool].add(interest(pool, borrower));
+        uint256 _interest = interest(pool, borrower);
+        borrowerTotalPaidInterest[pool][borrower] = borrowerTotalPaidInterest[pool][borrower].add(_interest);
+        poolTotalPaidInterest[pool] = poolTotalPaidInterest[pool].add(_interest);
+
+        borrowingMutex.unlock(borrower);
+        // TODO lock borrower to a new DebtToken. This placeholder currently locks borrower to an inaccessible locker address.
+        borrowingMutex.lock(borrower, address(1));
+        emit EnteredDefault(borrower, reason);
     }
 
     /**
