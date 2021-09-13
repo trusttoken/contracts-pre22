@@ -5,6 +5,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import {ERC20, IERC20, SafeMath} from "../common/UpgradeableERC20.sol";
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 
+import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {ITrueRateAdjuster} from "./interface/ITrueRateAdjuster.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
@@ -126,6 +127,8 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
     IPoolFactory public poolFactory;
 
+    ILoanFactory2 public loanFactory;
+
     mapping(ITrueFiPool2 => mapping(address => uint256)) public overBorrowLimitTime;
 
     // ======= STORAGE DECLARATION END ============
@@ -138,6 +141,9 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
     /// @dev emit `newPoolFactory` when pool factory changed
     event PoolFactoryChanged(IPoolFactory newPoolFactory);
+
+    /// @dev emit `newLoanFactory` when loan factory changed
+    event LoanFactoryChanged(ILoanFactory2 newLoanFactory);
 
     /// @dev emit `who` and `isAllowed` when borrower allowance changes
     event BorrowerAllowed(address indexed who, bool isAllowed);
@@ -164,13 +170,15 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         ITrueFiCreditOracle _creditOracle,
         ITrueRateAdjuster _rateAdjuster,
         IBorrowingMutex _borrowingMutex,
-        IPoolFactory _poolFactory
+        IPoolFactory _poolFactory,
+        ILoanFactory2 _loanFactory
     ) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
         creditOracle = _creditOracle;
         rateAdjuster = _rateAdjuster;
         borrowingMutex = _borrowingMutex;
         poolFactory = _poolFactory;
+        loanFactory = _loanFactory;
         minCreditScore = 191;
         interestRepaymentPeriod = 31 days;
     }
@@ -193,6 +201,13 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         require(address(newPoolFactory) != address(0), "TrueCreditAgency: PoolFactory cannot be set to zero address");
         poolFactory = newPoolFactory;
         emit PoolFactoryChanged(newPoolFactory);
+    }
+
+    /// @dev Set loanFactory to `newLoanFactory` and update state
+    function setLoanFactory(ILoanFactory2 newLoanFactory) external onlyOwner {
+        require(address(newLoanFactory) != address(0), "TrueCreditAgency: LoanFactory cannot be set to zero address");
+        loanFactory = newLoanFactory;
+        emit LoanFactoryChanged(newLoanFactory);
     }
 
     /// @dev set interestRepaymentPeriod to `newPeriod`
@@ -446,6 +461,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         address borrower,
         DefaultReason reason
     ) private {
+        uint256 principal = borrowed[pool][borrower];
         (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, borrower);
         _rebucket(pool, borrower, oldScore, newScore, 0);
 
@@ -453,9 +469,12 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         borrowerTotalPaidInterest[pool][borrower] = borrowerTotalPaidInterest[pool][borrower].add(_interest);
         poolTotalPaidInterest[pool] = poolTotalPaidInterest[pool].add(_interest);
 
-        borrowingMutex.unlock(borrower);
-        // TODO lock borrower to a new DebtToken. This placeholder currently locks borrower to an inaccessible locker address.
-        borrowingMutex.lock(borrower, address(1));
+        loanFactory.createDebtToken(pool, borrower, principal.add(_interest));
+
+        if (totalBorrowed(borrower) == 0) {
+            borrowingMutex.unlock(borrower);
+        }
+
         emit EnteredDefault(borrower, reason);
     }
 

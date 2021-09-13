@@ -2,6 +2,7 @@ import { deployMockContract } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
 import {
   BorrowingMutex__factory,
+  LoanFactory2,
   PoolFactory,
   TestTrueFiPool,
   TrueFiPool2,
@@ -12,7 +13,7 @@ import {
 import { TimeAveragedBaseRateOracleJson } from 'build'
 import { AddressZero } from '@ethersproject/constants'
 
-export const setupCreditAgency = async (owner: Wallet, poolFactory: PoolFactory, pool: TrueFiPool2 | TestTrueFiPool) => {
+export const setupCreditAgency = async (owner: Wallet, poolFactory: PoolFactory, loanFactory: LoanFactory2, pool: TrueFiPool2 | TestTrueFiPool) => {
   const borrowingMutex = await new BorrowingMutex__factory(owner).deploy()
   const creditAgency = await new TrueCreditAgency__factory(owner).deploy()
   const rateAdjuster = await new TrueRateAdjuster__factory(owner).deploy()
@@ -20,7 +21,7 @@ export const setupCreditAgency = async (owner: Wallet, poolFactory: PoolFactory,
   const mockBaseRateOracle = await deployMockContract(owner, TimeAveragedBaseRateOracleJson.abi)
   await mockBaseRateOracle.mock.getWeeklyAPY.returns(300)
 
-  await creditAgency.initialize(creditOracle.address, rateAdjuster.address, borrowingMutex.address, poolFactory.address)
+  await creditAgency.initialize(creditOracle.address, rateAdjuster.address, borrowingMutex.address, poolFactory.address, loanFactory.address)
   await rateAdjuster.initialize(AddressZero)
   await creditOracle.initialize()
 
