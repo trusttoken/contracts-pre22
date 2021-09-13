@@ -471,9 +471,10 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
         loanFactory.createDebtToken(pool, borrower, principal.add(_interest));
 
-        borrowingMutex.unlock(borrower);
-        // TODO lock borrower to a new DebtToken. This placeholder currently locks borrower to an inaccessible locker address.
-        borrowingMutex.lock(borrower, address(1));
+        if (totalBorrowed(borrower) == 0) {
+            borrowingMutex.unlock(borrower);
+        }
+
         emit EnteredDefault(borrower, reason);
     }
 
