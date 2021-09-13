@@ -1,6 +1,6 @@
-import { BigNumber, BigNumberish, Wallet } from 'ethers'
+import { BigNumber, BigNumberish, ContractTransaction, Wallet } from 'ethers'
 import {
-  BorrowingMutex,
+  BorrowingMutex, DebtToken__factory,
   LoanFactory2,
   MockBorrowingMutex__factory,
   MockTrueCurrency,
@@ -1064,14 +1064,24 @@ describe('TrueCreditAgency', () => {
         await creditAgency.allowBorrower(borrower.address, false)
       })
 
+      async function extractDebtTokenAddress (pendingTx: Promise<ContractTransaction>) {
+        const tx = await pendingTx
+        const receipt = await tx.wait()
+        const iface = loanFactory.interface
+        return DebtToken__factory.connect(
+          receipt.events
+            .filter(({ address }) => address === loanFactory.address)
+            .map((e) => iface.parseLog(e))
+            .find(({ eventFragment }) => eventFragment.name === 'DebtTokenCreated')
+            .args.contractAddress,
+          owner)
+      }
+
       it('creates DebtToken with expected params', async () => {
-        // TODO capture debtToken address from tx events
-        const tx = await creditAgency.enterDefault(tusdPool.address, borrower.address)
-        expect(tx).to.emit(loanFactory, 'DebtTokenCreated')
-        // const debtToken = ???
-        // expect(await debtToken.pool()).to.eq(tusdPool.address)
-        // expect(await debtToken.borrower()).to.eq(borrower.address)
-        // expect(await debtToken.debt()).to.eq(1000) // TODO calculate principal + interest
+        const debtToken = await extractDebtTokenAddress(creditAgency.enterDefault(tusdPool.address, borrower.address))
+        expect(await debtToken.pool()).to.eq(tusdPool.address)
+        expect(await debtToken.borrower()).to.eq(borrower.address)
+        expect(await debtToken.debt()).to.eq(1000)
       })
 
       it('creates multiple DebtTokens for different pools', async () => {
