@@ -11,6 +11,7 @@ import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {OneInchExchange} from "./libraries/OneInchExchange.sol";
 
 import {ILoanToken2} from "./interface/ILoanToken2.sol";
+import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
 import {IDebtToken} from "../truefi2/interface/ILoanToken2.sol";
 import {IStakingPool} from "../truefi/interface/IStakingPool.sol";
 import {IFixedTermLoanAgency} from "./interface/IFixedTermLoanAgency.sol";
@@ -63,7 +64,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
 
     IStakingPool public stakingPool;
 
-    IPoolFactory public factory;
+    IPoolFactory public poolFactory;
 
     I1Inch3 public _1inch;
 
@@ -88,6 +89,8 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
 
     // mutex ensuring there's only one running loan or credit line for borrower
     IBorrowingMutex public borrowingMutex;
+
+    ILoanFactory2 public loanFactory;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -157,32 +160,34 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
      * @dev Can be only called by a pool
      */
     modifier onlySupportedPool() {
-        require(factory.isSupportedPool(ITrueFiPool2(msg.sender)), "FixedTermLoanAgency: Pool not supported by the factory");
+        require(poolFactory.isSupportedPool(ITrueFiPool2(msg.sender)), "FixedTermLoanAgency: Pool not supported by the factory");
         _;
     }
 
     /**
      * @dev Initialize the contract with parameters
      * @param _stakingPool stkTRU address
-     * @param _factory PoolFactory address
+     * @param _poolFactory PoolFactory address
      * @param __1inch 1Inch exchange address (0x11111112542d85b3ef69ae05771c2dccff4faa26 for mainnet)
      */
     function initialize(
         IStakingPool _stakingPool,
-        IPoolFactory _factory,
+        IPoolFactory _poolFactory,
         I1Inch3 __1inch,
         ITrueFiCreditOracle _creditOracle,
         ITrueRateAdjuster _rateAdjuster,
-        IBorrowingMutex _borrowingMutex
+        IBorrowingMutex _borrowingMutex,
+        ILoanFactory2 _loanFactory
     ) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
 
         stakingPool = _stakingPool;
-        factory = _factory;
+        poolFactory = _poolFactory;
         _1inch = __1inch;
         creditOracle = _creditOracle;
         rateAdjuster = _rateAdjuster;
         borrowingMutex = _borrowingMutex;
+        loanFactory = _loanFactory;
 
         swapFeeSlippage = 100; // 1%
         fee = 1000;
@@ -289,46 +294,40 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
     }
 
     /**
-     * @dev Fund a loan
-     * LoanToken should be created by the LoanFactory over the pool
-     * than was also created by the PoolFactory.
+     * @dev Create and fund a loan via LoanFactory for a pool supported by PoolFactory
      * Method should be called by the loan borrower
      *
      * When called, agency takes funds from the pool, gives it to the loan and holds all LoanTokens
      * Origination fee is transferred to the stake
-     *
-     * @param loanToken LoanToken to fund
      */
-    function fund(ILoanToken2 loanToken) external {
-        // TODO Replace hardcoded _maxApy value with a param
-        uint256 _maxApy = 10000;
-
-        ITrueFiPool2 pool = loanToken.pool();
-        require(factory.isSupportedPool(pool), "FixedTermLoanAgency: Pool not supported by the factory");
-        require(loanToken.token() == pool.token(), "FixedTermLoanAgency: Loan and pool token mismatch");
+    function fund(
+        ITrueFiPool2 pool,
+        uint256 amount,
+        uint256 term,
+        uint256 _maxApy
+    ) external {
+        require(poolFactory.isSupportedPool(pool), "FixedTermLoanAgency: Pool not supported by the factory");
         require(poolLoans[pool].length < maxLoans, "FixedTermLoanAgency: Loans number has reached the limit");
 
-        address borrower = loanToken.borrower();
-        require(msg.sender == borrower, "FixedTermLoanAgency: Sender is not borrower");
+        address borrower = msg.sender;
         require(borrowingMutex.isUnlocked(borrower), "FixedTermLoanAgency: There is an ongoing loan or credit line");
-        borrowingMutex.lock(borrower, address(loanToken));
         require(
             creditOracle.status(borrower) == ITrueFiCreditOracle.Status.Eligible,
             "FixedTermLoanAgency: Sender is not eligible for loan"
         );
 
-        uint256 term = loanToken.term();
+        require(amount > 0, "LoanFactory: Loans of amount 0, will not be approved");
+        require(amount <= borrowLimit(pool, borrower), "FixedTermLoanAgency: Loan amount cannot exceed borrow limit");
+
         require(term > 0, "LoanFactory: Loans cannot have instantaneous term of repay");
         require(isTermBelowMax(term), "FixedTermLoanAgency: Loan's term is too long");
         require(isCredibleForTerm(term), "FixedTermLoanAgency: Credit score is too low for loan's term");
 
-        uint256 amount = loanToken.amount();
-        require(amount > 0, "LoanFactory: Loans of amount 0, will not be approved");
-        require(amount <= borrowLimit(pool, loanToken.borrower()), "FixedTermLoanAgency: Loan amount cannot exceed borrow limit");
-
         uint256 apy = rate(pool, borrower, amount, term);
         require(apy <= _maxApy, "LoanFactory: Calculated apy is higher than max apy");
 
+        ILoanToken2 loanToken = loanFactory.createFTLALoanToken(pool, borrower, amount, term, apy);
+        borrowingMutex.lock(borrower, address(loanToken));
         poolLoans[pool].push(loanToken);
         pool.borrow(amount);
         pool.token().safeApprove(address(loanToken), amount);
@@ -393,7 +392,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
         uint256 resultPrecision = uint256(10)**decimals;
 
         // loop through loans and sum amount borrowed accounting for precision
-        ITrueFiPool2[] memory pools = factory.getSupportedPools();
+        ITrueFiPool2[] memory pools = poolFactory.getSupportedPools();
         for (uint8 i = 0; i < pools.length; i++) {
             ITrueFiPool2 pool = pools[i];
             uint256 poolPrecision = uint256(10)**ITrueFiPool2WithDecimals(address(pool)).decimals();
