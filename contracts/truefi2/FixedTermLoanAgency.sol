@@ -307,7 +307,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
         address borrower,
         uint256 amount,
         uint256 term
-    ) internal view returns (uint256) {
+    ) public view returns (uint256) {
         uint8 borrowerScore = creditOracle.score(borrower);
         uint256 fixedTermLoanAdjustment = rateAdjuster.fixedTermLoanAdjustment(term);
         return rateAdjuster.rate(pool, borrowerScore, amount).add(fixedTermLoanAdjustment);
@@ -336,15 +336,15 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
             "FixedTermLoanAgency: Sender is not eligible for loan"
         );
 
-        require(amount > 0, "LoanFactory: Loans of amount 0, will not be approved");
+        require(amount > 0, "FixedTermLoanAgency: Loans of amount 0, will not be approved");
         require(amount <= borrowLimit(pool, borrower), "FixedTermLoanAgency: Loan amount cannot exceed borrow limit");
 
-        require(term > 0, "LoanFactory: Loans cannot have instantaneous term of repay");
+        require(term > 0, "FixedTermLoanAgency: Loans cannot have instantaneous term of repay");
         require(isTermBelowMax(term), "FixedTermLoanAgency: Loan's term is too long");
         require(isCredibleForTerm(term), "FixedTermLoanAgency: Credit score is too low for loan's term");
 
         uint256 apy = rate(pool, borrower, amount, term);
-        require(apy <= _maxApy, "LoanFactory: Calculated apy is higher than max apy");
+        require(apy <= _maxApy, "FixedTermLoanAgency: Calculated apy is higher than max apy");
 
         ILoanToken2 loanToken = loanFactory.createFTLALoanToken(pool, borrower, amount, term, apy);
         borrowingMutex.lock(borrower, address(loanToken));

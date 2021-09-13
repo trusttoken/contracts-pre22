@@ -28,14 +28,14 @@ import {
   TrueFiPool2,
   TrueFiPool2__factory,
   TrueRateAdjuster,
-  TimeAveragedBaseRateOracle,
+  TimeAveragedBaseRateOracle, DebtToken__factory, LoanToken2__factory,
 } from 'contracts'
 
 import { BorrowingMutexJson, LoanToken2Json, Mock1InchV3Json } from 'build'
 
 import { deployMockContract, solidity } from 'ethereum-waffle'
 import { AddressZero } from '@ethersproject/constants'
-import { BigNumber, BigNumberish, utils, Wallet } from 'ethers'
+import { BigNumber, BigNumberish, Contract, ContractTransaction, utils, Wallet } from 'ethers'
 
 use(solidity)
 
@@ -118,6 +118,7 @@ describe('FixedTermLoanAgency', () => {
 
     await ftlAgency.setFeePool(feePool.address)
     await ftlAgency.allowBorrower(borrower.address)
+    await ftlAgency.allowBorrower(borrower2.address)
 
     await token1.mint(owner.address, parseEth(1e7))
     await token2.mint(owner.address, parseEth(1e7))
@@ -345,32 +346,50 @@ describe('FixedTermLoanAgency', () => {
   })
 
   describe('Funding', () => {
+    const fund = async (connectedBorrower: Wallet, pool: Contract, amount: number | BigNumber, term: number) =>
+      ftlAgency.connect(connectedBorrower).fund(pool.address, amount, term, await ftlAgency.rate(pool.address, connectedBorrower.address, amount, term))
+
+    async function extractLoanTokenAddress (pendingTx: Promise<ContractTransaction>) {
+      const tx = await pendingTx
+      const receipt = await tx.wait()
+      const iface = loanFactory.interface
+      return LoanToken2__factory.connect(receipt.events
+        .filter(({ address }) => address === loanFactory.address)
+        .map((e) => iface.parseLog(e))
+        .find(({ eventFragment }) => eventFragment.name === 'LoanTokenCreated')
+        .args.contractAddress, owner)
+    }
+
     describe('reverts if', () => {
       it('borrower is not allowed', async () => {
         await ftlAgency.blockBorrower(borrower.address)
-        await expect(ftlAgency.connect(borrower).fund(pool1.address, 100000, YEAR, 100)).to.be.revertedWith('FixedTermLoanAgency: Sender is not allowed to borrow')
+        await expect(fund(borrower, pool1, 100000, YEAR)).to.be.revertedWith('FixedTermLoanAgency: Sender is not allowed to borrow')
       })
 
       it('loan was created for unknown pool', async () => {
-        await expect(ftlAgency.connect(borrower).fund(counterfeitPool.address, 100000, YEAR, 100)).to.be.revertedWith('FixedTermLoanAgency: Pool not supported by the factory')
+        await expect(ftlAgency.connect(borrower).fund(counterfeitPool.address, 100000, YEAR, 1000)).to.be.revertedWith('FixedTermLoanAgency: Pool not supported by the factory')
       })
 
       it('loan was created for unsupported pool', async () => {
         await poolFactory.unsupportPool(pool1.address)
-        await expect(ftlAgency.connect(borrower).fund(pool1.address, 100000, YEAR, 100)).to.be.revertedWith('FixedTermLoanAgency: Pool not supported by the factory')
+        await expect(fund(borrower, pool1, 100000, YEAR)).to.be.revertedWith('FixedTermLoanAgency: Pool not supported by the factory')
+      })
+
+      it('apy is higher than maxApy', async () => {
+        await expect(ftlAgency.connect(borrower).fund(pool1.address, 100000, YEAR, 100)).to.be.revertedWith('FixedTermLoanAgency: Calculated apy is higher than max apy')
       })
 
       it('there are too many loans for given pool', async () => {
         await ftlAgency.setLoansLimit(1)
-        await ftlAgency.connect(borrower2).fund(pool1.address, 100_000, DAY, 100)
-        await expect(ftlAgency.connect(borrower).fund(pool1.address, 100000, YEAR, 100)).to.be.revertedWith('FixedTermLoanAgency: Loans number has reached the limit')
+        await fund(borrower2, pool1, 100_000, DAY)
+        await expect(fund(borrower, pool1, 100000, YEAR)).to.be.revertedWith('FixedTermLoanAgency: Loans number has reached the limit')
       })
 
       it('loan term exceeds max term', async () => {
         await ftlAgency.setLongTermLoanThreshold(DAY * 365 - 1)
         await ftlAgency.setMaxLoanTerm(DAY * 365 - 1)
 
-        await expect(ftlAgency.connect(borrower).fund(pool1.address, 100000, YEAR, 100))
+        await expect(fund(borrower, pool1, 100000, YEAR))
           .to.be.revertedWith('FixedTermLoanAgency: Loan\'s term is too long')
       })
 
@@ -378,29 +397,29 @@ describe('FixedTermLoanAgency', () => {
         await creditOracle.setScore(borrower.address, 199)
         await ftlAgency.setLongTermLoanThreshold(DAY)
 
-        await expect(ftlAgency.connect(borrower).fund(pool1.address, 100000, YEAR, 100))
+        await expect(fund(borrower, pool1, 100000, YEAR))
           .to.be.revertedWith('FixedTermLoanAgency: Credit score is too low for loan\'s term')
       })
 
       it('amount to fund exceeds borrow limit', async () => {
         const amountToFund = parseEth(1e7).mul(15).div(100).add(1) // 15% of pool value + 1
-        await expect(ftlAgency.connect(borrower).fund(pool1.address, amountToFund, YEAR, 100))
+        await expect(fund(borrower, pool1, amountToFund, YEAR))
           .to.be.revertedWith('FixedTermLoanAgency: Loan amount cannot exceed borrow limit')
       })
 
       it('taking new loans is locked by mutex', async () => {
         await borrowingMutex.allowLocker(owner.address, true)
         await borrowingMutex.lock(borrower.address, owner.address)
-        await expect(ftlAgency.connect(borrower).fund(pool1.address, 100000, YEAR, 100))
+        await expect(fund(borrower, pool1, 100000, YEAR))
           .to.be.revertedWith('FixedTermLoanAgency: There is an ongoing loan or credit line')
       })
 
       it('borrower is not eligible', async () => {
         await creditOracle.setIneligible(borrower.address)
-        await expect(ftlAgency.connect(borrower).fund(pool1.address, 100000, YEAR, 100))
+        await expect(fund(borrower, pool1, 100000, YEAR))
           .to.be.revertedWith('FixedTermLoanAgency: Sender is not eligible for loan')
         await creditOracle.setOnHold(borrower.address)
-        await expect(ftlAgency.connect(borrower).fund(pool1.address, 100000, YEAR, 100))
+        await expect(fund(borrower, pool1, 100000, YEAR))
           .to.be.revertedWith('FixedTermLoanAgency: Sender is not eligible for loan')
       })
     })
@@ -409,37 +428,39 @@ describe('FixedTermLoanAgency', () => {
       it('borrower is allowed to have a long term loan', async () => {
         await creditOracle.setScore(borrower.address, 200)
         await ftlAgency.setLongTermLoanThreshold(DAY)
-        await expect(ftlAgency.connect(borrower).fund(pool1.address, 100000, YEAR, 100))
+        await expect(fund(borrower, pool1, 100000, YEAR))
           .not.to.be.reverted
       })
 
       it('borrows tokens from pool', async () => {
         const poolValueBefore = await pool1.liquidValue()
         const borrowedAmount = 100_000
-        await ftlAgency.connect(borrower).fund(pool1.address, borrowedAmount, YEAR, 100)
+        await fund(borrower, pool1, borrowedAmount, YEAR)
         expect(poolValueBefore.sub(await pool1.liquidValue())).to.eq(borrowedAmount)
       })
 
       it('borrows receivedAmount from pool and transfers to the loan', async () => {
-        await expect(ftlAgency.connect(borrower).fund(pool1.address, 100000, YEAR, 100))
+        const tx = fund(borrower, pool1, 100000, YEAR)
+        const newLoan = await extractLoanTokenAddress(tx)
+        await expect(tx)
           .to.emit(token1, 'Transfer')
           .withArgs(pool1.address, ftlAgency.address, 100_000)
           .and.to.emit(token1, 'Transfer')
-          .withArgs(ftlAgency.address, loan1.address, 100_000)
-        // TODO get loan address from the above line and then properly test the line below
-        expect(await loan1.balance()).to.equal(100_000)
+          .withArgs(ftlAgency.address, newLoan.address, 100_000)
+        expect(await newLoan.balance()).to.equal(100_000)
       })
 
       it('locks borrowing mutex', async () => {
-        await ftlAgency.connect(borrower).fund(pool1.address, 100000, YEAR, 100)
-        expect(await borrowingMutex.locker(borrower.address)).to.equal(loan1.address)
+        const loan = await extractLoanTokenAddress(fund(borrower, pool1, 100000, YEAR))
+        expect(await borrowingMutex.locker(borrower.address)).to.equal(loan.address)
       })
 
       it('emits event', async () => {
-        // TODO get loan address and then fix this test.
-        await expect(ftlAgency.connect(borrower).fund(pool1.address, 100000, YEAR, 100))
+        const tx = fund(borrower, pool1, 100000, YEAR)
+        const newLoan = await extractLoanTokenAddress(tx)
+        await expect(tx)
           .to.emit(ftlAgency, 'Funded')
-          .withArgs(pool1.address, loan1.address, 100000)
+          .withArgs(pool1.address, newLoan.address, 100000)
       })
     })
   })
@@ -451,8 +472,8 @@ describe('FixedTermLoanAgency', () => {
       await mockMutex.mock.isUnlocked.returns(true)
       await mockMutex.mock.lock.returns()
 
-      await ftlAgency.connect(borrower).fund(pool1.address, 100000, YEAR, 100)
-      await ftlAgency.connect(borrower).fund(pool1.address, 100000, DAY, 100)
+      await ftlAgency.connect(borrower).fund(pool1.address, 100000, YEAR, 1000)
+      await ftlAgency.connect(borrower).fund(pool1.address, 100000, DAY, 1000)
       await ftlAgency.connect(borrower).fund(pool2.address, 500000, YEAR, 1000)
     })
 
@@ -463,8 +484,8 @@ describe('FixedTermLoanAgency', () => {
 
     it('value should increase with time', async () => {
       await timeTravel(DAY / 2)
-      expect(await ftlAgency.value(pool1.address)).to.equal(200002)
-      expect(await ftlAgency.value(pool2.address)).to.equal(500068)
+      expect(await ftlAgency.value(pool1.address)).to.equal(200016)
+      expect(await ftlAgency.value(pool2.address)).to.equal(500054)
     })
 
     it('value stops increasing after term passes', async () => {
@@ -485,7 +506,7 @@ describe('FixedTermLoanAgency', () => {
     }
 
     beforeEach(async () => {
-      await ftlAgency.connect(borrower).fund(pool1.address, 100000, YEAR, 100)
+      await ftlAgency.connect(borrower).fund(pool1.address, 100000, YEAR, 1000)
       await ftlAgency.setFee(0)
     })
 
@@ -662,7 +683,7 @@ describe('FixedTermLoanAgency', () => {
 
   describe('transferAllLoanTokens', () => {
     beforeEach(async () => {
-      await ftlAgency.connect(borrower).fund(pool1.address, 100000, YEAR, 100)
+      await ftlAgency.connect(borrower).fund(pool1.address, 100000, YEAR, 1000)
       await ftlAgency.setFee(0)
     })
 
