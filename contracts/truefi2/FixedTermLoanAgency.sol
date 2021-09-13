@@ -499,23 +499,13 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
                 _loans[index] = _loans[_loans.length - 1];
                 _loans.pop();
 
-                _transferLoan(loan, recipient, 1, 1);
+                loan.safeTransfer(recipient, loan.balanceOf(address(this)));
                 return;
             }
         }
         // If we reach this, it means loanToken was not present in _loans array
         // This prevents invalid loans from being reclaimed
         revert("FixedTermLoanAgency: This loan has not been funded by the agency");
-    }
-
-    // @dev Transfer (numerator/denominator)*balance of loan to the recipient
-    function _transferLoan(
-        ILoanToken2 loan,
-        address recipient,
-        uint256 numerator,
-        uint256 denominator
-    ) internal {
-        loan.safeTransfer(recipient, numerator.mul(loan.balanceOf(address(this))).div(denominator));
     }
 
     function isCredibleForTerm(uint256 term) internal view returns (bool) {
