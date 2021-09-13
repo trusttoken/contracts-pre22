@@ -1087,32 +1087,17 @@ describe('TrueCreditAgency', () => {
       it('creates multiple DebtTokens for different pools', async () => {
         const tx = await creditAgency.enterDefault(tusdPool.address, borrower.address)
         expect(tx).to.emit(loanFactory, 'DebtTokenCreated')
-        // TODO allow multiple defaults with the mutex
-        // tx = await creditAgency.enterDefault(usdcPool.address, borrower.address)
-        // expect(tx).to.emit(loanFactory, 'DebtTokenCreated')
+        const tx2 = await creditAgency.enterDefault(usdcPool.address, borrower.address)
+        expect(tx2).to.emit(loanFactory, 'DebtTokenCreated')
       })
 
-      it('locks borrowing mutex to newly created DebtToken', async () => {
+      it('unlocks borrowing mutex after all loans were defaulted', async () => {
         await creditAgency.enterDefault(tusdPool.address, borrower.address)
-        // TODO return token address from DebtToken so we can pass it to mutex
         expect(await borrowingMutex.locker(borrower.address))
-          .to.equal('0x0000000000000000000000000000000000000001')
-      })
-
-      it('prevents borrower from withdrawing from same pool', async () => {
-        await creditAgency.enterDefault(tusdPool.address, borrower.address)
-        await creditAgency.allowBorrower(borrower.address, true)
-
-        await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000))
-          .to.be.revertedWith('TrueCreditAgency: Borrower cannot open two simultaneous debt positions')
-      })
-
-      it('prevents borrower from withdrawing from other pools', async () => {
-        await creditAgency.enterDefault(tusdPool.address, borrower.address)
-        await creditAgency.allowBorrower(borrower.address, true)
-
-        await expect(creditAgency.connect(borrower).borrow(usdcPool.address, 1000))
-          .to.be.revertedWith('TrueCreditAgency: Borrower cannot open two simultaneous debt positions')
+          .to.equal(creditAgency.address)
+        await creditAgency.enterDefault(usdcPool.address, borrower.address)
+        expect(await borrowingMutex.locker(borrower.address))
+          .to.equal(AddressZero)
       })
     })
   })
