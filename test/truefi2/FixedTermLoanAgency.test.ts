@@ -490,11 +490,11 @@ describe('FixedTermLoanAgency', () => {
 
     it('value stops increasing after term passes', async () => {
       await timeTravel(YEAR)
-      expect(await ftlAgency.value(pool1.address)).to.equal(201002)
-      expect(await ftlAgency.value(pool2.address)).to.equal(550000)
+      expect(await ftlAgency.value(pool1.address)).to.equal(208013)
+      expect(await ftlAgency.value(pool2.address)).to.equal(540000)
       await timeTravel(YEAR * 10)
-      expect(await ftlAgency.value(pool1.address)).to.equal(201002)
-      expect(await ftlAgency.value(pool2.address)).to.equal(550000)
+      expect(await ftlAgency.value(pool1.address)).to.equal(208013)
+      expect(await ftlAgency.value(pool2.address)).to.equal(540000)
     })
   })
 
