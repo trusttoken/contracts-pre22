@@ -1,7 +1,6 @@
 import { expect, use } from 'chai'
 import {
   beforeEachWithFixture,
-  createLoan,
   DAY,
   parseEth,
   parseUSDC,
@@ -46,7 +45,6 @@ describe('FixedTermLoanAgency', () => {
   let borrower2: Wallet
 
   let loanFactory: LoanFactory2
-  let loan1: LoanToken2
   let pool1: TrueFiPool2
   let pool2: TrueFiPool2
   let feePool: TrueFiPool2
@@ -126,8 +124,6 @@ describe('FixedTermLoanAgency', () => {
     await token2.approve(pool2.address, parseEth(1e7))
     await pool1.join(parseEth(1e7))
     await pool2.join(parseEth(1e7))
-
-    loan1 = await createLoan(loanFactory, borrower, pool1, 100000, YEAR, 100)
 
     await creditOracle.setCreditUpdatePeriod(YEAR)
     await creditOracle.setScore(borrower.address, 255)
