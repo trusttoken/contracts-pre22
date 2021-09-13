@@ -28,6 +28,8 @@ import {
   TrueFiCreditOracle__factory,
   TrueFiPool2,
   TrueFiPool2__factory,
+  TrueRateAdjuster,
+  TimeAveragedBaseRateOracle,
 } from 'contracts'
 
 import { BorrowingMutexJson, LoanToken2Json, Mock1InchV3Json } from 'build'
@@ -63,6 +65,8 @@ describe('FixedTermLoanAgency', () => {
   let usdc: MockUsdc
   let oneInch: Mock1InchV3
   let borrowingMutex: BorrowingMutex
+  let rateAdjuster: TrueRateAdjuster
+  let baseRateOracle: TimeAveragedBaseRateOracle
 
   const YEAR = DAY * 365
 
@@ -85,6 +89,8 @@ describe('FixedTermLoanAgency', () => {
       ftlAgency,
       creditOracle,
       borrowingMutex,
+      rateAdjuster,
+      standardBaseRateOracle: baseRateOracle,
     } = await setupTruefi2(owner, _provider, { ftlAgency: ftlAgency, oneInch: oneInch }))
 
     token1 = await deployContract(owner, MockErc20Token__factory)
@@ -107,6 +113,8 @@ describe('FixedTermLoanAgency', () => {
 
     await pool1.setOracle(poolOracle.address)
     await pool2.setOracle(poolOracle.address)
+    await rateAdjuster.setBaseRateOracle(pool1.address, baseRateOracle.address)
+    await rateAdjuster.setBaseRateOracle(pool2.address, baseRateOracle.address)
 
     await ftlAgency.setFeePool(feePool.address)
 
