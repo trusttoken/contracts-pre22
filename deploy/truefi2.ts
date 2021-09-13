@@ -4,6 +4,7 @@ import {
   ChainlinkTruTusdOracle,
   ChainlinkTruUsdcOracle,
   ChainlinkTruUsdtOracle,
+  FixedTermLoanAgency,
   ImplementationReference,
   LinearTrueDistributor,
   Liquidator2,
@@ -74,6 +75,7 @@ deploy({}, (_, config) => {
 
   // New contract impls
   const trueLender2_impl = contract(TrueLender2)
+  const ftlAgency_impl = contract(FixedTermLoanAgency)
   const poolFactory_impl = contract(PoolFactory)
   const liquidator2_impl = contract(Liquidator2)
   const loanFactory2_impl = contract(LoanFactory2)
@@ -87,6 +89,7 @@ deploy({}, (_, config) => {
 
   // New contract proxies
   const trueLender2 = proxy(trueLender2_impl, () => {})
+  const ftlAgency = proxy(ftlAgency_impl, () => {})
   const poolFactory = proxy(poolFactory_impl, () => {})
   const liquidator2 = proxy(liquidator2_impl, () => {})
   const loanFactory2 = proxy(loanFactory2_impl, () => {})
@@ -110,13 +113,16 @@ deploy({}, (_, config) => {
     safu.initialize(loanFactory2, liquidator2, oneInch)
   })
   runIf(poolFactory.isInitialized().not(), () => {
-    poolFactory.initialize(implementationReference, trueLender2, safu)
+    poolFactory.initialize(implementationReference, trueLender2, ftlAgency, safu)
   })
   runIf(trueLender2.isInitialized().not(), () => {
     trueLender2.initialize(stkTruToken, poolFactory, oneInch, trueFiCreditOracle, AddressZero, borrowingMutex)
   })
+  runIf(ftlAgency.isInitialized().not(), () => {
+    ftlAgency.initialize(stkTruToken, poolFactory, oneInch, trueFiCreditOracle, AddressZero, borrowingMutex)
+  })
   runIf(loanFactory2.isInitialized().not(), () => {
-    loanFactory2.initialize(poolFactory, trueLender2, liquidator2, AddressZero, trueFiCreditOracle, borrowingMutex, AddressZero)
+    loanFactory2.initialize(poolFactory, trueLender2, ftlAgency, liquidator2, AddressZero, trueFiCreditOracle, borrowingMutex, AddressZero)
   })
   runIf(liquidator2.isInitialized().not(), () => {
     liquidator2.initialize(stkTruToken, trustToken, loanFactory2, poolFactory, AddressZero)
@@ -128,6 +134,9 @@ deploy({}, (_, config) => {
   const usdc_TrueFiPool2 = poolFactory.pool(usdc)
   runIf(trueLender2.feePool().equals(AddressZero), () => {
     trueLender2.setFeePool(usdc_TrueFiPool2)
+  })
+  runIf(ftlAgency.feePool().equals(AddressZero), () => {
+    ftlAgency.setFeePool(usdc_TrueFiPool2)
   })
   runIf(usdc_TrueFiPool2_LinearTrueDistributor.isInitialized().not(), () => {
     usdc_TrueFiPool2_LinearTrueDistributor.initialize(deployParams[NETWORK].DISTRIBUTION_START, deployParams[NETWORK].DISTRIBUTION_DURATION, deployParams[NETWORK].STAKE_DISTRIBUTION_AMOUNT, trustToken)
@@ -157,6 +166,7 @@ deploy({}, (_, config) => {
   })
   if (!isMainnet) {
     trueLender2.setFee(deployParams['testnet'].LOAN_INTEREST_FEE)
+    ftlAgency.setFee(deployParams['testnet'].LOAN_INTEREST_FEE)
   }
   runIf(poolFactory.isPool(trueFiPool).not(), () => {
     poolFactory.addLegacyPool(trueFiPool)

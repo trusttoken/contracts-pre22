@@ -6,6 +6,8 @@ import { beforeEachWithFixture, DAY, MAX_APY, parseEth, setupTruefi2, createDebt
 import {
   BorrowingMutex,
   BorrowingMutex__factory,
+  FixedTermLoanAgency,
+  FixedTermLoanAgency__factory,
   LoanFactory2,
   TrueFiPool2,
   TrueFiPool2__factory,
@@ -164,7 +166,7 @@ describe('LoanFactory2', () => {
       const mockPoolFactory = await deployMockContract(owner, PoolFactoryJson.abi)
       await factory.initialize(
         mockPoolFactory.address,
-        AddressZero, AddressZero, AddressZero, AddressZero, AddressZero, AddressZero,
+        AddressZero, AddressZero, AddressZero, AddressZero, AddressZero, AddressZero, AddressZero,
       )
       await mockPoolFactory.mock.isSupportedPool.withArgs(AddressZero).returns(true)
       await expect(factory.connect(borrower).createLoanToken(AddressZero, parseEth(123), 15 * DAY, MAX_APY))
@@ -247,7 +249,7 @@ describe('LoanFactory2', () => {
       it('there is no token implementation', async () => {
         const factory = await new LoanFactory2__factory(owner).deploy()
         await factory.initialize(
-          AddressZero, AddressZero, AddressZero, AddressZero, AddressZero, AddressZero,
+          AddressZero, AddressZero, AddressZero, AddressZero, AddressZero, AddressZero, AddressZero,
           tca.address,
         )
         await expect(factory.connect(tca).createDebtToken(pool.address, borrower.address, parseEth(1)))
@@ -509,6 +511,36 @@ describe('LoanFactory2', () => {
       await expect(loanFactory.setDebtTokenImplementation(implementation.address))
         .to.emit(loanFactory, 'DebtTokenImplementationChanged')
         .withArgs(implementation.address)
+    })
+  })
+
+  describe('setFixedTermLoanAgency', () => {
+    let ftlAgency: FixedTermLoanAgency
+    beforeEach(async () => {
+      ftlAgency = await new FixedTermLoanAgency__factory(owner).deploy()
+    })
+
+    it('only admin can call', async () => {
+      await expect(loanFactory.connect(owner).setFixedTermLoanAgency(ftlAgency.address))
+        .not.to.be.reverted
+      await expect(loanFactory.connect(borrower).setFixedTermLoanAgency(ftlAgency.address))
+        .to.be.revertedWith('LoanFactory: Caller is not the admin')
+    })
+
+    it('cannot be set to address(0)', async () => {
+      await expect(loanFactory.setFixedTermLoanAgency(AddressZero))
+        .to.be.revertedWith('LoanFactory: Cannot set fixed term loan agency to address(0)')
+    })
+
+    it('changes fixed term loan agency', async () => {
+      await loanFactory.setFixedTermLoanAgency(ftlAgency.address)
+      expect(await loanFactory.ftlAgency()).to.eq(ftlAgency.address)
+    })
+
+    it('emits event', async () => {
+      await expect(loanFactory.setFixedTermLoanAgency(ftlAgency.address))
+        .to.emit(loanFactory, 'FixedTermLoanAgencyChanged')
+        .withArgs(ftlAgency.address)
     })
   })
 })

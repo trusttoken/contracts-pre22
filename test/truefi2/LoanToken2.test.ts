@@ -62,7 +62,7 @@ describe('LoanToken2', () => {
     const poolFactory = await deployContract(lender, PoolFactory__factory)
     const poolImplementation = await deployContract(lender, TrueFiPool2__factory)
     const implementationReference = await deployContract(lender, ImplementationReference__factory, [poolImplementation.address])
-    await poolFactory.initialize(implementationReference.address, AddressZero, AddressZero)
+    await poolFactory.initialize(implementationReference.address, AddressZero, AddressZero, AddressZero)
     await poolFactory.allowToken(token.address, true)
     await poolFactory.createPool(token.address)
     poolAddress = await poolFactory.pool(token.address)
@@ -76,6 +76,7 @@ describe('LoanToken2', () => {
       borrowingMutex.address,
       borrower.address,
       lender.address,
+      AddressZero,
       lender.address,
       lender.address, // easier testing purposes
       parseEth(1000),
@@ -679,7 +680,7 @@ describe('LoanToken2', () => {
     it('non-whitelisted address cannot transfer', async () => {
       await fund()
       await loanToken.transfer(other.address, 10)
-      await expect(loanToken.connect(other).transfer(lender.address, 2)).to.be.revertedWith('LoanToken2: This can be performed only by lender or accounts allowed to transfer')
+      await expect(loanToken.connect(other).transfer(lender.address, 2)).to.be.revertedWith('LoanToken2: This can be performed only by lender, ftlAgency, or accounts allowed to transfer')
     })
 
     it('whitelisted address can transfer', async () => {
@@ -693,7 +694,7 @@ describe('LoanToken2', () => {
   describe('Debt calculation', () => {
     const getDebt = async (amount: number, termInMonths: number, apy: number) => {
       const contract = await new LoanToken2__factory(borrower).deploy()
-      await contract.initialize(poolAddress, borrowingMutex.address, borrower.address, lender.address, lender.address, lender.address, parseEth(amount.toString()), termInMonths * averageMonthInSeconds, apy)
+      await contract.initialize(poolAddress, borrowingMutex.address, borrower.address, lender.address, AddressZero, lender.address, lender.address, parseEth(amount.toString()), termInMonths * averageMonthInSeconds, apy)
       return Number.parseInt(formatEther(await contract.debt()))
     }
 

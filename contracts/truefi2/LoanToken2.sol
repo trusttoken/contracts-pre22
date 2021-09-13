@@ -6,6 +6,7 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 import {ERC20} from "../common/UpgradeableERC20.sol";
+import {IFixedTermLoanAgency} from "./interface/IFixedTermLoanAgency.sol";
 import {ILoanToken2} from "./interface/ILoanToken2.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
@@ -65,6 +66,8 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     ITrueFiPool2 public override pool;
 
     IBorrowingMutex public borrowingMutex;
+
+    IFixedTermLoanAgency public ftlAgency;
 
     /**
      * @dev Emitted when the loan is funded
@@ -136,6 +139,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @param _pool Pool to lend from
      * @param _borrower Borrower address
      * @param _lender Lender address
+     * @param _ftlAgency FixedTermLoanAgency address
      * @param _liquidator Liquidator address
      * @param _amount Borrow amount of loaned tokens
      * @param _term Loan length
@@ -146,6 +150,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         IBorrowingMutex _mutex,
         address _borrower,
         address _lender,
+        IFixedTermLoanAgency _ftlAgency,
         address _admin,
         address _liquidator,
         uint256 _amount,
@@ -165,6 +170,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         term = _term;
         apy = _apy;
         lender = _lender;
+        ftlAgency = _ftlAgency;
         debt = interest(amount);
     }
 
@@ -245,8 +251,8 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      */
     modifier onlyWhoCanTransfer(address sender) {
         require(
-            transferable || sender == lender || canTransfer[sender],
-            "LoanToken2: This can be performed only by lender or accounts allowed to transfer"
+            transferable || sender == lender || sender == address(ftlAgency) || canTransfer[sender],
+            "LoanToken2: This can be performed only by lender, ftlAgency, or accounts allowed to transfer"
         );
         _;
     }
@@ -254,8 +260,11 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     /**
      * @dev Only lender can perform certain actions
      */
-    modifier onlyLender() {
-        require(msg.sender == lender, "LoanToken2: This can be performed only by lender");
+    modifier onlyLenderOrFTLAgency() {
+        require(
+            msg.sender == lender || msg.sender == address(ftlAgency),
+            "LoanToken2: This can be performed only by lender or ftlAgency"
+        );
         _;
     }
 
@@ -302,7 +311,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @dev Fund a loan
      * Set status, start time, lender
      */
-    function fund() external override onlyAwaiting onlyLender {
+    function fund() external override onlyAwaiting onlyLenderOrFTLAgency {
         status = Status.Funded;
         start = block.timestamp;
         _mint(msg.sender, debt);
@@ -316,7 +325,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @param account address to allow transfers for
      * @param _status true allows transfers, false disables transfers
      */
-    function allowTransfer(address account, bool _status) external override onlyLender {
+    function allowTransfer(address account, bool _status) external override onlyLenderOrFTLAgency {
         canTransfer[account] = _status;
         emit TransferAllowanceChanged(account, _status);
     }

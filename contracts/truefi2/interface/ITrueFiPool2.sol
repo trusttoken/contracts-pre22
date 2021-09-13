@@ -3,6 +3,7 @@ pragma solidity 0.6.10;
 
 import {ERC20, IERC20} from "../../common/UpgradeableERC20.sol";
 import {ITrueLender2} from "../interface/ITrueLender2.sol";
+import {IFixedTermLoanAgency} from "../interface/IFixedTermLoanAgency.sol";
 import {IDebtToken} from "../interface/ILoanToken2.sol";
 import {ITrueFiPoolOracle} from "./ITrueFiPoolOracle.sol";
 import {I1Inch3} from "./I1Inch3.sol";
@@ -12,6 +13,7 @@ interface ITrueFiPool2 is IERC20 {
     function initialize(
         ERC20 _token,
         ITrueLender2 _lender,
+        IFixedTermLoanAgency _ftlAgency,
         ISAFU safu,
         address __owner
     ) external;
@@ -19,6 +21,7 @@ interface ITrueFiPool2 is IERC20 {
     function singleBorrowerInitialize(
         ERC20 _token,
         ITrueLender2 _lender,
+        IFixedTermLoanAgency _ftlAgency,
         ISAFU safu,
         address __owner,
         string memory borrowerName,
