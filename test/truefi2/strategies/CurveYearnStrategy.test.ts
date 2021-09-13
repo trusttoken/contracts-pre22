@@ -5,6 +5,7 @@ import {
   MockCrvPriceOracle__factory,
   MockCurvePool,
   MockCurvePool__factory,
+  MockCurve__factory,
   MockErc20Token,
   MockErc20Token__factory,
   TestCurveStrategy,
@@ -131,6 +132,12 @@ describe('CurveYearnStrategy', () => {
         .to.emit(strategy, 'Deposited')
         .withArgs(amount, amount.div(2))
     })
+
+    it('calls calc_token_amount with correct arguments', async () => {
+      await strategy.connect(pool).deposit(amount)
+      const curve = new MockCurve__factory(owner).attach(await curvePool.curve())
+      expect('calc_token_amount').to.be.calledOnContractWith(curve, [[0, 0, 0, amount], true])
+    })
   })
 
   describe('withdraw', () => {
@@ -183,6 +190,12 @@ describe('CurveYearnStrategy', () => {
       await expect(strategy.connect(pool).withdraw(amount))
         .to.emit(strategy, 'Withdrawn')
         .withArgs(amount, amount.div(2))
+    })
+
+    it('calls calc_token_amount with correct arguments', async () => {
+      await strategy.connect(pool).withdraw(amount)
+      const curve = new MockCurve__factory(owner).attach(await curvePool.curve())
+      expect('calc_token_amount').to.be.calledOnContractWith(curve, [[0, 0, 0, amount], false])
     })
   })
 
