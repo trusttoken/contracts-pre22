@@ -978,7 +978,6 @@ describe('TrueCreditAgency', () => {
           .to.be.revertedWith('TrueCreditAgency: The pool is not supported for borrowing')
       })
 
-      it('has no debt', async () => {
       it('pool is not supported', async () => {
         await poolFactory.unsupportPool(tusdPool.address)
         await expect(creditAgency.enterDefault(tusdPool.address, borrower.address))
