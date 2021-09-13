@@ -30,7 +30,7 @@ commands:
 jobs:
   setup:
     docker:
-      - image: circleci/python:3-node
+      - image: circleci/python:3.8-node
     steps:
       - checkout
       - setup_remote_docker
@@ -42,7 +42,7 @@ jobs:
             - .
   build:
     docker:
-      - image: circleci/python:3-node
+      - image: circleci/python:3.8-node
     steps:
       - attach_workspace:
           at: .
@@ -54,7 +54,7 @@ jobs:
             - .
   slither:
     docker:
-      - image: circleci/python:3-node
+      - image: circleci/python:3.8-node
     steps:
       - attach_workspace:
           at: .
