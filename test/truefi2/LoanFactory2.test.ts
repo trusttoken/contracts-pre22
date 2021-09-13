@@ -27,7 +27,7 @@ import {
   DebtToken,
   DebtToken__factory,
 } from 'contracts'
-import { PoolFactoryJson } from 'build'
+import { PoolFactoryJson, TrueFiCreditOracleJson, TrueRateAdjusterJson } from 'build'
 import { deployMockContract, solidity } from 'ethereum-waffle'
 import { AddressZero } from '@ethersproject/constants'
 
@@ -37,6 +37,7 @@ describe('LoanFactory2', () => {
   let owner: Wallet
   let borrower: Wallet
   let depositor: Wallet
+  let ftla: Wallet
   let tca: Wallet
   let lender: TrueLender2
   let liquidator: Liquidator2
@@ -59,12 +60,20 @@ describe('LoanFactory2', () => {
     return LoanToken2__factory.connect(contractAddress, owner)
   }
 
+  const createFTLALoanToken = async (pool: TrueFiPool2, borrower: Wallet, amount: BigNumberish, term: BigNumberish, apy: BigNumberish) => {
+    await loanFactory.setFixedTermLoanAgency(ftla.address)
+    const tx = await loanFactory.connect(ftla).createFTLALoanToken(pool.address, borrower.address, amount, term, apy)
+    const creationEvent = (await tx.wait()).events[0]
+    ;({ contractAddress } = creationEvent.args)
+    return LoanToken2__factory.connect(contractAddress, owner)
+  }
+
   const createDebtToken = async (pool: TrueFiPool2, borrower: Wallet, debt: BigNumberish) => {
     return _createDebtToken(loanFactory, tca, owner, pool, borrower, debt)
   }
 
   beforeEachWithFixture(async (wallets, _provider) => {
-    [owner, borrower, depositor, tca] = wallets
+    [owner, borrower, depositor, ftla, tca] = wallets
 
     ; ({
       standardPool: pool,
@@ -164,11 +173,16 @@ describe('LoanFactory2', () => {
     it('prevents token creation when there is no token implementation', async () => {
       const factory = await new LoanFactory2__factory(owner).deploy()
       const mockPoolFactory = await deployMockContract(owner, PoolFactoryJson.abi)
+      const mockCreditOracle = await deployMockContract(owner, TrueFiCreditOracleJson.abi)
+      const mockRateAdjuster = await deployMockContract(owner, TrueRateAdjusterJson.abi)
       await factory.initialize(
         mockPoolFactory.address,
-        AddressZero, AddressZero, AddressZero, AddressZero, AddressZero, AddressZero, AddressZero,
+        AddressZero, AddressZero, AddressZero, mockRateAdjuster.address, mockCreditOracle.address, AddressZero, AddressZero,
       )
       await mockPoolFactory.mock.isSupportedPool.withArgs(AddressZero).returns(true)
+      await mockCreditOracle.mock.score.withArgs(borrower.address).returns(0)
+      await mockRateAdjuster.mock.fixedTermLoanAdjustment.withArgs(15 * DAY).returns(0)
+      await mockRateAdjuster.mock.rate.withArgs(AddressZero, 0, parseEth(123)).returns(0)
       await expect(factory.connect(borrower).createLoanToken(AddressZero, parseEth(123), 15 * DAY, MAX_APY))
         .to.be.revertedWith('LoanFactory: Loan token implementation should be set')
     })
@@ -229,6 +243,60 @@ describe('LoanFactory2', () => {
           expect(await loan.apy())
             .to.equal(rateWithoutFixedTermLoanAdjustment.add((fixedTermLoanAdjustmentCoefficient.mul(6))))
         })
+      })
+    })
+  })
+
+  describe('createFTLALoanToken', () => {
+    let loanToken: LoanToken2
+
+    beforeEach(async () => {
+      loanToken = await createFTLALoanToken(pool, borrower, parseEth(1), 15 * DAY, 1000)
+    })
+
+    describe('reverts if', () => {
+      it('caller is not FTLA', async () => {
+        await expect(loanFactory.connect(borrower).createFTLALoanToken(pool.address, borrower.address, parseEth(1), 15 * DAY, 1000))
+          .to.be.revertedWith('LoanFactory: Caller is not the fixed term loan agency')
+      })
+
+      it('there is no token implementation', async () => {
+        const factory = await new LoanFactory2__factory(owner).deploy()
+        await factory.initialize(
+          AddressZero, AddressZero, ftla.address, AddressZero, AddressZero, AddressZero, AddressZero,
+          AddressZero,
+        )
+        await expect(factory.connect(ftla).createFTLALoanToken(pool.address, borrower.address, parseEth(1), 15 * DAY, 1000))
+          .to.be.revertedWith('LoanFactory: Loan token implementation should be set')
+      })
+
+      it('loan token intitialize signature differs from expected', async () => {
+        const debtToken = await new DebtToken__factory(owner).deploy()
+        await loanFactory.connect(owner).setLoanTokenImplementation(debtToken.address)
+        await expect(loanFactory.connect(ftla).createFTLALoanToken(pool.address, borrower.address, parseEth(1), 15 * DAY, 1000))
+          .to.be.revertedWith('Transaction reverted: function selector was not recognized and there\'s no fallback function')
+      })
+    })
+
+    describe('deploys loan token contract', () => {
+      it('has storage variables set properly', async () => {
+        enum Status {Awaiting, Funded, Withdrawn, Settled, Defaulted, Liquidated}
+
+        expect(await loanToken.pool()).to.eq(pool.address)
+        expect(await loanToken.borrowingMutex()).to.eq(borrowingMutex.address)
+        expect(await loanToken.borrower()).to.eq(borrower.address)
+        expect(await loanToken.lender()).to.eq(lender.address)
+        expect(await loanToken.ftlAgency()).to.eq(ftla.address)
+        expect(await loanToken.admin()).to.eq(owner.address)
+        expect(await loanToken.liquidator()).to.eq(liquidator.address)
+        expect(await loanToken.amount()).to.eq(parseEth(1))
+        expect(await loanToken.term()).to.eq(15 * DAY)
+        expect(await loanToken.apy()).to.eq(1000)
+        expect(await loanToken.status()).to.eq(Status.Awaiting)
+      })
+
+      it('marks deployed contract as loan token', async () => {
+        expect(await loanFactory.isLoanToken(loanToken.address)).to.be.true
       })
     })
   })
