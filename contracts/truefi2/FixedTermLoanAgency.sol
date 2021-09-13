@@ -549,16 +549,6 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
         revert("FixedTermLoanAgency: This loan has not been funded by the agency");
     }
 
-    // @dev Transfer (numerator/denominator)*balance of loan to the recipient
-    function _transferLoan(
-        ILoanToken2 loan,
-        address recipient,
-        uint256 numerator,
-        uint256 denominator
-    ) internal {
-        loan.safeTransfer(recipient, numerator.mul(loan.balanceOf(address(this))).div(denominator));
-    }
-
     function isCredibleForTerm(uint256 term) internal view returns (bool) {
         return term <= longTermLoanThreshold || creditOracle.score(msg.sender) >= longTermLoanScoreThreshold;
     }
