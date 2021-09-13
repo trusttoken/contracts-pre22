@@ -117,6 +117,7 @@ describe('FixedTermLoanAgency', () => {
     await rateAdjuster.setBaseRateOracle(pool2.address, baseRateOracle.address)
 
     await ftlAgency.setFeePool(feePool.address)
+    await ftlAgency.allowBorrower(borrower.address)
 
     await token1.mint(owner.address, parseEth(1e7))
     await token2.mint(owner.address, parseEth(1e7))
@@ -314,10 +315,42 @@ describe('FixedTermLoanAgency', () => {
           .withArgs(2)
       })
     })
+
+    describe('Borrower allowance', () => {
+      it('only owner can allow borrowers', async () => {
+        await expect(ftlAgency.connect(borrower).allowBorrower(borrower.address))
+          .to.be.revertedWith('Ownable: caller is not the owner')
+        await expect(ftlAgency.connect(borrower).blockBorrower(borrower.address))
+          .to.be.revertedWith('Ownable: caller is not the owner')
+      })
+
+      it('allowance is properly set', async () => {
+        await ftlAgency.blockBorrower(borrower.address)
+        expect(await ftlAgency.isBorrowerAllowed(borrower.address)).to.equal(false)
+        await ftlAgency.allowBorrower(borrower.address)
+        expect(await ftlAgency.isBorrowerAllowed(borrower.address)).to.equal(true)
+        await ftlAgency.blockBorrower(borrower.address)
+        expect(await ftlAgency.isBorrowerAllowed(borrower.address)).to.equal(false)
+      })
+
+      it('emits a proper event', async () => {
+        await expect(ftlAgency.allowBorrower(borrower.address))
+          .to.emit(ftlAgency, 'BorrowerAllowed')
+          .withArgs(borrower.address)
+        await expect(ftlAgency.blockBorrower(borrower.address))
+          .to.emit(ftlAgency, 'BorrowerBlocked')
+          .withArgs(borrower.address)
+      })
+    })
   })
 
   describe('Funding', () => {
     describe('reverts if', () => {
+      it('borrower is not allowed', async () => {
+        await ftlAgency.blockBorrower(borrower.address)
+        await expect(ftlAgency.connect(borrower).fund(pool1.address, 100000, YEAR, 100)).to.be.revertedWith('FixedTermLoanAgency: Sender is not allowed to borrow')
+      })
+
       it('loan was created for unknown pool', async () => {
         await expect(ftlAgency.connect(borrower).fund(counterfeitPool.address, 100000, YEAR, 100)).to.be.revertedWith('FixedTermLoanAgency: Pool not supported by the factory')
       })

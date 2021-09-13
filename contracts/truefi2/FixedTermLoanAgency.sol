@@ -92,6 +92,8 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
 
     ILoanFactory2 public loanFactory;
 
+    mapping(address => bool) public isBorrowerAllowed;
+
     // ======= STORAGE DECLARATION END ============
 
     /**
@@ -156,11 +158,19 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
      */
     event BorrowingMutexChanged(IBorrowingMutex borrowingMutex);
 
+    event BorrowerAllowed(address indexed who);
+    event BorrowerBlocked(address indexed who);
+
     /**
      * @dev Can be only called by a pool
      */
     modifier onlySupportedPool() {
         require(poolFactory.isSupportedPool(ITrueFiPool2(msg.sender)), "FixedTermLoanAgency: Pool not supported by the factory");
+        _;
+    }
+
+    modifier onlyAllowedBorrowers() {
+        require(isBorrowerAllowed[msg.sender], "FixedTermLoanAgency: Sender is not allowed to borrow");
         _;
     }
 
@@ -273,6 +283,16 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
         emit FeeChanged(newFee);
     }
 
+    function allowBorrower(address who) external onlyOwner {
+        isBorrowerAllowed[who] = true;
+        emit BorrowerAllowed(who);
+    }
+
+    function blockBorrower(address who) external onlyOwner {
+        isBorrowerAllowed[who] = false;
+        emit BorrowerBlocked(who);
+    }
+
     /**
      * @dev Get currently funded loans for a pool
      * @param pool pool address
@@ -305,7 +325,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
         uint256 amount,
         uint256 term,
         uint256 _maxApy
-    ) external {
+    ) external onlyAllowedBorrowers {
         require(poolFactory.isSupportedPool(pool), "FixedTermLoanAgency: Pool not supported by the factory");
         require(poolLoans[pool].length < maxLoans, "FixedTermLoanAgency: Loans number has reached the limit");
 
