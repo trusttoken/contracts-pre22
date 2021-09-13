@@ -5,6 +5,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import {ERC20, IERC20, SafeMath} from "../common/UpgradeableERC20.sol";
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 
+import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {ITrueRateAdjuster} from "./interface/ITrueRateAdjuster.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
@@ -31,6 +32,8 @@ interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
 contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     using SafeERC20 for ERC20;
     using SafeMath for uint256;
+
+    enum DefaultReason {NotAllowed, Ineligible, BelowMinScore, InterestOverdue, TimeLimitExceeded}
 
     /// @dev credit scores are uint8
     uint8 constant MAX_CREDIT_SCORE = 255;
@@ -124,6 +127,10 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
     IPoolFactory public poolFactory;
 
+    ILoanFactory2 public loanFactory;
+
+    mapping(ITrueFiPool2 => mapping(address => uint256)) public overBorrowLimitTime;
+
     // ======= STORAGE DECLARATION END ============
 
     /// @dev emit `pool` and `oracle` when base rate oracle changed
@@ -134,6 +141,9 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
     /// @dev emit `newPoolFactory` when pool factory changed
     event PoolFactoryChanged(IPoolFactory newPoolFactory);
+
+    /// @dev emit `newLoanFactory` when loan factory changed
+    event LoanFactoryChanged(ILoanFactory2 newLoanFactory);
 
     /// @dev emit `who` and `isAllowed` when borrower allowance changes
     event BorrowerAllowed(address indexed who, bool isAllowed);
@@ -153,19 +163,24 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     /// @dev emit `newValue` when minimum credit score is changed
     event MinCreditScoreChanged(uint256 newValue);
 
+    event EnteredDefault(address borrower, DefaultReason reason);
+
     /// @dev initialize
     function initialize(
         ITrueFiCreditOracle _creditOracle,
         ITrueRateAdjuster _rateAdjuster,
         IBorrowingMutex _borrowingMutex,
-        IPoolFactory _poolFactory
+        IPoolFactory _poolFactory,
+        ILoanFactory2 _loanFactory
     ) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
         creditOracle = _creditOracle;
         rateAdjuster = _rateAdjuster;
-        interestRepaymentPeriod = 31 days;
         borrowingMutex = _borrowingMutex;
         poolFactory = _poolFactory;
+        loanFactory = _loanFactory;
+        minCreditScore = 191;
+        interestRepaymentPeriod = 31 days;
     }
 
     /// @dev modifier for only whitelisted borrowers
@@ -186,6 +201,13 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         require(address(newPoolFactory) != address(0), "TrueCreditAgency: PoolFactory cannot be set to zero address");
         poolFactory = newPoolFactory;
         emit PoolFactoryChanged(newPoolFactory);
+    }
+
+    /// @dev Set loanFactory to `newLoanFactory` and update state
+    function setLoanFactory(ILoanFactory2 newLoanFactory) external onlyOwner {
+        require(address(newLoanFactory) != address(0), "TrueCreditAgency: LoanFactory cannot be set to zero address");
+        loanFactory = newLoanFactory;
+        emit LoanFactoryChanged(newLoanFactory);
     }
 
     /// @dev set interestRepaymentPeriod to `newPeriod`
@@ -283,6 +305,16 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
             );
     }
 
+    function isOverLimit(ITrueFiPool2 pool, address borrower) public view returns (bool) {
+        return
+            rateAdjuster.isOverLimit(
+                pool,
+                creditOracle.score(borrower),
+                creditOracle.maxBorrowerLimit(borrower),
+                totalBorrowed(borrower)
+            );
+    }
+
     /**
      * @dev Get current rate for `borrower` in `pool` from rate adjuster
      * @return current rate for `borrower` in `pool`
@@ -319,21 +351,19 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
             pool.oracle().tokenToUsd(amount) <= borrowLimit(pool, msg.sender),
             "TrueCreditAgency: Borrow amount cannot exceed borrow limit"
         );
-
         if (totalBorrowed(msg.sender) == 0) {
             borrowingMutex.lock(msg.sender, address(this));
         }
-
         require(
             borrowingMutex.locker(msg.sender) == address(this),
             "TrueCreditAgency: Borrower cannot open two simultaneous debt positions"
         );
-        uint256 currentDebt = borrowed[pool][msg.sender];
 
+        uint256 currentDebt = borrowed[pool][msg.sender];
         if (currentDebt == 0) {
             nextInterestRepayTime[pool][msg.sender] = block.timestamp.add(interestRepaymentPeriod);
         }
-
+        overBorrowLimitTime[pool][msg.sender] = 0;
         _rebucket(pool, msg.sender, oldScore, newScore, currentDebt.add(amount));
 
         pool.borrow(amount);
@@ -371,16 +401,16 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
             _payPrincipalWithoutTransfer(pool, amount.sub(accruedInterest));
         }
 
-        if (totalBorrowed(msg.sender) == 0) {
-            borrowingMutex.unlock(msg.sender);
-        }
-
         if (borrowed[pool][msg.sender] == 0) {
             nextInterestRepayTime[pool][msg.sender] = 0;
         }
+        pokeBorrowLimitTimer(pool, msg.sender);
 
         // transfer token from sender wallets
         _repay(pool, amount);
+        if (totalBorrowed(msg.sender) == 0) {
+            borrowingMutex.unlock(msg.sender);
+        }
     }
 
     /**
@@ -394,22 +424,68 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     /**
      * @dev Enter default for a certain borrower's line of credit
      */
-    function enterDefault(ITrueFiPool2 pool, address borrower) external {
-        require(borrowed[pool][borrower] > 0, "TrueCreditAgency: Borrower does not have any debt in pool");
+    function enterDefault(ITrueFiPool2 pool, address borrower) external onlyOwner {
+        require(poolFactory.isSupportedPool(pool), "TrueCreditAgency: The pool is not supported for borrowing");
         require(
-            block.timestamp >= nextInterestRepayTime[pool][borrower].add(creditOracle.gracePeriod()),
-            "TrueCreditAgency: Borrower can still repay the debt"
+            borrowingMutex.locker(borrower) == address(this),
+            "TrueCreditAgency: Cannot default a borrower with no open debt position"
         );
-        require(
-            creditOracle.status(borrower) == ITrueFiCreditOracle.Status.Ineligible,
-            "TrueCreditAgency: Borrower status has to be ineligible to default"
-        );
+        if (!isBorrowerAllowed[borrower]) {
+            _enterDefault(pool, borrower, DefaultReason.NotAllowed);
+            return;
+        }
+        if (creditOracle.status(borrower) == ITrueFiCreditOracle.Status.Ineligible) {
+            _enterDefault(pool, borrower, DefaultReason.Ineligible);
+            return;
+        }
+        if (creditOracle.score(borrower) < minCreditScore) {
+            _enterDefault(pool, borrower, DefaultReason.BelowMinScore);
+            return;
+        }
+        uint256 defaultTime = block.timestamp.sub(creditOracle.gracePeriod());
+        uint256 nextInterestRepay = nextInterestRepayTime[pool][borrower];
+        if (nextInterestRepay != 0 && defaultTime >= nextInterestRepay) {
+            _enterDefault(pool, borrower, DefaultReason.InterestOverdue);
+            return;
+        }
+        uint256 _overBorrowLimitTime = overBorrowLimitTime[pool][borrower];
+        if (_overBorrowLimitTime != 0 && defaultTime >= _overBorrowLimitTime) {
+            _enterDefault(pool, borrower, DefaultReason.TimeLimitExceeded);
+            return;
+        }
+        revert("TrueCreditAgency: Borrower has no reason to enter default at this time");
+    }
 
+    function _enterDefault(
+        ITrueFiPool2 pool,
+        address borrower,
+        DefaultReason reason
+    ) private {
+        uint256 principal = borrowed[pool][borrower];
         (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, borrower);
         _rebucket(pool, borrower, oldScore, newScore, 0);
 
-        borrowerTotalPaidInterest[pool][borrower] = borrowerTotalPaidInterest[pool][borrower].add(interest(pool, borrower));
-        poolTotalPaidInterest[pool] = poolTotalPaidInterest[pool].add(interest(pool, borrower));
+        uint256 _interest = interest(pool, borrower);
+        borrowerTotalPaidInterest[pool][borrower] = borrowerTotalPaidInterest[pool][borrower].add(_interest);
+        poolTotalPaidInterest[pool] = poolTotalPaidInterest[pool].add(_interest);
+
+        loanFactory.createDebtToken(pool, borrower, principal.add(_interest));
+
+        if (totalBorrowed(borrower) == 0) {
+            borrowingMutex.unlock(borrower);
+        }
+
+        emit EnteredDefault(borrower, reason);
+    }
+
+    function pokeBorrowLimitTimer(ITrueFiPool2 pool, address borrower) public {
+        if (!isOverLimit(pool, borrower)) {
+            overBorrowLimitTime[pool][borrower] = 0;
+            return;
+        }
+        if (overBorrowLimitTime[pool][borrower] == 0) {
+            overBorrowLimitTime[pool][borrower] = block.timestamp;
+        }
     }
 
     /**

@@ -1,6 +1,6 @@
-import { BigNumber, BigNumberish, Wallet } from 'ethers'
+import { BigNumber, BigNumberish, ContractTransaction, Wallet } from 'ethers'
 import {
-  BorrowingMutex,
+  BorrowingMutex, DebtToken__factory,
   LoanFactory2,
   MockBorrowingMutex__factory,
   MockTrueCurrency,
@@ -86,10 +86,14 @@ describe('TrueCreditAgency', () => {
     } = await setupTruefi2(owner, provider))
 
     await tusdPool.setCreditAgency(creditAgency.address)
-
     await tusd.mint(owner.address, parseEth(1e7))
     await tusd.approve(tusdPool.address, parseEth(1e7))
     await tusdPool.join(parseEth(1e7))
+
+    await usdcPool.setCreditAgency(creditAgency.address)
+    await usdc.mint(owner.address, parseUSDC(2e7))
+    await usdc.approve(usdcPool.address, parseUSDC(2e7))
+    await usdcPool.join(parseUSDC(2e7))
 
     await creditOracle.setScore(borrower.address, 255)
     await creditOracle.setMaxBorrowerLimit(owner.address, parseEth(100_000_000))
@@ -111,6 +115,10 @@ describe('TrueCreditAgency', () => {
 
     it('sets poolFactory', async () => {
       expect(await creditAgency.poolFactory()).to.equal(poolFactory.address)
+    })
+
+    it('sets loanFactory', async () => {
+      expect(await creditAgency.loanFactory()).to.equal(loanFactory.address)
     })
   })
 
@@ -149,6 +157,29 @@ describe('TrueCreditAgency', () => {
       await expect(creditAgency.setPoolFactory(poolFactory.address))
         .to.emit(creditAgency, 'PoolFactoryChanged')
         .withArgs(poolFactory.address)
+    })
+  })
+
+  describe('setLoanFactory', () => {
+    it('only owner can set loan factory', async () => {
+      await expect(creditAgency.connect(borrower).setLoanFactory(loanFactory.address))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('cannot be set to zero address', async () => {
+      await expect(creditAgency.setLoanFactory(AddressZero))
+        .to.be.revertedWith('TrueCreditAgency: LoanFactory cannot be set to zero address')
+    })
+
+    it('loan factory is properly set', async () => {
+      await creditAgency.setLoanFactory(loanFactory.address)
+      expect(await creditAgency.loanFactory()).to.equal(loanFactory.address)
+    })
+
+    it('emits a proper event', async () => {
+      await expect(creditAgency.setLoanFactory(loanFactory.address))
+        .to.emit(creditAgency, 'LoanFactoryChanged')
+        .withArgs(loanFactory.address)
     })
   })
 
@@ -208,14 +239,6 @@ describe('TrueCreditAgency', () => {
   })
 
   describe('totalBorrowed & poolValue', () => {
-    beforeEach(async () => {
-      await usdcPool.setCreditAgency(creditAgency.address)
-
-      await usdc.mint(owner.address, parseUSDC(2e7))
-      await usdc.approve(usdcPool.address, parseUSDC(2e7))
-      await usdcPool.join(parseUSDC(2e7))
-    })
-
     it('totalBorrowed returns total borrowed amount across all pools with 18 decimals precision', async () => {
       await creditAgency.allowBorrower(borrower.address, true)
       await creditAgency.connect(borrower).borrow(tusdPool.address, parseEth(100))
@@ -301,12 +324,6 @@ describe('TrueCreditAgency', () => {
     beforeEach(async () => {
       await creditOracle.setScore(borrower.address, 191) // adjustment = 0.8051
       await creditAgency.allowBorrower(borrower.address, true)
-
-      await usdcPool.setCreditAgency(creditAgency.address)
-
-      await usdc.mint(owner.address, parseUSDC(2e7))
-      await usdc.approve(usdcPool.address, parseUSDC(2e7))
-      await usdcPool.join(parseUSDC(2e7))
     })
 
     it('borrow amount is limited by borrower limit', async () => {
@@ -397,7 +414,7 @@ describe('TrueCreditAgency', () => {
       const faultyCreditAgency = await deployContract(TrueCreditAgency__factory)
       const faultyBorrowingMutex = await deployContract(MockBorrowingMutex__factory)
 
-      await faultyCreditAgency.initialize(creditOracle.address, rateAdjuster.address, faultyBorrowingMutex.address, poolFactory.address)
+      await faultyCreditAgency.initialize(creditOracle.address, rateAdjuster.address, faultyBorrowingMutex.address, poolFactory.address, loanFactory.address)
       await tusdPool.setCreditAgency(faultyCreditAgency.address)
       await faultyCreditAgency.allowBorrower(borrower.address, true)
 
@@ -420,6 +437,17 @@ describe('TrueCreditAgency', () => {
       const tx = await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
       const timestamp = BigNumber.from((await provider.getBlock(tx.blockNumber)).timestamp)
       expect(await creditAgency.nextInterestRepayTime(tusdPool.address, borrower.address)).to.eq(timestamp.add(MONTH))
+    })
+
+    it('zeroes out overBorrowLimitTime', async () => {
+      await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
+      await creditOracle.setMaxBorrowerLimit(borrower.address, 0)
+      const tx = await creditAgency.pokeBorrowLimitTimer(tusdPool.address, borrower.address)
+      const timestamp = BigNumber.from((await provider.getBlock(tx.blockNumber)).timestamp)
+      await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
+      expect(await creditAgency.overBorrowLimitTime(tusdPool.address, borrower.address)).to.eq(timestamp)
+      await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
+      expect(await creditAgency.overBorrowLimitTime(tusdPool.address, borrower.address)).to.eq(0)
     })
 
     it('locks mutex', async () => {
@@ -614,6 +642,24 @@ describe('TrueCreditAgency', () => {
       expect(await creditAgency.nextInterestRepayTime(tusdPool.address, borrower.address)).to.eq(prevNextInterestRepayTime)
     })
 
+    it('zeroes out overBorrowLimitTime when brought under limit', async () => {
+      await creditOracle.setMaxBorrowerLimit(borrower.address, 600)
+      const tx = await creditAgency.pokeBorrowLimitTimer(tusdPool.address, borrower.address)
+      const timestamp = BigNumber.from((await provider.getBlock(tx.blockNumber)).timestamp)
+
+      expect(await creditAgency.overBorrowLimitTime(tusdPool.address, borrower.address)).to.eq(timestamp)
+      await creditAgency.connect(borrower).repay(tusdPool.address, 400)
+      expect(await creditAgency.overBorrowLimitTime(tusdPool.address, borrower.address)).to.eq(0)
+    })
+
+    it('sets nonzero overBorrowLimitTime when above limit', async () => {
+      await creditOracle.setMaxBorrowerLimit(borrower.address, 600)
+      expect(await creditAgency.overBorrowLimitTime(tusdPool.address, borrower.address)).to.eq(0)
+      const tx = await creditAgency.connect(borrower).repay(tusdPool.address, 399)
+      const timestamp = BigNumber.from((await provider.getBlock(tx.blockNumber)).timestamp)
+      expect(await creditAgency.overBorrowLimitTime(tusdPool.address, borrower.address)).to.eq(timestamp)
+    })
+
     it('calls _rebucket', async () => {
       const bucketBefore = await creditAgency.buckets(tusdPool.address, 255)
       await creditAgency.connect(borrower).repay(tusdPool.address, 500)
@@ -771,6 +817,7 @@ describe('TrueCreditAgency', () => {
       await creditOracle.setScore(owner.address, 255)
       await creditOracle.setScore(borrower.address, 255)
       await creditAgency.setInterestRepaymentPeriod(YEAR * 10)
+      await creditAgency.setMinCreditScore(150)
     })
 
     it('interest for single borrower and stable rate', async () => {
@@ -910,33 +957,92 @@ describe('TrueCreditAgency', () => {
     beforeEach(async () => {
       await creditAgency.allowBorrower(borrower.address, true)
       await rateAdjuster.setRiskPremium(700)
+
       await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
       await tusd.connect(borrower).approve(creditAgency.address, 2000)
+
+      await creditAgency.connect(borrower).borrow(usdcPool.address, 1000)
+      await usdc.connect(borrower).approve(creditAgency.address, 2000)
     })
 
-    describe('reverts if', () => {
-      it('borrower has no debt', async () => {
+    describe('reverts if borrower', () => {
+      it('pool is not supported', async () => {
+        await poolFactory.unsupportPool(tusdPool.address)
+        await expect(creditAgency.enterDefault(tusdPool.address, borrower.address))
+          .to.be.revertedWith('TrueCreditAgency: The pool is not supported for borrowing')
+      })
+
+      it('pool is not supported', async () => {
+        await poolFactory.unsupportPool(tusdPool.address)
+        await expect(creditAgency.enterDefault(tusdPool.address, borrower.address))
+          .to.be.revertedWith('TrueCreditAgency: The pool is not supported for borrowing')
+      })
+
+      it('pool is not supported', async () => {
+        await poolFactory.unsupportPool(tusdPool.address)
+        await expect(creditAgency.enterDefault(tusdPool.address, borrower.address))
+          .to.be.revertedWith('TrueCreditAgency: The pool is not supported for borrowing')
+      })
+
+      it('has no debt', async () => {
         await creditAgency.connect(borrower).repayInFull(tusdPool.address)
+        await creditAgency.connect(borrower).repayInFull(usdcPool.address)
         await expect(creditAgency.enterDefault(tusdPool.address, borrower.address))
-          .to.be.revertedWith('TrueCreditAgency: Borrower does not have any debt in pool')
+          .to.be.revertedWith('TrueCreditAgency: Cannot default a borrower with no open debt position')
       })
 
-      it('borrower can still repay', async () => {
+      it('has no reason to default', async () => {
         await expect(creditAgency.enterDefault(tusdPool.address, borrower.address))
-          .to.be.revertedWith('TrueCreditAgency: Borrower can still repay the debt')
+          .to.be.revertedWith('TrueCreditAgency: Borrower has no reason to enter default at this time')
+      })
+    })
+
+    describe('because borrower', () => {
+      enum DefaultReason { NotAllowed, Ineligible, BelowMinScore, InterestOverdue, TimeLimitExceeded }
+
+      it('is not allowed to use LoCs', async () => {
+        await creditAgency.allowBorrower(borrower.address, false)
+        await expect(creditAgency.enterDefault(tusdPool.address, borrower.address))
+          .to.emit(creditAgency, 'EnteredDefault')
+          .withArgs(borrower.address, DefaultReason.NotAllowed)
       })
 
-      it('borrower is not ineligible', async () => {
-        await creditOracle.setEligibleForDuration(borrower.address, 2 * MONTH)
+      it('has ineligible credit', async () => {
+        await creditOracle.setIneligible(borrower.address)
+        await expect(creditAgency.enterDefault(tusdPool.address, borrower.address))
+          .to.emit(creditAgency, 'EnteredDefault')
+          .withArgs(borrower.address, DefaultReason.Ineligible)
+      })
+
+      it('is below min score', async () => {
+        await creditAgency.setMinCreditScore(191)
+        await creditOracle.setScore(borrower.address, 190)
+        await expect(creditAgency.enterDefault(tusdPool.address, borrower.address))
+          .to.emit(creditAgency, 'EnteredDefault')
+          .withArgs(borrower.address, DefaultReason.BelowMinScore)
+      })
+
+      it('has overdue interest', async () => {
+        await creditOracle.setEligibleForDuration(borrower.address, YEAR)
         await timeTravel(MONTH + DAY * 3 + 1)
         await expect(creditAgency.enterDefault(tusdPool.address, borrower.address))
-          .to.be.revertedWith('TrueCreditAgency: Borrower status has to be ineligible to default')
+          .to.emit(creditAgency, 'EnteredDefault')
+          .withArgs(borrower.address, DefaultReason.InterestOverdue)
+      })
+
+      it('has exceeded borrow time limit', async () => {
+        await creditOracle.setMaxBorrowerLimit(borrower.address, 0)
+        await creditAgency.pokeBorrowLimitTimer(tusdPool.address, borrower.address)
+        await timeTravel(DAY * 3 + 1)
+        await expect(creditAgency.enterDefault(tusdPool.address, borrower.address))
+          .to.emit(creditAgency, 'EnteredDefault')
+          .withArgs(borrower.address, DefaultReason.TimeLimitExceeded)
       })
     })
 
     describe('makes LoC repaid from TCA point of view', () => {
       beforeEach(async () => {
-        await timeTravel(MONTH + DAY * 3 + 1)
+        await creditAgency.allowBorrower(borrower.address, false)
       })
 
       it('reduces principal debt to 0', async () => {
@@ -946,10 +1052,131 @@ describe('TrueCreditAgency', () => {
       })
 
       it('reduces interest to 0', async () => {
+        timeTravel(MONTH)
         expect(await creditAgency.interest(tusdPool.address, borrower.address)).to.be.gt(0)
         await creditAgency.enterDefault(tusdPool.address, borrower.address)
         expect(await creditAgency.interest(tusdPool.address, borrower.address)).to.eq(0)
       })
+    })
+
+    describe('DebtTokens', () => {
+      beforeEach(async () => {
+        await creditAgency.allowBorrower(borrower.address, false)
+      })
+
+      async function extractDebtTokenAddress (pendingTx: Promise<ContractTransaction>) {
+        const tx = await pendingTx
+        const receipt = await tx.wait()
+        const iface = loanFactory.interface
+        return DebtToken__factory.connect(
+          receipt.events
+            .filter(({ address }) => address === loanFactory.address)
+            .map((e) => iface.parseLog(e))
+            .find(({ eventFragment }) => eventFragment.name === 'DebtTokenCreated')
+            .args.contractAddress,
+          owner)
+      }
+
+      it('creates DebtToken with expected params', async () => {
+        const debtToken = await extractDebtTokenAddress(creditAgency.enterDefault(tusdPool.address, borrower.address))
+        expect(await debtToken.pool()).to.eq(tusdPool.address)
+        expect(await debtToken.borrower()).to.eq(borrower.address)
+        expect(await debtToken.debt()).to.eq(1000)
+      })
+
+      it('creates multiple DebtTokens for different pools', async () => {
+        const tx = await creditAgency.enterDefault(tusdPool.address, borrower.address)
+        expect(tx).to.emit(loanFactory, 'DebtTokenCreated')
+        const tx2 = await creditAgency.enterDefault(usdcPool.address, borrower.address)
+        expect(tx2).to.emit(loanFactory, 'DebtTokenCreated')
+      })
+
+      it('unlocks borrowing mutex after all loans were defaulted', async () => {
+        await creditAgency.enterDefault(tusdPool.address, borrower.address)
+        expect(await borrowingMutex.locker(borrower.address))
+          .to.equal(creditAgency.address)
+        await creditAgency.enterDefault(usdcPool.address, borrower.address)
+        expect(await borrowingMutex.locker(borrower.address))
+          .to.equal(AddressZero)
+      })
+    })
+  })
+
+  describe('pokeBorrowLimitTimer', () => {
+    beforeEach(async () => {
+      await creditAgency.allowBorrower(borrower.address, true)
+      await rateAdjuster.setRiskPremium(700)
+      await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
+      await tusd.connect(borrower).approve(creditAgency.address, 2000)
+    })
+
+    it('zeroes out overBorrowLimitTime when brought under limit', async () => {
+      await creditOracle.setMaxBorrowerLimit(borrower.address, 500)
+      await creditAgency.pokeBorrowLimitTimer(tusdPool.address, borrower.address)
+
+      expect(await creditAgency.overBorrowLimitTime(tusdPool.address, borrower.address)).to.be.gt(0)
+      await creditOracle.setMaxBorrowerLimit(borrower.address, 10_000)
+      await creditAgency.pokeBorrowLimitTimer(tusdPool.address, borrower.address)
+      expect(await creditAgency.overBorrowLimitTime(tusdPool.address, borrower.address)).to.eq(0)
+    })
+
+    it('sets overBorrowLimitTime when borrower is first over limit', async () => {
+      await creditOracle.setMaxBorrowerLimit(borrower.address, 500)
+
+      expect(await creditAgency.overBorrowLimitTime(tusdPool.address, borrower.address)).to.eq(0)
+      const tx = await creditAgency.pokeBorrowLimitTimer(tusdPool.address, borrower.address)
+      const timestamp = BigNumber.from((await provider.getBlock(tx.blockNumber)).timestamp)
+      expect(await creditAgency.overBorrowLimitTime(tusdPool.address, borrower.address)).to.eq(timestamp)
+    })
+
+    it('does not update overBorrowLimitTime when borrower remains over limit', async () => {
+      await creditOracle.setMaxBorrowerLimit(borrower.address, 500)
+
+      expect(await creditAgency.overBorrowLimitTime(tusdPool.address, borrower.address)).to.eq(0)
+      const tx = await creditAgency.pokeBorrowLimitTimer(tusdPool.address, borrower.address)
+      const timestamp = BigNumber.from((await provider.getBlock(tx.blockNumber)).timestamp)
+      timeTravel(YEAR)
+      await creditAgency.pokeBorrowLimitTimer(tusdPool.address, borrower.address)
+      expect(await creditAgency.overBorrowLimitTime(tusdPool.address, borrower.address)).to.eq(timestamp)
+    })
+  })
+
+  describe('pokeBorrowLimitTimer', () => {
+    beforeEach(async () => {
+      await creditAgency.allowBorrower(borrower.address, true)
+      await rateAdjuster.setRiskPremium(700)
+      await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
+      await tusd.connect(borrower).approve(creditAgency.address, 2000)
+    })
+
+    it('zeroes out overBorrowLimitTime when brought under limit', async () => {
+      await creditOracle.setMaxBorrowerLimit(borrower.address, 500)
+      await creditAgency.pokeBorrowLimitTimer(tusdPool.address, borrower.address)
+
+      expect(await creditAgency.overBorrowLimitTime(tusdPool.address, borrower.address)).to.be.gt(0)
+      await creditOracle.setMaxBorrowerLimit(borrower.address, 10_000)
+      await creditAgency.pokeBorrowLimitTimer(tusdPool.address, borrower.address)
+      expect(await creditAgency.overBorrowLimitTime(tusdPool.address, borrower.address)).to.eq(0)
+    })
+
+    it('sets overBorrowLimitTime when borrower is first over limit', async () => {
+      await creditOracle.setMaxBorrowerLimit(borrower.address, 500)
+
+      expect(await creditAgency.overBorrowLimitTime(tusdPool.address, borrower.address)).to.eq(0)
+      const tx = await creditAgency.pokeBorrowLimitTimer(tusdPool.address, borrower.address)
+      const timestamp = BigNumber.from((await provider.getBlock(tx.blockNumber)).timestamp)
+      expect(await creditAgency.overBorrowLimitTime(tusdPool.address, borrower.address)).to.eq(timestamp)
+    })
+
+    it('does not update overBorrowLimitTime when borrower remains over limit', async () => {
+      await creditOracle.setMaxBorrowerLimit(borrower.address, 500)
+
+      expect(await creditAgency.overBorrowLimitTime(tusdPool.address, borrower.address)).to.eq(0)
+      const tx = await creditAgency.pokeBorrowLimitTimer(tusdPool.address, borrower.address)
+      const timestamp = BigNumber.from((await provider.getBlock(tx.blockNumber)).timestamp)
+      timeTravel(YEAR)
+      await creditAgency.pokeBorrowLimitTimer(tusdPool.address, borrower.address)
+      expect(await creditAgency.overBorrowLimitTime(tusdPool.address, borrower.address)).to.eq(timestamp)
     })
   })
 

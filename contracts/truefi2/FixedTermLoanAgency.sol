@@ -14,7 +14,9 @@ import {ILoanToken2} from "./interface/ILoanToken2.sol";
 import {IDebtToken} from "../truefi2/interface/ILoanToken2.sol";
 import {IStakingPool} from "../truefi/interface/IStakingPool.sol";
 import {IFixedTermLoanAgency} from "./interface/IFixedTermLoanAgency.sol";
-import {ITrueFiPool2, ITrueFiPoolOracle, I1Inch3} from "./interface/ITrueFiPool2.sol";
+import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
+import {ITrueFiPoolOracle} from "./interface/ITrueFiPoolOracle.sol";
+import {I1Inch3} from "./interface/I1Inch3.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {ITrueRatingAgency} from "../truefi/interface/ITrueRatingAgency.sol";
 import {IERC20WithDecimals} from "./interface/IERC20WithDecimals.sol";
@@ -30,7 +32,7 @@ interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
  * @title FixedTermLoanAgency
  * @dev Loans management helper
  * This contract is a bridge that helps to transfer funds from pool to the loans and back
- * FixedTermLoanAgency holds all LoanTokens and may distribute them on pool exits
+ * FixedTermLoanAgency holds all LoanTokens
  */
 contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
     using SafeMath for uint256;
@@ -63,8 +65,6 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
 
     IPoolFactory public factory;
 
-    ITrueRatingAgency public DEPRECATED__ratingAgency;
-
     I1Inch3 public _1inch;
 
     // Loan fees should be swapped for this token, deposited into the feePool
@@ -75,18 +75,6 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
     // Minimal possible fee swap slippage
     // basis precision: 10000 = 100%
     uint256 public swapFeeSlippage;
-
-    // ===== Voting parameters =====
-
-    // How many votes are needed for a loan to be approved
-    uint256 public DEPRECATED__minVotes;
-
-    // Minimum ratio of yes votes to total votes for a loan to be approved
-    // basis precision: 10000 = 100%
-    uint256 public DEPRECATED__minRatio;
-
-    // minimum prediction market voting period
-    uint256 public DEPRECATED__votingPeriod;
 
     ITrueFiCreditOracle public creditOracle;
 
@@ -515,26 +503,6 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
     }
 
     /**
-     * @dev Withdraw a basket of tokens held by the pool
-     * Function is expected to be called by the pool
-     * When exiting the pool, the pool contract calls this function
-     * to withdraw a fraction of all the loans held by the pool
-     * Loop through recipient's share of LoanTokens and calculate versus total per loan.
-     * There should never be too many loans in the pool to run out of gas
-     *
-     * @param recipient Recipient of basket
-     * @param numerator Numerator of fraction to withdraw
-     * @param denominator Denominator of fraction to withdraw
-     */
-    function distribute(
-        address recipient,
-        uint256 numerator,
-        uint256 denominator
-    ) external override onlySupportedPool {
-        _distribute(recipient, numerator, denominator, msg.sender);
-    }
-
-    /**
      * @dev Allow pool to transfer all LoanTokens to the SAFU in case of liquidation
      * @param loan LoanToken address
      * @param recipient expected to be SAFU address
@@ -551,7 +519,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
                 _loans[index] = _loans[_loans.length - 1];
                 _loans.pop();
 
-                _transferLoan(loan, recipient, 1, 1);
+                loan.safeTransfer(recipient, loan.balanceOf(address(this)));
                 return;
             }
         }
@@ -560,44 +528,11 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
         revert("FixedTermLoanAgency: This loan has not been funded by the agency");
     }
 
-    /// @dev Helper used in tests
-    function _distribute(
-        address recipient,
-        uint256 numerator,
-        uint256 denominator,
-        address pool
-    ) internal {
-        ILoanToken2[] storage _loans = poolLoans[ITrueFiPool2(pool)];
-        for (uint256 index = 0; index < _loans.length; index++) {
-            _transferLoan(_loans[index], recipient, numerator, denominator);
-        }
-    }
-
-    // @dev Transfer (numerator/denominator)*balance of loan to the recipient
-    function _transferLoan(
-        ILoanToken2 loan,
-        address recipient,
-        uint256 numerator,
-        uint256 denominator
-    ) internal {
-        loan.safeTransfer(recipient, numerator.mul(loan.balanceOf(address(this))).div(denominator));
-    }
-
     function isCredibleForTerm(uint256 term) internal view returns (bool) {
-        if (term > longTermLoanThreshold) {
-            return creditOracle.score(msg.sender) >= longTermLoanScoreThreshold;
-        }
-        return true;
+        return term <= longTermLoanThreshold || creditOracle.score(msg.sender) >= longTermLoanScoreThreshold;
     }
 
     function isTermBelowMax(uint256 term) internal view returns (bool) {
         return term <= maxLoanTerm;
-    }
-
-    function deprecate() external {
-        DEPRECATED__ratingAgency = ITrueRatingAgency(address(0));
-        DEPRECATED__minVotes = type(uint256).max;
-        DEPRECATED__minRatio = type(uint256).max;
-        DEPRECATED__votingPeriod = type(uint256).max;
     }
 }
