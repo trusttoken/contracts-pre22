@@ -346,20 +346,20 @@ describe('FixedTermLoanAgency', () => {
     })
   })
 
+  async function extractLoanTokenAddress (pendingTx: Promise<ContractTransaction>) {
+    const tx = await pendingTx
+    const receipt = await tx.wait()
+    const iface = loanFactory.interface
+    return LoanToken2__factory.connect(receipt.events
+      .filter(({ address }) => address === loanFactory.address)
+      .map((e) => iface.parseLog(e))
+      .find(({ eventFragment }) => eventFragment.name === 'LoanTokenCreated')
+      .args.contractAddress, owner)
+  }
+
   describe('Funding', () => {
     const fund = async (connectedBorrower: Wallet, pool: Contract, amount: number | BigNumber, term: number) =>
       ftlAgency.connect(connectedBorrower).fund(pool.address, amount, term, await ftlAgency.rate(pool.address, connectedBorrower.address, amount, term))
-
-    async function extractLoanTokenAddress (pendingTx: Promise<ContractTransaction>) {
-      const tx = await pendingTx
-      const receipt = await tx.wait()
-      const iface = loanFactory.interface
-      return LoanToken2__factory.connect(receipt.events
-        .filter(({ address }) => address === loanFactory.address)
-        .map((e) => iface.parseLog(e))
-        .find(({ eventFragment }) => eventFragment.name === 'LoanTokenCreated')
-        .args.contractAddress, owner)
-    }
 
     describe('reverts if', () => {
       it('borrower is not allowed', async () => {
@@ -506,13 +506,15 @@ describe('FixedTermLoanAgency', () => {
       await token.mint(loan.address, debt.sub(balance))
     }
 
+    let loan: LoanToken2
+
     beforeEach(async () => {
-      await ftlAgency.connect(borrower).fund(pool1.address, 100000, YEAR, 1000)
+      loan = await extractLoanTokenAddress(ftlAgency.connect(borrower).fund(pool1.address, 100000, YEAR, 1000))
       await ftlAgency.setFee(0)
     })
 
     it('works only for closed loans', async () => {
-      await expect(ftlAgency.reclaim(loan1.address, '0x'))
+      await expect(ftlAgency.reclaim(loan.address, '0x'))
         .to.be.revertedWith('FixedTermLoanAgency: LoanToken is not closed yet')
     })
 
@@ -525,34 +527,34 @@ describe('FixedTermLoanAgency', () => {
     })
 
     it('redeems funds from loan token', async () => {
-      await payBack(token1, loan1)
-      await loan1.settle()
-      await expect(ftlAgency.reclaim(loan1.address, '0x'))
+      await payBack(token1, loan)
+      await loan.settle()
+      await expect(ftlAgency.reclaim(loan.address, '0x'))
         .to.emit(token1, 'Transfer')
-        .withArgs(loan1.address, ftlAgency.address, 101000)
+        .withArgs(loan.address, ftlAgency.address, 108000)
     })
 
     it('repays funds from the pool', async () => {
-      await payBack(token1, loan1)
-      await loan1.settle()
-      await expect(ftlAgency.reclaim(loan1.address, '0x'))
+      await payBack(token1, loan)
+      await loan.settle()
+      await expect(ftlAgency.reclaim(loan.address, '0x'))
         .to.emit(token1, 'Transfer')
-        .withArgs(ftlAgency.address, pool1.address, 101000)
+        .withArgs(ftlAgency.address, pool1.address, 108000)
     })
 
     it('defaulted loans can only be reclaimed by owner', async () => {
       await timeTravel(YEAR * 2)
-      await loan1.enterDefault()
-      await expect(ftlAgency.connect(borrower).reclaim(loan1.address, '0x'))
+      await loan.enterDefault()
+      await expect(ftlAgency.connect(borrower).reclaim(loan.address, '0x'))
         .to.be.revertedWith('FixedTermLoanAgency: Only owner can reclaim from defaulted loan')
     })
 
     it('emits a proper event', async () => {
-      await payBack(token1, loan1)
-      await loan1.settle()
-      await expect(ftlAgency.reclaim(loan1.address, '0x'))
+      await payBack(token1, loan)
+      await loan.settle()
+      await expect(ftlAgency.reclaim(loan.address, '0x'))
         .to.emit(ftlAgency, 'Reclaimed')
-        .withArgs(pool1.address, loan1.address, 101000)
+        .withArgs(pool1.address, loan.address, 108000)
     })
 
     describe('Removes loan from array', () => {
