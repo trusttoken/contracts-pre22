@@ -28,7 +28,8 @@ import {
   TrueFiPool2,
   TrueFiPool2__factory,
   TrueRateAdjuster,
-  TimeAveragedBaseRateOracle, DebtToken__factory, LoanToken2__factory,
+  TimeAveragedBaseRateOracle,
+  LoanToken2__factory,
 } from 'contracts'
 
 import { BorrowingMutexJson, LoanToken2Json, Mock1InchV3Json } from 'build'
