@@ -166,7 +166,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         ITrueFiPool2 _pool,
         address _borrower,
         uint256 _debt
-    ) external onlyTCA {
+    ) external override onlyTCA {
         address dtImplementationAddress = address(debtTokenImplementation);
         require(dtImplementationAddress != address(0), "LoanFactory: Debt token implementation should be set");
 
