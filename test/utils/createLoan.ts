@@ -1,4 +1,5 @@
 import {
+  DebtToken__factory,
   LoanFactory2,
   LoanToken2__factory,
   TrueFiPool2,
@@ -14,4 +15,11 @@ export const createLoan = async function (factory: LoanFactory2, creator: Wallet
   const loanTx = await factory.connect(creator).createLoanToken(pool.address, amount, duration, MAX_APY)
   const loanAddress = (await loanTx.wait()).events[0].args.contractAddress
   return new LoanToken2__factory(creator).attach(loanAddress)
+}
+
+export const createDebtToken = async (loanFactory: LoanFactory2, tca: Wallet, owner: Wallet, pool: TrueFiPool2, borrower: Wallet, debt: BigNumberish) => {
+  await loanFactory.setCreditAgency(tca.address)
+  const tx = await loanFactory.connect(tca).createDebtToken(pool.address, borrower.address, debt)
+  const creationEvent = (await tx.wait()).events[1]
+  return DebtToken__factory.connect(creationEvent.args.contractAddress, owner)
 }

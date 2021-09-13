@@ -520,7 +520,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
                 _loans[index] = _loans[_loans.length - 1];
                 _loans.pop();
 
-                _transferLoan(loan, recipient, 1, 1);
+                loan.safeTransfer(recipient, loan.balanceOf(address(this)));
                 return;
             }
         }
@@ -540,10 +540,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
     }
 
     function isCredibleForTerm(uint256 term) internal view returns (bool) {
-        if (term > longTermLoanThreshold) {
-            return creditOracle.score(msg.sender) >= longTermLoanScoreThreshold;
-        }
-        return true;
+        return term <= longTermLoanThreshold || creditOracle.score(msg.sender) >= longTermLoanScoreThreshold;
     }
 
     function isTermBelowMax(uint256 term) internal view returns (bool) {

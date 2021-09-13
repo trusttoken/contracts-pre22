@@ -79,7 +79,7 @@ describe('FixedTermLoanAgency', () => {
     ftlAgency = await deployContract(owner, TestFixedTermLoanAgency__factory)
     oneInch = await new Mock1InchV3__factory(owner).deploy()
 
-    ;({
+    ; ({
       loanFactory,
       feePool,
       standardTokenOracle: poolOracle,

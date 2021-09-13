@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { beforeEachWithFixture, createLoan, DAY, parseTRU, parseUSDC, parseEth, setupTruefi2, timeTravel as _timeTravel } from 'utils'
+import { beforeEachWithFixture, createLoan, DAY, parseTRU, parseUSDC, parseEth, setupTruefi2, timeTravel as _timeTravel, createDebtToken } from 'utils'
 import { BigNumberish, utils, Wallet } from 'ethers'
 import { AddressZero } from '@ethersproject/constants'
 
@@ -19,6 +19,7 @@ import {
   TrueFiPool2,
   TrueLender2,
   TrueFiCreditOracle,
+  DebtToken,
 } from 'contracts'
 
 import {
@@ -53,7 +54,7 @@ describe('SAFU', () => {
     timeTravel = (time: number) => _timeTravel(_provider, time)
 
     oneInch = await new Mock1InchV3__factory(owner).deploy()
-    ;({
+    ; ({
       safu,
       feeToken: token,
       feePool: pool,
@@ -127,6 +128,26 @@ describe('SAFU', () => {
         await loan.enterDefault()
         await safu.liquidate(loan.address)
         await expect(await loan.balanceOf(safu.address)).to.equal(defaultAmount)
+      })
+    })
+
+    describe('Handles debt tokens', () => {
+      let debtToken: DebtToken
+
+      beforeEach(async () => {
+        await token.mint(safu.address, defaultAmount)
+        await loanFactory.setLender(owner.address)
+        await loanFactory.setCreditAgency(owner.address)
+        await pool.setCreditAgency(owner.address)
+        debtToken = await createDebtToken(loanFactory, owner, owner, pool, borrower, defaultAmount)
+        await debtToken.approve(pool.address, defaultAmount)
+        await pool.addDebt(debtToken.address, defaultAmount)
+      })
+
+      it('transfers DebtTokens to the SAFU', async () => {
+        await timeTravel(DAY * 400)
+        await safu.liquidate(debtToken.address)
+        await expect(await debtToken.balanceOf(safu.address)).to.equal(defaultAmount)
       })
     })
 
