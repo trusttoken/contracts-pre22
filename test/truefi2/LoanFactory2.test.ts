@@ -1,7 +1,7 @@
 import { expect, use } from 'chai'
 import { BigNumber, BigNumberish, Wallet } from 'ethers'
 
-import { beforeEachWithFixture, DAY, MAX_APY, parseEth, setupTruefi2 } from 'utils'
+import { beforeEachWithFixture, DAY, MAX_APY, parseEth, setupTruefi2, createDebtToken as _createDebtToken } from 'utils'
 
 import {
   BorrowingMutex,
@@ -53,22 +53,18 @@ describe('LoanFactory2', () => {
   const createLoan = async (amount: BigNumberish, term: BigNumberish) => {
     const tx = await loanFactory.connect(borrower).createLoanToken(pool.address, amount, term, MAX_APY)
     const creationEvent = (await tx.wait()).events[0]
-    ;({ contractAddress } = creationEvent.args)
+      ; ({ contractAddress } = creationEvent.args)
     return LoanToken2__factory.connect(contractAddress, owner)
   }
 
   const createDebtToken = async (pool: TrueFiPool2, borrower: Wallet, debt: BigNumberish) => {
-    await loanFactory.setCreditAgency(tca.address)
-    const tx = await loanFactory.connect(tca).createDebtToken(pool.address, borrower.address, debt)
-    const creationEvent = (await tx.wait()).events[1]
-    ;({ contractAddress } = creationEvent.args)
-    return LoanToken2__factory.connect(contractAddress, owner)
+    return _createDebtToken(loanFactory, tca, owner, pool, borrower, debt)
   }
 
   beforeEachWithFixture(async (wallets, _provider) => {
     [owner, borrower, depositor, tca] = wallets
 
-    ;({
+    ; ({
       standardPool: pool,
       standardToken: poolToken,
       loanFactory,
@@ -268,7 +264,7 @@ describe('LoanFactory2', () => {
 
     describe('deploys debt token contract', () => {
       it('has storage variables set properly', async () => {
-        enum Status {Awaiting, Funded, Withdrawn, Settled, Defaulted, Liquidated}
+        enum Status { Awaiting, Funded, Withdrawn, Settled, Defaulted, Liquidated }
 
         expect(await debtToken.pool()).to.eq(pool.address)
         expect(await debtToken.borrower()).to.eq(borrower.address)
@@ -280,6 +276,36 @@ describe('LoanFactory2', () => {
 
       it('marks deployed contract as debt token', async () => {
         expect(await loanFactory.isDebtToken(debtToken.address)).to.be.true
+      })
+    })
+  })
+
+  describe('isCreatedByFactory', () => {
+    describe('returns true for', () => {
+      it('loan token created by factory', async () => {
+        const loanToken = await createLoan(parseEth(1), DAY)
+        expect(await loanFactory.isCreatedByFactory(loanToken.address)).to.eq(true)
+      })
+
+      it('debt token created by factory', async () => {
+        const debtToken = await createDebtToken(pool, borrower, parseEth(1))
+        expect(await loanFactory.isCreatedByFactory(debtToken.address)).to.eq(true)
+      })
+    })
+
+    describe('returns false for', () => {
+      it('loan token not created by factory', async () => {
+        const loanToken = await new LoanToken2__factory(owner).deploy()
+        expect(await loanFactory.isCreatedByFactory(loanToken.address)).to.eq(false)
+      })
+
+      it('debt token not created by factory', async () => {
+        const debtToken = await new DebtToken__factory(owner).deploy()
+        expect(await loanFactory.isCreatedByFactory(debtToken.address)).to.eq(false)
+      })
+
+      it('non-loan address', async () => {
+        expect(await loanFactory.isCreatedByFactory(owner.address)).to.eq(false)
       })
     })
   })
@@ -428,6 +454,31 @@ describe('LoanFactory2', () => {
       await expect(loanFactory.setCreditAgency(creditAgency.address))
         .to.emit(loanFactory, 'CreditAgencyChanged')
         .withArgs(creditAgency.address)
+    })
+  })
+
+  describe('setLender', () => {
+    it('only admin can call', async () => {
+      await expect(loanFactory.connect(owner).setLender(lender.address))
+        .not.to.be.reverted
+      await expect(loanFactory.connect(borrower).setLender(lender.address))
+        .to.be.revertedWith('LoanFactory: Caller is not the admin')
+    })
+
+    it('cannot be set to address(0)', async () => {
+      await expect(loanFactory.setLender(AddressZero))
+        .to.be.revertedWith('LoanFactory: Cannot set lender to address(0)')
+    })
+
+    it('changes lender', async () => {
+      await loanFactory.setLender(owner.address)
+      expect(await loanFactory.lender()).to.eq(owner.address)
+    })
+
+    it('emits event', async () => {
+      await expect(loanFactory.setLender(owner.address))
+        .to.emit(loanFactory, 'LenderChanged')
+        .withArgs(owner.address)
     })
   })
 

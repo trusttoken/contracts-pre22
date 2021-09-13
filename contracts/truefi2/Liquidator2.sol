@@ -133,7 +133,7 @@ contract Liquidator2 is UpgradeableClaimable {
      */
     function liquidate(IDebtToken loan) external {
         require(msg.sender == SAFU, "Liquidator: Only SAFU contract can liquidate a loan");
-        require(loanFactory.isLoanToken(address(loan)), "Liquidator: Unknown loan");
+        require(loanFactory.isCreatedByFactory(address(loan)), "Liquidator: Unknown loan");
         require(loan.status() == IDebtToken.Status.Defaulted, "Liquidator: Loan must be defaulted");
         ITrueFiPool2 pool = ITrueFiPool2(loan.pool());
         require(poolFactory.isSupportedPool(pool), "Liquidator: Pool not supported for default protection");
