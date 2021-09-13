@@ -388,6 +388,16 @@ describe('TrueRateAdjuster', () => {
     it('borrow limit is 0 if credit limit is below the borrowed amount', async () => {
       expect(await rateAdjuster.borrowLimit(mockPool.address, 191, parseEth(100), parseEth(100))).to.equal(0)
     })
+
+    describe('isOverLimit', () => {
+      it('returns true when over limit', async () => {
+        expect(await rateAdjuster.isOverLimit(mockPool.address, 191, parseEth(100), parseEth(80.51).add(1))).to.equal(true)
+      })
+
+      it('returns false when below limit', async () => {
+        expect(await rateAdjuster.isOverLimit(mockPool.address, 191, parseEth(100), parseEth(80.51))).to.equal(false)
+      })
+    })
   })
 
   const weeklyFillOracle = async (oracle: TimeAveragedBaseRateOracle) => {

@@ -32,7 +32,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     using SafeERC20 for ERC20;
     using SafeMath for uint256;
 
-    enum DefaultReason {NotAllowed, Ineligible, BelowMinScore, InterestOverdue}
+    enum DefaultReason {NotAllowed, Ineligible, BelowMinScore, InterestOverdue, TimeLimitExceeded}
 
     /// @dev credit scores are uint8
     uint8 constant MAX_CREDIT_SCORE = 255;
@@ -125,6 +125,8 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     uint256 public minCreditScore;
 
     IPoolFactory public poolFactory;
+
+    mapping(ITrueFiPool2 => mapping(address => uint256)) public overBorrowLimitTime;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -288,6 +290,16 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
             );
     }
 
+    function isOverLimit(ITrueFiPool2 pool, address borrower) public view returns (bool) {
+        return
+            rateAdjuster.isOverLimit(
+                pool,
+                creditOracle.score(borrower),
+                creditOracle.maxBorrowerLimit(borrower),
+                totalBorrowed(borrower)
+            );
+    }
+
     /**
      * @dev Get current rate for `borrower` in `pool` from rate adjuster
      * @return current rate for `borrower` in `pool`
@@ -324,21 +336,19 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
             pool.oracle().tokenToUsd(amount) <= borrowLimit(pool, msg.sender),
             "TrueCreditAgency: Borrow amount cannot exceed borrow limit"
         );
-
         if (totalBorrowed(msg.sender) == 0) {
             borrowingMutex.lock(msg.sender, address(this));
         }
-
         require(
             borrowingMutex.locker(msg.sender) == address(this),
             "TrueCreditAgency: Borrower cannot open two simultaneous debt positions"
         );
-        uint256 currentDebt = borrowed[pool][msg.sender];
 
+        uint256 currentDebt = borrowed[pool][msg.sender];
         if (currentDebt == 0) {
             nextInterestRepayTime[pool][msg.sender] = block.timestamp.add(interestRepaymentPeriod);
         }
-
+        overBorrowLimitTime[pool][msg.sender] = 0;
         _rebucket(pool, msg.sender, oldScore, newScore, currentDebt.add(amount));
 
         pool.borrow(amount);
@@ -376,16 +386,16 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
             _payPrincipalWithoutTransfer(pool, amount.sub(accruedInterest));
         }
 
-        if (totalBorrowed(msg.sender) == 0) {
-            borrowingMutex.unlock(msg.sender);
-        }
-
         if (borrowed[pool][msg.sender] == 0) {
             nextInterestRepayTime[pool][msg.sender] = 0;
         }
+        pokeBorrowLimitTimer(pool, msg.sender);
 
         // transfer token from sender wallets
         _repay(pool, amount);
+        if (totalBorrowed(msg.sender) == 0) {
+            borrowingMutex.unlock(msg.sender);
+        }
     }
 
     /**
@@ -423,6 +433,11 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
             _enterDefault(pool, borrower, DefaultReason.InterestOverdue);
             return;
         }
+        uint256 _overBorrowLimitTime = overBorrowLimitTime[pool][borrower];
+        if (_overBorrowLimitTime != 0 && defaultTime >= _overBorrowLimitTime) {
+            _enterDefault(pool, borrower, DefaultReason.TimeLimitExceeded);
+            return;
+        }
         revert("TrueCreditAgency: Borrower has no reason to enter default at this time");
     }
 
@@ -442,6 +457,16 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         // TODO lock borrower to a new DebtToken. This placeholder currently locks borrower to an inaccessible locker address.
         borrowingMutex.lock(borrower, address(1));
         emit EnteredDefault(borrower, reason);
+    }
+
+    function pokeBorrowLimitTimer(ITrueFiPool2 pool, address borrower) public {
+        if (!isOverLimit(pool, borrower)) {
+            overBorrowLimitTime[pool][borrower] = 0;
+            return;
+        }
+        if (overBorrowLimitTime[pool][borrower] == 0) {
+            overBorrowLimitTime[pool][borrower] = block.timestamp;
+        }
     }
 
     /**
