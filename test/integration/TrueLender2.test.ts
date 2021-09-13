@@ -73,7 +73,7 @@ describe('TrueLender2', () => {
     lender = await deployContract(TrueLender2__factory)
     await lender.initialize(stkTru.address, poolFactory.address, INCH_ADDRESS, mockCreditOracle.address, mockRateAdjuster.address, borrowingMutex.address)
 
-    await poolFactory.initialize(implementationReference.address, lender.address, AddressZero)
+    await poolFactory.initialize(implementationReference.address, lender.address, AddressZero, AddressZero)
 
     await poolFactory.allowToken(USDC_ADDRESS, true)
     usdc = Erc20Mock__factory.connect(USDC_ADDRESS, owner)
@@ -97,7 +97,7 @@ describe('TrueLender2', () => {
 
     const loanTokenImplementation = await new LoanToken2__factory(owner).deploy()
     loanFactory = await new LoanFactory2__factory(owner).deploy()
-    await loanFactory.initialize(poolFactory.address, lender.address, AddressZero, mockRateAdjuster.address, mockCreditOracle.address, borrowingMutex.address, AddressZero)
+    await loanFactory.initialize(poolFactory.address, lender.address, AddressZero, AddressZero, mockRateAdjuster.address, mockCreditOracle.address, borrowingMutex.address, AddressZero)
     await loanFactory.setLoanTokenImplementation(loanTokenImplementation.address)
     await borrowingMutex.allowLocker(lender.address, true)
   })

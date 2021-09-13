@@ -7,6 +7,7 @@ import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {OwnedProxyWithReference} from "../proxy/OwnedProxyWithReference.sol";
 import {ERC20, IERC20} from "../common/UpgradeableERC20.sol";
 
+import {IFixedTermLoanAgency} from "./interface/IFixedTermLoanAgency.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {ITrueFiPool2, I1Inch3} from "./interface/ITrueFiPool2.sol";
 import {ITrueLender2} from "./interface/ITrueLender2.sol";
@@ -50,6 +51,8 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
 
     /// @dev array of pools officially supported by TrueFi
     ITrueFiPool2[] public supportedPools;
+
+    IFixedTermLoanAgency public ftlAgency;
 
     // ======= STORAGE DECLARATION END ===========
 
@@ -100,6 +103,8 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
      */
     event TrueLenderChanged(ITrueLender2 trueLender2);
 
+    event FixedTermLoanAgencyChanged(IFixedTermLoanAgency ftlAgency);
+
     /**
      * @dev Emitted when SAFU address is changed
      * @param newSafu New SAFU address
@@ -140,12 +145,14 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
     function initialize(
         ImplementationReference _poolImplementationReference,
         ITrueLender2 _trueLender2,
+        IFixedTermLoanAgency _ftlAgency,
         ISAFU _safu
     ) external initializer {
         UpgradeableClaimable.initialize(msg.sender);
 
         poolImplementationReference = _poolImplementationReference;
         trueLender2 = _trueLender2;
+        ftlAgency = _ftlAgency;
         safu = _safu;
     }
 
@@ -182,7 +189,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
         pool[token] = address(proxy);
         isPool[address(proxy)] = true;
 
-        ITrueFiPool2(address(proxy)).initialize(ERC20(token), trueLender2, safu, this.owner());
+        ITrueFiPool2(address(proxy)).initialize(ERC20(token), trueLender2, ftlAgency, safu, this.owner());
 
         emit PoolCreated(token, address(proxy));
     }
@@ -208,6 +215,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
         ITrueFiPool2(address(proxy)).singleBorrowerInitialize(
             ERC20(token),
             trueLender2,
+            ftlAgency,
             safu,
             this.owner(),
             borrowerName,
@@ -291,6 +299,12 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
         require(address(_trueLender2) != address(0), "PoolFactory: TrueLender address cannot be set to 0");
         trueLender2 = _trueLender2;
         emit TrueLenderChanged(trueLender2);
+    }
+
+    function setFixedTermLoanAgency(IFixedTermLoanAgency _ftlAgency) external onlyOwner {
+        require(address(_ftlAgency) != address(0), "PoolFactory: FixedTermLoanAgency address cannot be set to 0");
+        ftlAgency = _ftlAgency;
+        emit FixedTermLoanAgencyChanged(ftlAgency);
     }
 
     function setSafuAddress(ISAFU _safu) external onlyOwner {

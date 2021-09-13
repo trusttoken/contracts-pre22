@@ -61,7 +61,7 @@ describe('[Skip CI] Curve Yearn Pool Strategy', () => {
     const poolFactory = await deployContract(PoolFactory__factory)
     const poolImplementation = await deployContract(TrueFiPool2__factory)
     const implementationReference = await deployContract(ImplementationReference__factory, poolImplementation.address)
-    await poolFactory.initialize(implementationReference.address, AddressZero, AddressZero)
+    await poolFactory.initialize(implementationReference.address, AddressZero, AddressZero, AddressZero)
     await poolFactory.allowToken(USDC_ADDRESS, true)
     await poolFactory.createPool(USDC_ADDRESS)
 

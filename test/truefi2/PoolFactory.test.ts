@@ -6,6 +6,8 @@ import {
   MockErc20Token__factory,
   OwnedProxyWithReference,
   OwnedProxyWithReference__factory,
+  TestFixedTermLoanAgency,
+  TestFixedTermLoanAgency__factory,
   TestTrueLender,
   TestTrueLender__factory,
   PoolFactory,
@@ -36,6 +38,8 @@ describe('PoolFactory', () => {
   let token4: MockErc20Token
   let trueLenderInstance1: TestTrueLender
   let trueLenderInstance2: TestTrueLender
+  let ftlAgencyInstance1: TestFixedTermLoanAgency
+  let ftlAgencyInstance2: TestFixedTermLoanAgency
 
   beforeEachWithFixture(async (wallets) => {
     [owner, otherWallet, borrower] = wallets
@@ -49,10 +53,13 @@ describe('PoolFactory', () => {
     token4 = await new MockErc20Token__factory(owner).deploy()
     trueLenderInstance1 = await new TestTrueLender__factory(owner).deploy()
     trueLenderInstance2 = await new TestTrueLender__factory(owner).deploy()
+    ftlAgencyInstance1 = await new TestFixedTermLoanAgency__factory(owner).deploy()
+    ftlAgencyInstance2 = await new TestFixedTermLoanAgency__factory(owner).deploy()
     safu = await new Safu__factory(owner).deploy()
     await factory.initialize(
       implementationReference.address,
       trueLenderInstance1.address,
+      ftlAgencyInstance1.address,
       safu.address,
     )
   })
@@ -116,6 +123,10 @@ describe('PoolFactory', () => {
 
     it('true lender is set correctly', async () => {
       expect(await pool.lender()).to.eq(trueLenderInstance1.address)
+    })
+
+    it('fixed term loan agency is set correctly', async () => {
+      expect(await pool.ftlAgency()).to.eq(ftlAgencyInstance1.address)
     })
 
     it('cannot create pool for token that already has a pool', async () => {
@@ -229,6 +240,10 @@ describe('PoolFactory', () => {
 
     it('true lender is set correctly', async () => {
       expect(await pool.lender()).to.eq(trueLenderInstance1.address)
+    })
+
+    it('fixed term loan agency is set correctly', async () => {
+      expect(await pool.ftlAgency()).to.eq(ftlAgencyInstance1.address)
     })
 
     it('cannot create pool for token that already has a pool', async () => {
@@ -466,6 +481,26 @@ describe('PoolFactory', () => {
       expect(await factory.trueLender2()).to.eq(trueLenderInstance1.address)
       await factory.connect(owner).setTrueLender(trueLenderInstance2.address)
       expect(await factory.trueLender2()).to.eq(trueLenderInstance2.address)
+    })
+  })
+
+  describe('setFixedTermLoanAgency', () => {
+    it('only owner can set ftlAgency', async () => {
+      await expect(factory.connect(otherWallet).setFixedTermLoanAgency(ftlAgencyInstance2.address))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+      await expect(factory.connect(owner).setFixedTermLoanAgency(ftlAgencyInstance2.address))
+        .not.to.be.reverted
+    })
+
+    it('reverts when set to 0', async () => {
+      await expect(factory.setFixedTermLoanAgency(AddressZero))
+        .to.be.revertedWith('PoolFactory: FixedTermLoanAgency address cannot be set to 0')
+    })
+
+    it('sets new true ftlAgency contract', async () => {
+      expect(await factory.ftlAgency()).to.eq(ftlAgencyInstance1.address)
+      await factory.connect(owner).setFixedTermLoanAgency(ftlAgencyInstance2.address)
+      expect(await factory.ftlAgency()).to.eq(ftlAgencyInstance2.address)
     })
   })
 
