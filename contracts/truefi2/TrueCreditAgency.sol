@@ -424,52 +424,59 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     /**
      * @dev Enter default for a certain borrower's line of credit
      */
-    function enterDefault(ITrueFiPool2 pool, address borrower) external onlyOwner {
-        require(poolFactory.isSupportedPool(pool), "TrueCreditAgency: The pool is not supported for borrowing");
+    function enterDefault(address borrower) external onlyOwner {
         require(
             borrowingMutex.locker(borrower) == address(this),
             "TrueCreditAgency: Cannot default a borrower with no open debt position"
         );
         if (!isBorrowerAllowed[borrower]) {
-            _enterDefault(pool, borrower, DefaultReason.NotAllowed);
+            _enterDefault(borrower, DefaultReason.NotAllowed);
             return;
         }
         if (creditOracle.status(borrower) == ITrueFiCreditOracle.Status.Ineligible) {
-            _enterDefault(pool, borrower, DefaultReason.Ineligible);
+            _enterDefault(borrower, DefaultReason.Ineligible);
             return;
         }
         if (creditOracle.score(borrower) < minCreditScore) {
-            _enterDefault(pool, borrower, DefaultReason.BelowMinScore);
+            _enterDefault(borrower, DefaultReason.BelowMinScore);
             return;
         }
         uint256 defaultTime = block.timestamp.sub(creditOracle.gracePeriod());
-        uint256 nextInterestRepay = nextInterestRepayTime[pool][borrower];
-        if (nextInterestRepay != 0 && defaultTime >= nextInterestRepay) {
-            _enterDefault(pool, borrower, DefaultReason.InterestOverdue);
-            return;
-        }
-        uint256 _overBorrowLimitTime = overBorrowLimitTime[pool][borrower];
-        if (_overBorrowLimitTime != 0 && defaultTime >= _overBorrowLimitTime) {
-            _enterDefault(pool, borrower, DefaultReason.TimeLimitExceeded);
-            return;
+        ITrueFiPool2[] memory pools = poolFactory.getSupportedPools();
+        for (uint i = 0; i < pools.length; i++) {
+            ITrueFiPool2 pool = pools[i];
+            uint256 nextInterestRepay = nextInterestRepayTime[pool][borrower];
+            if (nextInterestRepay != 0 && defaultTime >= nextInterestRepay) {
+                _enterDefault(borrower, DefaultReason.InterestOverdue);
+                return;
+            }
+            uint256 _overBorrowLimitTime = overBorrowLimitTime[pool][borrower];
+            if (_overBorrowLimitTime != 0 && defaultTime >= _overBorrowLimitTime) {
+                _enterDefault(borrower, DefaultReason.TimeLimitExceeded);
+                return;
+            }
         }
         revert("TrueCreditAgency: Borrower has no reason to enter default at this time");
     }
 
     function _enterDefault(
-        ITrueFiPool2 pool,
         address borrower,
         DefaultReason reason
     ) private {
-        uint256 principal = borrowed[pool][borrower];
-        (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, borrower);
-        _rebucket(pool, borrower, oldScore, newScore, 0);
+        ITrueFiPool2[] memory pools = poolFactory.getSupportedPools();
+        for (uint i = 0; i < pools.length; i++) {
+            ITrueFiPool2 pool = pools[i];
 
-        uint256 _interest = interest(pool, borrower);
-        borrowerTotalPaidInterest[pool][borrower] = borrowerTotalPaidInterest[pool][borrower].add(_interest);
-        poolTotalPaidInterest[pool] = poolTotalPaidInterest[pool].add(_interest);
+            uint256 principal = borrowed[pool][borrower];
+            (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, borrower);
+            _rebucket(pool, borrower, oldScore, newScore, 0);
 
-        loanFactory.createDebtToken(pool, borrower, principal.add(_interest));
+            uint256 _interest = interest(pool, borrower);
+            borrowerTotalPaidInterest[pool][borrower] = borrowerTotalPaidInterest[pool][borrower].add(_interest);
+            poolTotalPaidInterest[pool] = poolTotalPaidInterest[pool].add(_interest);
+
+            loanFactory.createDebtToken(pool, borrower, principal.add(_interest));
+        }
 
         if (totalBorrowed(borrower) == 0) {
             borrowingMutex.unlock(borrower);
