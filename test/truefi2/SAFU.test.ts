@@ -54,7 +54,7 @@ describe('SAFU', () => {
     timeTravel = (time: number) => _timeTravel(_provider, time)
 
     oneInch = await new Mock1InchV3__factory(owner).deploy()
-    ; ({
+    ;({
       safu,
       feeToken: token,
       feePool: pool,
@@ -96,14 +96,14 @@ describe('SAFU', () => {
   describe('liquidate', () => {
     describe('reverts if', () => {
       it('loan is not defaulted', async () => {
-        await expect(safu.liquidate(loan.address))
+        await expect(safu.liquidate([loan.address]))
           .to.be.revertedWith('SAFU: Loan is not defaulted')
       })
 
       it('loan is not created by factory', async () => {
         const strangerLoan = await new LoanToken2__factory(owner).deploy()
         await strangerLoan.initialize(pool.address, borrowingMutex.address, owner.address, owner.address, AddressZero, owner.address, owner.address, 1000, 1, 1)
-        await expect(safu.liquidate(strangerLoan.address))
+        await expect(safu.liquidate([strangerLoan.address]))
           .to.be.revertedWith('SAFU: Unknown loan')
       })
 
@@ -112,8 +112,8 @@ describe('SAFU', () => {
         await timeTravel(DAY * 400)
         await loan.enterDefault()
 
-        await safu.liquidate(loan.address)
-        await expect(safu.liquidate(loan.address))
+        await safu.liquidate([loan.address])
+        await expect(safu.liquidate([loan.address]))
           .to.be.revertedWith('SAFU: Loan is not defaulted')
       })
     })
@@ -126,7 +126,7 @@ describe('SAFU', () => {
       it('transfers LoanTokens to the SAFU', async () => {
         await timeTravel(DAY * 400)
         await loan.enterDefault()
-        await safu.liquidate(loan.address)
+        await safu.liquidate([loan.address])
         await expect(await loan.balanceOf(safu.address)).to.equal(defaultAmount)
       })
     })
@@ -146,7 +146,7 @@ describe('SAFU', () => {
 
       it('transfers DebtTokens to the SAFU', async () => {
         await timeTravel(DAY * 400)
-        await safu.liquidate(debtToken.address)
+        await safu.liquidate([debtToken.address])
         await expect(await debtToken.balanceOf(safu.address)).to.equal(defaultAmount)
       })
     })
@@ -163,27 +163,27 @@ describe('SAFU', () => {
         })
 
         it('takes funds from safu', async () => {
-          await expect(() => safu.liquidate(loan.address))
+          await expect(() => safu.liquidate([loan.address]))
             .to.changeTokenBalance(token, safu, defaultAmount.mul(-1))
         })
 
         it('transfers funds to the pool', async () => {
-          await expect(() => safu.liquidate(loan.address))
+          await expect(() => safu.liquidate([loan.address]))
             .to.changeTokenBalance(token, pool, defaultAmount)
         })
 
         it('sets deficiencyToken', async () => {
-          await safu.liquidate(loan.address)
+          await safu.liquidate([loan.address])
           expect(await safu.deficiencyToken(loan.address)).to.eq(AddressZero)
         })
 
         it('increases pool deficit', async () => {
-          await safu.liquidate(loan.address)
+          await safu.liquidate([loan.address])
           expect(await safu.poolDeficit(pool.address)).to.eq(0)
         })
 
         it('emits event', async () => {
-          await expect(safu.liquidate(loan.address))
+          await expect(safu.liquidate([loan.address]))
             .to.emit(safu, 'Liquidated')
             .withArgs(loan.address, defaultAmount, AddressZero, 0)
         })
@@ -195,28 +195,28 @@ describe('SAFU', () => {
         })
 
         it('takes funds from safu', async () => {
-          await expect(() => safu.liquidate(loan.address))
+          await expect(() => safu.liquidate([loan.address]))
             .to.changeTokenBalance(token, safu, defaultAmount.div(2).mul(-1))
         })
 
         it('transfers funds to the pool', async () => {
-          await expect(() => safu.liquidate(loan.address))
+          await expect(() => safu.liquidate([loan.address]))
             .to.changeTokenBalance(token, pool, defaultAmount.div(2))
         })
 
         it('sets deficiencyToken', async () => {
-          const tx = await safu.liquidate(loan.address)
+          const tx = await safu.liquidate([loan.address])
           const deficiencyToken = (await tx.wait()).events[8].args.deficiencyToken
           expect(await safu.deficiencyToken(loan.address)).to.eq(deficiencyToken)
         })
 
         it('increases pool deficit', async () => {
-          await safu.liquidate(loan.address)
+          await safu.liquidate([loan.address])
           expect(await safu.poolDeficit(pool.address)).to.eq(defaultAmount.div(2))
         })
 
         it('emits event', async () => {
-          const tx = await safu.liquidate(loan.address)
+          const tx = await safu.liquidate([loan.address])
           await expect(tx)
             .to.emit(safu, 'Liquidated')
             .withArgs(loan.address, defaultAmount.div(2), await safu.deficiencyToken(loan.address), defaultAmount.div(2))
@@ -233,21 +233,21 @@ describe('SAFU', () => {
 
       describe('Loan not repaid at all', () => {
         it('0 tru in staking pool balance', async () => {
-          await safu.liquidate(loan.address)
+          await safu.liquidate([loan.address])
           expect(await tru.balanceOf(safu.address)).to.eq(0)
         })
 
         it('returns max fetch share to assurance', async () => {
           await stkTru.stake(parseTRU(1e3))
 
-          await safu.liquidate(loan.address)
+          await safu.liquidate([loan.address])
           expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(1e2))
         })
 
         it('returns defaulted value', async () => {
           await stkTru.stake(parseTRU(1e7))
 
-          await safu.liquidate(loan.address)
+          await safu.liquidate([loan.address])
           expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(4400))
         })
       })
@@ -258,21 +258,21 @@ describe('SAFU', () => {
         })
 
         it('0 tru in staking pool balance', async () => {
-          await safu.liquidate(loan.address)
+          await safu.liquidate([loan.address])
           expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(0))
         })
 
         it('returns max fetch share to assurance', async () => {
           await stkTru.stake(parseTRU(1e3))
 
-          await safu.liquidate(loan.address)
+          await safu.liquidate([loan.address])
           expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(100))
         })
 
         it('returns defaulted value', async () => {
           await stkTru.stake(parseTRU(1e7))
 
-          await safu.liquidate(loan.address)
+          await safu.liquidate([loan.address])
           expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(22e2))
         })
       })
@@ -284,7 +284,7 @@ describe('SAFU', () => {
       await timeTravel(DAY * 400)
       await loan.enterDefault()
       await token.mint(safu.address, defaultAmount.div(2))
-      await safu.liquidate(loan.address)
+      await safu.liquidate([loan.address])
     })
 
     describe('Reverts if', () => {
@@ -367,7 +367,7 @@ describe('SAFU', () => {
     })
 
     it('only manager can call it', async () => {
-      await safu.liquidate(loan.address)
+      await safu.liquidate([loan.address])
       await expect(safu.connect(borrower).redeem(loan.address))
         .to.be.revertedWith('Ownable: caller is not the owner')
     })
@@ -380,18 +380,18 @@ describe('SAFU', () => {
     })
 
     it('burns loan tokens', async () => {
-      await safu.liquidate(loan.address)
+      await safu.liquidate([loan.address])
       await expect(() => safu.redeem(loan.address)).changeTokenBalance(loan, safu, parseUSDC(1100).mul(-1))
     })
 
     it('redeems available tokens', async () => {
-      await safu.liquidate(loan.address)
+      await safu.liquidate([loan.address])
       await token.mint(loan.address, parseUSDC(25))
       await expect(() => safu.redeem(loan.address)).changeTokenBalance(token, safu, parseUSDC(25))
     })
 
     it('emits a proper event', async () => {
-      await safu.liquidate(loan.address)
+      await safu.liquidate([loan.address])
       await token.mint(loan.address, parseUSDC(25))
 
       const loanTokensToBurn = await loan.balanceOf(safu.address)
