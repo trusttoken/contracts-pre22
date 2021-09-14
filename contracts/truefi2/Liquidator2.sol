@@ -78,6 +78,8 @@ contract Liquidator2 is UpgradeableClaimable {
      */
     event PoolFactoryChanged(IPoolFactory poolFactory);
 
+    event TusdPoolOracleChanged(ITrueFiPoolOracle poolOracle);
+
     /**
      * @dev Initialize this contract
      */
@@ -117,6 +119,12 @@ contract Liquidator2 is UpgradeableClaimable {
         require(address(_poolFactory) != address(0), "Liquidator: Pool factory address cannot be set to 0");
         poolFactory = _poolFactory;
         emit PoolFactoryChanged(_poolFactory);
+    }
+
+    function setTusdPoolOracle(ITrueFiPoolOracle _tusdPoolOracle) external onlyOwner {
+        require(address(_tusdPoolOracle) != address(0), "Liquidator: Pool oracle cannot be set to 0");
+        tusdPoolOracle = _tusdPoolOracle;
+        emit TusdPoolOracleChanged(_tusdPoolOracle);
     }
 
     /**

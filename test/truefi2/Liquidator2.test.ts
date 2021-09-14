@@ -15,6 +15,7 @@ import {
   PoolFactory__factory,
   DebtToken,
   MockTrueFiPoolOracle,
+  MockTrueFiPoolOracle__factory,
 } from 'contracts'
 
 import { solidity } from 'ethereum-waffle'
@@ -169,6 +170,34 @@ describe('Liquidator2', () => {
       await expect(liquidator.setPoolFactory(fakePoolFactory.address))
         .to.emit(liquidator, 'PoolFactoryChanged')
         .withArgs(fakePoolFactory.address)
+    })
+  })
+
+  describe('setTusdPoolOracle', () => {
+    let fakePoolOracle: MockTrueFiPoolOracle
+    beforeEach(async () => {
+      fakePoolOracle = await new MockTrueFiPoolOracle__factory(owner).deploy(tusd.address)
+    })
+
+    it('only owner', async () => {
+      await expect(liquidator.connect(otherWallet).setTusdPoolOracle(fakePoolOracle.address))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('cannot be set to 0 address', async () => {
+      await expect(liquidator.setTusdPoolOracle(AddressZero))
+        .to.be.revertedWith('Liquidator: Pool oracle cannot be set to 0')
+    })
+
+    it('sets new poolOracle address', async () => {
+      await liquidator.setTusdPoolOracle(fakePoolOracle.address)
+      expect(await liquidator.tusdPoolOracle()).to.eq(fakePoolOracle.address)
+    })
+
+    it('emits event', async () => {
+      await expect(liquidator.setTusdPoolOracle(fakePoolOracle.address))
+        .to.emit(liquidator, 'TusdPoolOracleChanged')
+        .withArgs(fakePoolOracle.address)
     })
   })
 
