@@ -13,7 +13,7 @@ import {
   DeficiencyToken__factory,
   DeficiencyToken,
   TrueCreditAgency,
-  TrueFiCreditOracle, TrueRateAdjuster, MockTrueCurrency__factory,
+  TrueFiCreditOracle, TrueRateAdjuster, MockTrueCurrency__factory, FixedTermLoanAgency,
 } from 'contracts'
 import { MockProvider, solidity } from 'ethereum-waffle'
 import { BigNumber, Wallet } from 'ethers'
@@ -54,6 +54,7 @@ describe('TrueFiPool2', () => {
   let poolStrategy2: MockStrategy
   let badPoolStrategy: BadStrategy
   let rateAdjuster: TrueRateAdjuster
+  let ftlAgency: FixedTermLoanAgency
 
   let timeTravel: (time: number) => void
   let setUtilization: (utilization: number) => void
@@ -74,6 +75,7 @@ describe('TrueFiPool2', () => {
       creditAgency,
       creditOracle,
       rateAdjuster,
+      ftlAgency,
     } = await setupTruefi2(owner, provider))
 
     loan = await createLoan(loanFactory, borrower, tusdPool, 500000, DAY, 1000)
@@ -85,6 +87,7 @@ describe('TrueFiPool2', () => {
     await tusd.mint(owner.address, parseEth(1e7))
 
     await tusdPool.setCreditAgency(creditAgency.address)
+    await tusdPool.setFixedTermLoanAgency(ftlAgency.address)
     await rateAdjuster.setRiskPremium(700)
 
     for (const wallet of [borrower, borrower2, borrower3]) {
@@ -219,6 +222,31 @@ describe('TrueFiPool2', () => {
       await expect(tusdPool.setCreditAgency(creditAgency.address))
         .to.emit(tusdPool, 'CreditAgencyChanged')
         .withArgs(creditAgency.address)
+    })
+  })
+
+  describe('setFixedTermLoanAgency', () => {
+    it('can be called by owner', async () => {
+      await expect(tusdPool.setFixedTermLoanAgency(ftlAgency.address))
+        .not.to.be.reverted
+    })
+
+    it('cannot be called by unauthorized address', async () => {
+      await expect(tusdPool.connect(borrower).setFixedTermLoanAgency(ftlAgency.address))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('properly changes Credit Agency address', async () => {
+      await tusdPool.setFixedTermLoanAgency(AddressZero)
+      expect(await tusdPool.ftlAgency()).to.equal(AddressZero)
+      await tusdPool.setFixedTermLoanAgency(ftlAgency.address)
+      expect(await tusdPool.ftlAgency()).to.equal(ftlAgency.address)
+    })
+
+    it('emits proper event', async () => {
+      await expect(tusdPool.setFixedTermLoanAgency(ftlAgency.address))
+        .to.emit(tusdPool, 'FixedTermLoanAgencyChanged')
+        .withArgs(ftlAgency.address)
     })
   })
 
@@ -375,6 +403,19 @@ describe('TrueFiPool2', () => {
         await timeTravel(DAY * 2)
         expect(await tusdPool.loansValue()).to.equal(500136)
         expect(await tusdPool.poolValue()).to.equal(joinAmount.add(136))
+      })
+
+      it('when there are ongoing loans in both trueLender and FTLA, pool value contains both', async () => {
+        await lender.connect(borrower).fund(loan.address)
+        await ftlAgency.allowBorrower(borrower2.address)
+        await ftlAgency.connect(borrower2).fund(tusdPool.address, 5000, YEAR, 10000)
+        expect(await tusdPool.liquidValue()).to.equal(joinAmount.sub(500000).sub(5000))
+        expect(await tusdPool.loansValue()).to.equal(500000 + 5000)
+        expect(await tusdPool.poolValue()).to.equal(joinAmount)
+
+        await timeTravel(DAY * 2)
+        expect(await tusdPool.loansValue()).to.equal(505139)
+        expect(await tusdPool.poolValue()).to.equal(joinAmount.add(139))
       })
 
       it('when pool has some deficiency value', async () => {
