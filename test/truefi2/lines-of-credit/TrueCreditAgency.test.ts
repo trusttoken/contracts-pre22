@@ -1064,31 +1064,29 @@ describe('TrueCreditAgency', () => {
         await creditAgency.allowBorrower(borrower.address, false)
       })
 
-      async function extractDebtTokenAddress (pendingTx: Promise<ContractTransaction>) {
+      async function extractDebtTokens (pendingTx: Promise<ContractTransaction>) {
         const tx = await pendingTx
         const receipt = await tx.wait()
         const iface = loanFactory.interface
-        return DebtToken__factory.connect(
-          receipt.events
-            .filter(({ address }) => address === loanFactory.address)
-            .map((e) => iface.parseLog(e))
-            .find(({ eventFragment }) => eventFragment.name === 'DebtTokenCreated')
-            .args.contractAddress,
-          owner)
+        return Promise.all(receipt.events
+          .filter(({ address }) => address === loanFactory.address)
+          .map((e) => iface.parseLog(e))
+          .filter(({ eventFragment }) => eventFragment.name === 'DebtTokenCreated')
+          .map((e) => DebtToken__factory.connect(e.args.contractAddress, owner)))
       }
 
       it('creates DebtToken with expected params', async () => {
-        const debtToken = await extractDebtTokenAddress(creditAgency.enterDefault(borrower.address))
-        expect(await debtToken.pool()).to.eq(tusdPool.address)
-        expect(await debtToken.borrower()).to.eq(borrower.address)
-        expect(await debtToken.debt()).to.eq(1000)
+        const debtTokens = await extractDebtTokens(creditAgency.enterDefault(borrower.address))
+        expect(await debtTokens[1].pool()).to.eq(tusdPool.address)
+        expect(await debtTokens[1].borrower()).to.eq(borrower.address)
+        expect(await debtTokens[1].debt()).to.eq(1000)
       })
 
       it('creates multiple DebtTokens for different pools', async () => {
-        const tx = await creditAgency.enterDefault(borrower.address)
-        expect(tx).to.emit(loanFactory, 'DebtTokenCreated')
-        const tx2 = await creditAgency.enterDefault(borrower.address)
-        expect(tx2).to.emit(loanFactory, 'DebtTokenCreated')
+        const debtTokens = await extractDebtTokens(creditAgency.enterDefault(borrower.address))
+        expect(debtTokens.length).to.eq(2)
+        expect(await debtTokens[0].pool()).to.eq(usdcPool.address)
+        expect(await debtTokens[1].pool()).to.eq(tusdPool.address)
       })
 
       it('bans borrower in borrowing mutex', async () => {
