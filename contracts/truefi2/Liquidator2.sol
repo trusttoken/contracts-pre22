@@ -143,7 +143,7 @@ contract Liquidator2 is UpgradeableClaimable {
      * then transfers tru to TrueFiPool as compensation
      * @param loans Loan to be liquidated
      */
-    function liquidate(IDebtToken[] memory loans) external {
+    function liquidate(IDebtToken[] calldata loans) external {
         require(msg.sender == SAFU, "Liquidator: Only SAFU contract can liquidate a loan");
         uint256 totalDefaultedValue;
 

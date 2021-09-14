@@ -93,7 +93,11 @@ contract SAFU is ISAFU, UpgradeableClaimable {
         ITrueFiPool2 pool = ITrueFiPool2(loan.pool());
         IERC20 token = IERC20(pool.token());
 
-        liquidator.liquidate(loan);
+        // Temporary (it has to be storage, memory arrays cannot be pushed)
+        IDebtToken[] memory loans = new IDebtToken[](1);
+        loans[0] = loan;
+        liquidator.liquidate(loans);
+
         _poolLiquidate(pool, loan);
         uint256 owedToPool = loan.debt().mul(tokenBalance(loan)).div(loan.totalSupply());
         uint256 safuTokenBalance = tokenBalance(token);
