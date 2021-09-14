@@ -966,24 +966,6 @@ describe('TrueCreditAgency', () => {
     })
 
     describe('reverts if borrower', () => {
-      it('pool is not supported', async () => {
-        await poolFactory.unsupportPool(tusdPool.address)
-        await expect(creditAgency.enterDefault(borrower.address))
-          .to.be.revertedWith('TrueCreditAgency: The pool is not supported for borrowing')
-      })
-
-      it('pool is not supported', async () => {
-        await poolFactory.unsupportPool(tusdPool.address)
-        await expect(creditAgency.enterDefault(borrower.address))
-          .to.be.revertedWith('TrueCreditAgency: The pool is not supported for borrowing')
-      })
-
-      it('pool is not supported', async () => {
-        await poolFactory.unsupportPool(tusdPool.address)
-        await expect(creditAgency.enterDefault(borrower.address))
-          .to.be.revertedWith('TrueCreditAgency: The pool is not supported for borrowing')
-      })
-
       it('has no debt', async () => {
         await creditAgency.connect(borrower).repayInFull(tusdPool.address)
         await creditAgency.connect(borrower).repayInFull(usdcPool.address)
