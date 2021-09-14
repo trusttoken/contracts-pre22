@@ -169,6 +169,7 @@ contract Liquidator2 is UpgradeableClaimable {
      * @dev Calculate amount of tru to be withdrawn from staking pool (not more than preset share)
      * @param deficit Amount of tusd lost on defaulted loan
      * @return amount of TRU to be withdrawn on liquidation
+     * tusd oracle is used here, because deficit is represented using 18 decimals
      */
     function getAmountToWithdraw(uint256 deficit) internal view returns (uint256) {
         uint256 stakingPoolSupply = stkTru.stakeSupply();
