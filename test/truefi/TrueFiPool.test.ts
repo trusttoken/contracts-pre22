@@ -518,7 +518,7 @@ describe('TrueFiPool', () => {
     const loanFactory2 = await new LoanFactory2__factory(owner).deploy()
     const liquidator2 = await new Liquidator2__factory(owner).deploy()
     await loanFactory2.initialize(factory.address, lender2.address, AddressZero, liquidator2.address, AddressZero, AddressZero, borrowingMutex.address, AddressZero)
-    await liquidator2.initialize(mockStakingPool.address, trustToken.address, loanFactory2.address, AddressZero, owner.address)
+    await liquidator2.initialize(mockStakingPool.address, trustToken.address, loanFactory2.address, AddressZero, owner.address, AddressZero)
 
     return { lender2, loanFactory2, liquidator2 }
   }
@@ -557,7 +557,7 @@ describe('TrueFiPool', () => {
       await timeTravel(provider, DAY * 4)
       await loan.enterDefault()
       await liquidator2.setTokenApproval(token.address, true)
-      await liquidator2.liquidate(loan.address)
+      await liquidator2.liquidate([loan.address])
     })
 
     it('distributions with 2 lenders', async () => {
@@ -578,7 +578,7 @@ describe('TrueFiPool', () => {
       const { lender2, loanFactory2, liquidator2 } = await deployLender2()
       await token.approve(pool.address, parseEth(1e7))
       await pool.join(parseEth(1e7))
-      ;({ loan } = await fundLoan(loanFactory2, lender2))
+      ; ({ loan } = await fundLoan(loanFactory2, lender2))
       await pool.setSafuAddress(safu.address)
       await liquidator2.setAssurance(safu.address)
       await liquidator2.setTokenApproval(token.address, true)
