@@ -443,7 +443,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         }
         uint256 defaultTime = block.timestamp.sub(creditOracle.gracePeriod());
         ITrueFiPool2[] memory pools = poolFactory.getSupportedPools();
-        for (uint i = 0; i < pools.length; i++) {
+        for (uint256 i = 0; i < pools.length; i++) {
             ITrueFiPool2 pool = pools[i];
             uint256 nextInterestRepay = nextInterestRepayTime[pool][borrower];
             if (nextInterestRepay != 0 && defaultTime >= nextInterestRepay) {
@@ -459,12 +459,9 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         revert("TrueCreditAgency: Borrower has no reason to enter default at this time");
     }
 
-    function _enterDefault(
-        address borrower,
-        DefaultReason reason
-    ) private {
+    function _enterDefault(address borrower, DefaultReason reason) private {
         ITrueFiPool2[] memory pools = poolFactory.getSupportedPools();
-        for (uint i = 0; i < pools.length; i++) {
+        for (uint256 i = 0; i < pools.length; i++) {
             ITrueFiPool2 pool = pools[i];
 
             uint256 principal = borrowed[pool][borrower];
@@ -478,9 +475,8 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
             loanFactory.createDebtToken(pool, borrower, principal.add(_interest));
         }
 
-        if (totalBorrowed(borrower) == 0) {
-            borrowingMutex.unlock(borrower);
-        }
+        borrowingMutex.unlock(borrower);
+        borrowingMutex.lock(borrower, address(uint256(IBorrowingMutex.Status.Banned)));
 
         emit EnteredDefault(borrower, reason);
     }

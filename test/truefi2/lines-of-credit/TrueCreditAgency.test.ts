@@ -1091,13 +1091,10 @@ describe('TrueCreditAgency', () => {
         expect(tx2).to.emit(loanFactory, 'DebtTokenCreated')
       })
 
-      it('unlocks borrowing mutex after all loans were defaulted', async () => {
+      it('bans borrower in borrowing mutex', async () => {
         await creditAgency.enterDefault(borrower.address)
         expect(await borrowingMutex.locker(borrower.address))
-          .to.equal(creditAgency.address)
-        await creditAgency.enterDefault(borrower.address)
-        expect(await borrowingMutex.locker(borrower.address))
-          .to.equal(AddressZero)
+          .to.equal('0x0000000000000000000000000000000000000001')
       })
     })
   })
