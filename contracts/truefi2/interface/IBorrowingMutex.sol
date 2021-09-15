@@ -2,7 +2,7 @@
 pragma solidity 0.6.10;
 
 interface IBorrowingMutex {
-    enum Status {Unlocked, Banned}
+    function ban(address borrower) external;
 
     function lock(address borrower, address _locker) external;
 

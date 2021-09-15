@@ -476,7 +476,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         }
 
         borrowingMutex.unlock(borrower);
-        borrowingMutex.lock(borrower, address(uint256(IBorrowingMutex.Status.Banned)));
+        borrowingMutex.ban(borrower);
 
         emit EnteredDefault(borrower, reason);
     }

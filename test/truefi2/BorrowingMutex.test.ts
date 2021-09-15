@@ -51,6 +51,37 @@ describe('BorrowingMutex', () => {
     })
   })
 
+  describe('ban', () => {
+    it('sender not in canLock', async () => {
+      await expect(mutex.connect(owner).ban(borrower.address))
+        .to.be.revertedWith('BorrowingMutex: Sender is not allowed to lock borrowers')
+
+      await expect(mutex.connect(locker).ban(borrower.address))
+        .not.to.be.reverted
+    })
+
+    it('cannot ban already locked borrower', async () => {
+      await mutex.allowLocker(owner.address, true)
+      await mutex.connect(locker).lock(borrower.address, owner.address)
+
+      await expect(mutex.connect(owner).ban(borrower.address))
+        .to.be.revertedWith('BorrowingMutex: Borrower is already locked')
+    })
+
+    it('changes locker', async () => {
+      expect(await mutex.isUnlocked(borrower.address)).to.be.true
+      await mutex.connect(locker).ban(borrower.address)
+      expect(await mutex.locker(borrower.address)).to.eq('0x0000000000000000000000000000000000000001')
+      expect(await mutex.isUnlocked(borrower.address)).to.be.false
+    })
+
+    it('emits event', async () => {
+      await expect(mutex.connect(locker).lock(borrower.address, owner.address))
+        .to.emit(mutex, 'BorrowerLocked')
+        .withArgs(borrower.address, owner.address)
+    })
+  })
+
   describe('lock', () => {
     it('sender not in canLock', async () => {
       await expect(mutex.connect(owner).lock(borrower.address, owner.address))
