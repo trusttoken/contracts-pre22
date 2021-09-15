@@ -6,7 +6,6 @@ import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
 
 contract BorrowingMutex is IBorrowingMutex, UpgradeableClaimable {
-
     address public constant UNLOCKED = address(0);
     address public constant BANNED = address(1);
 
