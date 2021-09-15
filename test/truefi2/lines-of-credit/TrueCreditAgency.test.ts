@@ -1071,6 +1071,13 @@ describe('TrueCreditAgency', () => {
         expect(await debtTokens[1].pool()).to.eq(tusdPool.address)
       })
 
+      it('only creates DebtTokens for pools with nonzero debt', async () => {
+        await creditAgency.connect(borrower).repayInFull(usdcPool.address)
+        const debtTokens = await extractDebtTokens(creditAgency.enterDefault(borrower.address))
+        expect(debtTokens.length).to.eq(1)
+        expect(await debtTokens[0].pool()).to.eq(tusdPool.address)
+      })
+
       it('bans borrower in borrowing mutex', async () => {
         await creditAgency.enterDefault(borrower.address)
         expect(await borrowingMutex.locker(borrower.address))

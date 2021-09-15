@@ -465,14 +465,19 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
             ITrueFiPool2 pool = pools[i];
 
             uint256 principal = borrowed[pool][borrower];
+            uint256 _interest = interest(pool, borrower);
+            uint256 debt = principal.add(_interest);
+            if (debt == 0) {
+                continue;
+            }
+
             (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, borrower);
             _rebucket(pool, borrower, oldScore, newScore, 0);
 
-            uint256 _interest = interest(pool, borrower);
             borrowerTotalPaidInterest[pool][borrower] = borrowerTotalPaidInterest[pool][borrower].add(_interest);
             poolTotalPaidInterest[pool] = poolTotalPaidInterest[pool].add(_interest);
 
-            loanFactory.createDebtToken(pool, borrower, principal.add(_interest));
+            loanFactory.createDebtToken(pool, borrower, debt);
         }
 
         borrowingMutex.unlock(borrower);
