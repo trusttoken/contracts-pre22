@@ -78,6 +78,8 @@ contract Liquidator2 is UpgradeableClaimable {
      */
     event PoolFactoryChanged(IPoolFactory poolFactory);
 
+    event TusdPoolOracleChanged(ITrueFiPoolOracle poolOracle);
+
     /**
      * @dev Initialize this contract
      */
@@ -119,6 +121,12 @@ contract Liquidator2 is UpgradeableClaimable {
         emit PoolFactoryChanged(_poolFactory);
     }
 
+    function setTusdPoolOracle(ITrueFiPoolOracle _tusdPoolOracle) external onlyOwner {
+        require(address(_tusdPoolOracle) != address(0), "Liquidator: Pool oracle cannot be set to 0");
+        tusdPoolOracle = _tusdPoolOracle;
+        emit TusdPoolOracleChanged(_tusdPoolOracle);
+    }
+
     /**
      * @dev Set new max fetch share
      * @param newShare New share to be set
@@ -135,7 +143,7 @@ contract Liquidator2 is UpgradeableClaimable {
      * then transfers tru to TrueFiPool as compensation
      * @param loans Loan to be liquidated
      */
-    function liquidate(IDebtToken[] memory loans) external {
+    function liquidate(IDebtToken[] calldata loans) external {
         require(msg.sender == SAFU, "Liquidator: Only SAFU contract can liquidate a loan");
         uint256 totalDefaultedValue;
 
@@ -161,6 +169,7 @@ contract Liquidator2 is UpgradeableClaimable {
      * @dev Calculate amount of tru to be withdrawn from staking pool (not more than preset share)
      * @param deficit Amount of tusd lost on defaulted loan
      * @return amount of TRU to be withdrawn on liquidation
+     * tusd oracle is used here, because deficit is represented using 18 decimals
      */
     function getAmountToWithdraw(uint256 deficit) internal view returns (uint256) {
         uint256 stakingPoolSupply = stkTru.stakeSupply();
