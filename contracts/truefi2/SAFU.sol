@@ -102,7 +102,8 @@ contract SAFU is ISAFU, UpgradeableClaimable {
             uint256 owedToPool = loans[i].debt().mul(tokenBalance(loans[i])).div(loans[i].totalSupply());
             uint256 safuTokenBalance = tokenBalance(token);
             uint256 deficit;
-            uint256 toTransfer = safuTokenBalance;
+            uint256 toTransfer = owedToPool;
+
             if (owedToPool > safuTokenBalance) {
                 deficit = owedToPool.sub(safuTokenBalance);
                 toTransfer = safuTokenBalance;
