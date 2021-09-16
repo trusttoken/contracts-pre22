@@ -2,6 +2,8 @@
 pragma solidity 0.6.10;
 
 interface IBorrowingMutex {
+    function ban(address borrower) external;
+
     function lock(address borrower, address _locker) external;
 
     function unlock(address borrower) external;
