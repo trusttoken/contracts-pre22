@@ -60,12 +60,12 @@ deploy({}, (_, config) => {
 
   // Existing contracts
   const trustToken = isMainnet
-    ? timeProxy(contract(TrustToken), () => {})
-    : timeProxy(contract(TestTrustToken), () => {})
-  const stkTruToken = proxy(contract(StkTruToken), () => {})
+    ? timeProxy(contract(TrustToken), () => { })
+    : timeProxy(contract(TestTrustToken), () => { })
+  const stkTruToken = proxy(contract(StkTruToken), () => { })
   const trueFiPool = isMainnet
-    ? proxy(contract(TrueFiPool), () => {})
-    : proxy(contract(TestTrueFiPool), () => {})
+    ? proxy(contract(TrueFiPool), () => { })
+    : proxy(contract(TestTrueFiPool), () => { })
   const usdc = isMainnet
     ? deployParams['mainnet'].USDC
     : contract(TestUSDCToken)
@@ -88,18 +88,18 @@ deploy({}, (_, config) => {
   const borrowingMutex_impl = contract(BorrowingMutex)
 
   // New contract proxies
-  const trueLender2 = proxy(trueLender2_impl, () => {})
-  const ftlAgency = proxy(ftlAgency_impl, () => {})
-  const poolFactory = proxy(poolFactory_impl, () => {})
-  const liquidator2 = proxy(liquidator2_impl, () => {})
-  const loanFactory2 = proxy(loanFactory2_impl, () => {})
-  const usdc_TrueFiPool2_LinearTrueDistributor = proxy(usdc_TrueFiPool2_LinearTrueDistributor_impl, () => {})
-  const usdc_TrueFiPool2_TrueFarm = proxy(usdc_TrueFiPool2_TrueFarm_impl, () => {})
-  const usdt_TrueFiPool2_LinearTrueDistributor = proxy(usdt_TrueFiPool2_LinearTrueDistributor_impl, () => {})
-  const usdt_TrueFiPool2_TrueFarm = proxy(usdt_TrueFiPool2_TrueFarm_impl, () => {})
-  const trueFiCreditOracle = proxy(trueFiCreditOracle_impl, () => {})
-  const safu = proxy(safu_impl, () => {})
-  const borrowingMutex = proxy(borrowingMutex_impl, () => {})
+  const trueLender2 = proxy(trueLender2_impl, () => { })
+  const ftlAgency = proxy(ftlAgency_impl, () => { })
+  const poolFactory = proxy(poolFactory_impl, () => { })
+  const liquidator2 = proxy(liquidator2_impl, () => { })
+  const loanFactory2 = proxy(loanFactory2_impl, () => { })
+  const usdc_TrueFiPool2_LinearTrueDistributor = proxy(usdc_TrueFiPool2_LinearTrueDistributor_impl, () => { })
+  const usdc_TrueFiPool2_TrueFarm = proxy(usdc_TrueFiPool2_TrueFarm_impl, () => { })
+  const usdt_TrueFiPool2_LinearTrueDistributor = proxy(usdt_TrueFiPool2_LinearTrueDistributor_impl, () => { })
+  const usdt_TrueFiPool2_TrueFarm = proxy(usdt_TrueFiPool2_TrueFarm_impl, () => { })
+  const trueFiCreditOracle = proxy(trueFiCreditOracle_impl, () => { })
+  const safu = proxy(safu_impl, () => { })
+  const borrowingMutex = proxy(borrowingMutex_impl, () => { })
   // New bare contracts
   const trueFiPool2 = contract(TrueFiPool2)
   const implementationReference = contract(ImplementationReference, [trueFiPool2])
@@ -125,7 +125,7 @@ deploy({}, (_, config) => {
     loanFactory2.initialize(poolFactory, trueLender2, ftlAgency, liquidator2, AddressZero, trueFiCreditOracle, borrowingMutex, AddressZero)
   })
   runIf(liquidator2.isInitialized().not(), () => {
-    liquidator2.initialize(stkTruToken, trustToken, loanFactory2, poolFactory, AddressZero)
+    liquidator2.initialize(stkTruToken, trustToken, loanFactory2, poolFactory, AddressZero, AddressZero)
   })
   runIf(poolFactory.pool(usdc).equals(AddressZero), () => {
     poolFactory.allowToken(usdc, true)
