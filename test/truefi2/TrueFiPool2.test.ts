@@ -299,7 +299,7 @@ describe('TrueFiPool2', () => {
       await loan.connect(borrower).withdraw(borrower.address)
       await timeTravel(DAY * 4)
       await loan.enterDefault()
-      await safu.liquidate(loan.address)
+      await safu.liquidate([loan.address])
     })
 
     describe('deficitValue', () => {
@@ -382,7 +382,7 @@ describe('TrueFiPool2', () => {
         await loan.connect(borrower).withdraw(borrower.address)
         await timeTravel(DAY * 4)
         await loan.enterDefault()
-        await safu.liquidate(loan.address)
+        await safu.liquidate([loan.address])
 
         expect(await tusdPool.deficitValue()).to.eq(500136)
         expect(await tusdPool.poolValue()).to.equal(joinAmount.add(136))
@@ -936,7 +936,7 @@ describe('TrueFiPool2', () => {
     async function liquidateLoan () {
       await timeTravel(DAY * 4)
       await loan.enterDefault()
-      await safu.liquidate(loan.address)
+      await safu.liquidate([loan.address])
     }
 
     it('transfers all LTs to the safu', async () => {

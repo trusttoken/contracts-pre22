@@ -81,37 +81,38 @@ contract SAFU is ISAFU, UpgradeableClaimable {
     }
 
     /**
-     * @dev Liquidates a defaulted Loan, withdraws a portion of tru from staking pool
-     * then tries to cover the loan with own funds, to compensate TrueFiPool
+     * @dev Liquidates defaulted loans, withdraws a portion of tru from staking pool
+     * then tries to cover the loans with own funds, to compensate TrueFiPool
      * If SAFU does not have enough funds, deficit is saved to be redeemed later
-     * @param loan Loan to be liquidated
+     * @param loans Loans to be liquidated
      */
-    function liquidate(IDebtToken loan) external {
-        require(loanFactory.isCreatedByFactory(address(loan)), "SAFU: Unknown loan");
-        require(loan.status() == IDebtToken.Status.Defaulted, "SAFU: Loan is not defaulted");
+    function liquidate(IDebtToken[] calldata loans) external {
+        for (uint256 i = 0; i < loans.length; i++) {
+            require(loanFactory.isCreatedByFactory(address(loans[i])), "SAFU: Unknown loan");
+            require(loans[i].status() == IDebtToken.Status.Defaulted, "SAFU: Loan is not defaulted");
+        }
 
-        ITrueFiPool2 pool = ITrueFiPool2(loan.pool());
-        IERC20 token = IERC20(pool.token());
-
-        // Temporary (it has to be storage, memory arrays cannot be pushed)
-        IDebtToken[] memory loans = new IDebtToken[](1);
-        loans[0] = loan;
         liquidator.liquidate(loans);
 
-        _poolLiquidate(pool, loan);
-        uint256 owedToPool = loan.debt().mul(tokenBalance(loan)).div(loan.totalSupply());
-        uint256 safuTokenBalance = tokenBalance(token);
+        for (uint256 i = 0; i < loans.length; i++) {
+            ITrueFiPool2 pool = ITrueFiPool2(loans[i].pool());
+            IERC20 token = IERC20(pool.token());
 
-        uint256 deficit = 0;
-        uint256 toTransfer = owedToPool;
-        if (owedToPool > safuTokenBalance) {
-            deficit = owedToPool.sub(safuTokenBalance);
-            toTransfer = safuTokenBalance;
-            deficiencyToken[loan] = new DeficiencyToken(loan, deficit);
-            poolDeficit[address(loan.pool())] = poolDeficit[address(loan.pool())].add(deficit);
+            _poolLiquidate(pool, loans[i]);
+            uint256 owedToPool = loans[i].debt().mul(tokenBalance(loans[i])).div(loans[i].totalSupply());
+            uint256 safuTokenBalance = tokenBalance(token);
+            uint256 deficit;
+            uint256 toTransfer = owedToPool;
+
+            if (owedToPool > safuTokenBalance) {
+                deficit = owedToPool.sub(safuTokenBalance);
+                toTransfer = safuTokenBalance;
+                deficiencyToken[loans[i]] = new DeficiencyToken(loans[i], deficit);
+                poolDeficit[address(loans[i].pool())] = poolDeficit[address(loans[i].pool())].add(deficit);
+            }
+            token.safeTransfer(address(pool), toTransfer);
+            emit Liquidated(loans[i], toTransfer, deficiencyToken[loans[i]], deficit);
         }
-        token.safeTransfer(address(pool), toTransfer);
-        emit Liquidated(loan, toTransfer, deficiencyToken[loan], deficit);
     }
 
     /**
