@@ -48,6 +48,8 @@ contract Liquidator2 is UpgradeableClaimable {
 
     IPoolFactory public poolFactory;
 
+    ITrueFiPoolOracle public tusdPoolOracle;
+
     // ======= STORAGE DECLARATION END ============
 
     /**
@@ -57,12 +59,12 @@ contract Liquidator2 is UpgradeableClaimable {
     event FetchMaxShareChanged(uint256 newShare);
 
     /**
-     * @dev Emitted when a loan gets liquidated
-     * @param loan Loan that has been liquidated
-     * @param defaultedValue Remaining loan debt to repay
-     * @param withdrawnTru Amount of TRU transferred to compensate defaulted loan
+     * @dev Emitted when loans are liquidated
+     * @param loans Loans that have been liquidated
+     * @param defaultedValue Remaining loans debt to repay
+     * @param withdrawnTru Amount of TRU transferred to compensate defaulted loans
      */
-    event Liquidated(IDebtToken loan, uint256 defaultedValue, uint256 withdrawnTru);
+    event Liquidated(IDebtToken[] loans, uint256 defaultedValue, uint256 withdrawnTru);
 
     /**
      * @dev Emitted when SAFU is changed
@@ -76,6 +78,8 @@ contract Liquidator2 is UpgradeableClaimable {
      */
     event PoolFactoryChanged(IPoolFactory poolFactory);
 
+    event TusdPoolOracleChanged(ITrueFiPoolOracle poolOracle);
+
     /**
      * @dev Initialize this contract
      */
@@ -84,7 +88,8 @@ contract Liquidator2 is UpgradeableClaimable {
         IERC20 _tru,
         ILoanFactory2 _loanFactory,
         IPoolFactory _poolFactory,
-        address _SAFU
+        address _SAFU,
+        ITrueFiPoolOracle _tusdPoolOracle
     ) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
 
@@ -93,6 +98,7 @@ contract Liquidator2 is UpgradeableClaimable {
         loanFactory = _loanFactory;
         poolFactory = _poolFactory;
         SAFU = _SAFU;
+        tusdPoolOracle = _tusdPoolOracle;
         fetchMaxShare = 1000;
     }
 
@@ -115,6 +121,12 @@ contract Liquidator2 is UpgradeableClaimable {
         emit PoolFactoryChanged(_poolFactory);
     }
 
+    function setTusdPoolOracle(ITrueFiPoolOracle _tusdPoolOracle) external onlyOwner {
+        require(address(_tusdPoolOracle) != address(0), "Liquidator: Pool oracle cannot be set to 0");
+        tusdPoolOracle = _tusdPoolOracle;
+        emit TusdPoolOracleChanged(_tusdPoolOracle);
+    }
+
     /**
      * @dev Set new max fetch share
      * @param newShare New share to be set
@@ -129,31 +141,44 @@ contract Liquidator2 is UpgradeableClaimable {
     /**
      * @dev Liquidates a defaulted Loan, withdraws a portion of tru from staking pool
      * then transfers tru to TrueFiPool as compensation
-     * @param loan Loan to be liquidated
+     * @param loans Loan to be liquidated
      */
-    function liquidate(IDebtToken loan) external {
+    function liquidate(IDebtToken[] calldata loans) external {
         require(msg.sender == SAFU, "Liquidator: Only SAFU contract can liquidate a loan");
-        require(loanFactory.isCreatedByFactory(address(loan)), "Liquidator: Unknown loan");
-        require(loan.status() == IDebtToken.Status.Defaulted, "Liquidator: Loan must be defaulted");
-        ITrueFiPool2 pool = ITrueFiPool2(loan.pool());
-        require(poolFactory.isSupportedPool(pool), "Liquidator: Pool not supported for default protection");
-        uint256 defaultedValue = loan.debt().sub(loan.repaid());
-        uint256 withdrawnTru = getAmountToWithdraw(defaultedValue, ITrueFiPoolOracle(pool.oracle()));
+        uint256 totalDefaultedValue;
+
+        for (uint256 i = 0; i < loans.length; i++) {
+            IDebtToken loan = loans[i];
+            require(loanFactory.isCreatedByFactory(address(loan)), "Liquidator: Unknown loan");
+            require(loan.status() == IDebtToken.Status.Defaulted, "Liquidator: Loan must be defaulted");
+            ITrueFiPool2 pool = ITrueFiPool2(loan.pool());
+            require(poolFactory.isSupportedPool(pool), "Liquidator: Pool not supported for default protection");
+
+            uint256 loanDefaultedValue = loan.debt().sub(loan.repaid());
+            totalDefaultedValue = totalDefaultedValue.add(getDefaultedValueInUsd(loanDefaultedValue, pool.oracle()));
+            loan.liquidate();
+        }
+
+        uint256 withdrawnTru = getAmountToWithdraw(totalDefaultedValue);
         stkTru.withdraw(withdrawnTru);
-        loan.liquidate();
         tru.safeTransfer(SAFU, withdrawnTru);
-        emit Liquidated(loan, defaultedValue, withdrawnTru);
+        emit Liquidated(loans, totalDefaultedValue, withdrawnTru);
     }
 
     /**
      * @dev Calculate amount of tru to be withdrawn from staking pool (not more than preset share)
      * @param deficit Amount of tusd lost on defaulted loan
      * @return amount of TRU to be withdrawn on liquidation
+     * tusd oracle is used here, because deficit is represented using 18 decimals
      */
-    function getAmountToWithdraw(uint256 deficit, ITrueFiPoolOracle oracle) internal view returns (uint256) {
+    function getAmountToWithdraw(uint256 deficit) internal view returns (uint256) {
         uint256 stakingPoolSupply = stkTru.stakeSupply();
         uint256 maxWithdrawValue = stakingPoolSupply.mul(fetchMaxShare).div(BASIS_RATIO);
-        uint256 deficitInTru = oracle.tokenToTru(deficit);
+        uint256 deficitInTru = tusdPoolOracle.tokenToTru(deficit);
         return maxWithdrawValue > deficitInTru ? deficitInTru : maxWithdrawValue;
+    }
+
+    function getDefaultedValueInUsd(uint256 defaultedValue, ITrueFiPoolOracle oracle) internal view returns (uint256) {
+        return oracle.tokenToUsd(defaultedValue);
     }
 }

@@ -79,7 +79,7 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
   const arbitraryDistributor = await deployContract(ArbitraryDistributor__factory)
 
   // ====== SETUP ======
-  await liquidator.initialize(stkTru.address, tru.address, loanFactory.address, poolFactory.address, safu.address)
+  await liquidator.initialize(stkTru.address, tru.address, loanFactory.address, poolFactory.address, safu.address, standardTokenOracle.address)
   await loanFactory.initialize(poolFactory.address, lender.address, ftlAgency.address, liquidator.address, mockRateAdjuster.address, creditOracle.address, borrowingMutex.address, creditAgency.address)
   const loanTokenImplementation = await new LoanToken2__factory(owner).deploy()
   const debtTokenImplementation = await new DebtToken__factory(owner).deploy()
