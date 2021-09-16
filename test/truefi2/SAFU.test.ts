@@ -24,6 +24,7 @@ import {
   DebtToken,
   MockErc20Token__factory,
   MockTrueFiPoolOracle__factory,
+  MockErc20Token,
 } from 'contracts'
 
 import {
@@ -166,7 +167,7 @@ describe('SAFU', () => {
       return loan
     }
 
-    const createSupportedPool = async (poolFactory: PoolFactory) => {
+    const createSupportedPool = async (poolFactory: PoolFactory): Promise<[TrueFiPool2, MockErc20Token]> => {
       const poolImplementation = await new TrueFiPool2__factory(owner).deploy()
       const token = await new MockErc20Token__factory(owner).deploy()
       const tokenOracle = await new MockTrueFiPoolOracle__factory(owner).deploy(token.address)
