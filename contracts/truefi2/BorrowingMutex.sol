@@ -17,7 +17,7 @@ contract BorrowingMutex is IBorrowingMutex, UpgradeableClaimable {
 
     mapping(address => address) public override locker;
 
-    mapping(address => bool) public canLock;
+    mapping(address => bool) public isAllowedToLock;
 
     // ======= STORAGE DECLARATION END ===========
 
@@ -27,8 +27,8 @@ contract BorrowingMutex is IBorrowingMutex, UpgradeableClaimable {
 
     event BorrowerUnlocked(address borrower, address locker);
 
-    modifier onlyCanLock() {
-        require(canLock[msg.sender], "BorrowingMutex: Sender is not allowed to lock borrowers");
+    modifier onlyAllowedToLock() {
+        require(isAllowedToLock[msg.sender], "BorrowingMutex: Sender is not allowed to lock borrowers");
         _;
     }
 
@@ -37,15 +37,15 @@ contract BorrowingMutex is IBorrowingMutex, UpgradeableClaimable {
     }
 
     function allowLocker(address _locker, bool isAllowed) external onlyOwner {
-        canLock[_locker] = isAllowed;
+        isAllowedToLock[_locker] = isAllowed;
         emit LockerAllowed(_locker, isAllowed);
     }
 
-    function ban(address borrower) external override onlyCanLock {
+    function ban(address borrower) external override onlyAllowedToLock {
         _lock(borrower, BANNED);
     }
 
-    function lock(address borrower, address _locker) external override onlyCanLock {
+    function lock(address borrower, address _locker) external override onlyAllowedToLock {
         _lock(borrower, _locker);
     }
 

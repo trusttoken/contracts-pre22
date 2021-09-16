@@ -41,18 +41,18 @@ describe('BorrowingMutex', () => {
     })
 
     it('changes allowance status', async () => {
-      expect(await mutex.canLock(owner.address)).to.eq(false)
+      expect(await mutex.isAllowedToLock(owner.address)).to.eq(false)
 
       await mutex.allowLocker(owner.address, true)
-      expect(await mutex.canLock(owner.address)).to.eq(true)
+      expect(await mutex.isAllowedToLock(owner.address)).to.eq(true)
 
       await mutex.allowLocker(owner.address, false)
-      expect(await mutex.canLock(owner.address)).to.eq(false)
+      expect(await mutex.isAllowedToLock(owner.address)).to.eq(false)
     })
   })
 
   describe('ban', () => {
-    it('sender not in canLock', async () => {
+    it('sender not in isAllowedToLock', async () => {
       await expect(mutex.connect(owner).ban(borrower.address))
         .to.be.revertedWith('BorrowingMutex: Sender is not allowed to lock borrowers')
 
@@ -83,7 +83,7 @@ describe('BorrowingMutex', () => {
   })
 
   describe('lock', () => {
-    it('sender not in canLock', async () => {
+    it('sender not in isAllowedToLock', async () => {
       await expect(mutex.connect(owner).lock(borrower.address, owner.address))
         .to.be.revertedWith('BorrowingMutex: Sender is not allowed to lock borrowers')
 
