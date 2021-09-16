@@ -17,9 +17,13 @@ import {
   Safu,
   StkTruToken,
   TrueFiPool2,
+  TrueFiPool2__factory,
+  PoolFactory,
   TrueLender2,
   TrueFiCreditOracle,
   DebtToken,
+  MockErc20Token__factory,
+  MockTrueFiPoolOracle__factory,
 } from 'contracts'
 
 import {
@@ -34,6 +38,7 @@ describe('SAFU', () => {
   let loan: LoanToken2
   let loanFactory: LoanFactory2
   let pool: TrueFiPool2
+  let poolFactory: PoolFactory
   let lender: TrueLender2
   let oneInch: Mock1InchV3
   let liquidator: Liquidator2
@@ -58,6 +63,7 @@ describe('SAFU', () => {
       safu,
       feeToken: token,
       feePool: pool,
+      poolFactory,
       lender,
       loanFactory,
       tru,
@@ -151,6 +157,30 @@ describe('SAFU', () => {
       })
     })
 
+    const createFundedLoan = async (wallet: Wallet, amount: BigNumberish, _pool: TrueFiPool2 = pool) => {
+      const loan = await createLoan(loanFactory, wallet, _pool, amount, YEAR, 1000)
+      await creditOracle.setScore(wallet.address, 255)
+      await creditOracle.setMaxBorrowerLimit(wallet.address, parseEth(100_000_000))
+      await lender.connect(wallet).fund(loan.address)
+      await loan.connect(wallet).withdraw(wallet.address)
+      return loan
+    }
+
+    const createSupportedPool = async (poolFactory: PoolFactory) => {
+      const poolImplementation = await new TrueFiPool2__factory(owner).deploy()
+      const token = await new MockErc20Token__factory(owner).deploy()
+      const tokenOracle = await new MockTrueFiPoolOracle__factory(owner).deploy(token.address)
+      await poolFactory.allowToken(token.address, true)
+      await poolFactory.createPool(token.address)
+      const pool = poolImplementation.attach(await poolFactory.pool(token.address))
+      await poolFactory.supportPool(pool.address)
+      await pool.setOracle(tokenOracle.address)
+      await token.mint(owner.address, parseUSDC(1e7))
+      await token.approve(pool.address, parseUSDC(1e7))
+      await pool.connect(owner).join(parseUSDC(1e7))
+      return [pool, token]
+    }
+
     describe('Handles debt repay', () => {
       beforeEach(async () => {
         await timeTravel(DAY * 400)
@@ -187,6 +217,35 @@ describe('SAFU', () => {
             .to.emit(safu, 'Liquidated')
             .withArgs(loan.address, defaultAmount, AddressZero, 0)
         })
+
+        describe('handles multiple loans', () => {
+          it('from a single pool', async () => {
+            const loan2 = await createFundedLoan(owner, 50)
+            const loan3 = await createFundedLoan(voter, 50)
+            await token.mint(safu.address, 210)
+            await timeTravel(DAY * 365 + 3 * DAY + 1)
+            await loan2.enterDefault()
+            await loan3.enterDefault()
+            await safu.liquidate([loan.address, loan2.address, loan3.address])
+            expect(await safu.poolDeficit(pool.address)).to.eq(0)
+            expect(await token.balanceOf(safu.address)).to.eq(100)
+          })
+
+          it('from multiple pools', async () => {
+            const [pool2, token2] = await createSupportedPool(poolFactory)
+            const loan2 = await createFundedLoan(owner, 50, pool2)
+            const loan3 = await createFundedLoan(voter, 60, pool2)
+            await token2.mint(safu.address, 55 + 66 + 10)
+            await timeTravel(DAY * 365 + 3 * DAY + 1)
+            await loan2.enterDefault()
+            await loan3.enterDefault()
+            await safu.liquidate([loan.address, loan2.address, loan3.address])
+            expect(await safu.poolDeficit(pool.address)).to.eq(0)
+            expect(await safu.poolDeficit(pool2.address)).to.eq(0)
+            expect(await token.balanceOf(safu.address)).to.eq(0)
+            expect(await token2.balanceOf(safu.address)).to.eq(10)
+          })
+        })
       })
 
       describe('Safu does not have funds to cover, all loan tokens are in pool', () => {
@@ -220,6 +279,35 @@ describe('SAFU', () => {
           await expect(tx)
             .to.emit(safu, 'Liquidated')
             .withArgs(loan.address, defaultAmount.div(2), await safu.deficiencyToken(loan.address), defaultAmount.div(2))
+        })
+
+        describe('handles multiple loans', () => {
+          it('from a single pool', async () => {
+            const loan2 = await createFundedLoan(owner, 50)
+            const loan3 = await createFundedLoan(voter, 60)
+            await token.mint(safu.address, 100)
+            await timeTravel(DAY * 365 + 3 * DAY + 1)
+            await loan2.enterDefault()
+            await loan3.enterDefault()
+            await safu.liquidate([loan.address, loan2.address, loan3.address])
+            expect(await safu.poolDeficit(pool.address)).to.eq(defaultAmount.div(2).add(66 - (100 - 55)))
+            expect(await token.balanceOf(safu.address)).to.eq(0)
+          })
+
+          it('from multiple pools', async () => {
+            const [pool2, token2] = await createSupportedPool(poolFactory)
+            const loan2 = await createFundedLoan(owner, 50, pool2)
+            const loan3 = await createFundedLoan(voter, 60, pool2)
+            await token2.mint(safu.address, 100)
+            await timeTravel(DAY * 365 + 3 * DAY + 1)
+            await loan2.enterDefault()
+            await loan3.enterDefault()
+            await safu.liquidate([loan.address, loan2.address, loan3.address])
+            expect(await safu.poolDeficit(pool.address)).to.eq(defaultAmount.div(2))
+            expect(await safu.poolDeficit(pool2.address)).to.eq(66 - (100 - 55))
+            expect(await token.balanceOf(safu.address)).to.eq(0)
+            expect(await token2.balanceOf(safu.address)).to.eq(0)
+          })
         })
       })
     })
