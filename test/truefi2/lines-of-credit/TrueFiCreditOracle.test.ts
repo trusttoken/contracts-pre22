@@ -101,7 +101,7 @@ describe('TrueFiCreditOracle', () => {
     it('returns Eligible for borrowers before expiry', async () => {
       await oracle.setEligibleForDuration(borrower.address, 10 * DAY)
       expect(await oracle.status(borrower.address)).to.equal(Status.Eligible)
-      await timeTravel(provider, 10 * DAY - 1)
+      await timeTravel(provider, 10 * DAY - 10)
       expect(await oracle.status(borrower.address)).to.equal(Status.Eligible)
     })
 
@@ -109,7 +109,7 @@ describe('TrueFiCreditOracle', () => {
       await oracle.setEligibleForDuration(borrower.address, 10 * DAY)
       await timeTravel(provider, 10 * DAY)
       expect(await oracle.status(borrower.address)).to.equal(Status.OnHold)
-      await timeTravel(provider, 3 * DAY - 1)
+      await timeTravel(provider, 3 * DAY - 10)
       expect(await oracle.status(borrower.address)).to.equal(Status.OnHold)
     })
 
