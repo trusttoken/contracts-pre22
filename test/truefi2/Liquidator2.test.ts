@@ -275,7 +275,7 @@ describe('Liquidator2', () => {
         await loan.enterDefault()
         await loan2.enterDefault()
         await expect(liquidator.connect(assurance).liquidate([loan.address, loan2.address]))
-          .to.be.revertedWith('Liquidator: Loans liquidated in a single transaction, have to be of a single borrower')
+          .to.be.revertedWith('Liquidator: Loans liquidated in a single transaction, have to have the same borrower')
       })
 
       it('loan is not defaulted', async () => {
