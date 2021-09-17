@@ -152,6 +152,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         address _lender,
         IFixedTermLoanAgency _ftlAgency,
         address _admin,
+        address, // deprecated param
         uint256 _amount,
         uint256 _term,
         uint256 _apy
