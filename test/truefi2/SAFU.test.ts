@@ -60,7 +60,7 @@ describe('SAFU', () => {
     timeTravel = (time: number) => _timeTravel(_provider, time)
 
     oneInch = await new Mock1InchV3__factory(owner).deploy()
-    ;({
+    ; ({
       safu,
       feeToken: token,
       feePool: pool,
@@ -102,6 +102,11 @@ describe('SAFU', () => {
 
   describe('liquidate', () => {
     describe('reverts if', () => {
+      it('not called by the owner', async () => {
+        await expect(safu.connect(borrower).liquidate([loan.address]))
+          .to.be.revertedWith('Ownable: caller is not the owner')
+      })
+
       it('loan is not defaulted', async () => {
         await expect(safu.liquidate([loan.address]))
           .to.be.revertedWith('SAFU: Loan is not defaulted')
