@@ -481,5 +481,11 @@ describe('Liquidator2', () => {
           .withArgs([debtToken1.address], parseEth(1100), parseTRU(100))
       })
     })
+
+    it('providing empty list of loans does not slash tru', async () => {
+      const balanceBefore = await tru.balanceOf(stkTru.address)
+      liquidator.connect(assurance).liquidate([])
+      expect(await tru.balanceOf(stkTru.address)).to.eq(balanceBefore)
+    })
   })
 })

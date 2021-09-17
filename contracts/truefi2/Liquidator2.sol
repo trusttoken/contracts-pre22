@@ -187,7 +187,7 @@ contract Liquidator2 is UpgradeableClaimable {
     }
 
     function allLoansHaveSameBorrower(IDebtToken[] calldata loans) internal view returns (bool) {
-        if (loans.length == 1) {
+        if (loans.length <= 1) {
             return true;
         }
         address borrower = loans[0].borrower();
