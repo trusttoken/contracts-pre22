@@ -145,6 +145,10 @@ contract Liquidator2 is UpgradeableClaimable {
      */
     function liquidate(IDebtToken[] calldata loans) external {
         require(msg.sender == SAFU, "Liquidator: Only SAFU contract can liquidate a loan");
+        require(
+            areLoansOfSingleBorrower(loans),
+            "Liquidator: Loans liquidated in a single transaction, have to be of a single borrower"
+        );
         uint256 totalDefaultedValue;
 
         for (uint256 i = 0; i < loans.length; i++) {
@@ -180,5 +184,18 @@ contract Liquidator2 is UpgradeableClaimable {
 
     function getDefaultedValueInUsd(uint256 defaultedValue, ITrueFiPoolOracle oracle) internal view returns (uint256) {
         return oracle.tokenToUsd(defaultedValue);
+    }
+
+    function areLoansOfSingleBorrower(IDebtToken[] calldata loans) internal view returns (bool) {
+        if (loans.length == 1) {
+            return true;
+        }
+        address borrower = loans[0].borrower();
+        for (uint256 i = 1; i < loans.length; i++) {
+            if (borrower != loans[i].borrower()) {
+                return false;
+            }
+        }
+        return true;
     }
 }
