@@ -131,6 +131,8 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
     mapping(ITrueFiPool2 => mapping(address => uint256)) public overBorrowLimitTime;
 
+    mapping(address => uint256) public totalBorrowed;
+
     // ======= STORAGE DECLARATION END ============
 
     /// @dev emit `pool` and `oracle` when base rate oracle changed
@@ -275,21 +277,6 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     }
 
     /**
-     * @dev Get total amount borrowed for `borrower` from lines of credit in USD
-     * @param borrower Borrower to get amount borrowed for
-     * @return borrowSum Total amount borrowed for `borrower` in USD
-     */
-    function totalBorrowed(address borrower) public view returns (uint256) {
-        uint256 borrowSum;
-        // loop through pools and sum amount borrowed converted to USD
-        ITrueFiPool2[] memory pools = poolFactory.getSupportedPools();
-        for (uint256 i = 0; i < pools.length; i++) {
-            borrowSum = borrowSum.add(pools[i].oracle().tokenToUsd(borrowed[pools[i]][borrower]));
-        }
-        return borrowSum;
-    }
-
-    /**
      * @dev Get borrow limit for `borrower` in `pool` using rate adjuster
      * @param pool Pool to get borrow limit for
      * @param borrower Borrower to get borrow limit for
@@ -301,7 +288,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
                 pool,
                 creditOracle.score(borrower),
                 creditOracle.maxBorrowerLimit(borrower),
-                totalBorrowed(borrower)
+                totalBorrowed[borrower]
             );
     }
 
@@ -311,7 +298,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
                 pool,
                 creditOracle.score(borrower),
                 creditOracle.maxBorrowerLimit(borrower),
-                totalBorrowed(borrower)
+                totalBorrowed[borrower]
             );
     }
 
@@ -351,7 +338,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
             pool.oracle().tokenToUsd(amount) <= borrowLimit(pool, msg.sender),
             "TrueCreditAgency: Borrow amount cannot exceed borrow limit"
         );
-        if (totalBorrowed(msg.sender) == 0) {
+        if (totalBorrowed[msg.sender] == 0) {
             borrowingMutex.lock(msg.sender, address(this));
         }
         require(
@@ -365,6 +352,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         }
         overBorrowLimitTime[pool][msg.sender] = 0;
         _rebucket(pool, msg.sender, oldScore, newScore, currentDebt.add(amount));
+        totalBorrowed[msg.sender] = totalBorrowed[msg.sender].add(pool.oracle().tokenToUsd(amount));
 
         pool.borrow(amount);
         pool.token().safeTransfer(msg.sender, amount);
@@ -408,7 +396,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
         // transfer token from sender wallets
         _repay(pool, amount);
-        if (totalBorrowed(msg.sender) == 0) {
+        if (totalBorrowed[msg.sender] == 0) {
             borrowingMutex.unlock(msg.sender);
         }
     }
@@ -741,6 +729,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         }
         (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, msg.sender);
         _rebucket(pool, msg.sender, oldScore, newScore, borrowed[pool][msg.sender].sub(amount));
+        totalBorrowed[msg.sender] = totalBorrowed[msg.sender].sub(pool.oracle().tokenToUsd(amount));
 
         emit PrincipalRepaid(pool, msg.sender, amount);
     }
