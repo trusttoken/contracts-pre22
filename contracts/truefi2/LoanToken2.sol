@@ -363,7 +363,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         require(start.add(term).add(LAST_MINUTE_PAYBACK_DURATION) <= block.timestamp, "LoanToken2: Loan cannot be defaulted yet");
 
         status = Status.Defaulted;
-        debtToken = IDebtToken(loanFactory.createDebtToken(pool, borrower, debt.sub(repaid())));
+        debtToken = loanFactory.createDebtToken(pool, borrower, debt.sub(repaid()));
         claimDebtToken(address(pool));
 
         emit Defaulted(debtToken, debt.sub(repaid()));
