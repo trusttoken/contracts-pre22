@@ -69,7 +69,7 @@ describe('FixedTermLoanAgency', () => {
   const YEAR = DAY * 365
 
   let timeTravel: (time: number) => void
-  let extractLoanTokenAddress: (pendingTx: Promise<ContractTransaction>) => void
+  let extractLoanTokenAddress: (pendingTx: Promise<ContractTransaction>) => Promise<LoanToken2>
 
   beforeEachWithFixture(async (wallets, _provider) => {
     ([owner, borrower, borrower2] = wallets)
