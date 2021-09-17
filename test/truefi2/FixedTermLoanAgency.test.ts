@@ -74,8 +74,8 @@ describe('FixedTermLoanAgency', () => {
   beforeEachWithFixture(async (wallets, _provider) => {
     ([owner, borrower, borrower2] = wallets)
     timeTravel = (time: number) => _timeTravel(_provider, time)
-    extractLoanTokenAddress = (pendingTx: Promise<ContractTransaction>) => 
-    _extractLoanTokenAddress(pendingTx, owner, loanFactory)
+    extractLoanTokenAddress = (pendingTx: Promise<ContractTransaction>) =>
+      _extractLoanTokenAddress(pendingTx, owner, loanFactory)
 
     ftlAgency = await deployContract(owner, TestFixedTermLoanAgency__factory)
     oneInch = await new Mock1InchV3__factory(owner).deploy()
