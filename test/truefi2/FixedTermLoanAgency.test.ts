@@ -6,13 +6,13 @@ import {
   parseUSDC,
   setupTruefi2,
   timeTravel as _timeTravel,
+  extractLoanTokenAddress as _extractLoanTokenAddress,
 } from 'utils'
 import { deployContract } from 'scripts/utils/deployContract'
 import {
   BorrowingMutex,
   LoanFactory2,
   LoanToken2,
-  LoanToken2__factory,
   Mock1InchV3,
   Mock1InchV3__factory,
   MockErc20Token,
@@ -69,10 +69,13 @@ describe('FixedTermLoanAgency', () => {
   const YEAR = DAY * 365
 
   let timeTravel: (time: number) => void
+  let extractLoanTokenAddress: (pendingTx: Promise<ContractTransaction>) => void
 
   beforeEachWithFixture(async (wallets, _provider) => {
     ([owner, borrower, borrower2] = wallets)
     timeTravel = (time: number) => _timeTravel(_provider, time)
+    extractLoanTokenAddress = (pendingTx: Promise<ContractTransaction>) => 
+    _extractLoanTokenAddress(pendingTx, owner, loanFactory)
 
     ftlAgency = await deployContract(owner, TestFixedTermLoanAgency__factory)
     oneInch = await new Mock1InchV3__factory(owner).deploy()
@@ -338,17 +341,6 @@ describe('FixedTermLoanAgency', () => {
       })
     })
   })
-
-  async function extractLoanTokenAddress (pendingTx: Promise<ContractTransaction>) {
-    const tx = await pendingTx
-    const receipt = await tx.wait()
-    const iface = loanFactory.interface
-    return LoanToken2__factory.connect(receipt.events
-      .filter(({ address }) => address === loanFactory.address)
-      .map((e) => iface.parseLog(e))
-      .find(({ eventFragment }) => eventFragment.name === 'LoanTokenCreated')
-      .args.contractAddress, owner)
-  }
 
   describe('Funding', () => {
     const fund = async (connectedBorrower: Wallet, pool: Contract, amount: number | BigNumber, term: number) =>
