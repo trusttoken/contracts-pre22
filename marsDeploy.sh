@@ -41,4 +41,5 @@ export ETHERSCAN_KEY="XQPPJGFR4J3I6PEISYEG4JPETFZ2EF56EX"
 yarn mars
 yarn ts-node ${DEPLOY_SCRIPT} \
   --waffle-config ./.waffle.json \
-  "$@"
+  "$@" \
+  --out-file "deployments-mainnet.json"
