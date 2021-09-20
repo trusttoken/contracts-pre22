@@ -10,12 +10,12 @@ set -eu
 DEPLOY_SCRIPT="$1"
 shift 1
 
-if [ "$(git status --porcelain)" ]; then
+if [[ "$(git status --porcelain)" ]]; then
     echo "Error: git working directory must be empty to run deploy script."
     exit 1
 fi
 
-if [ "$(git log --pretty=format:'%H' -n 1)" != "$(cat ./build/canary.hash)" ]; then
+if [[ "$(git log --pretty=format:'%H' -n 1)" != "$(cat ./build/canary.hash)" ]]; then
     echo "Error: Build canary does not match current commit hash. Please run yarn build."
     exit 1
 fi
