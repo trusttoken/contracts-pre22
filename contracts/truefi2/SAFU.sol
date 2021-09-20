@@ -86,7 +86,7 @@ contract SAFU is ISAFU, UpgradeableClaimable {
      * If SAFU does not have enough funds, deficit is saved to be redeemed later
      * @param loans Loans to be liquidated
      */
-    function liquidate(IDebtToken[] calldata loans) external {
+    function liquidate(IDebtToken[] calldata loans) external onlyOwner {
         for (uint256 i = 0; i < loans.length; i++) {
             require(loanFactory.isCreatedByFactory(address(loans[i])), "SAFU: Unknown loan");
             require(loans[i].status() == IDebtToken.Status.Defaulted, "SAFU: Loan is not defaulted");
