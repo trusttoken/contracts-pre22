@@ -36,6 +36,17 @@ while [[ "$@" ]]; do
   shift 1
 done
 
+if [[ "${dry_run}" == 'false' ]]; then
+    if [[ "$(git status --porcelain)" ]]; then
+        echo "Error: git working directory must be empty to run deploy script."
+        exit 1
+    fi
+
+    if [[ "$(git log --pretty=format:'%H' -n 1)" != "$(cat ./build/canary.hash)" ]]; then
+        echo "Error: Build canary does not match current commit hash. Please run yarn build."
+        exit 1
+    fi
+fi
 # Skip PRIVATE_KEY prompt if --yes flag passed
 if [[ "${yes}" == 'false' ]]; then
   # Prompt the user for a PRIVATE_KEY without echoing to bash output.
@@ -48,17 +59,6 @@ if [[ "${yes}" == 'false' ]]; then
   echo "or leave blank if performing a dry run without authorization."
   read -s -p "PRIVATE_KEY=" PRIVATE_KEY
   export PRIVATE_KEY
-fi
-if [[ "${dry_run}" == 'false' ]]; then
-    if [[ "$(git status --porcelain)" ]]; then
-        echo "Error: git working directory must be empty to run deploy script."
-        exit 1
-    fi
-
-    if [[ "$(git log --pretty=format:'%H' -n 1)" != "$(cat ./build/canary.hash)" ]]; then
-        echo "Error: Build canary does not match current commit hash. Please run yarn build."
-        exit 1
-    fi
 fi
 export INFURA_KEY="ec659e9f6af4425c8a13aeb0af9f2809"
 export ETHERSCAN_KEY="XQPPJGFR4J3I6PEISYEG4JPETFZ2EF56EX"
