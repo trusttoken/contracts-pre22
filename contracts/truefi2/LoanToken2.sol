@@ -152,7 +152,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         address _lender,
         IFixedTermLoanAgency _ftlAgency,
         address _admin,
-        address, // deprecated param
+        ILoanFactory2 _loanFactory,
         uint256 _amount,
         uint256 _term,
         uint256 _apy
@@ -171,7 +171,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         lender = _lender;
         ftlAgency = _ftlAgency;
         debt = interest(amount);
-        loanFactory = ILoanFactory2(msg.sender);
+        loanFactory = _loanFactory;
     }
 
     /**

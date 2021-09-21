@@ -436,7 +436,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
         uint256 mintedAmount = mint(amount.sub(fee));
         claimableFees = claimableFees.add(fee);
 
-        // TODO: tx.origin will be depricated in a future ethereum upgrade
+        // TODO: tx.origin will be deprecated in a future ethereum upgrade
         latestJoinBlock[tx.origin] = block.number;
         token.safeTransferFrom(msg.sender, address(this), amount);
 
