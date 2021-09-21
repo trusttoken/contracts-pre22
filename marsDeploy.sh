@@ -10,24 +10,24 @@ set -eu
 DEPLOY_SCRIPT="$1"
 shift 1
 
-yes=false
-network=mainnet
-args=$@
-dry_run=false
+yes='false'
+network='mainnet'
+args="$@"
+dry_run='false'
 
-while [[ $@ ]]; do
-  case $1 in
+while [[ "$@" ]]; do
+  case "$1" in
     --network)
       if [ "$2" ]; then
-        network=$2
+        network="$2"
         shift 1
       fi
       ;;
     --yes)
-      yes=true
+      yes='true'
       ;;
     --dry-run)
-      dry_run=true
+      dry_run='true'
       ;;
     -?)
       # ignore
@@ -37,7 +37,7 @@ while [[ $@ ]]; do
 done
 
 # Skip PRIVATE_KEY prompt if --yes flag passed
-if [[ "$yes" == "false" ]]; then
+if [[ "${yes}" == 'false' ]]; then
   # Prompt the user for a PRIVATE_KEY without echoing to bash output.
   # Then export PRIVATE_KEY to an environment variable that won't get
   # leaked to bash history.
@@ -49,7 +49,7 @@ if [[ "$yes" == "false" ]]; then
   read -s -p "PRIVATE_KEY=" PRIVATE_KEY
   export PRIVATE_KEY
 fi
-if [[ "$dry_run" == "false" ]]; then
+if [[ "${dry_run}" == 'false' ]]; then
     if [[ "$(git status --porcelain)" ]]; then
         echo "Error: git working directory must be empty to run deploy script."
         exit 1
@@ -66,5 +66,5 @@ export ETHERSCAN_KEY="XQPPJGFR4J3I6PEISYEG4JPETFZ2EF56EX"
 yarn mars
 yarn ts-node ${DEPLOY_SCRIPT} \
   --waffle-config ./.waffle.json \
-  $args \
-  --out-file "deployments-$network.json"
+  ${args} \
+  --out-file "deployments-${network}.json"
