@@ -200,6 +200,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
      * Loop through
      */
     function allowPool(ITrueFiPool2 pool, bool isAllowed) external onlyOwner {
+        require(pools.length < maxPools, "TrueRatingAgency: Pools number has reached the limit");
         // if allowing new pool, push to pools array
         if (!isPoolAllowed[pool] && isAllowed) {
             pools.push(pool);

@@ -211,7 +211,14 @@ describe('TrueCreditAgency', () => {
       }
     }
     it('can only be called by the owner', async () => {
-      await expect(creditAgency.connect(borrower).allowPool(tusdPool.address, true)).to.be.revertedWith('Ownable: caller is not the owner')
+      await expect(creditAgency.connect(borrower).allowPool(tusdPool.address, true))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('reverts if there are too many pools', async () => {
+      await creditAgency.setMaxPools(1)
+      await expect(creditAgency.allowPool(usdcPool.address, true))
+        .to.be.revertedWith('TrueRatingAgency: Pools number has reached the limit')
     })
 
     it('changes pool allowance status', async () => {
