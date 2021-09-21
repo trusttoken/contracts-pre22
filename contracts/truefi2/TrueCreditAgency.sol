@@ -180,6 +180,11 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         emit MinCreditScoreChanged(newValue);
     }
 
+    /// @dev set maxPools to `_maxPools`
+    function setMaxPools(uint256 _maxPools) external onlyOwner {
+        maxPools = _maxPools;
+    }
+
     /// @dev set borrower `who` to whitelist status `isAllowed`
     function allowBorrower(address who, bool isAllowed) external onlyOwner {
         isBorrowerAllowed[who] = isAllowed;
