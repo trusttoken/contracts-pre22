@@ -561,6 +561,14 @@ describe('TrueCreditAgency', () => {
     })
   })
 
+  describe('poke', () => {
+    it('fails if pool is not supported', async () => {
+      await creditAgency.allowPool(tusdPool.address, false)
+      await expect(creditAgency.poke(tusd.address))
+        .to.be.revertedWith('TrueCreditAgency: The pool is not supported for poking')
+    })
+  })
+
   describe('repay', () => {
     beforeEach(async () => {
       await creditAgency.allowBorrower(borrower.address, true)
