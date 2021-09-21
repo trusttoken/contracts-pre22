@@ -117,6 +117,9 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     /// @dev minimum credit score required to use lines of credit
     uint256 public minCreditScore;
 
+    // maximum amount of pools credit agency can handle at once
+    uint256 public maxPools;
+
     // ======= STORAGE DECLARATION END ============
 
     /// @dev emit `pool` and `oracle` when base rate oracle changed
@@ -148,6 +151,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         UpgradeableClaimable.initialize(msg.sender);
         creditOracle = _creditOracle;
         rateAdjuster = _rateAdjuster;
+        maxPools = 10;
         interestRepaymentPeriod = 31 days;
     }
 

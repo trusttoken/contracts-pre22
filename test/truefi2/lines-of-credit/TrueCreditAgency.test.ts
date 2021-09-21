@@ -67,7 +67,7 @@ describe('TrueCreditAgency', () => {
     timeTravel = (time: number) => _timeTravel(_provider, time)
     provider = _provider
 
-    ;({
+    ; ({
       standardToken: tusd,
       standardPool: tusdPool,
       feeToken: usdc,
@@ -101,8 +101,16 @@ describe('TrueCreditAgency', () => {
       expect(await creditAgency.creditOracle()).to.equal(creditOracle.address)
     })
 
+    it('sets rateAdjuster', async () => {
+      expect(await creditAgency.rateAdjuster()).to.equal(rateAdjuster.address)
+    })
+
     it('sets interestRepaymentPeriod', async () => {
       expect(await creditAgency.interestRepaymentPeriod()).to.equal(MONTH)
+    })
+
+    it('sets maxPools to 10', async () => {
+      expect(await creditAgency.maxPools()).to.equal(10)
     })
   })
 
