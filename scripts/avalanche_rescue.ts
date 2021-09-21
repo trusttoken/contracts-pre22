@@ -14,10 +14,9 @@ import {
 // ownership was claimed in commented out lines as well
 // this script can verify the owner & pending owners of the TUSD controller & token
 async function avalancheRescue () {
-  const txnArgs = { gasLimit: 500_000, gasPrice: 225_000_000_000 }
-  let network = {
+  const network = {
     chainId: 43114,
-    name: "ava-c-chain"
+    name: 'ava-c-chain',
   }
 
   const provider = new providers.JsonRpcProvider('https://api.avax.network/ext/bc/C/rpc', network)
