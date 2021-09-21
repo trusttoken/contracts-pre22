@@ -1,0 +1,20 @@
+{
+  "unknown": {
+    "avalancheTrueUSD": {
+      "txHash": "0xe896845861efa50dadc75df87adeb286d11923cd284316c03e38a64ae415fc70",
+      "address": "0xFc0912Fe09756bD5f51d609b13D0ee7D7C8d19a9"
+    },
+    "avalancheTrueUSD_proxy": {
+      "txHash": "0xb431b2f0a3729c7e2fdd98fb5cb07277590bce17d321971559d39ca4c11caa88",
+      "address": "0xB36938c51c4f67e5E1112eb11916ed70A772bD75"
+    },
+    "avalancheTokenController": {
+      "txHash": "0x21be0a9ea61af0d457705b3760a8f7386069d35cab6a5194319937df0fe3ab33",
+      "address": "0x1C20E891Bab6b1727d14Da358FAe2984Ed9B59EB"
+    },
+    "avalancheTokenController_proxy": {
+      "txHash": "0xb8a69fb68b07c1e72ac3adb9c6973b888f885eb6891488a6783227a9d7902f28",
+      "address": "0x08031B53f15F7E5aADDCdF6da3382f8483dB4323"
+    }
+  }
+}

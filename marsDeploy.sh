@@ -10,20 +10,34 @@ set -eu
 DEPLOY_SCRIPT="$1"
 shift 1
 
-if [[ ! " $@ " =~ " --dry-run " ]]; then
-    if [[ "$(git status --porcelain)" ]]; then
-        echo "Error: git working directory must be empty to run deploy script."
-        exit 1
-    fi
+yes=false
+network=mainnet
+args=$@
+dry_run=false
 
-    if [[ "$(git log --pretty=format:'%H' -n 1)" != "$(cat ./build/canary.hash)" ]]; then
-        echo "Error: Build canary does not match current commit hash. Please run yarn build."
-        exit 1
-    fi
-fi
+while [[ $@ ]]; do
+  case $1 in
+    --network)
+      if [ "$2" ]; then
+        network=$2
+        shift 1
+      fi
+      ;;
+    --yes)
+      yes=true
+      ;;
+    --dry-run)
+      dry_run=true
+      ;;
+    -?)
+      # ignore
+      ;;
+  esac
+  shift 1
+done
 
 # Skip PRIVATE_KEY prompt if --yes flag passed
-if [[ ! " $@ " =~ " --yes " ]]; then
+if [[ "$yes" == "false" ]]; then
   # Prompt the user for a PRIVATE_KEY without echoing to bash output.
   # Then export PRIVATE_KEY to an environment variable that won't get
   # leaked to bash history.
@@ -35,11 +49,22 @@ if [[ ! " $@ " =~ " --yes " ]]; then
   read -s -p "PRIVATE_KEY=" PRIVATE_KEY
   export PRIVATE_KEY
 fi
+if [[ "$dry_run" == "false" ]]; then
+    if [[ "$(git status --porcelain)" ]]; then
+        echo "Error: git working directory must be empty to run deploy script."
+        exit 1
+    fi
+
+    if [[ "$(git log --pretty=format:'%H' -n 1)" != "$(cat ./build/canary.hash)" ]]; then
+        echo "Error: Build canary does not match current commit hash. Please run yarn build."
+        exit 1
+    fi
+fi
 export INFURA_KEY="ec659e9f6af4425c8a13aeb0af9f2809"
 export ETHERSCAN_KEY="XQPPJGFR4J3I6PEISYEG4JPETFZ2EF56EX"
 
 yarn mars
 yarn ts-node ${DEPLOY_SCRIPT} \
   --waffle-config ./.waffle.json \
-  "$@" \
-  --out-file "deployments-mainnet.json"
+  $args \
+  --out-file "deployments-$network.json"
