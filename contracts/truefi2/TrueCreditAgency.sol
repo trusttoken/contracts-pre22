@@ -367,6 +367,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
      * @param amount Amount of tokens to repay
      */
     function repay(ITrueFiPool2 pool, uint256 amount) public {
+        require(isPoolAllowed[pool], "TrueCreditAgency: The pool is not supported");
         uint256 currentDebt = borrowed[pool][msg.sender];
         uint256 accruedInterest = interest(pool, msg.sender);
         require(currentDebt.add(accruedInterest) >= amount, "TrueCreditAgency: Cannot repay over the debt");
