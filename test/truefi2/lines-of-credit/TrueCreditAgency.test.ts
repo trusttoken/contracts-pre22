@@ -575,6 +575,12 @@ describe('TrueCreditAgency', () => {
         .to.be.revertedWith('TrueCreditAgency: Cannot repay over the debt')
     })
 
+    it('fails if pool is not supported', async () => {
+      await creditAgency.allowPool(usdcPool.address, false)
+      await expect(creditAgency.connect(borrower).repay(usdcPool.address, 500))
+        .to.be.revertedWith('TrueCreditAgency: The pool is not supported')
+    })
+
     it('repays debt to the pool', async () => {
       await creditAgency.connect(borrower).repay(tusdPool.address, 500)
 
