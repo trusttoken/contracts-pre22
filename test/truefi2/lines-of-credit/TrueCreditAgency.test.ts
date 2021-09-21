@@ -171,7 +171,7 @@ describe('TrueCreditAgency', () => {
         .to.be.revertedWith('Ownable: caller is not the owner')
     })
 
-    it('changes minimal credit score', async () => {
+    it('changes maximum pools capacity', async () => {
       await creditAgency.setMaxPools(1)
       expect(await creditAgency.maxPools()).to.eq(1)
     })
