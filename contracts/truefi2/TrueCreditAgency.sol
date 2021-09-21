@@ -498,6 +498,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
      * @param pool Pool to update state for
      */
     function poke(ITrueFiPool2 pool) public {
+        require(isPoolAllowed[pool], "TrueCreditAgency: The pool is not supported for poking");
         uint256 bitMap = usedBucketsBitmap;
         uint256 timeNow = block.timestamp;
         // get basic pool rate
