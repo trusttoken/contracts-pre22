@@ -133,9 +133,6 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
     // ======= STORAGE DECLARATION END ============
 
-    /// @dev emit `pool` and `oracle` when base rate oracle changed
-    event BaseRateOracleChanged(ITrueFiPool2 pool, ITimeAveragedBaseRateOracle oracle);
-
     /// @dev emit `newRateAdjuster` when rate adjuster changed
     event TrueRateAdjusterChanged(ITrueRateAdjuster newRateAdjuster);
 
