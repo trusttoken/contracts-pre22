@@ -13,6 +13,7 @@ import {ITrueCreditAgency} from "./interface/ITrueCreditAgency.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
 import {ITimeAveragedBaseRateOracle} from "./interface/ITimeAveragedBaseRateOracle.sol";
 import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
+import {IDebtToken} from "./interface/ILoanToken2.sol";
 
 interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
     function decimals() external view returns (uint8);
@@ -477,7 +478,9 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
             borrowerTotalPaidInterest[pool][borrower] = borrowerTotalPaidInterest[pool][borrower].add(_interest);
             poolTotalPaidInterest[pool] = poolTotalPaidInterest[pool].add(_interest);
 
-            loanFactory.createDebtToken(pool, borrower, debt);
+            IDebtToken newToken = loanFactory.createDebtToken(pool, borrower, debt);
+            newToken.approve(address(pool), debt);
+            pool.addDebt(newToken, debt);
         }
 
         borrowingMutex.unlock(borrower);
