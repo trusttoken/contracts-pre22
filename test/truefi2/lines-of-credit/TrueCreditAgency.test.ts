@@ -165,7 +165,7 @@ describe('TrueCreditAgency', () => {
     })
   })
 
-  describe.only('setMaxPools', () => {
+  describe('setMaxPools', () => {
     it('reverts if not called by the owner', async () => {
       await expect(creditAgency.connect(borrower).setMaxPools(1))
         .to.be.revertedWith('Ownable: caller is not the owner')
@@ -174,6 +174,12 @@ describe('TrueCreditAgency', () => {
     it('changes minimal credit score', async () => {
       await creditAgency.setMaxPools(1)
       expect(await creditAgency.maxPools()).to.eq(1)
+    })
+
+    it('emits event', async () => {
+      await expect(creditAgency.setMaxPools(1))
+        .to.emit(creditAgency, 'MaxPoolsChanged')
+        .withArgs(1)
     })
   })
 

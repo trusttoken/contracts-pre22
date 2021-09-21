@@ -146,6 +146,9 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     /// @dev emit `newValue` when minimum credit score is changed
     event MinCreditScoreChanged(uint256 newValue);
 
+    /// @dev emit `maxPools` when maximum pools amount is changed
+    event MaxPoolsChanged(uint256 maxPools);
+
     /// @dev initialize
     function initialize(ITrueFiCreditOracle _creditOracle, ITrueRateAdjuster _rateAdjuster) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
@@ -183,6 +186,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     /// @dev set maxPools to `_maxPools`
     function setMaxPools(uint256 _maxPools) external onlyOwner {
         maxPools = _maxPools;
+        emit MaxPoolsChanged(_maxPools);
     }
 
     /// @dev set borrower `who` to whitelist status `isAllowed`
