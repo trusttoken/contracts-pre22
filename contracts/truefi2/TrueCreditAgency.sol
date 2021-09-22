@@ -131,6 +131,9 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
     mapping(ITrueFiPool2 => mapping(address => uint256)) public overBorrowLimitTime;
 
+    // maximum amount of pools credit agency can handle at once
+    uint256 public maxPools;
+
     // ======= STORAGE DECLARATION END ============
 
     /// @dev emit `newRateAdjuster` when rate adjuster changed
@@ -162,6 +165,9 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
     event EnteredDefault(address borrower, DefaultReason reason);
 
+    /// @dev emit `maxPools` when maximum pools amount is changed
+    event MaxPoolsChanged(uint256 maxPools);
+
     /// @dev initialize
     function initialize(
         ITrueFiCreditOracle _creditOracle,
@@ -177,6 +183,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         poolFactory = _poolFactory;
         loanFactory = _loanFactory;
         minCreditScore = 191;
+        maxPools = 10;
         interestRepaymentPeriod = 31 days;
     }
 
@@ -217,6 +224,12 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     function setMinCreditScore(uint256 newValue) external onlyOwner {
         minCreditScore = newValue;
         emit MinCreditScoreChanged(newValue);
+    }
+
+    /// @dev set maxPools to `_maxPools`
+    function setMaxPools(uint256 _maxPools) external onlyOwner {
+        maxPools = _maxPools;
+        emit MaxPoolsChanged(_maxPools);
     }
 
     /// @dev set borrower `who` to whitelist status `isAllowed`
@@ -385,7 +398,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
      * @param amount Amount of tokens to repay
      */
     function repay(ITrueFiPool2 pool, uint256 amount) public {
-        require(isPoolAllowed[pool], "TrueCreditAgency: The pool is not supported");
+        require(poolFactory.isSupportedPool(pool), "TrueCreditAgency: The pool is not supported");
         uint256 currentDebt = borrowed[pool][msg.sender];
         uint256 accruedInterest = interest(pool, msg.sender);
         require(currentDebt.add(accruedInterest) >= amount, "TrueCreditAgency: Cannot repay over the debt");
@@ -499,7 +512,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
      * @param pool Pool to update state for
      */
     function poke(ITrueFiPool2 pool) public {
-        require(isPoolAllowed[pool], "TrueCreditAgency: The pool is not supported for poking");
+        require(poolFactory.isSupportedPool(pool), "TrueCreditAgency: The pool is not supported for poking");
         uint256 bitMap = usedBucketsBitmap;
         uint256 timeNow = block.timestamp;
         // get basic pool rate

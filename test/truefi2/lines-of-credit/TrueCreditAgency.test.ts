@@ -56,7 +56,7 @@ describe('TrueCreditAgency', () => {
   const MONTH = DAY * 31
   const PRECISION = BigNumber.from(10).pow(27)
 
-  async function setupBorrower (borrower: Wallet, score: number, amount: BigNumberish) {
+  async function setupBorrower(borrower: Wallet, score: number, amount: BigNumberish) {
     await creditAgency.allowBorrower(borrower.address, true)
     await creditOracle.setScore(borrower.address, score)
     await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
@@ -69,21 +69,21 @@ describe('TrueCreditAgency', () => {
     timeTravel = (time: number) => _timeTravel(_provider, time)
     provider = _provider
 
-    ; ({
-      standardToken: tusd,
-      standardPool: tusdPool,
-      feeToken: usdc,
-      feePool: usdcPool,
-      loanFactory,
-      lender,
-      creditAgency,
-      creditOracle,
-      standardBaseRateOracle: tusdBaseRateOracle,
-      mockSpotOracle,
-      rateAdjuster,
-      borrowingMutex,
-      poolFactory,
-    } = await setupTruefi2(owner, provider))
+      ; ({
+        standardToken: tusd,
+        standardPool: tusdPool,
+        feeToken: usdc,
+        feePool: usdcPool,
+        loanFactory,
+        lender,
+        creditAgency,
+        creditOracle,
+        standardBaseRateOracle: tusdBaseRateOracle,
+        mockSpotOracle,
+        rateAdjuster,
+        borrowingMutex,
+        poolFactory,
+      } = await setupTruefi2(owner, provider))
 
     await tusdPool.setCreditAgency(creditAgency.address)
     await tusd.mint(owner.address, parseEth(1e7))
@@ -105,6 +105,10 @@ describe('TrueCreditAgency', () => {
       expect(await creditAgency.creditOracle()).to.equal(creditOracle.address)
     })
 
+    it('sets rateAdjuster', async () => {
+      expect(await creditAgency.rateAdjuster()).to.equal(rateAdjuster.address)
+    })
+
     it('sets interestRepaymentPeriod', async () => {
       expect(await creditAgency.interestRepaymentPeriod()).to.equal(MONTH)
     })
@@ -119,6 +123,10 @@ describe('TrueCreditAgency', () => {
 
     it('sets loanFactory', async () => {
       expect(await creditAgency.loanFactory()).to.equal(loanFactory.address)
+    })
+
+    it('sets maxPools to 10', async () => {
+      expect(await creditAgency.maxPools()).to.equal(10)
     })
   })
 
@@ -215,6 +223,24 @@ describe('TrueCreditAgency', () => {
     it('emits event', async () => {
       await expect(creditAgency.setMinCreditScore(1))
         .to.emit(creditAgency, 'MinCreditScoreChanged')
+        .withArgs(1)
+    })
+  })
+
+  describe('setMaxPools', () => {
+    it('reverts if not called by the owner', async () => {
+      await expect(creditAgency.connect(borrower).setMaxPools(1))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('changes maximum pools capacity', async () => {
+      await creditAgency.setMaxPools(1)
+      expect(await creditAgency.maxPools()).to.eq(1)
+    })
+
+    it('emits event', async () => {
+      await expect(creditAgency.setMaxPools(1))
+        .to.emit(creditAgency, 'MaxPoolsChanged')
         .withArgs(1)
     })
   })
@@ -1060,7 +1086,7 @@ describe('TrueCreditAgency', () => {
         await creditAgency.allowBorrower(borrower.address, false)
       })
 
-      async function extractDebtTokens (pendingTx: Promise<ContractTransaction>) {
+      async function extractDebtTokens(pendingTx: Promise<ContractTransaction>) {
         const tx = await pendingTx
         const receipt = await tx.wait()
         const iface = loanFactory.interface
