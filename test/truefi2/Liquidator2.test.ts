@@ -294,7 +294,7 @@ describe('Liquidator2', () => {
         await borrowingMutex.initialize()
         await borrowingMutex.allowLocker(owner.address, true)
         const fakeLoan = await deployContract(LoanToken2__factory)
-        await fakeLoan.initialize(usdcPool.address, borrowingMutex.address, borrower.address, borrower.address, AddressZero, owner.address, liquidator.address, parseUSDC(1000), YEAR, 1000)
+        await fakeLoan.initialize(usdcPool.address, borrowingMutex.address, borrower.address, borrower.address, AddressZero, owner.address, liquidator.address, AddressZero, parseUSDC(1000), YEAR, 1000)
         await usdc.connect(borrower).approve(fakeLoan.address, parseUSDC(1000))
         await fakeLoan.connect(borrower).fund()
         await borrowingMutex.lock(borrower.address, await fakeLoan.address)

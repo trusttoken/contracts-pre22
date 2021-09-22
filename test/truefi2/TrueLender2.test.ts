@@ -80,7 +80,7 @@ describe('TrueLender2', () => {
     lender = await deployContract(owner, TestTrueLender__factory)
     oneInch = await new Mock1InchV3__factory(owner).deploy()
 
-    ;({
+    ; ({
       loanFactory,
       feePool,
       standardTokenOracle: poolOracle,
@@ -337,6 +337,7 @@ describe('TrueLender2', () => {
           lender.address,
           AddressZero,
           owner.address,
+          AddressZero,
           AddressZero,
           100000,
           DAY,
