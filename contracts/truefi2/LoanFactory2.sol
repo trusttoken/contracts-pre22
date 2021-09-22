@@ -214,49 +214,49 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     }
 
     function setCreditOracle(ITrueFiCreditOracle _creditOracle) external onlyAdmin {
-        require(address(_creditOracle) != address(0), "LoanFactory: Cannot set credit oracle to address(0)");
+        require(address(_creditOracle) != address(0), "LoanFactory: Cannot set credit oracle to zero address");
         creditOracle = _creditOracle;
         emit CreditOracleChanged(_creditOracle);
     }
 
     function setRateAdjuster(ITrueRateAdjuster _rateAdjuster) external onlyAdmin {
-        require(address(_rateAdjuster) != address(0), "LoanFactory: Cannot set rate adjuster to address(0)");
+        require(address(_rateAdjuster) != address(0), "LoanFactory: Cannot set rate adjuster to zero address");
         rateAdjuster = _rateAdjuster;
         emit RateAdjusterChanged(_rateAdjuster);
     }
 
     function setBorrowingMutex(IBorrowingMutex _mutex) external onlyAdmin {
-        require(address(_mutex) != address(0), "LoanFactory: Cannot set borrowing mutex to address(0)");
+        require(address(_mutex) != address(0), "LoanFactory: Cannot set borrowing mutex to zero address");
         borrowingMutex = _mutex;
         emit BorrowingMutexChanged(_mutex);
     }
 
     function setLoanTokenImplementation(ILoanToken2 _implementation) external onlyAdmin {
-        require(address(_implementation) != address(0), "LoanFactory: Cannot set loan token implementation to address(0)");
+        require(address(_implementation) != address(0), "LoanFactory: Cannot set loan token implementation to zero address");
         loanTokenImplementation = _implementation;
         emit LoanTokenImplementationChanged(_implementation);
     }
 
     function setCreditAgency(ITrueCreditAgency _creditAgency) external onlyAdmin {
-        require(address(_creditAgency) != address(0), "LoanFactory: Cannot set credit agency to address(0)");
+        require(address(_creditAgency) != address(0), "LoanFactory: Cannot set credit agency to zero address");
         creditAgency = _creditAgency;
         emit CreditAgencyChanged(_creditAgency);
     }
 
     function setLender(address _lender) external onlyAdmin {
-        require(_lender != address(0), "LoanFactory: Cannot set lender to address(0)");
+        require(_lender != address(0), "LoanFactory: Cannot set lender to zero address");
         lender = _lender;
         emit LenderChanged(_lender);
     }
 
     function setDebtTokenImplementation(IDebtToken _implementation) external onlyAdmin {
-        require(address(_implementation) != address(0), "LoanFactory: Cannot set debt token implementation to address(0)");
+        require(address(_implementation) != address(0), "LoanFactory: Cannot set debt token implementation to zero address");
         debtTokenImplementation = _implementation;
         emit DebtTokenImplementationChanged(_implementation);
     }
 
     function setFixedTermLoanAgency(IFixedTermLoanAgency _ftlAgency) external onlyAdmin {
-        require(address(_ftlAgency) != address(0), "LoanFactory: Cannot set fixed term loan agency to address(0)");
+        require(address(_ftlAgency) != address(0), "LoanFactory: Cannot set fixed term loan agency to zero address");
         ftlAgency = _ftlAgency;
         emit FixedTermLoanAgencyChanged(_ftlAgency);
     }

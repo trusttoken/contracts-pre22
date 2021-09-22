@@ -475,7 +475,7 @@ describe('GovernorAlpha', () => {
   })
 
   describe('__abdicate', () => {
-    it('guardian should be address(0)', async () => {
+    it('guardian should be zero address', async () => {
       await governorAlpha.connect(owner).__abdicate()
       expect(await governorAlpha.guardian()).to.eq('0x0000000000000000000000000000000000000000')
     })

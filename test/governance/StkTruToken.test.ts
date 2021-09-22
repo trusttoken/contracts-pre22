@@ -93,7 +93,7 @@ describe('StkTruToken', () => {
   })
 
   describe('setFeeToken', () => {
-    it('is possible to change fee token from address(0)', async () => {
+    it('is possible to change fee token from zero address', async () => {
       await stkToken.setFeeToken(AddressZero)
       await stkToken.setFeeToken(feeToken.address)
       expect(await stkToken.feeToken()).to.eq(feeToken.address)

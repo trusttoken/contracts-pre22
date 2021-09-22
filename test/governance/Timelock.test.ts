@@ -53,7 +53,7 @@ describe('Timelock', () => {
       return proxy
     }
 
-    it('upgrades proxy implementation to address(0)', async () => {
+    it('upgrades proxy implementation to zero address', async () => {
       const proxy = await createProxy()
       expect(await proxy.implementation()).to.not.equal(AddressZero)
       await timelock.connect(pauser).emergencyPauseProxy(proxy.address)
@@ -98,7 +98,7 @@ describe('Timelock', () => {
       return [proxy, reference]
     }
 
-    it('upgrades proxy implementation to address(0)', async () => {
+    it('upgrades proxy implementation to zero address', async () => {
       const [proxy, reference] = await createProxy()
       expect(await reference.implementation()).to.not.equal(AddressZero)
       expect(await proxy.implementation()).to.not.equal(AddressZero)

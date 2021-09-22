@@ -393,9 +393,9 @@ describe('LoanFactory2', () => {
         .to.be.revertedWith('LoanFactory: Caller is not the admin')
     })
 
-    it('cannot be set to address(0)', async () => {
+    it('cannot be set to zero address', async () => {
       await expect(loanFactory.setCreditOracle(AddressZero))
-        .to.be.revertedWith('LoanFactory: Cannot set credit oracle to address(0)')
+        .to.be.revertedWith('LoanFactory: Cannot set credit oracle to zero address')
     })
 
     it('changes creditOracle', async () => {
@@ -424,9 +424,9 @@ describe('LoanFactory2', () => {
         .to.be.revertedWith('LoanFactory: Caller is not the admin')
     })
 
-    it('cannot be set to address(0)', async () => {
+    it('cannot be set to zero address', async () => {
       await expect(loanFactory.setRateAdjuster(AddressZero))
-        .to.be.revertedWith('LoanFactory: Cannot set rate adjuster to address(0)')
+        .to.be.revertedWith('LoanFactory: Cannot set rate adjuster to zero address')
     })
 
     it('changes rateAdjuster', async () => {
@@ -455,9 +455,9 @@ describe('LoanFactory2', () => {
         .to.be.revertedWith('LoanFactory: Caller is not the admin')
     })
 
-    it('cannot be set to address(0)', async () => {
+    it('cannot be set to zero address', async () => {
       await expect(loanFactory.setBorrowingMutex(AddressZero))
-        .to.be.revertedWith('LoanFactory: Cannot set borrowing mutex to address(0)')
+        .to.be.revertedWith('LoanFactory: Cannot set borrowing mutex to zero address')
     })
 
     it('changes borrowingMutex', async () => {
@@ -485,9 +485,9 @@ describe('LoanFactory2', () => {
         .to.be.revertedWith('LoanFactory: Caller is not the admin')
     })
 
-    it('cannot be set to address(0)', async () => {
+    it('cannot be set to zero address', async () => {
       await expect(loanFactory.setLoanTokenImplementation(AddressZero))
-        .to.be.revertedWith('LoanFactory: Cannot set loan token implementation to address(0)')
+        .to.be.revertedWith('LoanFactory: Cannot set loan token implementation to zero address')
     })
 
     it('changes loanTokenImplementation', async () => {
@@ -510,9 +510,9 @@ describe('LoanFactory2', () => {
         .to.be.revertedWith('LoanFactory: Caller is not the admin')
     })
 
-    it('cannot be set to address(0)', async () => {
+    it('cannot be set to zero address', async () => {
       await expect(loanFactory.setCreditAgency(AddressZero))
-        .to.be.revertedWith('LoanFactory: Cannot set credit agency to address(0)')
+        .to.be.revertedWith('LoanFactory: Cannot set credit agency to zero address')
     })
 
     it('changes creditAgency', async () => {
@@ -535,9 +535,9 @@ describe('LoanFactory2', () => {
         .to.be.revertedWith('LoanFactory: Caller is not the admin')
     })
 
-    it('cannot be set to address(0)', async () => {
+    it('cannot be set to zero address', async () => {
       await expect(loanFactory.setLender(AddressZero))
-        .to.be.revertedWith('LoanFactory: Cannot set lender to address(0)')
+        .to.be.revertedWith('LoanFactory: Cannot set lender to zero address')
     })
 
     it('changes lender', async () => {
@@ -565,9 +565,9 @@ describe('LoanFactory2', () => {
         .to.be.revertedWith('LoanFactory: Caller is not the admin')
     })
 
-    it('cannot be set to address(0)', async () => {
+    it('cannot be set to zero address', async () => {
       await expect(loanFactory.setDebtTokenImplementation(AddressZero))
-        .to.be.revertedWith('LoanFactory: Cannot set debt token implementation to address(0)')
+        .to.be.revertedWith('LoanFactory: Cannot set debt token implementation to zero address')
     })
 
     it('changes debtTokenImplementation', async () => {
@@ -595,9 +595,9 @@ describe('LoanFactory2', () => {
         .to.be.revertedWith('LoanFactory: Caller is not the admin')
     })
 
-    it('cannot be set to address(0)', async () => {
+    it('cannot be set to zero address', async () => {
       await expect(loanFactory.setFixedTermLoanAgency(AddressZero))
-        .to.be.revertedWith('LoanFactory: Cannot set fixed term loan agency to address(0)')
+        .to.be.revertedWith('LoanFactory: Cannot set fixed term loan agency to zero address')
     })
 
     it('changes fixed term loan agency', async () => {

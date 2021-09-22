@@ -103,7 +103,7 @@ describe('TrueCurrency - Mint/Burn', () => {
         })
       })
 
-      it('address(0) is not a redemption address', async () => {
+      it('zero address is not a redemption address', async () => {
         await expect(transfer(tokenOwner, AddressZero, 1))
           .to.be.revertedWith('ERC20: transfer to the zero address')
       })
