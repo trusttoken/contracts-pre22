@@ -980,7 +980,7 @@ describe('TrueCreditAgency', () => {
     })
 
     describe('because borrower', () => {
-      enum DefaultReason { NotAllowed, Ineligible, BelowMinScore, InterestOverdue, TimeLimitExceeded }
+      enum DefaultReason { NotAllowed, Ineligible, BelowMinScore, InterestOverdue, BorrowLimitExceeded }
 
       it('is not allowed to use LoCs', async () => {
         await creditAgency.allowBorrower(borrower.address, false)
@@ -1018,7 +1018,7 @@ describe('TrueCreditAgency', () => {
         await timeTravel(DAY * 3 + 1)
         await expect(creditAgency.enterDefault(borrower.address))
           .to.emit(creditAgency, 'EnteredDefault')
-          .withArgs(borrower.address, DefaultReason.TimeLimitExceeded)
+          .withArgs(borrower.address, DefaultReason.BorrowLimitExceeded)
       })
     })
 
