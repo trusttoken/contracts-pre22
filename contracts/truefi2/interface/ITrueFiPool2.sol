@@ -69,4 +69,6 @@ interface ITrueFiPool2 is IERC20 {
      * @dev SAFU buys DebtTokens from the pool
      */
     function liquidateDebt(IDebtToken debtToken) external;
+
+    function addDebt(IDebtToken debtToken, uint256 amount) external;
 }

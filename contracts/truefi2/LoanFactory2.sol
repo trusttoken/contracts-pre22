@@ -210,15 +210,16 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         ITrueFiPool2 _pool,
         address _borrower,
         uint256 _debt
-    ) external override onlyTCA {
+    ) external override onlyTCA returns (IDebtToken) {
         address dtImplementationAddress = address(debtTokenImplementation);
         require(dtImplementationAddress != address(0), "LoanFactory: Debt token implementation should be set");
 
         address newToken = Clones.clone(dtImplementationAddress);
-        DebtToken(newToken).initialize(_pool, lender, _borrower, liquidator, _debt);
+        DebtToken(newToken).initialize(_pool, msg.sender, _borrower, liquidator, _debt);
         isDebtToken[newToken] = true;
 
         emit DebtTokenCreated(newToken);
+        return IDebtToken(newToken);
     }
 
     function isCreatedByFactory(address loan) external override view returns (bool) {

@@ -13,6 +13,7 @@ import {ITrueCreditAgency} from "./interface/ITrueCreditAgency.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
 import {ITimeAveragedBaseRateOracle} from "./interface/ITimeAveragedBaseRateOracle.sol";
 import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
+import {IDebtToken} from "./interface/ILoanToken2.sol";
 
 interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
     function decimals() external view returns (uint8);
@@ -33,7 +34,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     using SafeERC20 for ERC20;
     using SafeMath for uint256;
 
-    enum DefaultReason {NotAllowed, Ineligible, BelowMinScore, InterestOverdue, TimeLimitExceeded}
+    enum DefaultReason {NotAllowed, Ineligible, BelowMinScore, InterestOverdue, BorrowLimitExceeded}
 
     /// @dev credit scores are uint8
     uint8 constant MAX_CREDIT_SCORE = 255;
@@ -452,7 +453,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
             }
             uint256 _overBorrowLimitTime = overBorrowLimitTime[pool][borrower];
             if (_overBorrowLimitTime != 0 && defaultTime >= _overBorrowLimitTime) {
-                _enterDefault(borrower, DefaultReason.TimeLimitExceeded);
+                _enterDefault(borrower, DefaultReason.BorrowLimitExceeded);
                 return;
             }
         }
@@ -477,7 +478,9 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
             borrowerTotalPaidInterest[pool][borrower] = borrowerTotalPaidInterest[pool][borrower].add(_interest);
             poolTotalPaidInterest[pool] = poolTotalPaidInterest[pool].add(_interest);
 
-            loanFactory.createDebtToken(pool, borrower, debt);
+            IDebtToken newToken = loanFactory.createDebtToken(pool, borrower, debt);
+            newToken.approve(address(pool), debt);
+            pool.addDebt(newToken, debt);
         }
 
         borrowingMutex.unlock(borrower);

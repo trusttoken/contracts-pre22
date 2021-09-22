@@ -64,7 +64,7 @@ describe('LoanFactory2', () => {
     await loanFactory.setFixedTermLoanAgency(ftla.address)
     const tx = await loanFactory.connect(ftla).createFTLALoanToken(pool.address, borrower.address, amount, term, apy)
     const creationEvent = (await tx.wait()).events[0]
-    ;({ contractAddress } = creationEvent.args)
+      ; ({ contractAddress } = creationEvent.args)
     return LoanToken2__factory.connect(contractAddress, owner)
   }
 
@@ -280,7 +280,7 @@ describe('LoanFactory2', () => {
 
     describe('deploys loan token contract', () => {
       it('has storage variables set properly', async () => {
-        enum Status {Awaiting, Funded, Withdrawn, Settled, Defaulted, Liquidated}
+        enum Status { Awaiting, Funded, Withdrawn, Settled, Defaulted, Liquidated }
 
         expect(await loanToken.pool()).to.eq(pool.address)
         expect(await loanToken.borrowingMutex()).to.eq(borrowingMutex.address)
@@ -341,7 +341,7 @@ describe('LoanFactory2', () => {
         expect(await debtToken.liquidator()).to.eq(liquidator.address)
         expect(await debtToken.debt()).to.eq(parseEth(1))
         expect(await debtToken.status()).to.eq(Status.Defaulted)
-        expect(await debtToken.balanceOf(lender.address)).to.eq(parseEth(1))
+        expect(await debtToken.balanceOf(tca.address)).to.eq(parseEth(1))
       })
 
       it('marks deployed contract as debt token', async () => {
