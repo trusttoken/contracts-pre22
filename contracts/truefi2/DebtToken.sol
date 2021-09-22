@@ -36,7 +36,7 @@ contract DebtToken is IDebtToken, ERC20 {
 
     function initialize(
         ITrueFiPool2 _pool,
-        address _lender,
+        address _holder,
         address _borrower,
         address _liquidator,
         uint256 _debt
@@ -48,7 +48,7 @@ contract DebtToken is IDebtToken, ERC20 {
         liquidator = _liquidator;
         debt = _debt;
         status = Status.Defaulted;
-        _mint(_lender, _debt);
+        _mint(_holder, _debt);
     }
 
     /**
