@@ -10,18 +10,19 @@ import {
   PoolFactory,
   StkTruToken,
   TrueFiPool2,
-  TrueLender2,
+  FixedTermLoanAgency,
   TrueFiCreditOracle,
   PoolFactory__factory,
   DebtToken,
   MockTrueFiPoolOracle,
   MockTrueFiPoolOracle__factory,
+  TrueRateAdjuster,
 } from 'contracts'
 
 import { solidity } from 'ethereum-waffle'
 import { BigNumberish, Wallet } from 'ethers'
 import { setupDeploy } from 'scripts/utils'
-import { DAY } from 'utils/constants'
+import { DAY, extractLoanTokenAddress } from 'utils'
 import {
   beforeEachWithFixture,
   createLoan,
@@ -51,7 +52,7 @@ describe('Liquidator2', () => {
   let tusd: MockUsdc
   let tru: MockTrueCurrency
   let stkTru: StkTruToken
-  let lender: TrueLender2
+  let ftlAgency: FixedTermLoanAgency
   let usdcPool: TrueFiPool2
   let tusdPool: TrueFiPool2
   let loan: LoanToken2
@@ -59,6 +60,7 @@ describe('Liquidator2', () => {
   let debtToken2: DebtToken
   let creditOracle: TrueFiCreditOracle
   let tusdOracle: MockTrueFiPoolOracle
+  let rateAdjuster: TrueRateAdjuster
 
   let timeTravel: (time: number) => void
 
@@ -84,11 +86,12 @@ describe('Liquidator2', () => {
       standardToken: tusd,
       tru,
       stkTru,
-      lender,
+      ftlAgency,
       feePool: usdcPool,
       standardPool: tusdPool,
       creditOracle,
       standardTokenOracle: tusdOracle,
+      rateAdjuster,
     } = await setupTruefi2(owner, _provider))
 
     loan = await createLoan(loanFactory, borrower, usdcPool, parseUSDC(1000), YEAR, 1000)
@@ -110,6 +113,9 @@ describe('Liquidator2', () => {
 
     await creditOracle.setScore(borrower.address, 255)
     await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
+    await ftlAgency.allowBorrower(borrower.address)
+
+    await rateAdjuster.setRiskPremium(400)
   })
 
   describe('Initializer', () => {
@@ -248,7 +254,8 @@ describe('Liquidator2', () => {
     beforeEach(async () => {
       await usdcPool.connect(owner).join(parseUSDC(1e7))
       await tusdPool.connect(owner).join(parseEth(1e7))
-      await lender.connect(borrower).fund(loan.address)
+      const tx = ftlAgency.connect(borrower).fund(usdcPool.address, parseUSDC(1000), YEAR, 1000)
+      loan = await extractLoanTokenAddress(tx, owner, loanFactory)
       await withdraw(loan, borrower)
     })
 
@@ -267,8 +274,10 @@ describe('Liquidator2', () => {
       it('loans are not of a single borrower', async () => {
         await creditOracle.setScore(owner.address, 255)
         await creditOracle.setMaxBorrowerLimit(owner.address, parseEth(100_000_000))
-        const loan2 = await createLoan(loanFactory, owner, usdcPool, parseUSDC(1000), YEAR, 1000)
-        await lender.connect(owner).fund(loan2.address)
+        await ftlAgency.allowBorrower(owner.address)
+        const tx = ftlAgency.fund(usdcPool.address, parseUSDC(1000), YEAR, 1000)
+        const loan2 = await extractLoanTokenAddress(tx, owner, loanFactory)
+
         await withdraw(loan2, owner)
 
         await timeTravel(defaultedLoanCloseTime)
@@ -331,6 +340,13 @@ describe('Liquidator2', () => {
         expect(await loan.status()).to.equal(LoanTokenStatus.Liquidated)
       })
 
+      it('emits event', async () => {
+        await stkTru.stake(parseTRU(1e3))
+        await expect(liquidator.connect(assurance).liquidate([loan.address]))
+          .to.emit(liquidator, 'Liquidated')
+          .withArgs([loan.address], parseEth(1100), parseTRU(100))
+      })
+
       describe('transfers correct amount of tru to assurance contract', () => {
         describe('whole debt has defaulted', () => {
           it('0 tru in staking pool balance', async () => {
@@ -381,7 +397,7 @@ describe('Liquidator2', () => {
         describe('half of debt has defaulted and half redeemed', () => {
           beforeEach(async () => {
             await usdc.mint(loan.address, parseUSDC(550))
-            await lender.reclaim(loan.address, '0x')
+            await ftlAgency.reclaim(loan.address, '0x')
           })
 
           it('0 tru in staking pool balance', async () => {
@@ -403,14 +419,6 @@ describe('Liquidator2', () => {
             expect(await tru.balanceOf(assurance.address)).to.equal(parseTRU(22e2))
           })
         })
-      })
-
-      it('emits event', async () => {
-        await stkTru.stake(parseTRU(1e3))
-
-        await expect(liquidator.connect(assurance).liquidate([loan.address]))
-          .to.emit(liquidator, 'Liquidated')
-          .withArgs([loan.address], parseEth(1100), parseTRU(100))
       })
     })
 
