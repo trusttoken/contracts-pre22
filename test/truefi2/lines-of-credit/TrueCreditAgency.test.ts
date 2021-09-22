@@ -56,7 +56,7 @@ describe('TrueCreditAgency', () => {
   const MONTH = DAY * 31
   const PRECISION = BigNumber.from(10).pow(27)
 
-  async function setupBorrower(borrower: Wallet, score: number, amount: BigNumberish) {
+  async function setupBorrower (borrower: Wallet, score: number, amount: BigNumberish) {
     await creditAgency.allowBorrower(borrower.address, true)
     await creditOracle.setScore(borrower.address, score)
     await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
@@ -69,21 +69,21 @@ describe('TrueCreditAgency', () => {
     timeTravel = (time: number) => _timeTravel(_provider, time)
     provider = _provider
 
-      ; ({
-        standardToken: tusd,
-        standardPool: tusdPool,
-        feeToken: usdc,
-        feePool: usdcPool,
-        loanFactory,
-        lender,
-        creditAgency,
-        creditOracle,
-        standardBaseRateOracle: tusdBaseRateOracle,
-        mockSpotOracle,
-        rateAdjuster,
-        borrowingMutex,
-        poolFactory,
-      } = await setupTruefi2(owner, provider))
+    ; ({
+      standardToken: tusd,
+      standardPool: tusdPool,
+      feeToken: usdc,
+      feePool: usdcPool,
+      loanFactory,
+      lender,
+      creditAgency,
+      creditOracle,
+      standardBaseRateOracle: tusdBaseRateOracle,
+      mockSpotOracle,
+      rateAdjuster,
+      borrowingMutex,
+      poolFactory,
+    } = await setupTruefi2(owner, provider))
 
     await tusdPool.setCreditAgency(creditAgency.address)
     await tusd.mint(owner.address, parseEth(1e7))
@@ -1086,7 +1086,7 @@ describe('TrueCreditAgency', () => {
         await creditAgency.allowBorrower(borrower.address, false)
       })
 
-      async function extractDebtTokens(pendingTx: Promise<ContractTransaction>) {
+      async function extractDebtTokens (pendingTx: Promise<ContractTransaction>) {
         const tx = await pendingTx
         const receipt = await tx.wait()
         const iface = loanFactory.interface
