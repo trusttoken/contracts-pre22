@@ -145,6 +145,9 @@ workflows:
       - test-lines-of-credit:
           requires:
             - build
+      - test-complete-flow:
+          requires:
+            - build
       - test-others:
           requires:
             - build
