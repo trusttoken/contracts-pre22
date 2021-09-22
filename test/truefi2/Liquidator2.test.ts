@@ -79,21 +79,21 @@ describe('Liquidator2', () => {
     [owner, otherWallet, borrower, assurance] = _wallets
     timeTravel = (time: number) => _timeTravel(_provider, time)
 
-      ; ({
-        liquidator,
-        loanFactory,
-        poolFactory,
-        feeToken: usdc,
-        standardToken: tusd,
-        tru,
-        stkTru,
-        ftlAgency,
-        feePool: usdcPool,
-        standardPool: tusdPool,
-        creditOracle,
-        standardTokenOracle: tusdOracle,
-        rateAdjuster,
-      } = await setupTruefi2(owner, _provider))
+    ; ({
+      liquidator,
+      loanFactory,
+      poolFactory,
+      feeToken: usdc,
+      standardToken: tusd,
+      tru,
+      stkTru,
+      ftlAgency,
+      feePool: usdcPool,
+      standardPool: tusdPool,
+      creditOracle,
+      standardTokenOracle: tusdOracle,
+      rateAdjuster,
+    } = await setupTruefi2(owner, _provider))
 
     loan = await createLoan(loanFactory, borrower, usdcPool, parseUSDC(1000), YEAR, 1000)
     debtToken1 = await createDebtToken(usdcPool, parseUSDC(1100))
