@@ -33,13 +33,17 @@ import {
   LoanToken2Deprecated,
   LoanToken2Deprecated__factory,
   TestUsdcToken,
-  TestUsdcToken__factory, BorrowingMutex, BorrowingMutex__factory,
+  TestUsdcToken__factory,
+  BorrowingMutex,
+  BorrowingMutex__factory,
+  TrueFiCreditOracle__factory,
 } from 'contracts'
 
 import {
   ILoanFactoryJson,
   ArbitraryDistributorJson,
 } from 'build'
+import { deployContract } from 'scripts/utils/deployContract'
 
 use(solidity)
 
@@ -706,6 +710,9 @@ describe('TrueRatingAgencyV2', () => {
         await usdc.mint(owner.address, parseEth(1e20))
         const usdcPool = await new TrueFiPool2__factory(owner).deploy()
         await usdcPool.initialize(usdc.address, AddressZero, AddressZero, AddressZero, AddressZero)
+        const creditOracle = await deployContract(owner, TrueFiCreditOracle__factory)
+        await creditOracle.initialize()
+
         loanToken2 = await new LoanToken2__factory(owner).deploy()
         await loanToken2.initialize(
           usdcPool.address,
@@ -715,7 +722,7 @@ describe('TrueRatingAgencyV2', () => {
           AddressZero,
           owner.address,
           AddressZero,
-          AddressZero,
+          creditOracle.address,
           parseUSDC(5e6),
           yearInSeconds * 2,
           100,
