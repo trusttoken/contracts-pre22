@@ -592,7 +592,7 @@ describe('TrueCreditAgency', () => {
 
   describe('poke', () => {
     it('fails if pool is not supported', async () => {
-      await creditAgency.allowPool(tusdPool.address, false)
+      await poolFactory.unsupportPool(tusdPool.address)
       await expect(creditAgency.poke(tusdPool.address))
         .to.be.revertedWith('TrueCreditAgency: The pool is not supported for poking')
     })
@@ -613,7 +613,7 @@ describe('TrueCreditAgency', () => {
     })
 
     it('fails if pool is not supported', async () => {
-      await creditAgency.allowPool(usdcPool.address, false)
+      await poolFactory.unsupportPool(usdcPool.address)
       await expect(creditAgency.connect(borrower).repay(usdcPool.address, 500))
         .to.be.revertedWith('TrueCreditAgency: The pool is not supported')
     })
