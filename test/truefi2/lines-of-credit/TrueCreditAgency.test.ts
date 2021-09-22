@@ -67,7 +67,7 @@ describe('TrueCreditAgency', () => {
     timeTravel = (time: number) => _timeTravel(_provider, time)
     provider = _provider
 
-    ;({
+    ; ({
       standardToken: tusd,
       standardPool: tusdPool,
       feeToken: usdc,
@@ -101,8 +101,16 @@ describe('TrueCreditAgency', () => {
       expect(await creditAgency.creditOracle()).to.equal(creditOracle.address)
     })
 
+    it('sets rateAdjuster', async () => {
+      expect(await creditAgency.rateAdjuster()).to.equal(rateAdjuster.address)
+    })
+
     it('sets interestRepaymentPeriod', async () => {
       expect(await creditAgency.interestRepaymentPeriod()).to.equal(MONTH)
+    })
+
+    it('sets maxPools to 10', async () => {
+      expect(await creditAgency.maxPools()).to.equal(10)
     })
   })
 
@@ -157,6 +165,24 @@ describe('TrueCreditAgency', () => {
     })
   })
 
+  describe('setMaxPools', () => {
+    it('reverts if not called by the owner', async () => {
+      await expect(creditAgency.connect(borrower).setMaxPools(1))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('changes maximum pools capacity', async () => {
+      await creditAgency.setMaxPools(1)
+      expect(await creditAgency.maxPools()).to.eq(1)
+    })
+
+    it('emits event', async () => {
+      await expect(creditAgency.setMaxPools(1))
+        .to.emit(creditAgency, 'MaxPoolsChanged')
+        .withArgs(1)
+    })
+  })
+
   describe('Borrower allowance', () => {
     it('only owner can set allowance', async () => {
       await expect(creditAgency.connect(borrower).allowBorrower(borrower.address, true))
@@ -185,7 +211,14 @@ describe('TrueCreditAgency', () => {
       }
     }
     it('can only be called by the owner', async () => {
-      await expect(creditAgency.connect(borrower).allowPool(tusdPool.address, true)).to.be.revertedWith('Ownable: caller is not the owner')
+      await expect(creditAgency.connect(borrower).allowPool(tusdPool.address, true))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('reverts if there are too many pools', async () => {
+      await creditAgency.setMaxPools(1)
+      await expect(creditAgency.allowPool(usdcPool.address, true))
+        .to.be.revertedWith('TrueRatingAgency: Pools number has reached the limit')
     })
 
     it('changes pool allowance status', async () => {

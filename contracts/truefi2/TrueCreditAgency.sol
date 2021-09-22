@@ -117,6 +117,9 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     /// @dev minimum credit score required to use lines of credit
     uint256 public minCreditScore;
 
+    // maximum amount of pools credit agency can handle at once
+    uint256 public maxPools;
+
     // ======= STORAGE DECLARATION END ============
 
     /// @dev emit `newRateAdjuster` when rate adjuster changed
@@ -140,11 +143,15 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     /// @dev emit `newValue` when minimum credit score is changed
     event MinCreditScoreChanged(uint256 newValue);
 
+    /// @dev emit `maxPools` when maximum pools amount is changed
+    event MaxPoolsChanged(uint256 maxPools);
+
     /// @dev initialize
     function initialize(ITrueFiCreditOracle _creditOracle, ITrueRateAdjuster _rateAdjuster) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
         creditOracle = _creditOracle;
         rateAdjuster = _rateAdjuster;
+        maxPools = 10;
         interestRepaymentPeriod = 31 days;
     }
 
@@ -173,6 +180,12 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         emit MinCreditScoreChanged(newValue);
     }
 
+    /// @dev set maxPools to `_maxPools`
+    function setMaxPools(uint256 _maxPools) external onlyOwner {
+        maxPools = _maxPools;
+        emit MaxPoolsChanged(_maxPools);
+    }
+
     /// @dev set borrower `who` to whitelist status `isAllowed`
     function allowBorrower(address who, bool isAllowed) external onlyOwner {
         isBorrowerAllowed[who] = isAllowed;
@@ -184,6 +197,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
      * Loop through
      */
     function allowPool(ITrueFiPool2 pool, bool isAllowed) external onlyOwner {
+        require(pools.length < maxPools, "TrueRatingAgency: Pools number has reached the limit");
         // if allowing new pool, push to pools array
         if (!isPoolAllowed[pool] && isAllowed) {
             pools.push(pool);
