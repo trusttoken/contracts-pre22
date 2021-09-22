@@ -100,6 +100,13 @@ jobs:
       - attach_workspace:
           at: .
       - run: yarn test:lines-of-credit
+  test-complete-flow:
+    docker:
+      - image: cimg/node:16.1.0
+    steps:
+      - attach_workspace:
+          at: .
+      - run: yarn test:complete-flow
   deploy:
     docker:
       - image: cimg/node:16.1.0
