@@ -16,6 +16,7 @@ import {
   DebtToken,
   MockTrueFiPoolOracle,
   MockTrueFiPoolOracle__factory,
+  TrueRateAdjuster,
 } from 'contracts'
 
 import { solidity } from 'ethereum-waffle'
@@ -59,6 +60,7 @@ describe('Liquidator2', () => {
   let debtToken2: DebtToken
   let creditOracle: TrueFiCreditOracle
   let tusdOracle: MockTrueFiPoolOracle
+  let rateAdjuster: TrueRateAdjuster
 
   let timeTravel: (time: number) => void
 
@@ -89,6 +91,7 @@ describe('Liquidator2', () => {
       standardPool: tusdPool,
       creditOracle,
       standardTokenOracle: tusdOracle,
+      rateAdjuster,
     } = await setupTruefi2(owner, _provider))
 
     loan = await createLoan(loanFactory, borrower, usdcPool, parseUSDC(1000), YEAR, 1000)
@@ -111,6 +114,8 @@ describe('Liquidator2', () => {
     await creditOracle.setScore(borrower.address, 255)
     await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
     await ftlAgency.allowBorrower(borrower.address)
+
+    await rateAdjuster.setRiskPremium(400)
   })
 
   describe('Initializer', () => {
@@ -339,7 +344,7 @@ describe('Liquidator2', () => {
         await stkTru.stake(parseTRU(1e3))
         await expect(liquidator.connect(assurance).liquidate([loan.address]))
           .to.emit(liquidator, 'Liquidated')
-          .withArgs([loan.address], parseEth(1080), parseTRU(100))
+          .withArgs([loan.address], parseEth(1100), parseTRU(100))
       })
 
       describe('transfers correct amount of tru to assurance contract', () => {
@@ -360,7 +365,7 @@ describe('Liquidator2', () => {
             await stkTru.stake(parseTRU(1e7))
 
             await liquidator.connect(assurance).liquidate([loan.address])
-            expect(await tru.balanceOf(assurance.address)).to.equal(parseTRU(4320))
+            expect(await tru.balanceOf(assurance.address)).to.equal(parseTRU(4400))
           })
         })
 
@@ -385,7 +390,7 @@ describe('Liquidator2', () => {
             await stkTru.stake(parseTRU(1e7))
 
             await liquidator.connect(assurance).liquidate([loan.address])
-            expect(await tru.balanceOf(assurance.address)).to.equal(parseTRU(2120))
+            expect(await tru.balanceOf(assurance.address)).to.equal(parseTRU(22e2))
           })
         })
 
@@ -411,7 +416,7 @@ describe('Liquidator2', () => {
             await stkTru.stake(parseTRU(1e7))
 
             await liquidator.connect(assurance).liquidate([loan.address])
-            expect(await tru.balanceOf(assurance.address)).to.equal(parseTRU(2120))
+            expect(await tru.balanceOf(assurance.address)).to.equal(parseTRU(22e2))
           })
         })
       })
