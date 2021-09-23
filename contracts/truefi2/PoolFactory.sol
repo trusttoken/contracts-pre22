@@ -270,6 +270,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
      */
     function supportPool(ITrueFiPool2 _pool) external onlyOwner {
         require(isPool[address(_pool)], "PoolFactory: Pool not created by factory");
+        require(supportedPools.length < maxPools, "PoolFactory: Pools number has reached the limit");
 
         for (uint256 i = 0; i < supportedPools.length; i++) {
             require(supportedPools[i] != _pool, "PoolFactory: Pool is already supported");

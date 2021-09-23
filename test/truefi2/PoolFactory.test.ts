@@ -343,6 +343,13 @@ describe('PoolFactory', () => {
         .to.be.revertedWith('PoolFactory: Pool is already supported')
     })
 
+    it('reverts if there are too many pools', async () => {
+      const pool3 = await factory.pool(token3.address)
+      await factory.setMaxPools(2)
+      await expect(factory.supportPool(pool3))
+        .to.be.revertedWith('PoolFactory: Pools number has reached the limit')
+    })
+
     it('adds pools to array', async () => {
       const pool1 = await factory.pool(token1.address)
       const pool2 = await factory.pool(token2.address)
