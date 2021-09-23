@@ -8,8 +8,8 @@ import {
   DeficiencyToken__factory,
   Liquidator2,
   LoanFactory2,
-  LoanToken2,
-  LoanToken2__factory,
+  LegacyLoanToken2,
+  LegacyLoanToken2__factory,
   Mock1InchV3,
   Mock1InchV3__factory,
   MockTrueCurrency,
@@ -36,7 +36,7 @@ describe('SAFU', () => {
 
   let safu: Safu
   let token: MockUsdc
-  let loan: LoanToken2
+  let loan: LegacyLoanToken2
   let loanFactory: LoanFactory2
   let pool: TrueFiPool2
   let poolFactory: PoolFactory
@@ -78,6 +78,8 @@ describe('SAFU', () => {
       borrowingMutex,
     } = await setupTruefi2(owner, _provider, { oneInch: oneInch }))
 
+    const legacyLoanTokenImpl = await new LegacyLoanToken2__factory(owner).deploy()
+    await loanFactory.setLoanTokenImplementation(legacyLoanTokenImpl.address)
     loan = await createLoan(loanFactory, borrower, pool, parseUSDC(1000), YEAR, 1000)
 
     await token.mint(owner.address, parseUSDC(1e7))
@@ -117,7 +119,7 @@ describe('SAFU', () => {
       })
 
       it('loan is not created by factory', async () => {
-        const strangerLoan = await new LoanToken2__factory(owner).deploy()
+        const strangerLoan = await new LegacyLoanToken2__factory(owner).deploy()
         await strangerLoan.initialize(pool.address, borrowingMutex.address, owner.address, owner.address, AddressZero, owner.address, owner.address, 1000, 1, 1)
         await expect(safu.liquidate([strangerLoan.address]))
           .to.be.revertedWith('SAFU: Unknown loan')
@@ -367,7 +369,7 @@ describe('SAFU', () => {
 
     describe('Reverts if', () => {
       it('loan is not created by factory', async () => {
-        const strangerLoan = await new LoanToken2__factory(owner).deploy()
+        const strangerLoan = await new LegacyLoanToken2__factory(owner).deploy()
         await strangerLoan.initialize(pool.address, borrowingMutex.address, owner.address, owner.address, AddressZero, owner.address, owner.address, 1000, 1, 1)
         await expect(safu.reclaim(strangerLoan.address, 0))
           .to.be.revertedWith('SAFU: Unknown loan')
@@ -451,7 +453,7 @@ describe('SAFU', () => {
     })
 
     it('reverts if loan is not created by factory', async () => {
-      const strangerLoan = await new LoanToken2__factory(owner).deploy()
+      const strangerLoan = await new LegacyLoanToken2__factory(owner).deploy()
       await strangerLoan.initialize(pool.address, borrowingMutex.address, owner.address, owner.address, AddressZero, owner.address, owner.address, 1000, 1, 1)
       await expect(safu.redeem(strangerLoan.address))
         .to.be.revertedWith('SAFU: Unknown loan')

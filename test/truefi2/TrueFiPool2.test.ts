@@ -13,7 +13,11 @@ import {
   DeficiencyToken__factory,
   DeficiencyToken,
   TrueCreditAgency,
-  TrueFiCreditOracle, TrueRateAdjuster, MockTrueCurrency__factory, FixedTermLoanAgency,
+  TrueFiCreditOracle,
+  TrueRateAdjuster,
+  MockTrueCurrency__factory,
+  FixedTermLoanAgency,
+  LegacyLoanToken2__factory,
 } from 'contracts'
 import { MockProvider, solidity } from 'ethereum-waffle'
 import { BigNumber, Wallet } from 'ethers'
@@ -320,6 +324,8 @@ describe('TrueFiPool2', () => {
   })
 
   describe('SAFU deficit', () => {
+    let debt: string
+
     beforeEach(async () => {
       await tusd.approve(tusdPool.address, parseEth(1e7))
       await tusdPool.join(parseEth(1e7))
@@ -327,7 +333,8 @@ describe('TrueFiPool2', () => {
       await loan.connect(borrower).withdraw(borrower.address)
       await timeTravel(DAY * 4)
       await loan.enterDefault()
-      await safu.liquidate([loan.address])
+      debt = await loan.debtToken()
+      await safu.liquidate([debt])
     })
 
     describe('deficitValue', () => {
@@ -341,9 +348,9 @@ describe('TrueFiPool2', () => {
       })
 
       it('returns 0 after loan has been repaid and redeemed', async () => {
-        await tusd.mint(loan.address, 500136)
-        await safu.redeem(loan.address)
-        await tusdPool.reclaimDeficit(loan.address)
+        await tusd.mint(debt, 500136)
+        await safu.redeem(debt)
+        await tusdPool.reclaimDeficit(debt)
         expect(await tusdPool.deficitValue()).to.eq(0)
       })
     })
@@ -352,9 +359,9 @@ describe('TrueFiPool2', () => {
       let dToken: DeficiencyToken
 
       beforeEach(async () => {
-        await tusd.mint(loan.address, 500136)
-        dToken = new DeficiencyToken__factory(owner).attach(await safu.deficiencyToken(loan.address))
-        await safu.redeem(loan.address)
+        await tusd.mint(debt, 500136)
+        dToken = new DeficiencyToken__factory(owner).attach(await safu.deficiencyToken(debt))
+        await safu.redeem(debt)
       })
 
       it('pool has deficiency tokens', async () => {
@@ -362,17 +369,17 @@ describe('TrueFiPool2', () => {
       })
 
       it('transfers deficiency tokens to safu', async () => {
-        await expect(() => tusdPool.reclaimDeficit(loan.address)).changeTokenBalance(dToken, tusdPool, -500136)
+        await expect(() => tusdPool.reclaimDeficit(debt)).changeTokenBalance(dToken, tusdPool, -500136)
       })
 
       it('gets pool tokens from safu', async () => {
-        await expect(() => tusdPool.reclaimDeficit(loan.address)).changeTokenBalance(tusd, tusdPool, 500136)
+        await expect(() => tusdPool.reclaimDeficit(debt)).changeTokenBalance(tusd, tusdPool, 500136)
       })
 
       it('emits event', async () => {
-        await expect(tusdPool.reclaimDeficit(loan.address))
+        await expect(tusdPool.reclaimDeficit(debt))
           .to.emit(tusdPool, 'DeficitReclaimed')
-          .withArgs(loan.address, 500136)
+          .withArgs(debt, 500136)
       })
     })
   })
@@ -423,7 +430,9 @@ describe('TrueFiPool2', () => {
         await loan.connect(borrower).withdraw(borrower.address)
         await timeTravel(DAY * 4)
         await loan.enterDefault()
-        await safu.liquidate([loan.address])
+        expect(await tusdPool.poolValue()).to.equal(joinAmount.add(136))
+        const debt = await loan.debtToken()
+        await safu.liquidate([debt])
 
         expect(await tusdPool.deficitValue()).to.eq(500136)
         expect(await tusdPool.poolValue()).to.equal(joinAmount.add(136))
@@ -957,7 +966,8 @@ describe('TrueFiPool2', () => {
     beforeEach(async () => {
       await tusd.approve(tusdPool.address, parseEth(100))
       await tusdPool.join(parseEth(100))
-
+      const legacyLoanImpl = await new LegacyLoanToken2__factory(owner).deploy()
+      await loanFactory.setLoanTokenImplementation(legacyLoanImpl.address)
       loan = await createLoan(
         loanFactory,
         borrower,
@@ -966,7 +976,6 @@ describe('TrueFiPool2', () => {
         DAY,
         100,
       )
-
       await lender.connect(borrower).fund(loan.address)
     })
 
@@ -1108,8 +1117,8 @@ describe('TrueFiPool2', () => {
         .withArgs(debtToken.address, amount)
     })
 
-    it('reverts if not called by creditAgency', async () => {
-      await expect(tusdPool.connect(borrower).addDebt(debtToken.address, amount)).to.be.revertedWith('TruePool: Only TrueCreditAgency can add debtTokens')
+    it('reverts if not called by creditAgency or any loan', async () => {
+      await expect(tusdPool.connect(borrower).addDebt(debtToken.address, amount)).to.be.revertedWith('TruePool: Only TrueCreditAgency and Loans can add debtTokens')
     })
   })
 })

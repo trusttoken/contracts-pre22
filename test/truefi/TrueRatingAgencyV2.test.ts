@@ -872,16 +872,16 @@ describe('TrueRatingAgencyV2', () => {
           await timeTravel(yearInSeconds)
 
           await expectRoughTrustTokenBalanceChangeAfterClaim(parseTRU(1e5).div(11), owner)
-          await timeTravel(averageMonthInSeconds * 30)
-          await loanToken2.enterDefault()
+          await usdc.mint(loanToken2.address, await loanToken2.debt())
+          await loanToken2.settle()
           await expectRoughTrustTokenBalanceChangeAfterClaim(parseTRU(0), owner)
           await expectRoughTrustTokenBalanceChangeAfterClaim(parseTRU(1e5).mul(10).div(11), otherWallet)
         })
 
         it('does not do anything when called multiple times', async () => {
           await loanToken2.fund()
-          await timeTravel(yearInSeconds * 2 + 3 * dayInSeconds)
-          await loanToken2.enterDefault()
+          await usdc.mint(loanToken2.address, await loanToken2.debt())
+          await loanToken2.settle()
 
           await expectRoughTrustTokenBalanceChangeAfterClaim(parseTRU(1e5), owner)
           await expectRoughTrustTokenBalanceChangeAfterClaim(0, owner)

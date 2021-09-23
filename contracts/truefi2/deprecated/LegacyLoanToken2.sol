@@ -5,45 +5,28 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
-import {ERC20} from "../common/UpgradeableERC20.sol";
-import {IFixedTermLoanAgency} from "./interface/IFixedTermLoanAgency.sol";
-import {ILoanToken2} from "./interface/ILoanToken2.sol";
-import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
-import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
-import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
-import {IDebtToken} from "./interface/ILoanToken2.sol";
+import {ERC20} from "../../common/UpgradeableERC20.sol";
+import {IFixedTermLoanAgency} from "../interface/IFixedTermLoanAgency.sol";
+import {ILoanToken2} from "../interface/ILoanToken2.sol";
+import {ITrueFiPool2} from "../interface/ITrueFiPool2.sol";
+import {IBorrowingMutex} from "../interface/IBorrowingMutex.sol";
 
 /**
- * @title LoanToken V2
- * @dev A token which represents share of a debt obligation
- *
- * Each LoanToken has:
- * - borrower address
- * - borrow amount
- * - loan term
- * - loan APY
- *
- * Loan progresses through the following states:
- * Awaiting:    Waiting for funding to meet capital requirements
- * Funded:      Capital requirements met, borrower can withdraw
- * Withdrawn:   Borrower withdraws money, loan waiting to be repaid
- * Settled:     Loan has been paid back in full with interest
- * Defaulted:   Loan has not been paid back in full
- * Liquidated:  Loan has Defaulted and stakers have been Liquidated
- *
- * - LoanTokens are non-transferable except for whitelisted addresses
- * - This version of LoanToken only supports a single funder
+ * @title Legacy version of LoanToken with old-style liquidations
+ * Used to test liquidation process with old loans
+ * There is one change compared to real deployed LTs:
+ * onlyLiquidator modifier was removed from liquidate() to make testing easier
  */
-contract LoanToken2 is ILoanToken2, ERC20 {
+contract LegacyLoanToken2 is ILoanToken2, ERC20 {
     using SafeMath for uint256;
     using SafeERC20 for ERC20;
-    using SafeERC20 for IDebtToken;
 
     uint128 public constant LAST_MINUTE_PAYBACK_DURATION = 3 days;
     uint256 private constant APY_PRECISION = 10000;
 
     address public admin;
     address public override borrower;
+    address public liquidator;
     uint256 public override amount;
     uint256 public override term;
 
@@ -70,10 +53,6 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     IBorrowingMutex public borrowingMutex;
 
     IFixedTermLoanAgency public ftlAgency;
-
-    ILoanFactory2 public loanFactory;
-
-    IDebtToken public debtToken;
 
     /**
      * @dev Emitted when the loan is funded
@@ -102,10 +81,9 @@ contract LoanToken2 is ILoanToken2, ERC20 {
 
     /**
      * @dev Emitted when term is over without full repayment
-     * @param debtToken Deployed DebtToken address
-     * @param unpaidAmount Amount left to pay
+     * @param returnedAmount Amount that was returned before expiry
      */
-    event Defaulted(IDebtToken debtToken, uint256 unpaidAmount);
+    event Defaulted(uint256 returnedAmount);
 
     /**
      * @dev Emitted when a LoanToken is redeemed for underlying tokens
@@ -130,6 +108,12 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     event Reclaimed(address borrower, uint256 reclaimedAmount);
 
     /**
+     * @dev Emitted when loan gets liquidated
+     * @param status Final loan status
+     */
+    event Liquidated(Status status);
+
+    /**
      * @dev Emitted when all transfers are allowed
      * @param status Transferability status
      */
@@ -141,6 +125,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @param _borrower Borrower address
      * @param _lender Lender address
      * @param _ftlAgency FixedTermLoanAgency address
+     * @param _liquidator Liquidator address
      * @param _amount Borrow amount of loaned tokens
      * @param _term Loan length
      * @param _apy Loan APY
@@ -152,7 +137,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         address _lender,
         IFixedTermLoanAgency _ftlAgency,
         address _admin,
-        ILoanFactory2 _loanFactory,
+        address _liquidator,
         uint256 _amount,
         uint256 _term,
         uint256 _apy
@@ -165,13 +150,13 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         borrowingMutex = _mutex;
         borrower = _borrower;
         admin = _admin;
+        liquidator = _liquidator;
         amount = _amount;
         term = _term;
         apy = _apy;
         lender = _lender;
         ftlAgency = _ftlAgency;
         debt = interest(amount);
-        loanFactory = _loanFactory;
     }
 
     /**
@@ -284,7 +269,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @return coupon value of _balance LoanTokens in tokens
      */
     function value(uint256 _balance) external override view returns (uint256) {
-        if (_balance == 0 || status >= Status.Defaulted) {
+        if (_balance == 0) {
             return 0;
         }
 
@@ -361,27 +346,18 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     function enterDefault() external override onlyOngoing {
         require(!isRepaid(), "LoanToken2: cannot default a repaid loan");
         require(start.add(term).add(LAST_MINUTE_PAYBACK_DURATION) <= block.timestamp, "LoanToken2: Loan cannot be defaulted yet");
-
         status = Status.Defaulted;
-        debtToken = loanFactory.createDebtToken(pool, borrower, debt.sub(repaid()));
 
-        uint256 poolBalance = balanceOf(lender);
-        uint256 debtShare = debtToken.totalSupply().mul(poolBalance).div(debt);
-        debtToken.approve(address(pool), debtShare);
-        pool.addDebt(debtToken, debtShare);
-
-        emit Defaulted(debtToken, debt.sub(repaid()));
+        emit Defaulted(_balance());
     }
 
-    function claimDebtToken(address loanHolder) public onlyDefaulted {
-        uint256 balance = balanceOf(loanHolder);
-        uint256 debtShare = debtToken.totalSupply().mul(balance).div(debt);
+    /**
+     * @dev Liquidate the loan if it has defaulted
+     */
+    function liquidate() external override onlyDefaulted {
+        status = Status.Liquidated;
 
-        debtToken.safeTransfer(loanHolder, debtShare);
-    }
-
-    function liquidate() external override {
-        revert("LoanToken2: Liquidation not supported");
+        emit Liquidated(status);
     }
 
     /**
@@ -452,7 +428,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * Funds stored on the contract's address plus funds already redeemed by lenders
      * @return Uint256 representing what value was already repaid
      */
-    function repaid() public override view onlyAfterWithdraw returns (uint256) {
+    function repaid() external override view onlyAfterWithdraw returns (uint256) {
         return _balance().add(redeemed);
     }
 
@@ -513,7 +489,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     }
 
     function version() external override pure returns (uint8) {
-        return 7;
+        return 6;
     }
 
     function decimals() public override view returns (uint8) {

@@ -631,6 +631,10 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      * @dev CreditAgency transfers DebtToken to the pool
      */
     function addDebt(IDebtToken debtToken, uint256 amount) external override {
+        require(
+            msg.sender == address(creditAgency) || ftlAgency.loanFactory().isLoanToken(msg.sender),
+            "TruePool: Only TrueCreditAgency and Loans can add debtTokens"
+        );
         debtValue = debtValue.add(amount);
         debtToken.safeTransferFrom(msg.sender, address(this), amount);
 

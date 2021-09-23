@@ -90,7 +90,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
     // mutex ensuring there's only one running loan or credit line for borrower
     IBorrowingMutex public borrowingMutex;
 
-    ILoanFactory2 public loanFactory;
+    ILoanFactory2 public override loanFactory;
 
     mapping(address => bool) public isBorrowerAllowed;
 
