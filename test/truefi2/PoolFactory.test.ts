@@ -77,6 +77,10 @@ describe('PoolFactory', () => {
     it('sets allowAll to false', async () => {
       expect(await factory.allowAll()).to.eq(false)
     })
+
+    it('sets maxPools to 10', async () => {
+      expect(await factory.maxPools()).to.equal(10)
+    })
   })
 
   describe('createPool', () => {
@@ -525,6 +529,24 @@ describe('PoolFactory', () => {
       await expect(factory.setSafuAddress(otherWallet.address))
         .to.emit(factory, 'SafuChanged')
         .withArgs(otherWallet.address)
+    })
+  })
+
+  describe('setMaxPools', () => {
+    it('reverts if not called by the owner', async () => {
+      await expect(factory.connect(borrower).setMaxPools(1))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('changes maximum pools capacity', async () => {
+      await factory.setMaxPools(1)
+      expect(await factory.maxPools()).to.eq(1)
+    })
+
+    it('emits event', async () => {
+      await expect(factory.setMaxPools(1))
+        .to.emit(factory, 'MaxPoolsChanged')
+        .withArgs(1)
     })
   })
 

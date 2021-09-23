@@ -124,10 +124,6 @@ describe('TrueCreditAgency', () => {
     it('sets loanFactory', async () => {
       expect(await creditAgency.loanFactory()).to.equal(loanFactory.address)
     })
-
-    it('sets maxPools to 10', async () => {
-      expect(await creditAgency.maxPools()).to.equal(10)
-    })
   })
 
   describe('Ownership', () => {
@@ -223,24 +219,6 @@ describe('TrueCreditAgency', () => {
     it('emits event', async () => {
       await expect(creditAgency.setMinCreditScore(1))
         .to.emit(creditAgency, 'MinCreditScoreChanged')
-        .withArgs(1)
-    })
-  })
-
-  describe('setMaxPools', () => {
-    it('reverts if not called by the owner', async () => {
-      await expect(creditAgency.connect(borrower).setMaxPools(1))
-        .to.be.revertedWith('Ownable: caller is not the owner')
-    })
-
-    it('changes maximum pools capacity', async () => {
-      await creditAgency.setMaxPools(1)
-      expect(await creditAgency.maxPools()).to.eq(1)
-    })
-
-    it('emits event', async () => {
-      await expect(creditAgency.setMaxPools(1))
-        .to.emit(creditAgency, 'MaxPoolsChanged')
         .withArgs(1)
     })
   })

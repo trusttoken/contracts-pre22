@@ -54,6 +54,9 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
 
     IFixedTermLoanAgency public ftlAgency;
 
+    // maximum amount of pools pool factory can handle at once
+    uint256 public maxPools;
+
     // ======= STORAGE DECLARATION END ===========
 
     /**
@@ -111,6 +114,9 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
      */
     event SafuChanged(ISAFU newSafu);
 
+    /// @dev emit `maxPools` when maximum pools amount is changed
+    event MaxPoolsChanged(uint256 maxPools);
+
     /**
      * @dev Throws if token already has an existing corresponding pool
      * @param token Token to be checked for existing pool
@@ -154,6 +160,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
         trueLender2 = _trueLender2;
         ftlAgency = _ftlAgency;
         safu = _safu;
+        maxPools = 10;
     }
 
     /**
@@ -311,6 +318,12 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
         require(address(_safu) != address(0), "PoolFactory: SAFU address cannot be set to 0");
         safu = _safu;
         emit SafuChanged(_safu);
+    }
+
+    /// @dev set maxPools to `_maxPools`
+    function setMaxPools(uint256 _maxPools) external onlyOwner {
+        maxPools = _maxPools;
+        emit MaxPoolsChanged(_maxPools);
     }
 
     /**
