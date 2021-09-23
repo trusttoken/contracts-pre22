@@ -16,6 +16,7 @@ import {
   DebtToken,
   MockTrueFiPoolOracle,
   MockTrueFiPoolOracle__factory,
+  TrueFiCreditOracle__factory,
   TrueRateAdjuster,
 } from 'contracts'
 
@@ -302,8 +303,10 @@ describe('Liquidator2', () => {
         const borrowingMutex = await deployContract(BorrowingMutex__factory)
         await borrowingMutex.initialize()
         await borrowingMutex.allowLocker(owner.address, true)
+        const creditOracle = await deployContract(TrueFiCreditOracle__factory)
+        await creditOracle.initialize()
         const fakeLoan = await deployContract(LoanToken2__factory)
-        await fakeLoan.initialize(usdcPool.address, borrowingMutex.address, borrower.address, borrower.address, AddressZero, owner.address, liquidator.address, parseUSDC(1000), YEAR, 1000)
+        await fakeLoan.initialize(usdcPool.address, borrowingMutex.address, borrower.address, borrower.address, AddressZero, owner.address, liquidator.address, creditOracle.address, parseUSDC(1000), YEAR, 1000)
         await usdc.connect(borrower).approve(fakeLoan.address, parseUSDC(1000))
         await fakeLoan.connect(borrower).fund()
         await borrowingMutex.lock(borrower.address, await fakeLoan.address)
