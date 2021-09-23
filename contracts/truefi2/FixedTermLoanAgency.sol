@@ -320,7 +320,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
      * When called, agency takes funds from the pool, gives it to the loan and holds all LoanTokens
      * Origination fee is transferred to the stake
      */
-    function fund(
+    function borrow(
         ITrueFiPool2 pool,
         uint256 amount,
         uint256 term,
