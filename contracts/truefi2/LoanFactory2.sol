@@ -117,16 +117,16 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         _;
     }
 
-    modifier onlyFTLAOrLoan() {
-        require(
-            msg.sender == address(ftlAgency) || isLoanToken[msg.sender],
-            "LoanFactory: Caller is neither the fixed term loan agency not loan token"
-        );
+    modifier onlyFTLA() {
+        require(msg.sender == address(ftlAgency), "LoanFactory: Caller is not the fixed term loan agency");
         _;
     }
 
-    modifier onlyTCA() {
-        require(msg.sender == address(creditAgency), "LoanFactory: Caller is not the credit agency");
+    modifier onlyTCAOrLoanToken() {
+        require(
+            msg.sender == address(creditAgency) || isLoanToken[msg.sender],
+            "LoanFactory: Caller is neither credit agency nor loan"
+        );
         _;
     }
 
@@ -175,7 +175,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         uint256 _amount,
         uint256 _term,
         uint256 _apy
-    ) external override onlyFTLAOrLoan returns (ILoanToken2) {
+    ) external override onlyFTLA returns (ILoanToken2) {
         return _createFTLALoanToken(_pool, _borrower, _amount, _term, _apy);
     }
 
@@ -201,7 +201,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         ITrueFiPool2 _pool,
         address _borrower,
         uint256 _debt
-    ) external override onlyTCA returns (IDebtToken) {
+    ) external override onlyTCAOrLoanToken returns (IDebtToken) {
         address dtImplementationAddress = address(debtTokenImplementation);
         require(dtImplementationAddress != address(0), "LoanFactory: Debt token implementation should be set");
 

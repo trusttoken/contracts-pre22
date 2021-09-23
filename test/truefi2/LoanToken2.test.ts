@@ -5,13 +5,17 @@ import { BigNumber, BigNumberish, ContractTransaction, Wallet } from 'ethers'
 import { beforeEachWithFixture, expectScaledCloseTo, parseEth, timeTravel } from 'utils'
 
 import {
-  BorrowingMutex, BorrowingMutex__factory,
+  BorrowingMutex,
+  BorrowingMutex__factory,
+  DebtToken__factory,
   ImplementationReference__factory,
   LoanToken2,
   LoanToken2__factory,
   MockTrueCurrency,
   MockTrueCurrency__factory,
   PoolFactory__factory,
+  TestLoanFactory,
+  TestLoanFactory__factory,
   TrueFiPool2__factory,
 } from 'contracts'
 import { deployContract } from 'scripts/utils/deployContract'
@@ -44,6 +48,7 @@ describe('LoanToken2', () => {
   let poolAddress: string
   let provider: MockProvider
   let borrowingMutex: BorrowingMutex
+  let loanFactory: TestLoanFactory
 
   async function fund () {
     const tx = await loanToken.fund()
@@ -69,7 +74,10 @@ describe('LoanToken2', () => {
     borrowingMutex = await deployContract(lender, BorrowingMutex__factory)
     await borrowingMutex.initialize()
     await borrowingMutex.allowLocker(lender.address, true)
-
+    loanFactory = await deployContract(lender, TestLoanFactory__factory)
+    await loanFactory.initialize(poolFactory.address, lender.address, AddressZero, AddressZero, AddressZero, AddressZero, borrowingMutex.address, AddressZero)
+    const debtToken = await deployContract(lender, DebtToken__factory)
+    await loanFactory.setDebtTokenImplementation(debtToken.address)
     loanToken = await new LoanToken2__factory(lender).deploy()
     await loanToken.initialize(
       poolAddress,
@@ -78,11 +86,12 @@ describe('LoanToken2', () => {
       lender.address,
       AddressZero,
       lender.address,
-      lender.address, // easier testing purposes
+      loanFactory.address,
       parseEth(1000),
       yearInSeconds,
       1000,
     )
+    await loanFactory.setIsLoanToken(loanToken.address)
     await token.approve(loanToken.address, parseEth(1000))
   })
 
@@ -289,7 +298,7 @@ describe('LoanToken2', () => {
       await withdraw(borrower)
       await token.mint(loanToken.address, parseEth(1099))
       await timeTravel(provider, defaultedLoanCloseTime)
-      await expect(loanToken.enterDefault()).to.emit(loanToken, 'Defaulted').withArgs(parseEth(1099))
+      await expect(loanToken.enterDefault()).to.emit(loanToken, 'Defaulted')
     })
 
     it('keeps the mutex locked', async () => {
@@ -304,41 +313,9 @@ describe('LoanToken2', () => {
   })
 
   describe('liquidate', () => {
-    it('reverts when status is not defaulted', async () => {
+    it('reverts because liquidation is not supported', async () => {
       await expect(loanToken.liquidate())
-        .to.be.revertedWith('LoanToken2: Current status should be Defaulted')
-
-      await fund()
-      await expect(loanToken.liquidate())
-        .to.be.revertedWith('LoanToken2: Current status should be Defaulted')
-
-      await withdraw(borrower)
-      await expect(loanToken.liquidate())
-        .to.be.revertedWith('LoanToken2: Current status should be Defaulted')
-
-      await timeTravel(provider, defaultedLoanCloseTime)
-      await expect(loanToken.liquidate())
-        .to.be.revertedWith('LoanToken2: Current status should be Defaulted')
-    })
-
-    it('reverts if not called by liquidator', async () => {
-      await fund()
-      await withdraw(borrower)
-      await timeTravel(provider, defaultedLoanCloseTime)
-      await loanToken.enterDefault()
-
-      await expect(loanToken.connect(borrower).liquidate())
-        .to.be.revertedWith('LoanToken2: Caller is not the liquidator')
-    })
-
-    it('sets status to liquidated', async () => {
-      await fund()
-      await withdraw(borrower)
-      await timeTravel(provider, defaultedLoanCloseTime)
-      await loanToken.enterDefault()
-
-      await loanToken.liquidate()
-      expect(await loanToken.status()).to.equal(LoanTokenStatus.Liquidated)
+        .to.be.revertedWith('LoanToken2: Liquidation not supported')
     })
   })
 
@@ -790,6 +767,6 @@ describe('LoanToken2', () => {
   })
 
   it('version', async () => {
-    expect(await loanToken.version()).to.equal(6)
+    expect(await loanToken.version()).to.equal(7)
   })
 })

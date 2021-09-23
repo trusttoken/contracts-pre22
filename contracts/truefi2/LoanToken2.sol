@@ -364,7 +364,11 @@ contract LoanToken2 is ILoanToken2, ERC20 {
 
         status = Status.Defaulted;
         debtToken = loanFactory.createDebtToken(pool, borrower, debt.sub(repaid()));
-        claimDebtToken(address(pool));
+
+        uint256 poolBalance = balanceOf(address(pool));
+        uint256 debtShare = debtToken.totalSupply().mul(poolBalance).div(debt);
+        debtToken.approve(address(pool), debtShare);
+        pool.addDebt(debtToken, debtShare);
 
         emit Defaulted(debtToken, debt.sub(repaid()));
     }
