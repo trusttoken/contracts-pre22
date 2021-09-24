@@ -23,7 +23,7 @@ import {
   LoanToken2__factory,
   MockTrueCurrency,
   TestLoanToken__factory,
-  TrueCreditAgency,
+  LineOfCreditAgency,
   DebtToken,
   DebtToken__factory,
 } from 'contracts'
@@ -51,7 +51,7 @@ describe('LoanFactory2', () => {
   let creditOracle: TrueFiCreditOracle
   let borrowerCreditScore: number
   let borrowingMutex: BorrowingMutex
-  let creditAgency: TrueCreditAgency
+  let creditAgency: LineOfCreditAgency
 
   const createLoan = async (amount: BigNumberish, term: BigNumberish) => {
     const tx = await loanFactory.connect(borrower).createLoanToken(pool.address, amount, term, MAX_APY)
@@ -75,18 +75,18 @@ describe('LoanFactory2', () => {
   beforeEachWithFixture(async (wallets, _provider) => {
     [owner, borrower, depositor, ftla, tca] = wallets
 
-    ; ({
-      standardPool: pool,
-      standardToken: poolToken,
-      loanFactory,
-      lender,
-      liquidator,
-      poolFactory,
-      rateAdjuster,
-      creditOracle,
-      borrowingMutex,
-      creditAgency,
-    } = await setupTruefi2(owner, _provider))
+      ; ({
+        standardPool: pool,
+        standardToken: poolToken,
+        loanFactory,
+        lender,
+        liquidator,
+        poolFactory,
+        rateAdjuster,
+        creditOracle,
+        borrowingMutex,
+        creditAgency,
+      } = await setupTruefi2(owner, _provider))
     await loanFactory.setRateAdjuster(rateAdjuster.address)
     await creditOracle.setScore(borrower.address, 255)
     borrowerCreditScore = await creditOracle.score(borrower.address)

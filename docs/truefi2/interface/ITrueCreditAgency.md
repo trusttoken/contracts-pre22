@@ -1,4 +1,4 @@
-## `ITrueCreditAgency`
+## `ILineOfCreditAgency`
 
 
 

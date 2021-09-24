@@ -1,4 +1,4 @@
-import { DebtToken__factory, LoanFactory2, MockTrueCurrency, Safu, StkTruToken, TrueCreditAgency, TrueFiCreditOracle, TrueFiPool2 } from 'contracts'
+import { DebtToken__factory, LoanFactory2, MockTrueCurrency, Safu, StkTruToken, LineOfCreditAgency, TrueFiCreditOracle, TrueFiPool2 } from 'contracts'
 import { expect, use } from 'chai'
 import { MockProvider, solidity } from 'ethereum-waffle'
 import { ContractTransaction, Wallet } from 'ethers'
@@ -20,7 +20,7 @@ describe('Lines Of Credit flow', () => {
   let owner: Wallet
   let borrower: Wallet
   let staker: Wallet
-  let creditAgency: TrueCreditAgency
+  let creditAgency: LineOfCreditAgency
   let tusd: MockTrueCurrency
   let pool: TrueFiPool2
   let loanFactory: LoanFactory2
@@ -30,7 +30,7 @@ describe('Lines Of Credit flow', () => {
   let stkTru: StkTruToken
   let timeTravel: (time: number) => void
 
-  async function extractDebtTokens (pendingTx: Promise<ContractTransaction>) {
+  async function extractDebtTokens(pendingTx: Promise<ContractTransaction>) {
     const tx = await pendingTx
     const receipt = await tx.wait()
     const iface = loanFactory.interface
@@ -46,16 +46,16 @@ describe('Lines Of Credit flow', () => {
     timeTravel = (time: number) => _timeTravel(_provider, time)
     provider = _provider
 
-    ; ({
-      standardToken: tusd,
-      standardPool: pool,
-      loanFactory,
-      creditAgency,
-      creditOracle,
-      safu,
-      tru,
-      stkTru,
-    } = await setupTruefi2(owner, provider))
+      ; ({
+        standardToken: tusd,
+        standardPool: pool,
+        loanFactory,
+        creditAgency,
+        creditOracle,
+        safu,
+        tru,
+        stkTru,
+      } = await setupTruefi2(owner, provider))
 
     await pool.setCreditAgency(creditAgency.address)
 

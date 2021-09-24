@@ -9,7 +9,7 @@ import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {ITrueRateAdjuster} from "./interface/ITrueRateAdjuster.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
-import {ITrueCreditAgency} from "./interface/ITrueCreditAgency.sol";
+import {ILineOfCreditAgency} from "./interface/ILineOfCreditAgency.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
 import {ITimeAveragedBaseRateOracle} from "./interface/ITimeAveragedBaseRateOracle.sol";
 import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
@@ -20,7 +20,7 @@ interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
 }
 
 /**
- * @title TrueCreditAgency
+ * @title LineOfCreditAgency
  * @dev Manager for Lines of Credit in the TrueFi Protocol
  * https://github.com/trusttoken/truefi-spec/blob/master/TrueFi2.0.md#lines-of-credit
  *
@@ -30,7 +30,7 @@ interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
  * - Uses TrueRateAdjuster to calculate rates & limits
  * - Responsible for approving borrowing from TrueFi pools using Lines of Credit
  */
-contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
+contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
     using SafeERC20 for ERC20;
     using SafeMath for uint256;
 
@@ -186,7 +186,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
     /// @dev modifier for only whitelisted borrowers
     modifier onlyAllowedBorrowers() {
-        require(isBorrowerAllowed[msg.sender], "TrueCreditAgency: Sender is not allowed to borrow");
+        require(isBorrowerAllowed[msg.sender], "LineOfCreditAgency: Sender is not allowed to borrow");
         _;
     }
 
@@ -199,14 +199,14 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
     /// @dev Set poolFactory to `newPoolFactory` and update state
     function setPoolFactory(IPoolFactory newPoolFactory) external onlyOwner {
-        require(address(newPoolFactory) != address(0), "TrueCreditAgency: PoolFactory cannot be set to zero address");
+        require(address(newPoolFactory) != address(0), "LineOfCreditAgency: PoolFactory cannot be set to zero address");
         poolFactory = newPoolFactory;
         emit PoolFactoryChanged(newPoolFactory);
     }
 
     /// @dev Set loanFactory to `newLoanFactory` and update state
     function setLoanFactory(ILoanFactory2 newLoanFactory) external onlyOwner {
-        require(address(newLoanFactory) != address(0), "TrueCreditAgency: LoanFactory cannot be set to zero address");
+        require(address(newLoanFactory) != address(0), "LineOfCreditAgency: LoanFactory cannot be set to zero address");
         loanFactory = newLoanFactory;
         emit LoanFactoryChanged(newLoanFactory);
     }
@@ -340,24 +340,24 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
      * @param amount Amount of tokens to borrow
      */
     function borrow(ITrueFiPool2 pool, uint256 amount) external onlyAllowedBorrowers {
-        require(poolFactory.isSupportedPool(pool), "TrueCreditAgency: The pool is not supported for borrowing");
+        require(poolFactory.isSupportedPool(pool), "LineOfCreditAgency: The pool is not supported for borrowing");
         require(
             creditOracle.status(msg.sender) == ITrueFiCreditOracle.Status.Eligible,
-            "TrueCreditAgency: Sender not eligible to borrow"
+            "LineOfCreditAgency: Sender not eligible to borrow"
         );
-        require(!_hasOverdueInterest(pool, msg.sender), "TrueCreditAgency: Sender has overdue interest in this pool");
+        require(!_hasOverdueInterest(pool, msg.sender), "LineOfCreditAgency: Sender has overdue interest in this pool");
         (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, msg.sender);
-        require(newScore >= minCreditScore, "TrueCreditAgency: Borrower has credit score below minimum");
+        require(newScore >= minCreditScore, "LineOfCreditAgency: Borrower has credit score below minimum");
         require(
             pool.oracle().tokenToUsd(amount) <= borrowLimit(pool, msg.sender),
-            "TrueCreditAgency: Borrow amount cannot exceed borrow limit"
+            "LineOfCreditAgency: Borrow amount cannot exceed borrow limit"
         );
         if (totalBorrowed(msg.sender) == 0) {
             borrowingMutex.lock(msg.sender, address(this));
         }
         require(
             borrowingMutex.locker(msg.sender) == address(this),
-            "TrueCreditAgency: Borrower cannot open two simultaneous debt positions"
+            "LineOfCreditAgency: Borrower cannot open two simultaneous debt positions"
         );
 
         uint256 currentDebt = borrowed[pool][msg.sender];
@@ -391,7 +391,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     function repay(ITrueFiPool2 pool, uint256 amount) public {
         uint256 currentDebt = borrowed[pool][msg.sender];
         uint256 accruedInterest = interest(pool, msg.sender);
-        require(currentDebt.add(accruedInterest) >= amount, "TrueCreditAgency: Cannot repay over the debt");
+        require(currentDebt.add(accruedInterest) >= amount, "LineOfCreditAgency: Cannot repay over the debt");
 
         // update state before making token transfer
         if (amount < accruedInterest) {
@@ -428,7 +428,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     function enterDefault(address borrower) external onlyOwner {
         require(
             borrowingMutex.locker(borrower) == address(this),
-            "TrueCreditAgency: Cannot default a borrower with no open debt position"
+            "LineOfCreditAgency: Cannot default a borrower with no open debt position"
         );
         if (!isBorrowerAllowed[borrower]) {
             _enterDefault(borrower, DefaultReason.NotAllowed);
@@ -457,7 +457,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
                 return;
             }
         }
-        revert("TrueCreditAgency: Borrower has no reason to enter default at this time");
+        revert("LineOfCreditAgency: Borrower has no reason to enter default at this time");
     }
 
     function _enterDefault(address borrower, DefaultReason reason) private {
@@ -647,7 +647,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         uint8 bucketNumber,
         address borrower
     ) internal returns (uint256 totalBorrowerInterest) {
-        require(bucket.borrowersCount > 0, "TrueCreditAgency: bucket is empty");
+        require(bucket.borrowersCount > 0, "LineOfCreditAgency: bucket is empty");
         // update bucket state
         pokeSingleBucket(pool, bucketNumber);
         // decrement count for this bucket

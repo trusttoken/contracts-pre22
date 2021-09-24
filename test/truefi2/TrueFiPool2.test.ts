@@ -12,7 +12,7 @@ import {
   Safu,
   DeficiencyToken__factory,
   DeficiencyToken,
-  TrueCreditAgency,
+  LineOfCreditAgency,
   TrueFiCreditOracle, TrueRateAdjuster, MockTrueCurrency__factory, FixedTermLoanAgency,
 } from 'contracts'
 import { MockProvider, solidity } from 'ethereum-waffle'
@@ -40,7 +40,7 @@ describe('TrueFiPool2', () => {
   let borrower: Wallet
   let borrower2: Wallet
   let borrower3: Wallet
-  let creditAgency: TrueCreditAgency
+  let creditAgency: LineOfCreditAgency
   let creditOracle: TrueFiCreditOracle
   let tusd: MockTrueCurrency
   let tusdPool: TrueFiPool2
@@ -65,18 +65,18 @@ describe('TrueFiPool2', () => {
     timeTravel = (time: number) => _timeTravel(_provider, time)
     provider = _provider
 
-    ;({
-      standardToken: tusd,
-      lender,
-      standardPool: tusdPool,
-      feePool: usdcPool,
-      loanFactory,
-      safu,
-      creditAgency,
-      creditOracle,
-      rateAdjuster,
-      ftlAgency,
-    } = await setupTruefi2(owner, provider))
+      ; ({
+        standardToken: tusd,
+        lender,
+        standardPool: tusdPool,
+        feePool: usdcPool,
+        loanFactory,
+        safu,
+        creditAgency,
+        creditOracle,
+        rateAdjuster,
+        ftlAgency,
+      } = await setupTruefi2(owner, provider))
 
     loan = await createLoan(loanFactory, borrower, tusdPool, 500000, DAY, 1000)
 
@@ -974,7 +974,7 @@ describe('TrueFiPool2', () => {
       await expect(tusdPool.liquidateLoan(loan.address)).to.be.revertedWith('TrueFiPool: Should be called by SAFU')
     })
 
-    async function liquidateLoan () {
+    async function liquidateLoan() {
       await timeTravel(DAY * 4)
       await loan.enterDefault()
       await safu.liquidate([loan.address])
@@ -1109,7 +1109,7 @@ describe('TrueFiPool2', () => {
     })
 
     it('reverts if not called by creditAgency', async () => {
-      await expect(tusdPool.connect(borrower).addDebt(debtToken.address, amount)).to.be.revertedWith('TruePool: Only TrueCreditAgency can add debtTokens')
+      await expect(tusdPool.connect(borrower).addDebt(debtToken.address, amount)).to.be.revertedWith('TruePool: Only LineOfCreditAgency can add debtTokens')
     })
   })
 })

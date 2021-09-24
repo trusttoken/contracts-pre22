@@ -1,4 +1,4 @@
-## `TrueCreditAgency`
+## `LineOfCreditAgency`
 
 
 
@@ -202,28 +202,28 @@ Get value of a single line of credit for `borrower` in `pool`
 Move borrower from one bucket to another when borrower score changes
 
 
-### `_takeOutOfBucket(contract ITrueFiPool2 pool, struct TrueCreditAgency.CreditScoreBucket bucket, uint8 bucketNumber, address borrower) → uint256 totalBorrowerInterest` (internal)
+### `_takeOutOfBucket(contract ITrueFiPool2 pool, struct LineOfCreditAgency.CreditScoreBucket bucket, uint8 bucketNumber, address borrower) → uint256 totalBorrowerInterest` (internal)
 
 
 
 Internal function to take `borrower` out of a bucket
 
 
-### `_putIntoBucket(contract ITrueFiPool2 pool, struct TrueCreditAgency.CreditScoreBucket bucket, uint8 bucketNumber, address borrower)` (internal)
+### `_putIntoBucket(contract ITrueFiPool2 pool, struct LineOfCreditAgency.CreditScoreBucket bucket, uint8 bucketNumber, address borrower)` (internal)
 
 
 
 Internal function to put borrower into a bucket
 
 
-### `_totalBorrowerInterest(contract ITrueFiPool2 pool, struct TrueCreditAgency.CreditScoreBucket bucket, address borrower) → uint256` (internal)
+### `_totalBorrowerInterest(contract ITrueFiPool2 pool, struct LineOfCreditAgency.CreditScoreBucket bucket, address borrower) → uint256` (internal)
 
 
 
 Internal helper to calculate total borrower interest in a pool based on bucket share
 
 
-### `_interest(contract ITrueFiPool2 pool, struct TrueCreditAgency.CreditScoreBucket bucket, address borrower) → uint256` (internal)
+### `_interest(contract ITrueFiPool2 pool, struct LineOfCreditAgency.CreditScoreBucket bucket, address borrower) → uint256` (internal)
 
 
 

@@ -13,7 +13,7 @@ import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {ITrueRateAdjuster} from "./interface/ITrueRateAdjuster.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
 import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
-import {ITrueCreditAgency} from "./interface/ITrueCreditAgency.sol";
+import {ILineOfCreditAgency} from "./interface/ILineOfCreditAgency.sol";
 
 import {LoanToken2, IERC20} from "./LoanToken2.sol";
 import {DebtToken} from "./DebtToken.sol";
@@ -46,7 +46,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     ITrueFiCreditOracle public creditOracle;
     IBorrowingMutex public borrowingMutex;
     ILoanToken2 public loanTokenImplementation;
-    ITrueCreditAgency public creditAgency;
+    ILineOfCreditAgency public creditAgency;
     IDebtToken public debtTokenImplementation;
 
     // @dev Track valid debtTokens
@@ -76,7 +76,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
 
     event LoanTokenImplementationChanged(ILoanToken2 loanTokenImplementation);
 
-    event CreditAgencyChanged(ITrueCreditAgency creditAgency);
+    event CreditAgencyChanged(ILineOfCreditAgency creditAgency);
 
     event LenderChanged(address lender);
 
@@ -99,7 +99,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         ITrueRateAdjuster _rateAdjuster,
         ITrueFiCreditOracle _creditOracle,
         IBorrowingMutex _borrowingMutex,
-        ITrueCreditAgency _creditAgency
+        ILineOfCreditAgency _creditAgency
     ) external initializer {
         poolFactory = _poolFactory;
         lender = _lender;
@@ -250,7 +250,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         emit LoanTokenImplementationChanged(_implementation);
     }
 
-    function setCreditAgency(ITrueCreditAgency _creditAgency) external onlyAdmin {
+    function setCreditAgency(ILineOfCreditAgency _creditAgency) external onlyAdmin {
         require(address(_creditAgency) != address(0), "LoanFactory: Cannot set credit agency to zero address");
         creditAgency = _creditAgency;
         emit CreditAgencyChanged(_creditAgency);

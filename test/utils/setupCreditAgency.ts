@@ -6,7 +6,7 @@ import {
   PoolFactory,
   TestTrueFiPool,
   TrueFiPool2,
-  TrueCreditAgency__factory,
+  LineOfCreditAgency__factory,
   TrueFiCreditOracle__factory,
   TrueRateAdjuster__factory,
 } from 'contracts'
@@ -15,7 +15,7 @@ import { AddressZero } from '@ethersproject/constants'
 
 export const setupCreditAgency = async (owner: Wallet, poolFactory: PoolFactory, loanFactory: LoanFactory2, pool: TrueFiPool2 | TestTrueFiPool) => {
   const borrowingMutex = await new BorrowingMutex__factory(owner).deploy()
-  const creditAgency = await new TrueCreditAgency__factory(owner).deploy()
+  const creditAgency = await new LineOfCreditAgency__factory(owner).deploy()
   const rateAdjuster = await new TrueRateAdjuster__factory(owner).deploy()
   const creditOracle = await new TrueFiCreditOracle__factory(owner).deploy()
   const mockBaseRateOracle = await deployMockContract(owner, TimeAveragedBaseRateOracleJson.abi)
