@@ -105,6 +105,10 @@ describe('TrueCreditAgency', () => {
       expect(await creditAgency.creditOracle()).to.equal(creditOracle.address)
     })
 
+    it('sets rateAdjuster', async () => {
+      expect(await creditAgency.rateAdjuster()).to.equal(rateAdjuster.address)
+    })
+
     it('sets interestRepaymentPeriod', async () => {
       expect(await creditAgency.interestRepaymentPeriod()).to.equal(MONTH)
     })
@@ -564,6 +568,14 @@ describe('TrueCreditAgency', () => {
     })
   })
 
+  describe('poke', () => {
+    it('fails if pool is not supported', async () => {
+      await poolFactory.unsupportPool(tusdPool.address)
+      await expect(creditAgency.poke(tusdPool.address))
+        .to.be.revertedWith('TrueCreditAgency: The pool is not supported for poking')
+    })
+  })
+
   describe('repay', () => {
     beforeEach(async () => {
       await creditAgency.allowBorrower(borrower.address, true)
@@ -576,6 +588,12 @@ describe('TrueCreditAgency', () => {
     it('cannot repay more than debt', async () => {
       await expect(creditAgency.connect(borrower).repay(tusdPool.address, 2000))
         .to.be.revertedWith('TrueCreditAgency: Cannot repay over the debt')
+    })
+
+    it('fails if pool is not supported', async () => {
+      await poolFactory.unsupportPool(usdcPool.address)
+      await expect(creditAgency.connect(borrower).repay(usdcPool.address, 500))
+        .to.be.revertedWith('TrueCreditAgency: The pool is not supported')
     })
 
     it('repays debt to the pool', async () => {
