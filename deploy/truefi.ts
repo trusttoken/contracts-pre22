@@ -1,6 +1,5 @@
 import { contract, createProxy, deploy, runIf } from 'ethereum-mars'
 import {
-  GovernorAlpha,
   LinearTrueDistributor,
   LoanFactory,
   MockCurveGauge,
@@ -53,7 +52,6 @@ const deployParams = {
 
 deploy({}, (deployer, config) => {
   const TIMELOCK_ADMIN = deployer
-  const GOV_GUARDIAN = deployer
   const is_mainnet = config.network === 'mainnet'
   const NETWORK = is_mainnet ? 'mainnet' : 'testnet'
 
@@ -86,7 +84,6 @@ deploy({}, (deployer, config) => {
   const trueFiPool_TrueFarm_impl = contract('trueFiPool_TrueFarm', TrueFarm)
   const truSushiswapRewarder_impl = contract(TruSushiswapRewarder)
   const timelock_impl = contract(Timelock)
-  const governorAlpha_impl = contract(GovernorAlpha)
 
   // New contract proxies
   const trueLender = proxy(trueLender_impl, () => {})
@@ -101,7 +98,6 @@ deploy({}, (deployer, config) => {
   const trueFiPool_TrueFarm = proxy(trueFiPool_TrueFarm_impl, () => {})
   const truSushiswapRewarder = proxy(truSushiswapRewarder_impl, () => {})
   const timelock = proxy(timelock_impl, () => {})
-  const governorAlpha = proxy(governorAlpha_impl, () => {})
 
   // New bare contracts
   const yCrvGauge = is_mainnet
@@ -154,8 +150,5 @@ deploy({}, (deployer, config) => {
   })
   runIf(timelock.isInitialized().not(), () => {
     timelock.initialize(TIMELOCK_ADMIN, deployParams[NETWORK].TIMELOCK_DELAY)
-  })
-  runIf(governorAlpha.isInitialized().not(), () => {
-    governorAlpha.initialize(timelock, trustToken, stkTruToken, GOV_GUARDIAN, deployParams[NETWORK].VOTING_PERIOD)
   })
 })
