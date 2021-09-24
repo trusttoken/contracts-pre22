@@ -11,7 +11,6 @@ import {
   SushiTimelock,
   TestTrueFiPool,
   TestTrustToken,
-  Timelock,
   TimeOwnedUpgradeabilityProxy,
   TruPriceOracle,
   TruSushiswapRewarder,
@@ -83,7 +82,6 @@ deploy({}, (deployer, config) => {
   const trueFiPool_LinearTrueDistributor_impl = contract('trueFiPool_LinearTrueDistributor', LinearTrueDistributor)
   const trueFiPool_TrueFarm_impl = contract('trueFiPool_TrueFarm', TrueFarm)
   const truSushiswapRewarder_impl = contract(TruSushiswapRewarder)
-  const timelock_impl = contract(Timelock)
 
   // New contract proxies
   const trueLender = proxy(trueLender_impl, () => {})
@@ -97,7 +95,6 @@ deploy({}, (deployer, config) => {
   const trueFiPool_LinearTrueDistributor = proxy(trueFiPool_LinearTrueDistributor_impl, () => {})
   const trueFiPool_TrueFarm = proxy(trueFiPool_TrueFarm_impl, () => {})
   const truSushiswapRewarder = proxy(truSushiswapRewarder_impl, () => {})
-  const timelock = proxy(timelock_impl, () => {})
 
   // New bare contracts
   const yCrvGauge = is_mainnet
@@ -147,8 +144,5 @@ deploy({}, (deployer, config) => {
   })
   runIf(truSushiswapRewarder.isInitialized().not(), () => {
     truSushiswapRewarder.initialize(deployParams[NETWORK].SUSHI_REWARD_MULTIPLIER, trustToken, deployParams[NETWORK].SUSHI_MASTER_CHEF)
-  })
-  runIf(timelock.isInitialized().not(), () => {
-    timelock.initialize(TIMELOCK_ADMIN, deployParams[NETWORK].TIMELOCK_DELAY)
   })
 })
