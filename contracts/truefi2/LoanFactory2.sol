@@ -34,7 +34,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     // ========= IN STORAGE CORRUPTION ===========
 
     // @dev Track Valid LoanTokens
-    mapping(address => bool) public override isLoanToken;
+    mapping(IDebtToken => bool) public override isLoanToken;
 
     IPoolFactory public poolFactory;
     address public lender;
@@ -50,7 +50,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     IDebtToken public debtTokenImplementation;
 
     // @dev Track valid debtTokens
-    mapping(address => bool) public override isDebtToken;
+    mapping(IDebtToken => bool) public override isDebtToken;
 
     IFixedTermLoanAgency public ftlAgency;
 
@@ -200,7 +200,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
             _term,
             _apy
         );
-        isLoanToken[newToken] = true;
+        isLoanToken[ILoanToken2(newToken)] = true;
 
         emit LoanTokenCreated(newToken);
         return ILoanToken2(newToken);
@@ -216,13 +216,13 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
 
         address newToken = Clones.clone(dtImplementationAddress);
         DebtToken(newToken).initialize(_pool, msg.sender, _borrower, liquidator, _debt);
-        isDebtToken[newToken] = true;
+        isDebtToken[IDebtToken(newToken)] = true;
 
         emit DebtTokenCreated(newToken);
         return IDebtToken(newToken);
     }
 
-    function isCreatedByFactory(address loan) external override view returns (bool) {
+    function isCreatedByFactory(IDebtToken loan) external override view returns (bool) {
         return isLoanToken[loan] || isDebtToken[loan];
     }
 
