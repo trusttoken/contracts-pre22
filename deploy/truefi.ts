@@ -1,7 +1,6 @@
 import { contract, createProxy, deploy, runIf } from 'ethereum-mars'
 import {
   LinearTrueDistributor,
-  LoanFactory,
   MockCurveGauge,
   MockTrueUSD,
   MockTruPriceOracle,
@@ -73,7 +72,6 @@ deploy({}, (deployer, config) => {
   const stkTruToken_impl = contract(StkTruToken)
   const trueFiPool_impl = contract(TrueFiPool)
   const testTrueFiPool_impl = contract(TestTrueFiPool)
-  const loanFactory_impl = contract(LoanFactory)
   const stkTruToken_LinearTrueDistributor_impl = contract('stkTruToken_LinearTrueDistributor', LinearTrueDistributor)
   const trueRatingAgencyV2_impl = contract(TrueRatingAgencyV2)
   const ratingAgencyV2Distributor_impl = contract(RatingAgencyV2Distributor)
@@ -85,7 +83,6 @@ deploy({}, (deployer, config) => {
   const stkTruToken = proxy(stkTruToken_impl, () => {})
   let trueFiPool = proxy(trueFiPool_impl, () => {})
   const testTrueFiPool = proxy(testTrueFiPool_impl, () => {})
-  const loanFactory = proxy(loanFactory_impl, () => {})
   const stkTruToken_LinearTrueDistributor = proxy(stkTruToken_LinearTrueDistributor_impl, () => {})
   const trueRatingAgencyV2 = proxy(trueRatingAgencyV2_impl, () => {})
   const ratingAgencyV2Distributor = proxy(ratingAgencyV2Distributor_impl, () => {})
@@ -109,9 +106,6 @@ deploy({}, (deployer, config) => {
   if (!is_mainnet) {
     trueFiPool = testTrueFiPool
   }
-  runIf(loanFactory.isInitialized().not(), () => {
-    loanFactory.initialize(trueUSD)
-  })
   runIf(stkTruToken_LinearTrueDistributor.isInitialized().not(), () => {
     stkTruToken_LinearTrueDistributor.initialize(deployParams[NETWORK].DISTRIBUTION_START, deployParams[NETWORK].DISTRIBUTION_DURATION, deployParams[NETWORK].STAKE_DISTRIBUTION_AMOUNT, trustToken)
   })
@@ -125,7 +119,7 @@ deploy({}, (deployer, config) => {
     ratingAgencyV2Distributor.initialize(trueRatingAgencyV2, trustToken)
   })
   runIf(trueRatingAgencyV2.isInitialized().not(), () => {
-    trueRatingAgencyV2.initialize(trustToken, stkTruToken, ratingAgencyV2Distributor, loanFactory)
+    trueRatingAgencyV2.initialize(trustToken, stkTruToken, ratingAgencyV2Distributor, AddressZero)
   })
   runIf(trueFiPool_LinearTrueDistributor.isInitialized().not(), () => {
     trueFiPool_LinearTrueDistributor.initialize(deployParams[NETWORK].DISTRIBUTION_START, deployParams[NETWORK].DISTRIBUTION_DURATION, deployParams[NETWORK].STAKE_DISTRIBUTION_AMOUNT, trustToken)
