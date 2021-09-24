@@ -80,7 +80,7 @@ describe('SAFU', () => {
 
     const legacyLoanTokenImpl = await new LegacyLoanToken2__factory(owner).deploy()
     await loanFactory.setLoanTokenImplementation(legacyLoanTokenImpl.address)
-    loan = await createLoan(loanFactory, borrower, pool, parseUSDC(1000), YEAR, 1000)
+    loan = await createLoan(loanFactory, borrower, pool, parseUSDC(1000), YEAR, 1000) as any
 
     await token.mint(owner.address, parseUSDC(1e7))
     await token.approve(pool.address, parseUSDC(1e7))

@@ -95,7 +95,7 @@ describe('Liquidator2', () => {
     } = await setupTruefi2(owner, _provider))
     const legacyLoanTokenImpl = await new LegacyLoanToken2__factory(owner).deploy()
     await loanFactory.setLoanTokenImplementation(legacyLoanTokenImpl.address)
-    loan = await createLoan(loanFactory, borrower, usdcPool, parseUSDC(1000), YEAR, 1000)
+    loan = await createLoan(loanFactory, borrower, usdcPool, parseUSDC(1000), YEAR, 1000) as any
     debtToken1 = await createDebtToken(usdcPool, parseUSDC(1100))
     debtToken2 = await createDebtToken(tusdPool, parseEth(1100))
 
@@ -256,7 +256,7 @@ describe('Liquidator2', () => {
       await usdcPool.connect(owner).join(parseUSDC(1e7))
       await tusdPool.connect(owner).join(parseEth(1e7))
       const tx = ftlAgency.connect(borrower).fund(usdcPool.address, parseUSDC(1000), YEAR, 1000)
-      loan = await extractLoanTokenAddress(tx, owner, loanFactory)
+      loan = await extractLoanTokenAddress(tx, owner, loanFactory) as any
       await withdraw(loan, borrower)
     })
 
@@ -279,7 +279,7 @@ describe('Liquidator2', () => {
         const tx = ftlAgency.fund(usdcPool.address, parseUSDC(1000), YEAR, 1000)
         const loan2 = await extractLoanTokenAddress(tx, owner, loanFactory)
 
-        await withdraw(loan2, owner)
+        await withdraw(loan2 as any, owner)
 
         await timeTravel(defaultedLoanCloseTime)
         await loan.enterDefault()
