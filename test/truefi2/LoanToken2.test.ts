@@ -8,6 +8,7 @@ import {
   BorrowingMutex,
   BorrowingMutex__factory,
   DebtToken__factory,
+  FixedTermLoanAgency__factory,
   ImplementationReference__factory,
   LoanToken2,
   LoanToken2__factory,
@@ -66,10 +67,13 @@ describe('LoanToken2', () => {
     await token.mint(lender.address, parseEth(1000))
 
     const poolFactory = await deployContract(lender, PoolFactory__factory)
+    loanFactory = await deployContract(lender, TestLoanFactory__factory)
     const poolImplementation = await deployContract(lender, TrueFiPool2__factory)
     const implementationReference = await deployContract(lender, ImplementationReference__factory, [poolImplementation.address])
     const creditOracle = await deployContract(lender, TrueFiCreditOracle__factory)
-    await poolFactory.initialize(implementationReference.address, AddressZero, AddressZero, AddressZero)
+    const ftlAgency = await deployContract(lender, FixedTermLoanAgency__factory)
+    await ftlAgency.initialize(AddressZero, AddressZero, AddressZero, AddressZero, AddressZero, AddressZero, loanFactory.address)
+    await poolFactory.initialize(implementationReference.address, AddressZero, ftlAgency.address, AddressZero)
     await poolFactory.allowToken(token.address, true)
     await poolFactory.createPool(token.address)
     await creditOracle.initialize()
@@ -77,7 +81,6 @@ describe('LoanToken2', () => {
     borrowingMutex = await deployContract(lender, BorrowingMutex__factory)
     await borrowingMutex.initialize()
     await borrowingMutex.allowLocker(lender.address, true)
-    loanFactory = await deployContract(lender, TestLoanFactory__factory)
     await loanFactory.initialize(poolFactory.address, lender.address, AddressZero, AddressZero, AddressZero, AddressZero, borrowingMutex.address, AddressZero)
     const debtToken = await deployContract(lender, DebtToken__factory)
     await loanFactory.setDebtTokenImplementation(debtToken.address)
@@ -313,6 +316,26 @@ describe('LoanToken2', () => {
       await loanToken.enterDefault()
       expect(await borrowingMutex.isUnlocked(borrower.address)).to.be.false
       expect(await borrowingMutex.locker(borrower.address)).to.equal(loanToken.address)
+    })
+
+    it('mints new DebtTokens and transfers them to the pool', async () => {
+      await fund()
+      await withdraw(borrower)
+      await timeTravel(provider, defaultedLoanCloseTime)
+      await loanToken.enterDefault()
+      const debtToken = DebtToken__factory.connect(await loanToken.debtToken(), lender)
+      expect(await debtToken.balanceOf(poolAddress)).to.equal(parseEth(1100))
+    })
+
+    it('after partial repayment, mints debtTokens for rest which is not repaid', async () => {
+      await fund()
+      await withdraw(borrower)
+      await timeTravel(provider, defaultedLoanCloseTime)
+      await token.mint(loanToken.address, parseEth(550))
+      await loanToken.enterDefault()
+      const debtToken = DebtToken__factory.connect(await loanToken.debtToken(), lender)
+      expect(await debtToken.balanceOf(poolAddress)).to.equal(parseEth(550))
+      expect(await loanToken.value(await loanToken.totalSupply())).to.equal(parseEth(550))
     })
   })
 
@@ -767,6 +790,15 @@ describe('LoanToken2', () => {
       await token.mint(loanToken.address, parseEth(1100))
       await loanToken.settle()
       expect(await loanToken.value(loanTokenBalance)).to.be.equal(parseEth(1100))
+    })
+
+    it('loan partially repaid, defaulted', async () => {
+      await withdraw(borrower)
+      await timeTravel(provider, defaultedLoanCloseTime)
+      await token.mint(loanToken.address, parseEth(123))
+      expect(await loanToken.value(loanTokenBalance)).to.be.equal(parseEth(1100))
+      await loanToken.enterDefault()
+      expect(await loanToken.value(loanTokenBalance)).to.be.equal(parseEth(123))
     })
   })
 

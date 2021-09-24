@@ -284,12 +284,16 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     /**
      * @dev Get coupon value of this loan token in token
      * This assumes the loan will be paid back on time, with interest
-     * @param _balance number of LoanTokens to get value for
+     * @param _amount number of LoanTokens to get value for
      * @return coupon value of _balance LoanTokens in tokens
      */
-    function value(uint256 _balance) external override view returns (uint256) {
-        if (_balance == 0 || status >= Status.Defaulted) {
+    function value(uint256 _amount) external override view returns (uint256) {
+        if (_amount == 0) {
             return 0;
+        }
+
+        if (status >= Status.Defaulted) {
+            return _amount.mul(_balance()).div(totalSupply());
         }
 
         uint256 passed = block.timestamp.sub(start);
@@ -300,7 +304,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         // assume year is 365 days
         uint256 interest = amount.mul(apy).mul(passed).div(365 days).div(APY_PRECISION);
 
-        return amount.add(interest).mul(_balance).div(debt);
+        return amount.add(interest).mul(_amount).div(debt);
     }
 
     /**
