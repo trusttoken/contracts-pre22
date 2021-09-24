@@ -13,13 +13,11 @@ import {
   PoolFactory,
   SAFU,
   StkTruToken,
-  TestTrueFiPool,
   TestTrustToken,
   TestUSDCToken,
   TestUSDTToken,
   TimeOwnedUpgradeabilityProxy,
   TrueFiCreditOracle,
-  TrueFiPool,
   TrueFiPool2,
   TrueLender2,
   TrustToken,
@@ -52,9 +50,6 @@ deploy({}, (_, config) => {
     ? timeProxy(contract(TrustToken), () => { })
     : timeProxy(contract(TestTrustToken), () => { })
   const stkTruToken = proxy(contract(StkTruToken), () => { })
-  const trueFiPool = isMainnet
-    ? proxy(contract(TrueFiPool), () => { })
-    : proxy(contract(TestTrueFiPool), () => { })
   const usdc = isMainnet
     ? deployParams['mainnet'].USDC
     : contract(TestUSDCToken)
@@ -131,7 +126,4 @@ deploy({}, (_, config) => {
     trueLender2.setFee(deployParams['testnet'].LOAN_INTEREST_FEE)
     ftlAgency.setFee(deployParams['testnet'].LOAN_INTEREST_FEE)
   }
-  runIf(poolFactory.isPool(trueFiPool).not(), () => {
-    poolFactory.addLegacyPool(trueFiPool)
-  })
 })
