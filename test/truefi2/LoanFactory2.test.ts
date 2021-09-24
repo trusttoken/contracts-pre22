@@ -75,18 +75,18 @@ describe('LoanFactory2', () => {
   beforeEachWithFixture(async (wallets, _provider) => {
     [owner, borrower, depositor, ftla, tca] = wallets
 
-      ; ({
-        standardPool: pool,
-        standardToken: poolToken,
-        loanFactory,
-        lender,
-        liquidator,
-        poolFactory,
-        rateAdjuster,
-        creditOracle,
-        borrowingMutex,
-        creditAgency,
-      } = await setupTruefi2(owner, _provider))
+    ; ({
+      standardPool: pool,
+      standardToken: poolToken,
+      loanFactory,
+      lender,
+      liquidator,
+      poolFactory,
+      rateAdjuster,
+      creditOracle,
+      borrowingMutex,
+      creditAgency,
+    } = await setupTruefi2(owner, _provider))
     await loanFactory.setRateAdjuster(rateAdjuster.address)
     await creditOracle.setScore(borrower.address, 255)
     borrowerCreditScore = await creditOracle.score(borrower.address)

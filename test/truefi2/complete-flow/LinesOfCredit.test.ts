@@ -30,7 +30,7 @@ describe('Lines Of Credit flow', () => {
   let stkTru: StkTruToken
   let timeTravel: (time: number) => void
 
-  async function extractDebtTokens(pendingTx: Promise<ContractTransaction>) {
+  async function extractDebtTokens (pendingTx: Promise<ContractTransaction>) {
     const tx = await pendingTx
     const receipt = await tx.wait()
     const iface = loanFactory.interface
@@ -46,16 +46,16 @@ describe('Lines Of Credit flow', () => {
     timeTravel = (time: number) => _timeTravel(_provider, time)
     provider = _provider
 
-      ; ({
-        standardToken: tusd,
-        standardPool: pool,
-        loanFactory,
-        creditAgency,
-        creditOracle,
-        safu,
-        tru,
-        stkTru,
-      } = await setupTruefi2(owner, provider))
+    ; ({
+      standardToken: tusd,
+      standardPool: pool,
+      loanFactory,
+      creditAgency,
+      creditOracle,
+      safu,
+      tru,
+      stkTru,
+    } = await setupTruefi2(owner, provider))
 
     await pool.setCreditAgency(creditAgency.address)
 
