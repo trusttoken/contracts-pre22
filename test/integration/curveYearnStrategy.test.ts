@@ -16,14 +16,14 @@ import { AddressZero } from '@ethersproject/constants'
 import { expect, use } from 'chai'
 import { solidity } from 'ethereum-waffle'
 import { DAY, expectScaledCloseTo, timeTravel } from 'utils'
-import fetch from 'node-fetch'
+import { mock1Inch_CYS } from './data'
 
 use(solidity)
 
 describe('[Skip CI] Curve Yearn Pool Strategy', () => {
   const USDC_HOLDER = '0x55fe002aeff02f77364de339a1292923a15844b8'
   const USDC_ADDRESS = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
-  const provider = forkChain('https://eth-mainnet.alchemyapi.io/v2/Vc3xNXIWdxEbDOToa69DhWeyhgFVBDWl', [CONTRACTS_OWNER, USDC_HOLDER, ETHER_HOLDER])
+  const provider = forkChain('https://eth-mainnet.alchemyapi.io/v2/Vc3xNXIWdxEbDOToa69DhWeyhgFVBDWl', [CONTRACTS_OWNER, USDC_HOLDER, ETHER_HOLDER], 13287798)
   const owner = provider.getSigner(CONTRACTS_OWNER)
   const holder = provider.getSigner(USDC_HOLDER)
   const deployContract = setupDeploy(owner)
@@ -33,7 +33,6 @@ describe('[Skip CI] Curve Yearn Pool Strategy', () => {
   const CURVE_POOL = '0xbbc81d23ea2c3ec7e56d39296f0cbb648873a5d3'
   const MINTER = '0xd061d61a4d941c39e5453435b6345dc261c2fce0'
   const ONE_INCH = '0x11111112542d85b3ef69ae05771c2dccff4faa26'
-  const CRV = '0xD533a949740bb3306d119CC777fa900bA034cd52'
 
   let usdc: Erc20
   let pool: TrueFiPool2
@@ -100,9 +99,8 @@ describe('[Skip CI] Curve Yearn Pool Strategy', () => {
     expect(await strategy.crvValue()).to.be.gt(0)
 
     const crvBalance = await strategy.crvBalance()
-    const dataUrl = `https://api.1inch.exchange/v3.0/1/swap?disableEstimate=true&protocols=UNISWAP_V2,SUSHI&allowPartialFill=false&fromTokenAddress=${CRV}&toTokenAddress=${USDC_ADDRESS}&amount=${crvBalance.toString()}&fromAddress=${strategy.address}&destReceiver=${pool.address}&slippage=2`
-    const body = await (await fetch(dataUrl)).json()
-    const data = body.tx.data
+    const data = mock1Inch_CYS(crvBalance)
+
     await strategy.sellCrv(data)
     expect(await usdc.balanceOf(pool.address)).to.be.gt(0)
     expect(await strategy.crvBalance()).to.equal(0)

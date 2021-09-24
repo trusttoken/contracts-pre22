@@ -18,12 +18,12 @@ import {
   TrueLender2__factory,
 } from 'contracts'
 import { DAY, MAX_APY, parseEth } from 'utils'
-import fetch from 'node-fetch'
 import { expect, use } from 'chai'
 import { deployMockContract, solidity } from 'ethereum-waffle'
 import { utils, Wallet } from 'ethers'
 import { TrueFiCreditOracleJson, TrueRateAdjusterJson } from 'build'
 import { AddressZero } from '@ethersproject/constants'
+import { mock1Inch_TL2 } from './data'
 
 use(solidity)
 
@@ -32,10 +32,10 @@ describe('TrueLender2', () => {
   const USDT_ADDRESS = '0xdAC17F958D2ee523a2206206994597C13D831ec7'
   const TUSD_ADDRESS = '0x0000000000085d4780B73119b644AE5ecd22b376'
   const INCH_ADDRESS = '0x11111112542D85B3EF69AE05771c2dCCff4fAa26'
-  const TUSD_HOLDER = '0xE662710B76BF0Eda532b109Ac2f6C1ca8688210b'
+  const TUSD_HOLDER = '0xf977814e90da44bfa03b6295a0616a897441acec'
   const USDT_HOLDER = '0x2faf487a4414fe77e2327f0bf4ae2a264a776ad2'
   const OWNER = '0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5'
-  const provider = forkChain('https://eth-mainnet.alchemyapi.io/v2/Vc3xNXIWdxEbDOToa69DhWeyhgFVBDWl', [OWNER, TUSD_HOLDER, USDT_HOLDER])
+  const provider = forkChain('https://eth-mainnet.alchemyapi.io/v2/Vc3xNXIWdxEbDOToa69DhWeyhgFVBDWl', [OWNER, TUSD_HOLDER, USDT_HOLDER], 13289115)
   const owner = provider.getSigner(OWNER)
   const tusdHolder = provider.getSigner(TUSD_HOLDER)
   const usdtHolder = provider.getSigner(USDT_HOLDER)
@@ -85,6 +85,7 @@ describe('TrueLender2', () => {
     tusd = Erc20Mock__factory.connect(TUSD_ADDRESS, owner)
     await poolFactory.createPool(tusd.address)
     tusdLoanPool = TrueFiPool2__factory.connect(await poolFactory.pool(tusd.address), owner)
+    await poolFactory.supportPool(tusdLoanPool.address)
 
     await poolFactory.allowToken(USDT_ADDRESS, true)
     usdt = Erc20Mock__factory.connect(USDT_ADDRESS, owner)
@@ -103,7 +104,7 @@ describe('TrueLender2', () => {
   })
 
   it('[Skip CI] ensure max 1% swap fee slippage', async () => {
-    const tx = await loanFactory.createLoanToken(tusdLoanPool.address, parseEth(100000), DAY * 365, MAX_APY)
+    const tx = await loanFactory.createLoanToken(tusdLoanPool.address, parseEth(1_000_000), DAY * 90, MAX_APY)
     const creationEvent = (await tx.wait()).events[0]
     const { contractAddress } = creationEvent.args
 
@@ -112,19 +113,21 @@ describe('TrueLender2', () => {
     const oracle = await deployContract(MockUsdStableCoinOracle__factory)
     await tusdLoanPool.setOracle(oracle.address)
 
-    await tusd.connect(tusdHolder).approve(tusdLoanPool.address, parseEth(100000))
-    await tusdLoanPool.connect(tusdHolder).join(parseEth(100000))
+    await tusd.connect(tusdHolder).approve(tusdLoanPool.address, parseEth(1_000_000))
+    await tusdLoanPool.connect(tusdHolder).join(parseEth(1_000_000))
     await lender.fund(loan.address)
     const debt = await loan.debt()
     await tusd.connect(tusdHolder).transfer(loan.address, debt)
     await loan.settle()
+    const fee = debt.sub(parseEth(1_000_000)).div(10)
 
-    const dataUrl = `https://api.1inch.exchange/v3.0/1/swap?disableEstimate=true&protocols=UNISWAP_V2,SUSHI&allowPartialFill=false&fromTokenAddress=${TUSD_ADDRESS}&toTokenAddress=${USDC_ADDRESS}&amount=${parseEth(1000)}&fromAddress=${lender.address}&slippage=1`
-    const body = await (await fetch(dataUrl)).json()
-    const data = body.tx.data
+    const data = mock1Inch_TL2()
 
     await lender.reclaim(loan.address, data)
-    expect(await usdcFeePool.balanceOf(stkTru.address)).to.gt(utils.parseUnits('100', 6).mul(98).div(100))
+
+    const reclaimedFee = await usdcFeePool.balanceOf(stkTru.address)
+    expect(reclaimedFee.mul(utils.parseUnits('1', 12))).to.gt(fee.mul(98).div(100))
+    expect(reclaimedFee.mul(utils.parseUnits('1', 12))).to.lt(fee.mul(102).div(100))
   })
 
   it('funds tether loan tokens', async () => {
