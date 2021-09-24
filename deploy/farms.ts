@@ -4,6 +4,8 @@ import {
   LinearTrueDistributor,
   TestTrustToken,
   TimeOwnedUpgradeabilityProxy,
+  TrueFarm,
+  TrueFiPool,
   TrueMultiFarm,
   TrustToken,
 } from '../build/artifacts'
@@ -36,12 +38,17 @@ deploy({}, (_, config) => {
   const trustToken = isMainnet
     ? timeProxy(contract(TrustToken), () => {})
     : timeProxy(contract(TestTrustToken), () => {})
+  let trueFiPool = proxy(contract(TrueFiPool), () => {})
 
   // New contract impls
+  const trueFiPool_LinearTrueDistributor_impl = contract('trueFiPool_LinearTrueDistributor', LinearTrueDistributor)
+  const trueFiPool_TrueFarm_impl = contract('trueFiPool_TrueFarm', TrueFarm)
   const trueMultiFarm_LinearTrueDistributor_impl = contract('trueMultiFarm_LinearTrueDistributor', LinearTrueDistributor)
   const trueMultiFarm_impl = contract(TrueMultiFarm)
 
   // New contract proxies
+  const trueFiPool_LinearTrueDistributor = proxy(trueFiPool_LinearTrueDistributor_impl, () => {})
+  const trueFiPool_TrueFarm = proxy(trueFiPool_TrueFarm_impl, () => {})
   const trueMultiFarm_LinearTrueDistributor = proxy(trueMultiFarm_LinearTrueDistributor_impl, () => {})
   const trueMultiFarm = proxy(trueMultiFarm_impl, () => {})
 
@@ -49,6 +56,15 @@ deploy({}, (_, config) => {
   // <None so far>
 
   // Contract initialization
+  runIf(trueFiPool_LinearTrueDistributor.isInitialized().not(), () => {
+    trueFiPool_LinearTrueDistributor.initialize(deployParams[NETWORK].DISTRIBUTION_START, deployParams[NETWORK].DISTRIBUTION_DURATION, deployParams[NETWORK].STAKE_DISTRIBUTION_AMOUNT, trustToken)
+  })
+  runIf(trueFiPool_LinearTrueDistributor.farm().equals(trueFiPool_TrueFarm).not(), () => {
+    trueFiPool_LinearTrueDistributor.setFarm(trueFiPool_TrueFarm)
+  })
+  runIf(trueFiPool_TrueFarm.isInitialized().not(), () => {
+    trueFiPool_TrueFarm.initialize(trueFiPool, trueFiPool_LinearTrueDistributor, 'TrueFi tfTUSD Farm')
+  })
   runIf(trueMultiFarm_LinearTrueDistributor.isInitialized().not(), () => {
     trueMultiFarm_LinearTrueDistributor.initialize(deployParams[NETWORK].DISTRIBUTION_START, deployParams[NETWORK].DISTRIBUTION_DURATION, deployParams[NETWORK].STAKE_DISTRIBUTION_AMOUNT, trustToken)
   })

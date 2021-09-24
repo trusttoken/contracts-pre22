@@ -13,7 +13,6 @@ import {
   TimeOwnedUpgradeabilityProxy,
   TruPriceOracle,
   TruSushiswapRewarder,
-  TrueFarm,
   TrueFiPool,
   TrueRatingAgencyV2,
   TrueUSD,
@@ -75,8 +74,6 @@ deploy({}, (deployer, config) => {
   const stkTruToken_LinearTrueDistributor_impl = contract('stkTruToken_LinearTrueDistributor', LinearTrueDistributor)
   const trueRatingAgencyV2_impl = contract(TrueRatingAgencyV2)
   const ratingAgencyV2Distributor_impl = contract(RatingAgencyV2Distributor)
-  const trueFiPool_LinearTrueDistributor_impl = contract('trueFiPool_LinearTrueDistributor', LinearTrueDistributor)
-  const trueFiPool_TrueFarm_impl = contract('trueFiPool_TrueFarm', TrueFarm)
   const truSushiswapRewarder_impl = contract(TruSushiswapRewarder)
 
   // New contract proxies
@@ -86,8 +83,6 @@ deploy({}, (deployer, config) => {
   const stkTruToken_LinearTrueDistributor = proxy(stkTruToken_LinearTrueDistributor_impl, () => {})
   const trueRatingAgencyV2 = proxy(trueRatingAgencyV2_impl, () => {})
   const ratingAgencyV2Distributor = proxy(ratingAgencyV2Distributor_impl, () => {})
-  const trueFiPool_LinearTrueDistributor = proxy(trueFiPool_LinearTrueDistributor_impl, () => {})
-  const trueFiPool_TrueFarm = proxy(trueFiPool_TrueFarm_impl, () => {})
   const truSushiswapRewarder = proxy(truSushiswapRewarder_impl, () => {})
 
   // New bare contracts
@@ -120,15 +115,6 @@ deploy({}, (deployer, config) => {
   })
   runIf(trueRatingAgencyV2.isInitialized().not(), () => {
     trueRatingAgencyV2.initialize(trustToken, stkTruToken, ratingAgencyV2Distributor, AddressZero)
-  })
-  runIf(trueFiPool_LinearTrueDistributor.isInitialized().not(), () => {
-    trueFiPool_LinearTrueDistributor.initialize(deployParams[NETWORK].DISTRIBUTION_START, deployParams[NETWORK].DISTRIBUTION_DURATION, deployParams[NETWORK].STAKE_DISTRIBUTION_AMOUNT, trustToken)
-  })
-  runIf(trueFiPool_LinearTrueDistributor.farm().equals(trueFiPool_TrueFarm).not(), () => {
-    trueFiPool_LinearTrueDistributor.setFarm(trueFiPool_TrueFarm)
-  })
-  runIf(trueFiPool_TrueFarm.isInitialized().not(), () => {
-    trueFiPool_TrueFarm.initialize(trueFiPool, trueFiPool_LinearTrueDistributor, 'TrueFi tfTUSD Farm')
   })
   runIf(truSushiswapRewarder.isInitialized().not(), () => {
     truSushiswapRewarder.initialize(deployParams[NETWORK].SUSHI_REWARD_MULTIPLIER, trustToken, deployParams[NETWORK].SUSHI_MASTER_CHEF)
