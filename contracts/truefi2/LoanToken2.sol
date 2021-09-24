@@ -12,6 +12,7 @@ import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
 import {IDebtToken} from "./interface/ILoanToken2.sol";
+import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
 
 /**
  * @title LoanToken V2
@@ -39,7 +40,6 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     using SafeERC20 for ERC20;
     using SafeERC20 for IDebtToken;
 
-    uint128 public constant LAST_MINUTE_PAYBACK_DURATION = 3 days;
     uint256 private constant APY_PRECISION = 10000;
 
     address public admin;
@@ -70,6 +70,8 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     IBorrowingMutex public borrowingMutex;
 
     IFixedTermLoanAgency public ftlAgency;
+
+    ITrueFiCreditOracle public creditOracle;
 
     ILoanFactory2 public loanFactory;
 
@@ -153,6 +155,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         IFixedTermLoanAgency _ftlAgency,
         address _admin,
         ILoanFactory2 _loanFactory,
+        ITrueFiCreditOracle _creditOracle,
         uint256 _amount,
         uint256 _term,
         uint256 _apy
@@ -170,6 +173,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         apy = _apy;
         lender = _lender;
         ftlAgency = _ftlAgency;
+        creditOracle = _creditOracle;
         debt = interest(amount);
         loanFactory = _loanFactory;
     }
@@ -360,8 +364,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      */
     function enterDefault() external override onlyOngoing {
         require(!isRepaid(), "LoanToken2: cannot default a repaid loan");
-        require(start.add(term).add(LAST_MINUTE_PAYBACK_DURATION) <= block.timestamp, "LoanToken2: Loan cannot be defaulted yet");
-
+        require(start.add(term).add(creditOracle.gracePeriod()) <= block.timestamp, "LoanToken2: Loan cannot be defaulted yet");
         status = Status.Defaulted;
         debtToken = loanFactory.createDebtToken(pool, borrower, debt.sub(repaid()));
 

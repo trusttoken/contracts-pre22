@@ -16,6 +16,7 @@ import {
   DebtToken,
   MockTrueFiPoolOracle,
   MockTrueFiPoolOracle__factory,
+  TrueFiCreditOracle__factory,
   TrueRateAdjuster,
 } from 'contracts'
 
@@ -255,7 +256,7 @@ describe('Liquidator2', () => {
     beforeEach(async () => {
       await usdcPool.connect(owner).join(parseUSDC(1e7))
       await tusdPool.connect(owner).join(parseEth(1e7))
-      const tx = ftlAgency.connect(borrower).fund(usdcPool.address, parseUSDC(1000), YEAR, 1000)
+      const tx = ftlAgency.connect(borrower).borrow(usdcPool.address, parseUSDC(1000), YEAR, 1000)
       loan = await extractLoanTokenAddress(tx, owner, loanFactory) as any
       await withdraw(loan, borrower)
     })
@@ -276,7 +277,7 @@ describe('Liquidator2', () => {
         await creditOracle.setScore(owner.address, 255)
         await creditOracle.setMaxBorrowerLimit(owner.address, parseEth(100_000_000))
         await ftlAgency.allowBorrower(owner.address)
-        const tx = ftlAgency.fund(usdcPool.address, parseUSDC(1000), YEAR, 1000)
+        const tx = ftlAgency.borrow(usdcPool.address, parseUSDC(1000), YEAR, 1000)
         const loan2 = await extractLoanTokenAddress(tx, owner, loanFactory)
 
         await withdraw(loan2 as any, owner)
@@ -303,8 +304,10 @@ describe('Liquidator2', () => {
         const borrowingMutex = await deployContract(BorrowingMutex__factory)
         await borrowingMutex.initialize()
         await borrowingMutex.allowLocker(owner.address, true)
+        const creditOracle = await deployContract(TrueFiCreditOracle__factory)
+        await creditOracle.initialize()
         const fakeLoan = await deployContract(LegacyLoanToken2__factory)
-        await fakeLoan.initialize(usdcPool.address, borrowingMutex.address, borrower.address, borrower.address, AddressZero, owner.address, liquidator.address, parseUSDC(1000), YEAR, 1000)
+        await fakeLoan.initialize(usdcPool.address, borrowingMutex.address, borrower.address, borrower.address, AddressZero, owner.address, liquidator.address, creditOracle.address, parseUSDC(1000), YEAR, 1000)
         await usdc.connect(borrower).approve(fakeLoan.address, parseUSDC(1000))
         await fakeLoan.connect(borrower).fund()
         await borrowingMutex.lock(borrower.address, await fakeLoan.address)

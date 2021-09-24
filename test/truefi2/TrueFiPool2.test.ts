@@ -415,7 +415,7 @@ describe('TrueFiPool2', () => {
       it('when there are ongoing loans in both trueLender and FTLA, pool value contains both', async () => {
         await lender.connect(borrower).fund(loan.address)
         await ftlAgency.allowBorrower(borrower2.address)
-        await ftlAgency.connect(borrower2).fund(tusdPool.address, 5000, YEAR, 10000)
+        await ftlAgency.connect(borrower2).borrow(tusdPool.address, 5000, YEAR, 10000)
         expect(await tusdPool.liquidValue()).to.equal(joinAmount.sub(500000).sub(5000))
         expect(await tusdPool.loansValue()).to.equal(500000 + 5000)
         expect(await tusdPool.poolValue()).to.equal(joinAmount)

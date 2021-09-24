@@ -16,6 +16,7 @@ import {
   PoolFactory__factory,
   TestLoanFactory,
   TestLoanFactory__factory,
+  TrueFiCreditOracle__factory,
   TrueFiPool2__factory,
 } from 'contracts'
 import { deployContract } from 'scripts/utils/deployContract'
@@ -67,9 +68,11 @@ describe('LoanToken2', () => {
     const poolFactory = await deployContract(lender, PoolFactory__factory)
     const poolImplementation = await deployContract(lender, TrueFiPool2__factory)
     const implementationReference = await deployContract(lender, ImplementationReference__factory, [poolImplementation.address])
+    const creditOracle = await deployContract(lender, TrueFiCreditOracle__factory)
     await poolFactory.initialize(implementationReference.address, AddressZero, AddressZero, AddressZero)
     await poolFactory.allowToken(token.address, true)
     await poolFactory.createPool(token.address)
+    await creditOracle.initialize()
     poolAddress = await poolFactory.pool(token.address)
     borrowingMutex = await deployContract(lender, BorrowingMutex__factory)
     await borrowingMutex.initialize()
@@ -87,6 +90,7 @@ describe('LoanToken2', () => {
       AddressZero,
       lender.address,
       loanFactory.address,
+      creditOracle.address,
       parseEth(1000),
       yearInSeconds,
       1000,
@@ -671,7 +675,7 @@ describe('LoanToken2', () => {
   describe('Debt calculation', () => {
     const getDebt = async (amount: number, termInMonths: number, apy: number) => {
       const contract = await new LoanToken2__factory(borrower).deploy()
-      await contract.initialize(poolAddress, borrowingMutex.address, borrower.address, lender.address, AddressZero, lender.address, lender.address, parseEth(amount.toString()), termInMonths * averageMonthInSeconds, apy)
+      await contract.initialize(poolAddress, borrowingMutex.address, borrower.address, lender.address, AddressZero, lender.address, lender.address, AddressZero, parseEth(amount.toString()), termInMonths * averageMonthInSeconds, apy)
       return Number.parseInt(formatEther(await contract.debt()))
     }
 

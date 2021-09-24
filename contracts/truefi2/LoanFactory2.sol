@@ -190,7 +190,19 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         require(ltImplementationAddress != address(0), "LoanFactory: Loan token implementation should be set");
 
         address newToken = Clones.clone(ltImplementationAddress);
-        LoanToken2(newToken).initialize(_pool, borrowingMutex, _borrower, lender, ftlAgency, admin, this, _amount, _term, _apy);
+        LoanToken2(newToken).initialize(
+            _pool,
+            borrowingMutex,
+            _borrower,
+            lender,
+            ftlAgency,
+            admin,
+            this,
+            creditOracle,
+            _amount,
+            _term,
+            _apy
+        );
         isLoanToken[newToken] = true;
 
         emit LoanTokenCreated(newToken);

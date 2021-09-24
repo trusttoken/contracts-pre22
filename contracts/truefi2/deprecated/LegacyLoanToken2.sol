@@ -16,6 +16,7 @@ import {IBorrowingMutex} from "../interface/IBorrowingMutex.sol";
  * Used to test liquidation process with old loans
  * There is one change compared to real deployed LTs:
  * onlyLiquidator modifier was removed from liquidate() to make testing easier
+ * initializer is updated to match latest LTs signature
  */
 contract LegacyLoanToken2 is ILoanToken2, ERC20 {
     using SafeMath for uint256;
@@ -138,6 +139,7 @@ contract LegacyLoanToken2 is ILoanToken2, ERC20 {
         IFixedTermLoanAgency _ftlAgency,
         address _admin,
         address _liquidator,
+        address,
         uint256 _amount,
         uint256 _term,
         uint256 _apy
