@@ -19,7 +19,6 @@ import {
   TrueRatingAgencyV2,
   TrueUSD,
   TrustToken,
-  TrueLender,
 } from '../build/artifacts'
 import { utils } from 'ethers'
 import { AddressZero } from '@ethersproject/constants'
@@ -71,7 +70,6 @@ deploy({}, (deployer, config) => {
     )
 
   // New contract impls
-  const trueLender_impl = contract(TrueLender)
   const stkTruToken_impl = contract(StkTruToken)
   const trueFiPool_impl = contract(TrueFiPool)
   const testTrueFiPool_impl = contract(TestTrueFiPool)
@@ -84,7 +82,6 @@ deploy({}, (deployer, config) => {
   const truSushiswapRewarder_impl = contract(TruSushiswapRewarder)
 
   // New contract proxies
-  const trueLender = proxy(trueLender_impl, () => {})
   const stkTruToken = proxy(stkTruToken_impl, () => {})
   let trueFiPool = proxy(trueFiPool_impl, () => {})
   const testTrueFiPool = proxy(testTrueFiPool_impl, () => {})
@@ -107,7 +104,7 @@ deploy({}, (deployer, config) => {
 
   // Contract initialization
   runIf(testTrueFiPool.isInitialized().not(), () => {
-    testTrueFiPool.initialize(AddressZero, yCrvGauge, trueUSD, trueLender, AddressZero, AddressZero, AddressZero)
+    testTrueFiPool.initialize(AddressZero, yCrvGauge, trueUSD, AddressZero, AddressZero, AddressZero, AddressZero)
   })
   if (!is_mainnet) {
     trueFiPool = testTrueFiPool
@@ -129,9 +126,6 @@ deploy({}, (deployer, config) => {
   })
   runIf(trueRatingAgencyV2.isInitialized().not(), () => {
     trueRatingAgencyV2.initialize(trustToken, stkTruToken, ratingAgencyV2Distributor, loanFactory)
-  })
-  runIf(trueLender.isInitialized().not(), () => {
-    trueLender.initialize(trueFiPool, trueRatingAgencyV2, stkTruToken)
   })
   runIf(trueFiPool_LinearTrueDistributor.isInitialized().not(), () => {
     trueFiPool_LinearTrueDistributor.initialize(deployParams[NETWORK].DISTRIBUTION_START, deployParams[NETWORK].DISTRIBUTION_DURATION, deployParams[NETWORK].STAKE_DISTRIBUTION_AMOUNT, trustToken)
