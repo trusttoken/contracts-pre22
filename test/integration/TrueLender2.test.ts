@@ -22,7 +22,7 @@ import fetch from 'node-fetch'
 import { expect, use } from 'chai'
 import { deployMockContract, solidity } from 'ethereum-waffle'
 import { utils, Wallet } from 'ethers'
-import { TrueFiCreditOracleJson, TrueRateAdjusterJson } from 'build'
+import { TrueFiCreditOracleJson, CreditModelJson } from 'build'
 import { AddressZero } from '@ethersproject/constants'
 
 use(solidity)
@@ -59,7 +59,7 @@ describe('TrueLender2', () => {
     const poolImplementation = await deployContract(TrueFiPool2__factory)
     const implementationReference = await deployContract(ImplementationReference__factory, poolImplementation.address)
 
-    const mockRateAdjuster = await deployMockContract(owner, TrueRateAdjusterJson.abi)
+    const mockRateAdjuster = await deployMockContract(owner, CreditModelJson.abi)
     await mockRateAdjuster.mock.rate.returns(0)
     await mockRateAdjuster.mock.fixedTermLoanAdjustment.returns(1000)
     const mockCreditOracle = await deployMockContract(owner, TrueFiCreditOracleJson.abi)

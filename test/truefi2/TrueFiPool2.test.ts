@@ -13,7 +13,7 @@ import {
   DeficiencyToken__factory,
   DeficiencyToken,
   TrueCreditAgency,
-  TrueFiCreditOracle, TrueRateAdjuster, MockTrueCurrency__factory, FixedTermLoanAgency,
+  TrueFiCreditOracle, CreditModel, MockTrueCurrency__factory, FixedTermLoanAgency,
 } from 'contracts'
 import { MockProvider, solidity } from 'ethereum-waffle'
 import { BigNumber, Wallet } from 'ethers'
@@ -53,7 +53,7 @@ describe('TrueFiPool2', () => {
   let poolStrategy1: MockStrategy
   let poolStrategy2: MockStrategy
   let badPoolStrategy: BadStrategy
-  let rateAdjuster: TrueRateAdjuster
+  let rateAdjuster: CreditModel
   let ftlAgency: FixedTermLoanAgency
 
   let timeTravel: (time: number) => void
@@ -65,7 +65,7 @@ describe('TrueFiPool2', () => {
     timeTravel = (time: number) => _timeTravel(_provider, time)
     provider = _provider
 
-    ;({
+    ; ({
       standardToken: tusd,
       lender,
       standardPool: tusdPool,

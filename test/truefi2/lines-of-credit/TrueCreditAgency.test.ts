@@ -12,7 +12,7 @@ import {
   TrueFiCreditOracle,
   TrueFiPool2,
   TrueLender2,
-  TrueRateAdjuster,
+  CreditModel,
 } from 'contracts'
 import {
   beforeEachWithFixture,
@@ -44,7 +44,7 @@ describe('TrueCreditAgency', () => {
   let usdc: MockUsdc
   let usdcPool: TrueFiPool2
   let loanFactory: LoanFactory2
-  let rateAdjuster: TrueRateAdjuster
+  let rateAdjuster: CreditModel
   let lender: TrueLender2
   let creditOracle: TrueFiCreditOracle
   let tusdBaseRateOracle: TimeAveragedBaseRateOracle

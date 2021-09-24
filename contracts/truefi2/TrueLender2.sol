@@ -19,7 +19,7 @@ import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {ITrueRatingAgency} from "../truefi/interface/ITrueRatingAgency.sol";
 import {IERC20WithDecimals} from "./interface/IERC20WithDecimals.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
-import {ITrueRateAdjuster} from "./interface/ITrueRateAdjuster.sol";
+import {ICreditModel} from "./interface/ICreditModel.sol";
 import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
 
 interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
@@ -96,7 +96,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
 
     uint8 public longTermLoanScoreThreshold;
 
-    ITrueRateAdjuster public rateAdjuster;
+    ICreditModel public rateAdjuster;
 
     // mutex ensuring there's only one running loan or credit line for borrower
     IBorrowingMutex public borrowingMutex;
@@ -184,7 +184,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         IPoolFactory _factory,
         I1Inch3 __1inch,
         ITrueFiCreditOracle _creditOracle,
-        ITrueRateAdjuster _rateAdjuster,
+        ICreditModel _rateAdjuster,
         IBorrowingMutex _borrowingMutex
     ) public initializer {
         UpgradeableClaimable.initialize(msg.sender);

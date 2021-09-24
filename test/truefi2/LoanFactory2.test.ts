@@ -17,8 +17,8 @@ import {
   LoanFactory2__factory,
   TrueFiCreditOracle,
   TrueFiCreditOracle__factory,
-  TrueRateAdjuster,
-  TrueRateAdjuster__factory,
+  CreditModel,
+  CreditModel__factory,
   LoanToken2,
   LoanToken2__factory,
   MockTrueCurrency,
@@ -27,7 +27,7 @@ import {
   DebtToken,
   DebtToken__factory,
 } from 'contracts'
-import { PoolFactoryJson, TrueFiCreditOracleJson, TrueRateAdjusterJson } from 'build'
+import { PoolFactoryJson, TrueFiCreditOracleJson, CreditModelJson } from 'build'
 import { deployMockContract, solidity } from 'ethereum-waffle'
 import { AddressZero } from '@ethersproject/constants'
 
@@ -47,7 +47,7 @@ describe('LoanFactory2', () => {
   let contractAddress: string
   let loanFactory: LoanFactory2
   let loanToken: LoanToken2
-  let rateAdjuster: TrueRateAdjuster
+  let rateAdjuster: CreditModel
   let creditOracle: TrueFiCreditOracle
   let borrowerCreditScore: number
   let borrowingMutex: BorrowingMutex
@@ -174,7 +174,7 @@ describe('LoanFactory2', () => {
       const factory = await new LoanFactory2__factory(owner).deploy()
       const mockPoolFactory = await deployMockContract(owner, PoolFactoryJson.abi)
       const mockCreditOracle = await deployMockContract(owner, TrueFiCreditOracleJson.abi)
-      const mockRateAdjuster = await deployMockContract(owner, TrueRateAdjusterJson.abi)
+      const mockRateAdjuster = await deployMockContract(owner, CreditModelJson.abi)
       await factory.initialize(
         mockPoolFactory.address,
         AddressZero, AddressZero, AddressZero, mockRateAdjuster.address, mockCreditOracle.address, AddressZero, AddressZero,
@@ -411,9 +411,9 @@ describe('LoanFactory2', () => {
   })
 
   describe('setRateAdjuster', () => {
-    let fakeRateAdjuster: TrueRateAdjuster
+    let fakeRateAdjuster: CreditModel
     beforeEach(async () => {
-      fakeRateAdjuster = await new TrueRateAdjuster__factory(owner).deploy()
+      fakeRateAdjuster = await new CreditModel__factory(owner).deploy()
       await fakeRateAdjuster.initialize(AddressZero)
     })
 

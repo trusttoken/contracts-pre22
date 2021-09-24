@@ -15,8 +15,8 @@ import {
   TimeAveragedBaseRateOracle__factory,
   TrueFiPool2,
   TrueFiPool2__factory,
-  TrueRateAdjuster,
-  TrueRateAdjuster__factory,
+  CreditModel,
+  CreditModel__factory,
 } from 'contracts'
 
 import { deployMockContract, MockContract, MockProvider, solidity } from 'ethereum-waffle'
@@ -24,11 +24,11 @@ import { ITimeAveragedBaseRateOracleJson, ITrueFiPool2WithDecimalsJson, SpotBase
 
 use(solidity)
 
-describe('TrueRateAdjuster', () => {
+describe('CreditModel', () => {
   let provider: MockProvider
   let owner: Wallet
   let borrower: Wallet
-  let rateAdjuster: TrueRateAdjuster
+  let rateAdjuster: CreditModel
   let mockPool: MockContract
   let asset: MockErc20Token
   let mockSpotOracle: MockContract
@@ -41,7 +41,7 @@ describe('TrueRateAdjuster', () => {
 
     const deployContract = setupDeploy(owner)
 
-    rateAdjuster = await deployContract(TrueRateAdjuster__factory)
+    rateAdjuster = await deployContract(CreditModel__factory)
     mockPool = await deployMockContract(owner, ITrueFiPool2WithDecimalsJson.abi)
 
     asset = await deployContract(MockErc20Token__factory)

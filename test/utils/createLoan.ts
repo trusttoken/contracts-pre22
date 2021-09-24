@@ -6,11 +6,11 @@ import {
 } from 'contracts'
 import { BigNumberish, Wallet } from 'ethers'
 import { connectMockContract } from 'utils/connectMockContract'
-import { TrueRateAdjusterJson } from 'build'
+import { CreditModelJson } from 'build'
 import { MAX_APY } from './constants'
 
 export const createLoan = async function (factory: LoanFactory2, creator: Wallet, pool: TrueFiPool2, amount: BigNumberish, duration: BigNumberish, apy: BigNumberish) {
-  const mockRateAdjuster = connectMockContract(await factory.rateAdjuster(), factory.signer, TrueRateAdjusterJson.abi)
+  const mockRateAdjuster = connectMockContract(await factory.rateAdjuster(), factory.signer, CreditModelJson.abi)
   await mockRateAdjuster.mock.fixedTermLoanAdjustment.returns(apy)
   const loanTx = await factory.connect(creator).createLoanToken(pool.address, amount, duration, MAX_APY)
   const loanAddress = (await loanTx.wait()).events[0].args.contractAddress

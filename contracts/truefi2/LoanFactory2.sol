@@ -10,7 +10,7 @@ import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {ILoanToken2, IDebtToken} from "./interface/ILoanToken2.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
-import {ITrueRateAdjuster} from "./interface/ITrueRateAdjuster.sol";
+import {ICreditModel} from "./interface/ICreditModel.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
 import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
 import {ITrueCreditAgency} from "./interface/ITrueCreditAgency.sol";
@@ -42,7 +42,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
 
     address public admin;
 
-    ITrueRateAdjuster public rateAdjuster;
+    ICreditModel public rateAdjuster;
     ITrueFiCreditOracle public creditOracle;
     IBorrowingMutex public borrowingMutex;
     ILoanToken2 public loanTokenImplementation;
@@ -70,7 +70,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
 
     event CreditOracleChanged(ITrueFiCreditOracle creditOracle);
 
-    event RateAdjusterChanged(ITrueRateAdjuster rateAdjuster);
+    event RateAdjusterChanged(ICreditModel rateAdjuster);
 
     event BorrowingMutexChanged(IBorrowingMutex borrowingMutex);
 
@@ -96,7 +96,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         address _lender,
         IFixedTermLoanAgency _ftlAgency,
         address _liquidator,
-        ITrueRateAdjuster _rateAdjuster,
+        ICreditModel _rateAdjuster,
         ITrueFiCreditOracle _creditOracle,
         IBorrowingMutex _borrowingMutex,
         ITrueCreditAgency _creditAgency
@@ -232,7 +232,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         emit CreditOracleChanged(_creditOracle);
     }
 
-    function setRateAdjuster(ITrueRateAdjuster _rateAdjuster) external onlyAdmin {
+    function setRateAdjuster(ICreditModel _rateAdjuster) external onlyAdmin {
         require(address(_rateAdjuster) != address(0), "LoanFactory: Cannot set rate adjuster to zero address");
         rateAdjuster = _rateAdjuster;
         emit RateAdjusterChanged(_rateAdjuster);

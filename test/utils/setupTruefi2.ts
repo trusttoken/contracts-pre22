@@ -25,14 +25,14 @@ import {
   TrueFiPool2__factory,
   TrueLender2,
   TrueLender2__factory,
-  TrueRateAdjuster__factory,
+  CreditModel__factory,
   TrueRatingAgencyV2__factory,
   DebtToken__factory,
 } from 'contracts'
 import { Wallet } from 'ethers'
 import { parseTRU, timeTravelTo, YEAR } from '.'
 import { deployMockContract, MockProvider } from 'ethereum-waffle'
-import { SpotBaseRateOracleJson, TrueRateAdjusterJson } from 'build'
+import { SpotBaseRateOracleJson, CreditModelJson } from 'build'
 import { DAY } from './constants'
 
 const weeklyFillBaseRateOracles = async (tusdOracle: TimeAveragedBaseRateOracle, usdcOracle: TimeAveragedBaseRateOracle, provider: MockProvider) => {
@@ -55,8 +55,8 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
   const lender: TrueLender2 & TestTrueLender = customDeployed?.lender ? customDeployed.lender : await deployContract(TrueLender2__factory)
   const ftlAgency: FixedTermLoanAgency & TestFixedTermLoanAgency = customDeployed?.ftlAgency ? customDeployed.ftlAgency : await deployContract(FixedTermLoanAgency__factory)
   const safu = await deployContract(Safu__factory)
-  const rateAdjuster = await deployContract(TrueRateAdjuster__factory)
-  const mockRateAdjuster = await deployMockContract(owner, TrueRateAdjusterJson.abi)
+  const rateAdjuster = await deployContract(CreditModel__factory)
+  const mockRateAdjuster = await deployMockContract(owner, CreditModelJson.abi)
   const creditAgency = await deployContract(TrueCreditAgency__factory)
   const borrowingMutex = await deployContract(BorrowingMutex__factory)
 

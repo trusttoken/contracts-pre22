@@ -1,4 +1,4 @@
-## `TrueRateAdjuster`
+## `CreditModel`
 
 
 

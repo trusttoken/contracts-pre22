@@ -17,7 +17,7 @@ import {
   MockTrueFiPoolOracle,
   MockTrueFiPoolOracle__factory,
   TrueFiCreditOracle__factory,
-  TrueRateAdjuster,
+  CreditModel,
 } from 'contracts'
 
 import { solidity } from 'ethereum-waffle'
@@ -61,7 +61,7 @@ describe('Liquidator2', () => {
   let debtToken2: DebtToken
   let creditOracle: TrueFiCreditOracle
   let tusdOracle: MockTrueFiPoolOracle
-  let rateAdjuster: TrueRateAdjuster
+  let rateAdjuster: CreditModel
 
   let timeTravel: (time: number) => void
 

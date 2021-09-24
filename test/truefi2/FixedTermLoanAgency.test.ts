@@ -28,7 +28,7 @@ import {
   TrueFiCreditOracle__factory,
   TrueFiPool2,
   TrueFiPool2__factory,
-  TrueRateAdjuster,
+  CreditModel,
 } from 'contracts'
 
 import { BorrowingMutexJson, LoanToken2Json, Mock1InchV3Json } from 'build'
@@ -63,7 +63,7 @@ describe('FixedTermLoanAgency', () => {
   let usdc: MockUsdc
   let oneInch: Mock1InchV3
   let borrowingMutex: BorrowingMutex
-  let rateAdjuster: TrueRateAdjuster
+  let rateAdjuster: CreditModel
   let baseRateOracle: TimeAveragedBaseRateOracle
 
   const YEAR = DAY * 365
