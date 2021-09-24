@@ -6,7 +6,6 @@ import {
   ChainlinkTruUsdtOracle,
   FixedTermLoanAgency,
   ImplementationReference,
-  LinearTrueDistributor,
   Liquidator2,
   LoanFactory2,
   Mock1InchV3,
@@ -19,7 +18,6 @@ import {
   TestUSDCToken,
   TestUSDTToken,
   TimeOwnedUpgradeabilityProxy,
-  TrueFarm,
   TrueFiCreditOracle,
   TrueFiPool,
   TrueFiPool2,
@@ -37,18 +35,9 @@ const deployParams = {
   mainnet: {
     USDC: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
     USDT: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
-    DISTRIBUTION_DURATION: 14 * DAY,
-    DISTRIBUTION_START: 1623952800,
-    // 200,000 per day for 14 days
-    STAKE_DISTRIBUTION_AMOUNT: BigNumber.from('280000000000000'),
-    WITHDRAW_PERIOD: 3 * DAY,
   },
   testnet: {
     LOAN_INTEREST_FEE: 500,
-    DISTRIBUTION_DURATION: 180 * DAY,
-    DISTRIBUTION_START: Date.parse('04/24/2021') / 1000,
-    STAKE_DISTRIBUTION_AMOUNT: utils.parseUnits('10', 8),
-    WITHDRAW_PERIOD: 3 * DAY,
   },
 }
 
@@ -80,10 +69,6 @@ deploy({}, (_, config) => {
   const liquidator2_impl = contract(Liquidator2)
   const loanFactory2_impl = contract(LoanFactory2)
   const safu_impl = contract(SAFU)
-  const usdc_TrueFiPool2_LinearTrueDistributor_impl = contract('usdc_TrueFiPool2_LinearTrueDistributor', LinearTrueDistributor)
-  const usdc_TrueFiPool2_TrueFarm_impl = contract('usdc_TrueFiPool2_TrueFarm', TrueFarm)
-  const usdt_TrueFiPool2_LinearTrueDistributor_impl = contract('usdt_TrueFiPool2_LinearTrueDistributor', LinearTrueDistributor)
-  const usdt_TrueFiPool2_TrueFarm_impl = contract('usdt_TrueFiPool2_TrueFarm', TrueFarm)
   const trueFiCreditOracle_impl = contract(TrueFiCreditOracle)
   const borrowingMutex_impl = contract(BorrowingMutex)
 
@@ -93,10 +78,6 @@ deploy({}, (_, config) => {
   const poolFactory = proxy(poolFactory_impl, () => { })
   const liquidator2 = proxy(liquidator2_impl, () => { })
   const loanFactory2 = proxy(loanFactory2_impl, () => { })
-  const usdc_TrueFiPool2_LinearTrueDistributor = proxy(usdc_TrueFiPool2_LinearTrueDistributor_impl, () => { })
-  const usdc_TrueFiPool2_TrueFarm = proxy(usdc_TrueFiPool2_TrueFarm_impl, () => { })
-  const usdt_TrueFiPool2_LinearTrueDistributor = proxy(usdt_TrueFiPool2_LinearTrueDistributor_impl, () => { })
-  const usdt_TrueFiPool2_TrueFarm = proxy(usdt_TrueFiPool2_TrueFarm_impl, () => { })
   const trueFiCreditOracle = proxy(trueFiCreditOracle_impl, () => { })
   const safu = proxy(safu_impl, () => { })
   const borrowingMutex = proxy(borrowingMutex_impl, () => { })
@@ -138,29 +119,11 @@ deploy({}, (_, config) => {
   runIf(ftlAgency.feePool().equals(AddressZero), () => {
     ftlAgency.setFeePool(usdc_TrueFiPool2)
   })
-  runIf(usdc_TrueFiPool2_LinearTrueDistributor.isInitialized().not(), () => {
-    usdc_TrueFiPool2_LinearTrueDistributor.initialize(deployParams[NETWORK].DISTRIBUTION_START, deployParams[NETWORK].DISTRIBUTION_DURATION, deployParams[NETWORK].STAKE_DISTRIBUTION_AMOUNT, trustToken)
-  })
-  runIf(usdc_TrueFiPool2_LinearTrueDistributor.farm().equals(usdc_TrueFiPool2_TrueFarm).not(), () => {
-    usdc_TrueFiPool2_LinearTrueDistributor.setFarm(usdc_TrueFiPool2_TrueFarm)
-  })
-  runIf(usdc_TrueFiPool2_TrueFarm.isInitialized().not(), () => {
-    usdc_TrueFiPool2_TrueFarm.initialize(usdc_TrueFiPool2, usdc_TrueFiPool2_LinearTrueDistributor, 'TrueFi tfUSDC Farm')
-  })
   runIf(poolFactory.pool(usdt).equals(AddressZero), () => {
     poolFactory.allowToken(usdt, true)
     poolFactory.createPool(usdt)
   })
   const usdt_TrueFiPool2 = poolFactory.pool(usdt)
-  runIf(usdt_TrueFiPool2_LinearTrueDistributor.isInitialized().not(), () => {
-    usdt_TrueFiPool2_LinearTrueDistributor.initialize(deployParams[NETWORK].DISTRIBUTION_START, deployParams[NETWORK].DISTRIBUTION_DURATION, deployParams[NETWORK].STAKE_DISTRIBUTION_AMOUNT, trustToken)
-  })
-  runIf(usdt_TrueFiPool2_LinearTrueDistributor.farm().equals(usdt_TrueFiPool2_TrueFarm).not(), () => {
-    usdt_TrueFiPool2_LinearTrueDistributor.setFarm(usdt_TrueFiPool2_TrueFarm)
-  })
-  runIf(usdt_TrueFiPool2_TrueFarm.isInitialized().not(), () => {
-    usdt_TrueFiPool2_TrueFarm.initialize(usdt_TrueFiPool2, usdt_TrueFiPool2_LinearTrueDistributor, 'TrueFi tfUSDT Farm')
-  })
   runIf(trueFiCreditOracle.isInitialized().not(), () => {
     trueFiCreditOracle.initialize()
   })
