@@ -58,15 +58,15 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
 
     /**
      * @dev Emitted when a LoanToken is created
-     * @param contractAddress LoanToken contract address
+     * @param loanToken LoanToken contract address
      */
-    event LoanTokenCreated(address contractAddress);
+    event LoanTokenCreated(ILoanToken2 loanToken);
 
     /**
      * @dev Emitted when a DebtToken is created
-     * @param contractAddress DebtToken contract address
+     * @param debtToken DebtToken contract address
      */
-    event DebtTokenCreated(address contractAddress);
+    event DebtTokenCreated(IDebtToken debtToken);
 
     event CreditOracleChanged(ITrueFiCreditOracle creditOracle);
 
@@ -186,8 +186,8 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         address ltImplementationAddress = address(loanTokenImplementation);
         require(ltImplementationAddress != address(0), "LoanFactory: Loan token implementation should be set");
 
-        address newToken = Clones.clone(ltImplementationAddress);
-        LoanToken2(newToken).initialize(
+        LoanToken2 newToken = LoanToken2(Clones.clone(ltImplementationAddress));
+        newToken.initialize(
             _pool,
             borrowingMutex,
             _borrower,
@@ -200,10 +200,10 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
             _term,
             _apy
         );
-        isLoanToken[ILoanToken2(newToken)] = true;
+        isLoanToken[newToken] = true;
 
         emit LoanTokenCreated(newToken);
-        return ILoanToken2(newToken);
+        return newToken;
     }
 
     function createDebtToken(
@@ -214,12 +214,12 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         address dtImplementationAddress = address(debtTokenImplementation);
         require(dtImplementationAddress != address(0), "LoanFactory: Debt token implementation should be set");
 
-        address newToken = Clones.clone(dtImplementationAddress);
-        DebtToken(newToken).initialize(_pool, msg.sender, _borrower, liquidator, _debt);
-        isDebtToken[IDebtToken(newToken)] = true;
+        DebtToken newToken = DebtToken(Clones.clone(dtImplementationAddress));
+        newToken.initialize(_pool, msg.sender, _borrower, liquidator, _debt);
+        isDebtToken[newToken] = true;
 
         emit DebtTokenCreated(newToken);
-        return IDebtToken(newToken);
+        return newToken;
     }
 
     function isCreatedByFactory(IDebtToken loan) external override view returns (bool) {
