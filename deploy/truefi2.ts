@@ -48,23 +48,23 @@ deploy({}, (_, config) => {
   const stkTruToken = proxy(contract(StkTruToken), () => { })
 
   // New contract impls
+  const safu_impl = contract(SAFU)
+  const poolFactory_impl = contract(PoolFactory)
   const trueLender2_impl = contract(TrueLender2)
   const ftlAgency_impl = contract(FixedTermLoanAgency)
-  const poolFactory_impl = contract(PoolFactory)
   const liquidator2_impl = contract(Liquidator2)
   const loanFactory2_impl = contract(LoanFactory2)
-  const safu_impl = contract(SAFU)
   const trueFiCreditOracle_impl = contract(TrueFiCreditOracle)
   const borrowingMutex_impl = contract(BorrowingMutex)
 
   // New contract proxies
+  const safu = proxy(safu_impl, () => { })
+  const poolFactory = proxy(poolFactory_impl, () => { })
   const trueLender2 = proxy(trueLender2_impl, () => { })
   const ftlAgency = proxy(ftlAgency_impl, () => { })
-  const poolFactory = proxy(poolFactory_impl, () => { })
   const liquidator2 = proxy(liquidator2_impl, () => { })
   const loanFactory2 = proxy(loanFactory2_impl, () => { })
   const trueFiCreditOracle = proxy(trueFiCreditOracle_impl, () => { })
-  const safu = proxy(safu_impl, () => { })
   const borrowingMutex = proxy(borrowingMutex_impl, () => { })
 
   // New bare contracts
@@ -88,11 +88,11 @@ deploy({}, (_, config) => {
   runIf(ftlAgency.isInitialized().not(), () => {
     ftlAgency.initialize(stkTruToken, poolFactory, oneInch, trueFiCreditOracle, AddressZero, borrowingMutex, loanFactory2)
   })
-  runIf(loanFactory2.isInitialized().not(), () => {
-    loanFactory2.initialize(poolFactory, trueLender2, ftlAgency, liquidator2, AddressZero, trueFiCreditOracle, borrowingMutex, AddressZero)
-  })
   runIf(liquidator2.isInitialized().not(), () => {
     liquidator2.initialize(stkTruToken, trustToken, loanFactory2, poolFactory, AddressZero, AddressZero)
+  })
+  runIf(loanFactory2.isInitialized().not(), () => {
+    loanFactory2.initialize(poolFactory, trueLender2, ftlAgency, liquidator2, AddressZero, trueFiCreditOracle, borrowingMutex, AddressZero)
   })
   runIf(trueFiCreditOracle.isInitialized().not(), () => {
     trueFiCreditOracle.initialize()
