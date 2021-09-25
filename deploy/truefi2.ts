@@ -94,6 +94,12 @@ deploy({}, (_, config) => {
   runIf(liquidator2.isInitialized().not(), () => {
     liquidator2.initialize(stkTruToken, trustToken, loanFactory2, poolFactory, AddressZero, AddressZero)
   })
+
+  runIf(poolFactory.pool(tusd).equals(AddressZero), () => {
+    poolFactory.allowToken(tusd, true)
+    poolFactory.createPool(tusd)
+  })
+  const tusd_TrueFiPool2 = poolFactory.pool(tusd)
   runIf(poolFactory.pool(usdc).equals(AddressZero), () => {
     poolFactory.allowToken(usdc, true)
     poolFactory.createPool(usdc)
