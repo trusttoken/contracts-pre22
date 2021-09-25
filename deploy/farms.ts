@@ -1,4 +1,6 @@
 import { contract, createProxy, deploy, runIf } from 'ethereum-mars'
+import { utils, BigNumber } from 'ethers'
+
 import {
   OwnedUpgradeabilityProxy,
   LinearTrueDistributor,
@@ -9,19 +11,17 @@ import {
   TrueMultiFarm,
   TruSushiswapRewarder,
 } from '../build/artifacts'
-import { utils, BigNumber } from 'ethers'
+import {
+  TRU, SUSHI_MASTER_CHEF
+} from './config.json'
 
 const DAY = 60 * 60 * 24
 const YEAR = 365 * DAY
-const TRU_DECIMALS = 8
+const TIMELOCK_DELAY = 2 * DAY
 
 const DISTRIBUTION_DURATION = 2 * YEAR
 const DISTRIBUTION_START = Math.floor(Date.now() / 1000) + DAY
 const DISTRIBUTION_AMOUNT = utils.parseUnits('330000', TRU_DECIMALS).mul(2 * 365)
-const SUSHI_MASTER_CHEF = '0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd'
-const TRU = '0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784'
-const SUSHI_REWARD_MULTIPLIER = 100
-const TIMELOCK_DELAY = 2 * DAY
 
 deploy({}, (deployer, config) => {
   const proxy = createProxy(OwnedUpgradeabilityProxy)

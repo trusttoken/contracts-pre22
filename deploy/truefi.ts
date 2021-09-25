@@ -1,4 +1,7 @@
 import { contract, createProxy, deploy, runIf } from 'ethereum-mars'
+import { utils } from 'ethers'
+import { AddressZero } from '@ethersproject/constants'
+
 import {
   LinearTrueDistributor,
   MockCurveGauge,
@@ -13,14 +16,12 @@ import {
   TrueFiPool,
   TrueRatingAgencyV2,
 } from '../build/artifacts'
-import { utils } from 'ethers'
-import { AddressZero } from '@ethersproject/constants'
+import {
+  TUSD, TRU, CURVE_GAUGE
+} from './config.json'
 
 const DAY = 60 * 60 * 24
 
-const TUSD = '0x0000000000085d4780B73119b644AE5ecd22b376'
-const TRU = '0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784'
-const Y_CRV_GAUGE = '0xFA712EE4788C042e2B7BB55E6cb8ec569C4530c1'
 const DISTRIBUTION_DURATION = 180 * DAY
 const DISTRIBUTION_START = Date.parse('04/24/2021') / 1000
 const DISTRIBUTION_AMOUNT = utils.parseUnits('10', 8)
@@ -55,7 +56,7 @@ deploy({}, (_, config) => {
 
   // New bare contracts
   const yCrvGauge = isMainnet
-    ? Y_CRV_GAUGE
+    ? CURVE_GAUGE
     : contract(MockCurveGauge)
   const truPriceOracle = isMainnet
     ? contract(TruPriceOracle)

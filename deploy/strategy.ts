@@ -1,4 +1,5 @@
 import { contract, createProxy, deploy, runIf } from 'ethereum-mars'
+
 import {
   CrvPriceOracle,
   CurveYearnStrategy,
@@ -10,15 +11,9 @@ import {
   TestUSDCToken,
   TestUSDTToken,
 } from '../build/artifacts'
-
-const TUSD = '0x0000000000085d4780B73119b644AE5ecd22b376'
-const USDC = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
-const USDT = '0xdAC17F958D2ee523a2206206994597C13D831ec7'
-const CURVE_GAUGE = '0xFA712EE4788C042e2B7BB55E6cb8ec569C4530c1'
-const CURVE_POOL = '0xbbc81d23ea2c3ec7e56d39296f0cbb648873a5d3'
-const CURVE_MINTER = '0xd061d61a4d941c39e5453435b6345dc261c2fce0'
-const ONE_INCH_EXCHANGE = '0x11111112542d85b3ef69ae05771c2dccff4faa26'
-const MAX_PRICE_SLIPPAGE = 75
+import {
+  TUSD, USDC, USDT, CURVE_GAUGE, CURVE_POOL, CURVE_MINTER, ONE_INCH_EXCHANGE, MAX_PRICE_SLIPPAGE
+} from './config.json'
 
 deploy({}, (_, config) => {
   const proxy = createProxy(OwnedUpgradeabilityProxy)
