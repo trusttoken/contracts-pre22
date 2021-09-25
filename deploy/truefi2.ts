@@ -97,6 +97,9 @@ deploy({}, (_, config) => {
   runIf(trueFiCreditOracle.isInitialized().not(), () => {
     trueFiCreditOracle.initialize()
   })
+  runIf(borrowingMutex.isInitialized().not(), () => {
+    borrowingMutex.initialize()
+  })
 
   runIf(poolFactory.pool(tusd).equals(AddressZero), () => {
     poolFactory.allowToken(tusd, true)
