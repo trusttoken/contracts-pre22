@@ -12,7 +12,7 @@ import {
   TruSushiswapRewarder,
 } from '../build/artifacts'
 import {
-  TRU, SUSHI_MASTER_CHEF
+  TRU, TRU_DECIMALS, SUSHI_MASTER_CHEF, SUSHI_REWARD_MULTIPLIER
 } from './config.json'
 
 const DAY = 60 * 60 * 24
