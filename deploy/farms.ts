@@ -2,12 +2,14 @@ import { contract, createProxy, deploy, runIf } from 'ethereum-mars'
 import {
   OwnedUpgradeabilityProxy,
   LinearTrueDistributor,
+  SushiTimelock,
   TestTrustToken,
   TimeOwnedUpgradeabilityProxy,
   TrueFarm,
   TrueFiPool,
   TrueMultiFarm,
   TrustToken,
+  TruSushiswapRewarder,
 } from '../build/artifacts'
 import { utils, BigNumber } from 'ethers'
 
@@ -20,19 +22,26 @@ const deployParams = {
     DISTRIBUTION_DURATION: 2 * YEAR,
     DISTRIBUTION_START: Math.floor(Date.now() / 1000) + DAY,
     STAKE_DISTRIBUTION_AMOUNT: utils.parseUnits('330000', TRU_DECIMALS).mul(2 * 365),
+    SUSHI_MASTER_CHEF: '0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd',
+    SUSHI_REWARD_MULTIPLIER: 100,
+    TIMELOCK_DELAY: 2 * DAY,
   },
   testnet: {
     DISTRIBUTION_DURATION: 2 * YEAR,
     DISTRIBUTION_START: Math.floor(Date.now() / 1000) + DAY,
     STAKE_DISTRIBUTION_AMOUNT: utils.parseUnits('330000', TRU_DECIMALS).mul(2 * 365),
+    SUSHI_MASTER_CHEF: '0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd',
+    SUSHI_REWARD_MULTIPLIER: 100,
+    TIMELOCK_DELAY: 2 * DAY,
   },
 }
 
-deploy({}, (_, config) => {
+deploy({}, (deployer, config) => {
   const proxy = createProxy(OwnedUpgradeabilityProxy)
   const timeProxy = createProxy(TimeOwnedUpgradeabilityProxy)
   const isMainnet = config.network === 'mainnet'
   const NETWORK = isMainnet ? 'mainnet' : 'testnet'
+  const TIMELOCK_ADMIN = deployer
 
   // Existing contracts
   const trustToken = isMainnet
@@ -45,15 +54,17 @@ deploy({}, (_, config) => {
   const trueFiPool_TrueFarm_impl = contract('trueFiPool_TrueFarm', TrueFarm)
   const trueMultiFarm_LinearTrueDistributor_impl = contract('trueMultiFarm_LinearTrueDistributor', LinearTrueDistributor)
   const trueMultiFarm_impl = contract(TrueMultiFarm)
+  const truSushiswapRewarder_impl = contract(TruSushiswapRewarder)
 
   // New contract proxies
   const trueFiPool_LinearTrueDistributor = proxy(trueFiPool_LinearTrueDistributor_impl, () => {})
   const trueFiPool_TrueFarm = proxy(trueFiPool_TrueFarm_impl, () => {})
   const trueMultiFarm_LinearTrueDistributor = proxy(trueMultiFarm_LinearTrueDistributor_impl, () => {})
   const trueMultiFarm = proxy(trueMultiFarm_impl, () => {})
+  const truSushiswapRewarder = proxy(truSushiswapRewarder_impl, () => {})
 
   // New bare contracts
-  // <None so far>
+  const sushiTimelock = contract(SushiTimelock, [TIMELOCK_ADMIN, deployParams[NETWORK].TIMELOCK_DELAY])
 
   // Contract initialization
   runIf(trueFiPool_LinearTrueDistributor.isInitialized().not(), () => {
@@ -73,5 +84,8 @@ deploy({}, (_, config) => {
   })
   runIf(trueMultiFarm.isInitialized().not(), () => {
     trueMultiFarm.initialize(trueMultiFarm_LinearTrueDistributor)
+  })
+  runIf(truSushiswapRewarder.isInitialized().not(), () => {
+    truSushiswapRewarder.initialize(deployParams[NETWORK].SUSHI_REWARD_MULTIPLIER, trustToken, deployParams[NETWORK].SUSHI_MASTER_CHEF)
   })
 })

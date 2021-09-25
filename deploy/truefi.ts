@@ -7,12 +7,10 @@ import {
   OwnedUpgradeabilityProxy,
   RatingAgencyV2Distributor,
   StkTruToken,
-  SushiTimelock,
   TestTrueFiPool,
   TestTrustToken,
   TimeOwnedUpgradeabilityProxy,
   TruPriceOracle,
-  TruSushiswapRewarder,
   TrueFiPool,
   TrueRatingAgencyV2,
   TrueUSD,
@@ -30,24 +28,17 @@ const deployParams = {
     DISTRIBUTION_DURATION: 180 * DAY,
     DISTRIBUTION_START: Date.parse('04/24/2021') / 1000,
     STAKE_DISTRIBUTION_AMOUNT: utils.parseUnits('10', 8),
-    SUSHI_MASTER_CHEF: '0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd',
-    SUSHI_REWARD_MULTIPLIER: 100,
-    TIMELOCK_DELAY: 2 * DAY,
     VOTING_PERIOD: 10, // blocks
   },
   testnet: {
     DISTRIBUTION_DURATION: 180 * DAY,
     DISTRIBUTION_START: Date.parse('04/24/2021') / 1000,
     STAKE_DISTRIBUTION_AMOUNT: utils.parseUnits('10', 8),
-    SUSHI_MASTER_CHEF: AddressZero, // TODO replace with a test address
-    SUSHI_REWARD_MULTIPLIER: 100,
-    TIMELOCK_DELAY: 2 * DAY,
     VOTING_PERIOD: 10, // blocks
   },
 }
 
-deploy({}, (deployer, config) => {
-  const TIMELOCK_ADMIN = deployer
+deploy({}, (_, config) => {
   const is_mainnet = config.network === 'mainnet'
   const NETWORK = is_mainnet ? 'mainnet' : 'testnet'
 
@@ -74,7 +65,6 @@ deploy({}, (deployer, config) => {
   const stkTruToken_LinearTrueDistributor_impl = contract('stkTruToken_LinearTrueDistributor', LinearTrueDistributor)
   const trueRatingAgencyV2_impl = contract(TrueRatingAgencyV2)
   const ratingAgencyV2Distributor_impl = contract(RatingAgencyV2Distributor)
-  const truSushiswapRewarder_impl = contract(TruSushiswapRewarder)
 
   // New contract proxies
   const stkTruToken = proxy(stkTruToken_impl, () => {})
@@ -83,7 +73,6 @@ deploy({}, (deployer, config) => {
   const stkTruToken_LinearTrueDistributor = proxy(stkTruToken_LinearTrueDistributor_impl, () => {})
   const trueRatingAgencyV2 = proxy(trueRatingAgencyV2_impl, () => {})
   const ratingAgencyV2Distributor = proxy(ratingAgencyV2Distributor_impl, () => {})
-  const truSushiswapRewarder = proxy(truSushiswapRewarder_impl, () => {})
 
   // New bare contracts
   const yCrvGauge = is_mainnet
@@ -92,7 +81,6 @@ deploy({}, (deployer, config) => {
   const truPriceOracle = is_mainnet
     ? contract(TruPriceOracle)
     : contract(MockTruPriceOracle)
-  const sushiTimelock = contract(SushiTimelock, [TIMELOCK_ADMIN, deployParams[NETWORK].TIMELOCK_DELAY])
 
   // Contract initialization
   runIf(testTrueFiPool.isInitialized().not(), () => {
@@ -115,8 +103,5 @@ deploy({}, (deployer, config) => {
   })
   runIf(trueRatingAgencyV2.isInitialized().not(), () => {
     trueRatingAgencyV2.initialize(trustToken, stkTruToken, ratingAgencyV2Distributor, AddressZero)
-  })
-  runIf(truSushiswapRewarder.isInitialized().not(), () => {
-    truSushiswapRewarder.initialize(deployParams[NETWORK].SUSHI_REWARD_MULTIPLIER, trustToken, deployParams[NETWORK].SUSHI_MASTER_CHEF)
   })
 })
