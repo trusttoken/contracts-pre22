@@ -94,6 +94,9 @@ deploy({}, (_, config) => {
   runIf(liquidator2.isInitialized().not(), () => {
     liquidator2.initialize(stkTruToken, trustToken, loanFactory2, poolFactory, AddressZero, AddressZero)
   })
+  runIf(trueFiCreditOracle.isInitialized().not(), () => {
+    trueFiCreditOracle.initialize()
+  })
 
   runIf(poolFactory.pool(tusd).equals(AddressZero), () => {
     poolFactory.allowToken(tusd, true)
@@ -105,19 +108,17 @@ deploy({}, (_, config) => {
     poolFactory.createPool(usdc)
   })
   const usdc_TrueFiPool2 = poolFactory.pool(usdc)
-  runIf(trueLender2.feePool().equals(AddressZero), () => {
-    trueLender2.setFeePool(usdc_TrueFiPool2)
-  })
-  runIf(ftlAgency.feePool().equals(AddressZero), () => {
-    ftlAgency.setFeePool(usdc_TrueFiPool2)
-  })
   runIf(poolFactory.pool(usdt).equals(AddressZero), () => {
     poolFactory.allowToken(usdt, true)
     poolFactory.createPool(usdt)
   })
   const usdt_TrueFiPool2 = poolFactory.pool(usdt)
-  runIf(trueFiCreditOracle.isInitialized().not(), () => {
-    trueFiCreditOracle.initialize()
+
+  runIf(trueLender2.feePool().equals(AddressZero), () => {
+    trueLender2.setFeePool(usdc_TrueFiPool2)
+  })
+  runIf(ftlAgency.feePool().equals(AddressZero), () => {
+    ftlAgency.setFeePool(usdc_TrueFiPool2)
   })
   if (!isMainnet) {
     trueLender2.setFee(LOAN_INTEREST_FEE)
