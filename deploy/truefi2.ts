@@ -36,13 +36,8 @@ const LOAN_INTEREST_FEE = 500
 deploy({}, (_, config) => {
   const proxy = createProxy(OwnedUpgradeabilityProxy)
   const isMainnet = config.network === 'mainnet'
-  const NETWORK = isMainnet ? 'mainnet' : 'testnet'
 
   // Existing contracts
-  const trustToken = isMainnet
-    ? TRU
-    : contract(TestTrustToken)
-  const stkTruToken = proxy(contract(StkTruToken), () => { })
   const tusd = isMainnet
     ? TUSD
     : contract(MockTrueUSD)
@@ -52,6 +47,10 @@ deploy({}, (_, config) => {
   const usdt = isMainnet
     ? USDT
     : contract(TestUSDTToken)
+  const trustToken = isMainnet
+    ? TRU
+    : contract(TestTrustToken)
+  const stkTruToken = proxy(contract(StkTruToken), () => { })
 
   // New contract impls
   const trueLender2_impl = contract(TrueLender2)
@@ -72,6 +71,7 @@ deploy({}, (_, config) => {
   const trueFiCreditOracle = proxy(trueFiCreditOracle_impl, () => { })
   const safu = proxy(safu_impl, () => { })
   const borrowingMutex = proxy(borrowingMutex_impl, () => { })
+
   // New bare contracts
   const trueFiPool2 = contract(TrueFiPool2)
   const implementationReference = contract(ImplementationReference, [trueFiPool2])

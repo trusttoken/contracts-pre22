@@ -26,7 +26,6 @@ const TIMELOCK_DELAY = 2 * DAY
 deploy({}, (deployer, config) => {
   const proxy = createProxy(OwnedUpgradeabilityProxy)
   const isMainnet = config.network === 'mainnet'
-  const NETWORK = isMainnet ? 'mainnet' : 'testnet'
   const TIMELOCK_ADMIN = deployer
 
   // Existing contracts

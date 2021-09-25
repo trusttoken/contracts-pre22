@@ -26,16 +26,14 @@ const DISTRIBUTION_START = Date.parse('04/24/2021') / 1000
 const DISTRIBUTION_AMOUNT = utils.parseUnits('10', 8)
 
 deploy({}, (_, config) => {
-  const is_mainnet = config.network === 'mainnet'
-  const NETWORK = is_mainnet ? 'mainnet' : 'testnet'
-
   const proxy = createProxy(OwnedUpgradeabilityProxy)
+  const isMainnet = config.network === 'mainnet'
 
   // Existing contracts
-  const tusd = is_mainnet
+  const tusd = isMainnet
     ? TUSD
     : contract(MockTrueUSD)
-  const trustToken = is_mainnet
+  const trustToken = isMainnet
     ? TRU
     : contract(TestTrustToken)
 
@@ -56,10 +54,10 @@ deploy({}, (_, config) => {
   const ratingAgencyV2Distributor = proxy(ratingAgencyV2Distributor_impl, () => {})
 
   // New bare contracts
-  const yCrvGauge = is_mainnet
+  const yCrvGauge = isMainnet
     ? Y_CRV_GAUGE
     : contract(MockCurveGauge)
-  const truPriceOracle = is_mainnet
+  const truPriceOracle = isMainnet
     ? contract(TruPriceOracle)
     : contract(MockTruPriceOracle)
 
@@ -67,7 +65,7 @@ deploy({}, (_, config) => {
   runIf(testTrueFiPool.isInitialized().not(), () => {
     testTrueFiPool.initialize(AddressZero, yCrvGauge, tusd, AddressZero, AddressZero, AddressZero, AddressZero)
   })
-  if (!is_mainnet) {
+  if (!isMainnet) {
     trueFiPool = testTrueFiPool
   }
   runIf(stkTruToken_LinearTrueDistributor.isInitialized().not(), () => {

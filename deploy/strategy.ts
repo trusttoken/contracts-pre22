@@ -23,7 +23,6 @@ const MAX_PRICE_SLIPPAGE = 75
 deploy({}, (_, config) => {
   const proxy = createProxy(OwnedUpgradeabilityProxy)
   const isMainnet = config.network === 'mainnet'
-  const NETWORK = isMainnet ? 'mainnet' : 'testnet'
 
   // Existing contracts
   const tusd = isMainnet
