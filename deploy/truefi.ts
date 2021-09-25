@@ -21,22 +21,10 @@ import { AddressZero } from '@ethersproject/constants'
 
 const DAY = 60 * 60 * 24
 
-// TODO Fill values
-const deployParams = {
-  mainnet: {
-    Y_CRV_GAUGE: '0xFA712EE4788C042e2B7BB55E6cb8ec569C4530c1',
-    DISTRIBUTION_DURATION: 180 * DAY,
-    DISTRIBUTION_START: Date.parse('04/24/2021') / 1000,
-    STAKE_DISTRIBUTION_AMOUNT: utils.parseUnits('10', 8),
-    VOTING_PERIOD: 10, // blocks
-  },
-  testnet: {
-    DISTRIBUTION_DURATION: 180 * DAY,
-    DISTRIBUTION_START: Date.parse('04/24/2021') / 1000,
-    STAKE_DISTRIBUTION_AMOUNT: utils.parseUnits('10', 8),
-    VOTING_PERIOD: 10, // blocks
-  },
-}
+const Y_CRV_GAUGE = '0xFA712EE4788C042e2B7BB55E6cb8ec569C4530c1'
+const DISTRIBUTION_DURATION = 180 * DAY
+const DISTRIBUTION_START = Date.parse('04/24/2021') / 1000
+const DISTRIBUTION_AMOUNT = utils.parseUnits('10', 8)
 
 deploy({}, (_, config) => {
   const is_mainnet = config.network === 'mainnet'
@@ -76,7 +64,7 @@ deploy({}, (_, config) => {
 
   // New bare contracts
   const yCrvGauge = is_mainnet
-    ? deployParams['mainnet'].Y_CRV_GAUGE
+    ? Y_CRV_GAUGE
     : contract(MockCurveGauge)
   const truPriceOracle = is_mainnet
     ? contract(TruPriceOracle)
@@ -90,7 +78,7 @@ deploy({}, (_, config) => {
     trueFiPool = testTrueFiPool
   }
   runIf(stkTruToken_LinearTrueDistributor.isInitialized().not(), () => {
-    stkTruToken_LinearTrueDistributor.initialize(deployParams[NETWORK].DISTRIBUTION_START, deployParams[NETWORK].DISTRIBUTION_DURATION, deployParams[NETWORK].STAKE_DISTRIBUTION_AMOUNT, trustToken)
+    stkTruToken_LinearTrueDistributor.initialize(DISTRIBUTION_START, DISTRIBUTION_DURATION, DISTRIBUTION_AMOUNT, trustToken)
   })
   runIf(stkTruToken_LinearTrueDistributor.farm().equals(stkTruToken).not(), () => {
     stkTruToken_LinearTrueDistributor.setFarm(stkTruToken)

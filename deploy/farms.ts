@@ -17,24 +17,12 @@ const DAY = 60 * 60 * 24
 const YEAR = 365 * DAY
 const TRU_DECIMALS = 8
 
-const deployParams = {
-  mainnet: {
-    DISTRIBUTION_DURATION: 2 * YEAR,
-    DISTRIBUTION_START: Math.floor(Date.now() / 1000) + DAY,
-    STAKE_DISTRIBUTION_AMOUNT: utils.parseUnits('330000', TRU_DECIMALS).mul(2 * 365),
-    SUSHI_MASTER_CHEF: '0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd',
-    SUSHI_REWARD_MULTIPLIER: 100,
-    TIMELOCK_DELAY: 2 * DAY,
-  },
-  testnet: {
-    DISTRIBUTION_DURATION: 2 * YEAR,
-    DISTRIBUTION_START: Math.floor(Date.now() / 1000) + DAY,
-    STAKE_DISTRIBUTION_AMOUNT: utils.parseUnits('330000', TRU_DECIMALS).mul(2 * 365),
-    SUSHI_MASTER_CHEF: '0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd',
-    SUSHI_REWARD_MULTIPLIER: 100,
-    TIMELOCK_DELAY: 2 * DAY,
-  },
-}
+const DISTRIBUTION_DURATION = 2 * YEAR
+const DISTRIBUTION_START = Math.floor(Date.now() / 1000) + DAY
+const DISTRIBUTION_AMOUNT = utils.parseUnits('330000', TRU_DECIMALS).mul(2 * 365)
+const SUSHI_MASTER_CHEF = '0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd'
+const SUSHI_REWARD_MULTIPLIER = 100
+const TIMELOCK_DELAY = 2 * DAY
 
 deploy({}, (deployer, config) => {
   const proxy = createProxy(OwnedUpgradeabilityProxy)
@@ -64,11 +52,11 @@ deploy({}, (deployer, config) => {
   const truSushiswapRewarder = proxy(truSushiswapRewarder_impl, () => {})
 
   // New bare contracts
-  const sushiTimelock = contract(SushiTimelock, [TIMELOCK_ADMIN, deployParams[NETWORK].TIMELOCK_DELAY])
+  const sushiTimelock = contract(SushiTimelock, [TIMELOCK_ADMIN, TIMELOCK_DELAY])
 
   // Contract initialization
   runIf(trueFiPool_LinearTrueDistributor.isInitialized().not(), () => {
-    trueFiPool_LinearTrueDistributor.initialize(deployParams[NETWORK].DISTRIBUTION_START, deployParams[NETWORK].DISTRIBUTION_DURATION, deployParams[NETWORK].STAKE_DISTRIBUTION_AMOUNT, trustToken)
+    trueFiPool_LinearTrueDistributor.initialize(DISTRIBUTION_START, DISTRIBUTION_DURATION, DISTRIBUTION_AMOUNT, trustToken)
   })
   runIf(trueFiPool_LinearTrueDistributor.farm().equals(trueFiPool_TrueFarm).not(), () => {
     trueFiPool_LinearTrueDistributor.setFarm(trueFiPool_TrueFarm)
@@ -77,7 +65,7 @@ deploy({}, (deployer, config) => {
     trueFiPool_TrueFarm.initialize(trueFiPool, trueFiPool_LinearTrueDistributor, 'TrueFi tfTUSD Farm')
   })
   runIf(trueMultiFarm_LinearTrueDistributor.isInitialized().not(), () => {
-    trueMultiFarm_LinearTrueDistributor.initialize(deployParams[NETWORK].DISTRIBUTION_START, deployParams[NETWORK].DISTRIBUTION_DURATION, deployParams[NETWORK].STAKE_DISTRIBUTION_AMOUNT, trustToken)
+    trueMultiFarm_LinearTrueDistributor.initialize(DISTRIBUTION_START, DISTRIBUTION_DURATION, DISTRIBUTION_AMOUNT, trustToken)
   })
   runIf(trueMultiFarm_LinearTrueDistributor.farm().equals(trueMultiFarm).not(), () => {
     trueMultiFarm_LinearTrueDistributor.setFarm(trueMultiFarm)
@@ -86,6 +74,6 @@ deploy({}, (deployer, config) => {
     trueMultiFarm.initialize(trueMultiFarm_LinearTrueDistributor)
   })
   runIf(truSushiswapRewarder.isInitialized().not(), () => {
-    truSushiswapRewarder.initialize(deployParams[NETWORK].SUSHI_REWARD_MULTIPLIER, trustToken, deployParams[NETWORK].SUSHI_MASTER_CHEF)
+    truSushiswapRewarder.initialize(SUSHI_REWARD_MULTIPLIER, trustToken, SUSHI_MASTER_CHEF)
   })
 })

@@ -27,17 +27,10 @@ import { AddressZero } from '@ethersproject/constants'
 
 const DAY = 60 * 60 * 24
 
-// TODO set this properly for testnets or deploy a mock
 const ONE_INCH_EXCHANGE = '0x11111112542d85b3ef69ae05771c2dccff4faa26'
-const deployParams = {
-  mainnet: {
-    USDC: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
-    USDT: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
-  },
-  testnet: {
-    LOAN_INTEREST_FEE: 500,
-  },
-}
+const USDC = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
+const USDT = '0xdAC17F958D2ee523a2206206994597C13D831ec7'
+const LOAN_INTEREST_FEE = 500
 
 deploy({}, (_, config) => {
   const proxy = createProxy(OwnedUpgradeabilityProxy)
@@ -51,10 +44,10 @@ deploy({}, (_, config) => {
     : timeProxy(contract(TestTrustToken), () => { })
   const stkTruToken = proxy(contract(StkTruToken), () => { })
   const usdc = isMainnet
-    ? deployParams['mainnet'].USDC
+    ? USDC
     : contract(TestUSDCToken)
   const usdt = isMainnet
-    ? deployParams['mainnet'].USDT
+    ? USDT
     : contract(TestUSDTToken)
 
   // New contract impls
@@ -123,7 +116,7 @@ deploy({}, (_, config) => {
     trueFiCreditOracle.initialize()
   })
   if (!isMainnet) {
-    trueLender2.setFee(deployParams['testnet'].LOAN_INTEREST_FEE)
-    ftlAgency.setFee(deployParams['testnet'].LOAN_INTEREST_FEE)
+    trueLender2.setFee(LOAN_INTEREST_FEE)
+    ftlAgency.setFee(LOAN_INTEREST_FEE)
   }
 })
