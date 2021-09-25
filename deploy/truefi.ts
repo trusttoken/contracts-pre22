@@ -9,18 +9,17 @@ import {
   StkTruToken,
   TestTrueFiPool,
   TestTrustToken,
-  TimeOwnedUpgradeabilityProxy,
   TruPriceOracle,
   TrueFiPool,
   TrueRatingAgencyV2,
-  TrueUSD,
-  TrustToken,
 } from '../build/artifacts'
 import { utils } from 'ethers'
 import { AddressZero } from '@ethersproject/constants'
 
 const DAY = 60 * 60 * 24
 
+const TUSD = '0x0000000000085d4780B73119b644AE5ecd22b376'
+const TRU = '0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784'
 const Y_CRV_GAUGE = '0xFA712EE4788C042e2B7BB55E6cb8ec569C4530c1'
 const DISTRIBUTION_DURATION = 180 * DAY
 const DISTRIBUTION_START = Date.parse('04/24/2021') / 1000
@@ -31,20 +30,14 @@ deploy({}, (_, config) => {
   const NETWORK = is_mainnet ? 'mainnet' : 'testnet'
 
   const proxy = createProxy(OwnedUpgradeabilityProxy)
-  const timeProxy = createProxy(TimeOwnedUpgradeabilityProxy)
 
   // Existing contracts
-  const trueUSD = is_mainnet
-    ? proxy(contract(TrueUSD), () => {})
-    : proxy(contract(MockTrueUSD), 'initialize',
-      [],
-    )
+  const tusd = is_mainnet
+    ? TUSD
+    : contract(MockTrueUSD)
   const trustToken = is_mainnet
-    ? timeProxy(contract(TrustToken), 'initialize',
-      [],
-    ) : timeProxy(contract(TestTrustToken), 'initialize',
-      [],
-    )
+    ? TRU
+    : contract(TestTrustToken)
 
   // New contract impls
   const stkTruToken_impl = contract(StkTruToken)
@@ -72,7 +65,7 @@ deploy({}, (_, config) => {
 
   // Contract initialization
   runIf(testTrueFiPool.isInitialized().not(), () => {
-    testTrueFiPool.initialize(AddressZero, yCrvGauge, trueUSD, AddressZero, AddressZero, AddressZero, AddressZero)
+    testTrueFiPool.initialize(AddressZero, yCrvGauge, tusd, AddressZero, AddressZero, AddressZero, AddressZero)
   })
   if (!is_mainnet) {
     trueFiPool = testTrueFiPool

@@ -4,11 +4,9 @@ import {
   LinearTrueDistributor,
   SushiTimelock,
   TestTrustToken,
-  TimeOwnedUpgradeabilityProxy,
   TrueFarm,
   TrueFiPool,
   TrueMultiFarm,
-  TrustToken,
   TruSushiswapRewarder,
 } from '../build/artifacts'
 import { utils, BigNumber } from 'ethers'
@@ -21,20 +19,20 @@ const DISTRIBUTION_DURATION = 2 * YEAR
 const DISTRIBUTION_START = Math.floor(Date.now() / 1000) + DAY
 const DISTRIBUTION_AMOUNT = utils.parseUnits('330000', TRU_DECIMALS).mul(2 * 365)
 const SUSHI_MASTER_CHEF = '0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd'
+const TRU = '0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784'
 const SUSHI_REWARD_MULTIPLIER = 100
 const TIMELOCK_DELAY = 2 * DAY
 
 deploy({}, (deployer, config) => {
   const proxy = createProxy(OwnedUpgradeabilityProxy)
-  const timeProxy = createProxy(TimeOwnedUpgradeabilityProxy)
   const isMainnet = config.network === 'mainnet'
   const NETWORK = isMainnet ? 'mainnet' : 'testnet'
   const TIMELOCK_ADMIN = deployer
 
   // Existing contracts
   const trustToken = isMainnet
-    ? timeProxy(contract(TrustToken), () => {})
-    : timeProxy(contract(TestTrustToken), () => {})
+    ? TRU
+    : contract(TestTrustToken)
   let trueFiPool = proxy(contract(TrueFiPool), () => {})
 
   // New contract impls

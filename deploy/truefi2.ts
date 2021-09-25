@@ -9,6 +9,7 @@ import {
   Liquidator2,
   LoanFactory2,
   Mock1InchV3,
+  MockTrueUSD,
   OwnedUpgradeabilityProxy,
   PoolFactory,
   SAFU,
@@ -16,11 +17,9 @@ import {
   TestTrustToken,
   TestUSDCToken,
   TestUSDTToken,
-  TimeOwnedUpgradeabilityProxy,
   TrueFiCreditOracle,
   TrueFiPool2,
   TrueLender2,
-  TrustToken,
 } from '../build/artifacts'
 import { BigNumber, utils } from 'ethers'
 import { AddressZero } from '@ethersproject/constants'
@@ -28,21 +27,25 @@ import { AddressZero } from '@ethersproject/constants'
 const DAY = 60 * 60 * 24
 
 const ONE_INCH_EXCHANGE = '0x11111112542d85b3ef69ae05771c2dccff4faa26'
+const TUSD = '0x0000000000085d4780B73119b644AE5ecd22b376'
 const USDC = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
 const USDT = '0xdAC17F958D2ee523a2206206994597C13D831ec7'
+const TRU = '0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784'
 const LOAN_INTEREST_FEE = 500
 
 deploy({}, (_, config) => {
   const proxy = createProxy(OwnedUpgradeabilityProxy)
-  const timeProxy = createProxy(TimeOwnedUpgradeabilityProxy)
   const isMainnet = config.network === 'mainnet'
   const NETWORK = isMainnet ? 'mainnet' : 'testnet'
 
   // Existing contracts
   const trustToken = isMainnet
-    ? timeProxy(contract(TrustToken), () => { })
-    : timeProxy(contract(TestTrustToken), () => { })
+    ? TRU
+    : contract(TestTrustToken)
   const stkTruToken = proxy(contract(StkTruToken), () => { })
+  const tusd = isMainnet
+    ? TUSD
+    : contract(MockTrueUSD)
   const usdc = isMainnet
     ? USDC
     : contract(TestUSDCToken)
