@@ -13,22 +13,28 @@ import {
   DeficiencyToken__factory,
   DeficiencyToken,
   TrueCreditAgency,
-  TrueFiCreditOracle, TrueRateAdjuster, MockTrueCurrency__factory, FixedTermLoanAgency,
+  TrueFiCreditOracle, 
+  TrueRateAdjuster, 
+  MockTrueCurrency__factory, 
+  FixedTermLoanAgency,
 } from 'contracts'
-import { MockProvider, solidity } from 'ethereum-waffle'
+import { MockProvider, solidity, deployMockContract } from 'ethereum-waffle'
 import { BigNumber, Wallet } from 'ethers'
-import { beforeEachWithFixture } from 'utils/beforeEachWithFixture'
-import { parseEth } from 'utils/parseEth'
-import { setUtilization as _setUtilization } from 'utils/setUtilization'
 import { AddressZero } from '@ethersproject/constants'
 import {
+  beforeEachWithFixture,
+  parseEth,
+  setUtilization as _setUtilization,
+  extractLoanTokenAddress,
   createLoan,
   DAY,
   expectScaledCloseTo,
   setupTruefi2,
   timeTravel as _timeTravel,
   YEAR,
+  createLoanViaAgency,
 } from 'utils'
+import { TrueRateAdjusterJson } from 'build'
 import { Deployer, setupDeploy } from 'scripts/utils'
 import { beforeEach } from 'mocha'
 
@@ -78,7 +84,6 @@ describe('TrueFiPool2', () => {
       ftlAgency,
     } = await setupTruefi2(owner, provider))
 
-    loan = await createLoan(loanFactory, borrower, tusdPool, 500000, DAY, 1000)
 
     poolStrategy1 = await deployContract(MockStrategy__factory, tusd.address, tusdPool.address)
     poolStrategy2 = await deployContract(MockStrategy__factory, tusd.address, tusdPool.address)
@@ -96,13 +101,14 @@ describe('TrueFiPool2', () => {
       await creditAgency.allowBorrower(wallet.address, true)
     }
 
+    await ftlAgency.allowBorrower(borrower.address)
+
     setUtilization = (utilization: number) => (
       _setUtilization(
         tusd,
-        loanFactory,
         borrower2,
         borrower3,
-        lender,
+        ftlAgency,
         owner,
         tusdPool,
         utilization,
@@ -323,7 +329,8 @@ describe('TrueFiPool2', () => {
     beforeEach(async () => {
       await tusd.approve(tusdPool.address, parseEth(1e7))
       await tusdPool.join(parseEth(1e7))
-      await lender.connect(borrower).fund(loan.address)
+      const tx = await ftlAgency.connect(borrower).fund(tusdPool.address, 500000, DAY, 1000)
+      loan = await extractLoanTokenAddress(tx, owner, loanFactory)
       await loan.connect(borrower).withdraw(borrower.address)
       await timeTravel(DAY * 4)
       await loan.enterDefault()
@@ -395,7 +402,8 @@ describe('TrueFiPool2', () => {
       })
 
       it('when there are ongoing loans, pool value equals liquidValue + loanValue', async () => {
-        await lender.connect(borrower).fund(loan.address)
+        // await lender.connect(borrower).fund(loan.address)
+        await ftlAgency.connect(borrower).fund(tusdPool.address, 500000, DAY, 1000)
         expect(await tusdPool.liquidValue()).to.equal(joinAmount.sub(500000))
         expect(await tusdPool.loansValue()).to.equal(500000)
         expect(await tusdPool.poolValue()).to.equal(joinAmount)
@@ -406,6 +414,7 @@ describe('TrueFiPool2', () => {
       })
 
       it('when there are ongoing loans in both trueLender and FTLA, pool value contains both', async () => {
+        loan = await createLoan(loanFactory, borrower, tusdPool, 500000, DAY, 1000)
         await lender.connect(borrower).fund(loan.address)
         await ftlAgency.allowBorrower(borrower2.address)
         await ftlAgency.connect(borrower2).fund(tusdPool.address, 5000, YEAR, 10000)
@@ -419,7 +428,8 @@ describe('TrueFiPool2', () => {
       })
 
       it('when pool has some deficiency value', async () => {
-        await lender.connect(borrower).fund(loan.address)
+        const tx = ftlAgency.connect(borrower).fund(tusdPool.address, 500000, DAY, 1000)
+        loan = await extractLoanTokenAddress(tx, owner, loanFactory)
         await loan.connect(borrower).withdraw(borrower.address)
         await timeTravel(DAY * 4)
         await loan.enterDefault()
@@ -516,16 +526,7 @@ describe('TrueFiPool2', () => {
     })
 
     it('mints liquidity tokens proportionally to stake for next users', async () => {
-      const loan1 = await createLoan(
-        loanFactory,
-        borrower,
-        tusdPool,
-        parseEth(1e6),
-        DAY * 365,
-        1000,
-      )
-
-      await lender.connect(borrower).fund(loan1.address)
+      await ftlAgency.connect(borrower).fund(tusdPool.address, parseEth(1e6), DAY * 365, 2000, {gasLimit: 3000000})
       await timeTravel(DAY * 182.5)
       const totalSupply = await tusdPool.totalSupply()
       const poolValue = await tusdPool.poolValue()
@@ -537,29 +538,12 @@ describe('TrueFiPool2', () => {
     describe('two stakers', () => {
       let loan1: LoanToken2, loan2: LoanToken2
       beforeEach(async () => {
-        loan1 = await createLoan(
-          loanFactory,
-          borrower,
-          tusdPool,
-          parseEth(1e6),
-          DAY * 365,
-          1000,
-        )
-
-        await lender.connect(borrower).fund(loan1.address)
+        await ftlAgency.connect(borrower).fund(tusdPool.address, parseEth(1e6), DAY * 365, 1000)
         await timeTravel(DAY * 182.5)
         // PoolValue is 10.05M USD at the moment
         // After join, owner has around 91% of shares
         await tusdPool.connect(borrower).join(parseEth(1e6))
-        loan2 = await createLoan(
-          loanFactory,
-          borrower,
-          tusdPool,
-          parseEth(1e6),
-          DAY * 365,
-          2500,
-        )
-        await lender.connect(borrower).fund(loan2.address)
+        await ftlAgency.connect(borrower).fund(tusdPool.address, parseEth(1e6), DAY * 365, 1000)
       })
     })
   })
@@ -591,15 +575,7 @@ describe('TrueFiPool2', () => {
     })
 
     it('after loan approved, applies a penalty', async () => {
-      const loan1 = await createLoan(
-        loanFactory,
-        borrower,
-        tusdPool,
-        amount.div(10),
-        DAY * 365,
-        1000,
-      )
-      await lender.connect(borrower).fund(loan1.address)
+      await ftlAgency.connect(borrower).fund(tusdPool.address, amount.div(10), DAY * 365, 2000)
       expect(await tusdPool.liquidExitPenalty(amount.div(2))).to.equal(9995)
       await tusdPool.liquidExit(amount.div(2), { gasLimit: 5000000 })
       expectScaledCloseTo(await tusd.balanceOf(owner.address), (amount.div(2).mul(9995).div(10000)))
@@ -752,7 +728,7 @@ describe('TrueFiPool2', () => {
     })
 
     it('lender can borrow funds', async () => {
-      await lender.connect(borrower).fund(loan.address)
+      await ftlAgency.connect(borrower).fund(tusdPool.address, 500000, DAY * 365, 2000)
       expect('borrow').to.be.calledOnContract(tusdPool)
     })
 
@@ -763,49 +739,31 @@ describe('TrueFiPool2', () => {
 
     it('in order to borrow from pool it has to have liquidity', async () => {
       await setUtilization(90)
-      const loan1 = await createLoan(
-        loanFactory,
-        borrower,
-        tusdPool,
-        (await tusdPool.poolValue()).div(10).add(1),
-        DAY,
-        0,
-      )
 
-      await expect(lender.connect(borrower).fund(loan1.address))
+      const amount = (await tusdPool.poolValue()).div(10).add(1)
+      const mockRateAdjuster = await deployMockContract(owner, TrueRateAdjusterJson.abi)
+      await mockRateAdjuster.mock.fixedTermLoanAdjustment.returns(0)
+      await mockRateAdjuster.mock.rate.returns(0)
+      await mockRateAdjuster.mock.borrowLimit.returns(parseEth(100_000_000))
+      await ftlAgency.setRateAdjuster(mockRateAdjuster.address)
+
+      await expect(ftlAgency.connect(borrower).fund(tusdPool.address, amount, DAY, 50000))
         .to.be.revertedWith('TrueFiPool: Insufficient liquidity')
 
-      const loan2 = await createLoan(
-        loanFactory,
-        borrower,
-        tusdPool,
-        500000,
-        DAY,
-        1000,
-      )
-
-      await expect(lender.connect(borrower).fund(loan2.address))
+      await expect(ftlAgency.connect(borrower).fund(tusdPool.address, 500000, DAY, 50000))
         .not.to.be.reverted
     })
 
     describe('ensureSufficientLiquidity', () => {
       it('strategy has to return enough funds', async () => {
         await setUtilization(90)
-        const loan = await createLoan(
-          loanFactory,
-          borrower,
-          tusdPool,
-          await tusdPool.liquidValue(),
-          DAY,
-          0,
-        )
         await tusdPool.connect(owner).switchStrategy(badPoolStrategy.address)
         await tusdPool.flush(1000)
         await badPoolStrategy.setErrorPercents(1)
-        await expect(lender.connect(borrower).fund(loan.address))
+        await expect(ftlAgency.connect(borrower).fund(tusdPool.address, await tusdPool.liquidValue(), DAY, 50000))
           .to.be.revertedWith('TrueFiPool: Not enough funds taken from the strategy')
         await badPoolStrategy.setErrorPercents(0)
-        await expect(lender.connect(borrower).fund(loan.address))
+        await expect(ftlAgency.connect(borrower).fund(tusdPool.address, await tusdPool.liquidValue(), DAY, 50000))
           .not.to.be.reverted
       })
     })
@@ -824,16 +782,8 @@ describe('TrueFiPool2', () => {
       await tusd.approve(tusdPool.address, parseEth(100))
       await tusdPool.join(parseEth(100))
 
-      loan = await createLoan(
-        loanFactory,
-        borrower,
-        tusdPool,
-        100000,
-        DAY,
-        0,
-      )
 
-      await lender.connect(borrower).fund(loan.address)
+      loan = await createLoanViaAgency(ftlAgency, loanFactory, borrower, tusdPool, 100_000, DAY, 0)
       await payBack(tusd, loan)
       await loan.settle()
     })
@@ -844,7 +794,7 @@ describe('TrueFiPool2', () => {
     })
 
     it('lender can repay funds', async () => {
-      await lender.reclaim(loan.address, '0x')
+      await ftlAgency.reclaim(loan.address, '0x')
       expect('repay').to.be.calledOnContract(tusdPool)
     })
 
@@ -854,9 +804,9 @@ describe('TrueFiPool2', () => {
     })
 
     it('emits event', async () => {
-      await expect(lender.reclaim(loan.address, '0x'))
+      await expect(ftlAgency.reclaim(loan.address, '0x', {gasLimit: 3000000}))
         .to.emit(tusdPool, 'Repaid')
-        .withArgs(lender.address, 100000)
+        .withArgs(ftlAgency.address, 100000)
     })
   })
 
@@ -958,16 +908,8 @@ describe('TrueFiPool2', () => {
       await tusd.approve(tusdPool.address, parseEth(100))
       await tusdPool.join(parseEth(100))
 
-      loan = await createLoan(
-        loanFactory,
-        borrower,
-        tusdPool,
-        100000,
-        DAY,
-        100,
-      )
-
-      await lender.connect(borrower).fund(loan.address)
+      const tx = ftlAgency.connect(borrower).fund(tusdPool.address, 100000, DAY, 1000)
+      loan = await extractLoanTokenAddress(tx, owner, loanFactory)
     })
 
     it('can only be performed by the SAFU', async () => {
@@ -1059,24 +1001,9 @@ describe('TrueFiPool2', () => {
       const loanValue = parseEth(100)
       const expectedLiquidRatio = await tusdPool.liquidRatio(loanValue)
 
-      const loanForPartOfPool = await createLoan(
-        loanFactory,
-        borrower,
-        tusdPool,
-        loanValue,
-        DAY,
-        100,
-      )
-      await lender.connect(borrower).fund(loanForPartOfPool.address)
+      await ftlAgency.connect(borrower).fund(tusdPool.address, loanValue, DAY, 1000)
 
       expect(await tusdPool.liquidRatio(0)).to.eq(expectedLiquidRatio)
-    })
-
-    it('equals 100% - utilization after lending', async () => {
-      await setUtilization(25)
-      const poolUtilization = (await tusdPool.liquidValue()).mul(100_00).div(await tusdPool.poolValue())
-
-      expect(await tusdPool.liquidRatio(parseEth(1e5).div(2))).to.eq(BigNumber.from(100_00).sub(poolUtilization))
     })
 
     describe('setUtilization', () => {
