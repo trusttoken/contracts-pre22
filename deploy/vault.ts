@@ -14,6 +14,8 @@ const AMOUNT = utils.parseUnits('0', 8)
 const TRU = '0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784'
 const stkTRU = '0x23696914Ca9737466D8553a2d619948f548Ee424'
 
+const OWNER_MULTISIG = '0x16cEa306506c387713C70b9C1205fd5aC997E78E'
+
 deploy({}, (_, config) => {
   const proxy = createProxy(OwnedUpgradeabilityProxy)
   const timeProxy = createProxy(TimeOwnedUpgradeabilityProxy)
@@ -35,7 +37,13 @@ deploy({}, (_, config) => {
 
   // Contract initialization
   runIf(trueFiVault.isInitialized().not(), () => {
-    // tru.approve(trueFiVault, AMOUNT)
+    // TODO tru.approve(trueFiVault, AMOUNT)
     trueFiVault.initialize(BENEFICIARY, AMOUNT, tru, stkTruToken)
+
+    trueFiVault.transferOwnership(OWNER_MULTISIG)
+    // TODO trueFiVault.transferProxyOwnership(OWNER_MULTISIG)
+
+    // TODO trueFiVault.connect(multisig).claimOwnership()
+    // TODO trueFiVault.connect(multisig).claimProxyOwnership()
   })
 })
