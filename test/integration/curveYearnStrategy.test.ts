@@ -99,7 +99,7 @@ describe('[Skip CI] Curve Yearn Pool Strategy', () => {
     expect(await strategy.crvValue()).to.be.gt(0)
 
     const crvBalance = await strategy.crvBalance()
-    const data = mock1Inch_CYS(crvBalance)
+    const data = mock1Inch_CYS(crvBalance, pool.address)
 
     await strategy.sellCrv(data)
     expect(await usdc.balanceOf(pool.address)).to.be.gt(0)
