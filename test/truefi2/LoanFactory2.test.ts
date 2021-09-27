@@ -161,7 +161,7 @@ describe('LoanFactory2', () => {
         .to.be.revertedWith('LoanFactory: Pool is not supported by PoolFactory')
     })
 
-    it('prevents apy higer than limit', async () => {
+    it('prevents apy higher than limit', async () => {
       await expect(loanFactory.connect(borrower).createLoanToken(pool.address, parseEth(1_000), 15 * DAY, 510))
         .to.be.revertedWith('LoanFactory: Calculated apy is higher than max apy')
 
@@ -186,7 +186,7 @@ describe('LoanFactory2', () => {
         .to.be.revertedWith('LoanFactory: Loan token implementation should be set')
     })
 
-    it('fails when loan token intitialize signature differs from expected', async () => {
+    it('fails when loan token initialize signature differs from expected', async () => {
       const testLoanToken = await new TestLoanToken__factory(owner).deploy()
       await loanFactory.connect(owner).setLoanTokenImplementation(testLoanToken.address)
       await expect(loanFactory.connect(borrower).createLoanToken(pool.address, parseEth(123), 15 * DAY, MAX_APY))
@@ -269,7 +269,7 @@ describe('LoanFactory2', () => {
           .to.be.revertedWith('LoanFactory: Loan token implementation should be set')
       })
 
-      it('loan token intitialize signature differs from expected', async () => {
+      it('loan token initialize signature differs from expected', async () => {
         const debtToken = await new DebtToken__factory(owner).deploy()
         await loanFactory.connect(owner).setLoanTokenImplementation(debtToken.address)
         await expect(loanFactory.connect(ftla).createFTLALoanToken(pool.address, borrower.address, parseEth(1), 15 * DAY, 1000))
@@ -323,7 +323,7 @@ describe('LoanFactory2', () => {
           .to.be.revertedWith('LoanFactory: Debt token implementation should be set')
       })
 
-      it('debt token intitialize signature differs from expected', async () => {
+      it('debt token initialize signature differs from expected', async () => {
         const testLoanToken = await new TestLoanToken__factory(owner).deploy()
         await loanFactory.connect(owner).setDebtTokenImplementation(testLoanToken.address)
         await expect(loanFactory.connect(tca).createDebtToken(pool.address, borrower.address, parseEth(1)))
