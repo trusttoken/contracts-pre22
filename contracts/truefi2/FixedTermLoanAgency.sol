@@ -226,6 +226,10 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
         emit BorrowingMutexChanged(newMutex);
     }
 
+    function setRateAdjuster(ITrueRateAdjuster newRateAdjuster) public onlyOwner {
+        rateAdjuster = newRateAdjuster;
+    }
+
     /**
      * @dev Set max loan term. Only owner can change parameters.
      * @param _maxLoanTerm New maxLoanTerm
