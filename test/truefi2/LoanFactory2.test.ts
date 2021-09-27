@@ -435,7 +435,7 @@ describe('LoanFactory2', () => {
 
     it('emits event', async () => {
       await expect(loanFactory.setCreditModel(fakeCreditModel.address))
-        .to.emit(loanFactory, 'creditModelChanged')
+        .to.emit(loanFactory, 'CreditModelChanged')
         .withArgs(fakeCreditModel.address)
     })
   })
