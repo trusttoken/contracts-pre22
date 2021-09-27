@@ -11,7 +11,7 @@ import {
   TrueCreditAgency__factory,
   TrueFiCreditOracle,
   TrueFiPool2,
-  TrueLender2,
+  FixedTermLoanAgency,
   TrueRateAdjuster,
 } from 'contracts'
 import {
@@ -45,7 +45,7 @@ describe('TrueCreditAgency', () => {
   let usdcPool: TrueFiPool2
   let loanFactory: LoanFactory2
   let rateAdjuster: TrueRateAdjuster
-  let lender: TrueLender2
+  let ftlAgency: FixedTermLoanAgency
   let creditOracle: TrueFiCreditOracle
   let tusdBaseRateOracle: TimeAveragedBaseRateOracle
   let mockSpotOracle: MockContract
@@ -75,7 +75,7 @@ describe('TrueCreditAgency', () => {
       feeToken: usdc,
       feePool: usdcPool,
       loanFactory,
-      lender,
+      ftlAgency,
       creditAgency,
       creditOracle,
       standardBaseRateOracle: tusdBaseRateOracle,
@@ -1207,10 +1207,9 @@ describe('TrueCreditAgency', () => {
     const setUtilization = (utilization: number) => (
       _setUtilization(
         tusd,
-        loanFactory,
         owner,
         borrower2,
-        lender,
+        ftlAgency,
         owner,
         tusdPool,
         utilization,
