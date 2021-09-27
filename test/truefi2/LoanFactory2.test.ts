@@ -417,9 +417,9 @@ describe('LoanFactory2', () => {
     })
 
     it('only admin can call', async () => {
-      await expect(loanFactory.connect(owner).setcreditModel(fakeCreditModel.address))
+      await expect(loanFactory.connect(owner).setCreditModel(fakeCreditModel.address))
         .not.to.be.reverted
-      await expect(loanFactory.connect(borrower).setcreditModel(fakeCreditModel.address))
+      await expect(loanFactory.connect(borrower).setCreditModel(fakeCreditModel.address))
         .to.be.revertedWith('LoanFactory: Caller is not the admin')
     })
 
