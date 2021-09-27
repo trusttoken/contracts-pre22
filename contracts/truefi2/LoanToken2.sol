@@ -370,25 +370,18 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         require(!isRepaid(), "LoanToken2: cannot default a repaid loan");
         require(start.add(term).add(creditOracle.gracePeriod()) <= block.timestamp, "LoanToken2: Loan cannot be defaulted yet");
         status = Status.Defaulted;
-        debtToken = loanFactory.createDebtToken(pool, borrower, debt.sub(repaid()));
 
-        uint256 poolBalance = balanceOf(lender);
-        uint256 debtShare = debtToken.totalSupply().mul(poolBalance).div(debt);
-        debtToken.approve(address(pool), debtShare);
-        pool.addDebt(debtToken, debtShare);
+        uint256 unpaidDebt = debt.sub(repaid());
+        debtToken = loanFactory.createDebtToken(pool, borrower, unpaidDebt);
 
-        emit Defaulted(debtToken, debt.sub(repaid()));
-    }
+        debtToken.approve(address(pool), unpaidDebt);
+        pool.addDebt(debtToken, unpaidDebt);
 
-    function claimDebtToken(address loanHolder) public onlyDefaulted {
-        uint256 balance = balanceOf(loanHolder);
-        uint256 debtShare = debtToken.totalSupply().mul(balance).div(debt);
-
-        debtToken.safeTransfer(loanHolder, debtShare);
+        emit Defaulted(debtToken, unpaidDebt);
     }
 
     function liquidate() external override {
-        revert("LoanToken2: Liquidation not supported");
+        revert("LoanToken2: Direct liquidation has been deprecated");
     }
 
     /**
