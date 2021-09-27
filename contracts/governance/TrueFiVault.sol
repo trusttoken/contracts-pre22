@@ -36,17 +36,13 @@ contract TrueFiVault is UpgradeableClaimable {
     function initialize(
         address _beneficiary,
         uint256 _amount,
-        uint256 _start,
         IVoteTokenWithERC20 _tru,
         IStkTruToken _stkTru
     ) external initializer {
         UpgradeableClaimable.initialize(msg.sender);
 
-        // Protect from accidental passing incorrect start timestamp
-        require(_start >= block.timestamp, "TrueFiVault: lock start in the past");
-        require(_start < block.timestamp + 90 days, "TrueFiVault: lock start too far in the future");
         beneficiary = _beneficiary;
-        expiry = _start.add(DURATION);
+        expiry = block.timestamp.add(DURATION);
         tru = _tru;
         stkTru = _stkTru;
 
