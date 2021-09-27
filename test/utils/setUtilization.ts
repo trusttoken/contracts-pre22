@@ -5,7 +5,6 @@ import {
 } from 'contracts'
 import { BigNumber, Wallet } from 'ethers'
 import { DAY } from './constants'
-import { createLoanViaAgency as _createLoanViaAgency } from 'utils'
 
 // When setting utilization above 30 percent
 // slightly increases pool value
@@ -56,5 +55,5 @@ export const setUtilization = async (
   if (loanAmount.gt(liquidityLeft)) {
     loanAmount = liquidityLeft
   }
-  await ftlAgency.connect(borrower2).fund(pool.address, loanAmount, DAY, 50000, {gasLimit: 3000000})
+  await ftlAgency.connect(borrower2).fund(pool.address, loanAmount, DAY, 50000)
 }

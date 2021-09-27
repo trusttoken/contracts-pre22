@@ -25,8 +25,8 @@ export const createLoanViaAgency = async function (ftlAgency: FixedTermLoanAgenc
   await mockRateAdjuster.mock.rate.returns(0)
   await mockRateAdjuster.mock.borrowLimit.returns(parseEth(100_000_000))
   await ftlAgency.setRateAdjuster(mockRateAdjuster.address)
-  const tx = ftlAgency.connect(creator).fund(pool.address, amount, duration, MAX_APY, {gasLimit: 3000000})
-  return await extractLoanTokenAddress(tx, creator, factory)
+  const tx = ftlAgency.connect(creator).fund(pool.address, amount, duration, MAX_APY)
+  return extractLoanTokenAddress(tx, creator, factory)
 }
 
 export const createDebtToken = async (loanFactory: LoanFactory2, tca: Wallet, owner: Wallet, pool: TrueFiPool2, borrower: Wallet, debt: BigNumberish) => {
