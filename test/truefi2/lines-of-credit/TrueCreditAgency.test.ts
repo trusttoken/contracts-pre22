@@ -1072,7 +1072,7 @@ describe('TrueCreditAgency', () => {
           .filter(({ address }) => address === loanFactory.address)
           .map((e) => iface.parseLog(e))
           .filter(({ eventFragment }) => eventFragment.name === 'DebtTokenCreated')
-          .map((e) => DebtToken__factory.connect(e.args.contractAddress, owner)))
+          .map((e) => DebtToken__factory.connect(e.args.debtToken, owner)))
       }
 
       it('creates DebtToken with expected params', async () => {
