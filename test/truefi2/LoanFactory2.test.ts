@@ -44,7 +44,6 @@ describe('LoanFactory2', () => {
   let pool: TrueFiPool2
   let poolFactory: PoolFactory
   let poolToken: MockTrueCurrency
-  let contractAddress: string
   let loanFactory: LoanFactory2
   let loanToken: LoanToken2
   let creditModel: CreditModel
@@ -56,16 +55,16 @@ describe('LoanFactory2', () => {
   const createLoan = async (amount: BigNumberish, term: BigNumberish) => {
     const tx = await loanFactory.connect(borrower).createLoanToken(pool.address, amount, term, MAX_APY)
     const creationEvent = (await tx.wait()).events[0]
-      ; ({ contractAddress } = creationEvent.args)
-    return LoanToken2__factory.connect(contractAddress, owner)
+    const { loanToken } = creationEvent.args
+    return LoanToken2__factory.connect(loanToken, owner)
   }
 
   const createFTLALoanToken = async (pool: TrueFiPool2, borrower: Wallet, amount: BigNumberish, term: BigNumberish, apy: BigNumberish) => {
     await loanFactory.setFixedTermLoanAgency(ftla.address)
     const tx = await loanFactory.connect(ftla).createFTLALoanToken(pool.address, borrower.address, amount, term, apy)
     const creationEvent = (await tx.wait()).events[0]
-      ; ({ contractAddress } = creationEvent.args)
-    return LoanToken2__factory.connect(contractAddress, owner)
+    const { loanToken } = creationEvent.args
+    return LoanToken2__factory.connect(loanToken, owner)
   }
 
   const createDebtToken = async (pool: TrueFiPool2, borrower: Wallet, debt: BigNumberish) => {
