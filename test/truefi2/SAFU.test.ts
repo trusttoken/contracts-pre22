@@ -1,13 +1,13 @@
 import { expect } from 'chai'
-import { 
-  beforeEachWithFixture, 
-  createLoan, 
-  DAY, 
-  parseTRU, 
-  parseUSDC, 
-  parseEth, 
-  setupTruefi2, 
-  timeTravel as _timeTravel, 
+import {
+  beforeEachWithFixture,
+  createLoan,
+  DAY,
+  parseTRU,
+  parseUSDC,
+  parseEth,
+  setupTruefi2,
+  timeTravel as _timeTravel,
   createDebtToken as _createDebtToken,
   extractLoanTokenAddress,
 } from 'utils'
