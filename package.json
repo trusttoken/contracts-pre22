@@ -35,6 +35,7 @@
     "deploy:strategy": "bash ./marsDeploy.sh deploy/strategy.ts",
     "deploy:truefi": "bash ./marsDeploy.sh deploy/truefi.ts",
     "deploy:truefi2": "bash ./marsDeploy.sh deploy/truefi2.ts",
+    "deploy:vault": "bash ./marsDeploy.sh deploy/vault.ts",
     "deploy:dryrun": "yarn deploy:truefi --network kovan --dry-run --yes && yarn deploy:truefi2 --network kovan --dry-run --yes && yarn deploy:farms --network kovan --dry-run --yes",
     "checks": "yarn lint && yarn typecheck && yarn test && yarn test:integration",
     "docs": "npx solidity-docgen --solc-module solc-0.6 -i contracts -o docs",
