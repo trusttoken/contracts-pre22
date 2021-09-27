@@ -17,17 +17,17 @@ https://github.com/trusttoken/truefi-spec/blob/master/TrueFi2.0.md#lines-of-cred
 modifier for only whitelisted borrowers
 
 
-### `initialize(contract ITrueFiCreditOracle _creditOracle, contract ICreditModel _rateAdjuster)` (public)
+### `initialize(contract ITrueFiCreditOracle _creditOracle, contract ICreditModel _creditModel)` (public)
 
 
 
 initialize
 
-### `setRateAdjuster(contract ICreditModel newRateAdjuster)` (external)
+### `setCreditModel(contract ICreditModel newcreditModel)` (external)
 
 
 
-Set rateAdjuster to `newRateAdjuster` and update state
+Set creditModel to `newCreditModel` and update state
 
 ### `setInterestRepaymentPeriod(uint256 newPeriod)` (external)
 
@@ -73,19 +73,19 @@ Internal function to update `borrower` credit score for `pool` using credit orac
 
 
 
-Get credit score adjustment from rate adjuster
+Get credit score adjustment from credit model
 
 ### `utilizationAdjustmentRate(contract ITrueFiPool2 pool) → uint256` (public)
 
 
 
-Get utilization adjustment from rate adjuster
+Get utilization adjustment from credit model
 
 ### `borrowLimitAdjustment(uint8 score) → uint256` (public)
 
 
 
-Get borrow limit adjustment from rate adjuster
+Get borrow limit adjustment from credit model
 
 ### `totalTVL(uint8 decimals) → uint256` (public)
 
@@ -105,14 +105,14 @@ Get total amount borrowed for `borrower` from lines of credit in USD
 
 
 
-Get borrow limit for `borrower` in `pool` using rate adjuster
+Get borrow limit for `borrower` in `pool` using credit model
 
 
 ### `currentRate(contract ITrueFiPool2 pool, address borrower) → uint256` (external)
 
 
 
-Get current rate for `borrower` in `pool` from rate adjuster
+Get current rate for `borrower` in `pool` from credit model
 
 
 ### `interest(contract ITrueFiPool2 pool, address borrower) → uint256` (public)
@@ -261,11 +261,11 @@ Called after "payWithoutTransfer" functions to satisfy check-effects interaction
 
 emit `pool` and `oracle` when base rate oracle changed
 
-### `CreditModelChanged(contract ICreditModel newRateAdjuster)`
+### `CreditModelChanged(contract ICreditModel newCreditModel)`
 
 
 
-emit `newRateAdjuster` when rate adjuster changed
+emit `newCreditModel` when credit model changed
 
 ### `BorrowerAllowed(address who, bool isAllowed)`
 

@@ -63,7 +63,7 @@ describe('FixedTermLoanAgency', () => {
   let usdc: MockUsdc
   let oneInch: Mock1InchV3
   let borrowingMutex: BorrowingMutex
-  let rateAdjuster: CreditModel
+  let creditModel: CreditModel
   let baseRateOracle: TimeAveragedBaseRateOracle
 
   const YEAR = DAY * 365
@@ -90,7 +90,7 @@ describe('FixedTermLoanAgency', () => {
       ftlAgency,
       creditOracle,
       borrowingMutex,
-      rateAdjuster,
+      creditModel,
       standardBaseRateOracle: baseRateOracle,
     } = await setupTruefi2(owner, _provider, { ftlAgency: ftlAgency, oneInch: oneInch }))
 
@@ -114,8 +114,8 @@ describe('FixedTermLoanAgency', () => {
 
     await pool1.setOracle(poolOracle.address)
     await pool2.setOracle(poolOracle.address)
-    await rateAdjuster.setBaseRateOracle(pool1.address, baseRateOracle.address)
-    await rateAdjuster.setBaseRateOracle(pool2.address, baseRateOracle.address)
+    await creditModel.setBaseRateOracle(pool1.address, baseRateOracle.address)
+    await creditModel.setBaseRateOracle(pool2.address, baseRateOracle.address)
 
     await ftlAgency.setFeePool(feePool.address)
     await ftlAgency.allowBorrower(borrower.address)

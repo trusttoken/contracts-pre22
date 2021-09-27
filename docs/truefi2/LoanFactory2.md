@@ -13,7 +13,7 @@ LoanTokens adhere to the same contract code, rather than using an interface.
 
 
 
-### `initialize(contract IPoolFactory _poolFactory, address _lender, address _liquidator, contract ICreditModel _rateAdjuster, contract ITrueFiCreditOracle _creditOracle)` (external)
+### `initialize(contract IPoolFactory _poolFactory, address _lender, address _liquidator, contract ICreditModel _creditModel, contract ITrueFiCreditOracle _creditOracle)` (external)
 
 
 
@@ -45,7 +45,7 @@ Deploy LoanToken with parameters
 
 
 
-### `setRateAdjuster(contract ICreditModel _rateAdjuster)` (external)
+### `setCreditModel(contract ICreditModel _creditModel)` (external)
 
 
 
@@ -65,7 +65,7 @@ Emitted when a LoanToken is created
 
 
 
-### `RateAdjusterChanged(contract ICreditModel rateAdjuster)`
+### `CreditModelChanged(contract ICreditModel creditModel)`
 
 
 

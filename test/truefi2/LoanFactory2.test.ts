@@ -47,7 +47,7 @@ describe('LoanFactory2', () => {
   let contractAddress: string
   let loanFactory: LoanFactory2
   let loanToken: LoanToken2
-  let rateAdjuster: CreditModel
+  let creditModel: CreditModel
   let creditOracle: TrueFiCreditOracle
   let borrowerCreditScore: number
   let borrowingMutex: BorrowingMutex
@@ -82,12 +82,12 @@ describe('LoanFactory2', () => {
       lender,
       liquidator,
       poolFactory,
-      rateAdjuster,
+      creditModel,
       creditOracle,
       borrowingMutex,
       creditAgency,
     } = await setupTruefi2(owner, _provider))
-    await loanFactory.setRateAdjuster(rateAdjuster.address)
+    await loanFactory.setCreditModel(creditModel.address)
     await creditOracle.setScore(borrower.address, 255)
     borrowerCreditScore = await creditOracle.score(borrower.address)
 
@@ -111,8 +111,8 @@ describe('LoanFactory2', () => {
       expect(await loanFactory.liquidator()).to.eq(liquidator.address)
     })
 
-    it('sets rateAdjuster', async () => {
-      expect(await loanFactory.rateAdjuster()).to.eq(rateAdjuster.address)
+    it('sets creditModel', async () => {
+      expect(await loanFactory.creditModel()).to.eq(creditModel.address)
     })
 
     it('sets creditOracle', async () => {
@@ -174,15 +174,15 @@ describe('LoanFactory2', () => {
       const factory = await new LoanFactory2__factory(owner).deploy()
       const mockPoolFactory = await deployMockContract(owner, PoolFactoryJson.abi)
       const mockCreditOracle = await deployMockContract(owner, TrueFiCreditOracleJson.abi)
-      const mockRateAdjuster = await deployMockContract(owner, CreditModelJson.abi)
+      const mockCreditModel = await deployMockContract(owner, CreditModelJson.abi)
       await factory.initialize(
         mockPoolFactory.address,
-        AddressZero, AddressZero, AddressZero, mockRateAdjuster.address, mockCreditOracle.address, AddressZero, AddressZero,
+        AddressZero, AddressZero, AddressZero, mockCreditModel.address, mockCreditOracle.address, AddressZero, AddressZero,
       )
       await mockPoolFactory.mock.isSupportedPool.withArgs(AddressZero).returns(true)
       await mockCreditOracle.mock.score.withArgs(borrower.address).returns(0)
-      await mockRateAdjuster.mock.fixedTermLoanAdjustment.withArgs(15 * DAY).returns(0)
-      await mockRateAdjuster.mock.rate.withArgs(AddressZero, 0, parseEth(123)).returns(0)
+      await mockCreditModel.mock.fixedTermLoanAdjustment.withArgs(15 * DAY).returns(0)
+      await mockCreditModel.mock.rate.withArgs(AddressZero, 0, parseEth(123)).returns(0)
       await expect(factory.connect(borrower).createLoanToken(AddressZero, parseEth(123), 15 * DAY, MAX_APY))
         .to.be.revertedWith('LoanFactory: Loan token implementation should be set')
     })
@@ -222,8 +222,8 @@ describe('LoanFactory2', () => {
         const amount = parseEth(1_000)
 
         beforeEach(async () => {
-          rateWithoutFixedTermLoanAdjustment = await rateAdjuster.rate(pool.address, borrowerCreditScore, amount)
-          fixedTermLoanAdjustmentCoefficient = await rateAdjuster.fixedTermLoanAdjustmentCoefficient()
+          rateWithoutFixedTermLoanAdjustment = await creditModel.rate(pool.address, borrowerCreditScore, amount)
+          fixedTermLoanAdjustmentCoefficient = await creditModel.fixedTermLoanAdjustmentCoefficient()
         })
 
         it('short term', async () => {
@@ -410,34 +410,34 @@ describe('LoanFactory2', () => {
     })
   })
 
-  describe('setRateAdjuster', () => {
-    let fakeRateAdjuster: CreditModel
+  describe('setCreditModel', () => {
+    let fakeCreditModel: CreditModel
     beforeEach(async () => {
-      fakeRateAdjuster = await new CreditModel__factory(owner).deploy()
-      await fakeRateAdjuster.initialize(AddressZero)
+      fakeCreditModel = await new CreditModel__factory(owner).deploy()
+      await fakeCreditModel.initialize(AddressZero)
     })
 
     it('only admin can call', async () => {
-      await expect(loanFactory.connect(owner).setRateAdjuster(fakeRateAdjuster.address))
+      await expect(loanFactory.connect(owner).setcreditModel(fakeCreditModel.address))
         .not.to.be.reverted
-      await expect(loanFactory.connect(borrower).setRateAdjuster(fakeRateAdjuster.address))
+      await expect(loanFactory.connect(borrower).setcreditModel(fakeCreditModel.address))
         .to.be.revertedWith('LoanFactory: Caller is not the admin')
     })
 
     it('cannot be set to zero address', async () => {
-      await expect(loanFactory.setRateAdjuster(AddressZero))
-        .to.be.revertedWith('LoanFactory: Cannot set rate adjuster to zero address')
+      await expect(loanFactory.setCreditModel(AddressZero))
+        .to.be.revertedWith('LoanFactory: Cannot set credit model to zero address')
     })
 
-    it('changes rateAdjuster', async () => {
-      await loanFactory.setRateAdjuster(fakeRateAdjuster.address)
-      expect(await loanFactory.rateAdjuster()).to.eq(fakeRateAdjuster.address)
+    it('changes creditModel', async () => {
+      await loanFactory.setCreditModel(fakeCreditModel.address)
+      expect(await loanFactory.creditModel()).to.eq(fakeCreditModel.address)
     })
 
     it('emits event', async () => {
-      await expect(loanFactory.setRateAdjuster(fakeRateAdjuster.address))
-        .to.emit(loanFactory, 'RateAdjusterChanged')
-        .withArgs(fakeRateAdjuster.address)
+      await expect(loanFactory.setCreditModel(fakeCreditModel.address))
+        .to.emit(loanFactory, 'creditModelChanged')
+        .withArgs(fakeCreditModel.address)
     })
   })
 

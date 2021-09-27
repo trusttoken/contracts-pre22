@@ -55,8 +55,8 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
   const lender: TrueLender2 & TestTrueLender = customDeployed?.lender ? customDeployed.lender : await deployContract(TrueLender2__factory)
   const ftlAgency: FixedTermLoanAgency & TestFixedTermLoanAgency = customDeployed?.ftlAgency ? customDeployed.ftlAgency : await deployContract(FixedTermLoanAgency__factory)
   const safu = await deployContract(Safu__factory)
-  const rateAdjuster = await deployContract(CreditModel__factory)
-  const mockRateAdjuster = await deployMockContract(owner, CreditModelJson.abi)
+  const creditModel = await deployContract(CreditModel__factory)
+  const mockCreditModel = await deployMockContract(owner, CreditModelJson.abi)
   const creditAgency = await deployContract(TrueCreditAgency__factory)
   const borrowingMutex = await deployContract(BorrowingMutex__factory)
 
@@ -80,7 +80,7 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
 
   // ====== SETUP ======
   await liquidator.initialize(stkTru.address, tru.address, loanFactory.address, poolFactory.address, safu.address, standardTokenOracle.address)
-  await loanFactory.initialize(poolFactory.address, lender.address, ftlAgency.address, liquidator.address, mockRateAdjuster.address, creditOracle.address, borrowingMutex.address, creditAgency.address)
+  await loanFactory.initialize(poolFactory.address, lender.address, ftlAgency.address, liquidator.address, mockCreditModel.address, creditOracle.address, borrowingMutex.address, creditAgency.address)
   const loanTokenImplementation = await new LoanToken2__factory(owner).deploy()
   const debtTokenImplementation = await new DebtToken__factory(owner).deploy()
   await loanFactory.setLoanTokenImplementation(loanTokenImplementation.address)
@@ -88,12 +88,12 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
   await arbitraryDistributor.initialize(rater.address, tru.address, parseTRU(15e6))
   await rater.initialize(tru.address, stkTru.address, arbitraryDistributor.address, loanFactory.address)
   await borrowingMutex.initialize()
-  await lender.initialize(stkTru.address, poolFactory.address, customDeployed?.oneInch ? customDeployed.oneInch.address : AddressZero, creditOracle.address, rateAdjuster.address, borrowingMutex.address)
-  await ftlAgency.initialize(stkTru.address, poolFactory.address, customDeployed?.oneInch ? customDeployed.oneInch.address : AddressZero, creditOracle.address, rateAdjuster.address, borrowingMutex.address, loanFactory.address)
+  await lender.initialize(stkTru.address, poolFactory.address, customDeployed?.oneInch ? customDeployed.oneInch.address : AddressZero, creditOracle.address, creditModel.address, borrowingMutex.address)
+  await ftlAgency.initialize(stkTru.address, poolFactory.address, customDeployed?.oneInch ? customDeployed.oneInch.address : AddressZero, creditOracle.address, creditModel.address, borrowingMutex.address, loanFactory.address)
   await safu.initialize(loanFactory.address, liquidator.address, customDeployed?.oneInch ? customDeployed.oneInch.address : AddressZero)
   await poolFactory.initialize(implementationReference.address, lender.address, ftlAgency.address, safu.address)
-  await rateAdjuster.initialize(poolFactory.address)
-  await creditAgency.initialize(creditOracle.address, rateAdjuster.address, borrowingMutex.address, poolFactory.address, loanFactory.address)
+  await creditModel.initialize(poolFactory.address)
+  await creditAgency.initialize(creditOracle.address, creditModel.address, borrowingMutex.address, poolFactory.address, loanFactory.address)
   await standardBaseRateOracle.initialize(mockSpotOracle.address, standardToken.address, DAY)
   await feeBaseRateOracle.initialize(mockSpotOracle.address, feeToken.address, DAY)
 
@@ -109,15 +109,15 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
   await poolFactory.supportPool(standardPool.address)
   await standardPool.setOracle(standardTokenOracle.address)
 
-  await rateAdjuster.setBaseRateOracle(standardPool.address, standardBaseRateOracle.address)
-  await rateAdjuster.setBaseRateOracle(feePool.address, feeBaseRateOracle.address)
+  await creditModel.setBaseRateOracle(standardPool.address, standardBaseRateOracle.address)
+  await creditModel.setBaseRateOracle(feePool.address, feeBaseRateOracle.address)
 
   await borrowingMutex.allowLocker(lender.address, true)
   await borrowingMutex.allowLocker(ftlAgency.address, true)
   await borrowingMutex.allowLocker(creditAgency.address, true)
 
-  await mockRateAdjuster.mock.rate.returns(0)
-  await mockRateAdjuster.mock.fixedTermLoanAdjustment.returns(0)
+  await mockCreditModel.mock.rate.returns(0)
+  await mockCreditModel.mock.fixedTermLoanAdjustment.returns(0)
 
   await mockSpotOracle.mock.getRate.withArgs(standardToken.address).returns(300)
   await mockSpotOracle.mock.getRate.withArgs(feeToken.address).returns(300)
@@ -162,8 +162,8 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
     mockSpotOracle,
     standardBaseRateOracle,
     feeBaseRateOracle,
-    rateAdjuster,
-    mockRateAdjuster,
+    creditModel,
+    mockCreditModel,
     borrowingMutex,
   }
 }

@@ -104,8 +104,8 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     /// @dev period over which regular interest payments must be made
     uint256 public interestRepaymentPeriod;
 
-    /// @dev rate adjuster
-    ICreditModel public rateAdjuster;
+    /// @dev credit model
+    ICreditModel public creditModel;
 
     /// @dev credit oracle
     ITrueFiCreditOracle public creditOracle;
@@ -137,8 +137,8 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     /// @dev emit `pool` and `oracle` when base rate oracle changed
     event BaseRateOracleChanged(ITrueFiPool2 pool, ITimeAveragedBaseRateOracle oracle);
 
-    /// @dev emit `newRateAdjuster` when rate adjuster changed
-    event CreditModelChanged(ICreditModel newRateAdjuster);
+    /// @dev emit `newCreditModel` when credit model changed
+    event CreditModelChanged(ICreditModel newCreditModel);
 
     /// @dev emit `newPoolFactory` when pool factory changed
     event PoolFactoryChanged(IPoolFactory newPoolFactory);
@@ -169,14 +169,14 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     /// @dev initialize
     function initialize(
         ITrueFiCreditOracle _creditOracle,
-        ICreditModel _rateAdjuster,
+        ICreditModel _creditModel,
         IBorrowingMutex _borrowingMutex,
         IPoolFactory _poolFactory,
         ILoanFactory2 _loanFactory
     ) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
         creditOracle = _creditOracle;
-        rateAdjuster = _rateAdjuster;
+        creditModel = _creditModel;
         borrowingMutex = _borrowingMutex;
         poolFactory = _poolFactory;
         loanFactory = _loanFactory;
@@ -190,11 +190,11 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         _;
     }
 
-    /// @dev Set rateAdjuster to `newRateAdjuster` and update state
-    function setRateAdjuster(ICreditModel newRateAdjuster) external onlyOwner {
-        rateAdjuster = newRateAdjuster;
+    /// @dev Set creditModel to `newCreditModel` and update state
+    function setCreditModel(ICreditModel newCreditModel) external onlyOwner {
+        creditModel = newCreditModel;
         pokeAll();
-        emit CreditModelChanged(newRateAdjuster);
+        emit CreditModelChanged(newCreditModel);
     }
 
     /// @dev Set poolFactory to `newPoolFactory` and update state
@@ -255,24 +255,24 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         return (oldScore, newScore);
     }
 
-    /// @dev Get credit score adjustment from rate adjuster
+    /// @dev Get credit score adjustment from credit model
     function creditScoreAdjustmentRate(ITrueFiPool2 pool, address borrower) public view returns (uint256) {
-        return rateAdjuster.creditScoreAdjustmentRate(creditScore[pool][borrower]);
+        return creditModel.creditScoreAdjustmentRate(creditScore[pool][borrower]);
     }
 
-    /// @dev Get utilization adjustment from rate adjuster
+    /// @dev Get utilization adjustment from credit model
     function utilizationAdjustmentRate(ITrueFiPool2 pool) public view returns (uint256) {
-        return rateAdjuster.utilizationAdjustmentRate(pool, 0);
+        return creditModel.utilizationAdjustmentRate(pool, 0);
     }
 
-    /// @dev Get pool basic rate from rate adjuster
+    /// @dev Get pool basic rate from credit model
     function poolBasicRate(ITrueFiPool2 pool) public view returns (uint256) {
-        return rateAdjuster.poolBasicRate(pool, 0);
+        return creditModel.poolBasicRate(pool, 0);
     }
 
-    /// @dev Get borrow limit adjustment from rate adjuster
+    /// @dev Get borrow limit adjustment from credit model
     function borrowLimitAdjustment(uint8 score) public view returns (uint256) {
-        return rateAdjuster.borrowLimitAdjustment(score);
+        return creditModel.borrowLimitAdjustment(score);
     }
 
     /**
@@ -291,14 +291,14 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     }
 
     /**
-     * @dev Get borrow limit for `borrower` in `pool` using rate adjuster
+     * @dev Get borrow limit for `borrower` in `pool` using credit model
      * @param pool Pool to get borrow limit for
      * @param borrower Borrower to get borrow limit for
      * @return borrow limit for `borrower` in `pool`
      */
     function borrowLimit(ITrueFiPool2 pool, address borrower) public view returns (uint256) {
         return
-            rateAdjuster.borrowLimit(
+            creditModel.borrowLimit(
                 pool,
                 creditOracle.score(borrower),
                 creditOracle.maxBorrowerLimit(borrower),
@@ -308,7 +308,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
     function isOverLimit(ITrueFiPool2 pool, address borrower) public view returns (bool) {
         return
-            rateAdjuster.isOverLimit(
+            creditModel.isOverLimit(
                 pool,
                 creditOracle.score(borrower),
                 creditOracle.maxBorrowerLimit(borrower),
@@ -317,11 +317,11 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     }
 
     /**
-     * @dev Get current rate for `borrower` in `pool` from rate adjuster
+     * @dev Get current rate for `borrower` in `pool` from credit model
      * @return current rate for `borrower` in `pool`
      */
     function currentRate(ITrueFiPool2 pool, address borrower) external view returns (uint256) {
-        return rateAdjuster.rate(pool, creditScore[pool][borrower], 0);
+        return creditModel.rate(pool, creditScore[pool][borrower], 0);
     }
 
     /**
@@ -557,7 +557,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         poolTotalInterest[pool] = poolTotalInterest[pool].add(bucket.totalBorrowed.mul(newInterestPerShare));
         bucket.cumulativeInterestPerShare = bucket.cumulativeInterestPerShare.add(newInterestPerShare);
 
-        bucket.rate = rateAdjuster.combinedRate(poolRate, rateAdjuster.creditScoreAdjustmentRate(bucketNumber));
+        bucket.rate = creditModel.combinedRate(poolRate, creditModel.creditScoreAdjustmentRate(bucketNumber));
         bucket.timestamp = uint128(timeNow);
     }
 
