@@ -1,5 +1,16 @@
 import { expect } from 'chai'
-import { beforeEachWithFixture, createLoan, DAY, parseTRU, parseUSDC, parseEth, setupTruefi2, timeTravel as _timeTravel, createDebtToken as _createDebtToken } from 'utils'
+import { 
+  beforeEachWithFixture, 
+  createLoan, 
+  DAY, 
+  parseTRU, 
+  parseUSDC, 
+  parseEth, 
+  setupTruefi2, 
+  timeTravel as _timeTravel, 
+  createDebtToken as _createDebtToken,
+  extractLoanTokenAddress,
+} from 'utils'
 import { BigNumberish, utils, Wallet } from 'ethers'
 import { AddressZero } from '@ethersproject/constants'
 
@@ -19,7 +30,7 @@ import {
   TrueFiPool2,
   TrueFiPool2__factory,
   PoolFactory,
-  TrueLender2,
+  FixedTermLoanAgency,
   TrueFiCreditOracle,
   DebtToken,
   MockErc20Token__factory,
@@ -40,7 +51,7 @@ describe('SAFU', () => {
   let loanFactory: LoanFactory2
   let pool: TrueFiPool2
   let poolFactory: PoolFactory
-  let lender: TrueLender2
+  let ftlAgency: FixedTermLoanAgency
   let oneInch: Mock1InchV3
   let liquidator: Liquidator2
   let tru: MockTrueCurrency
@@ -53,7 +64,7 @@ describe('SAFU', () => {
   const YEAR = DAY * 365
   const defaultedLoanCloseTime = YEAR + 3 * DAY
 
-  const defaultAmount = parseUSDC(1100)
+  const defaultAmount = parseUSDC(1080)
 
   const createDebtToken = async (pool: TrueFiPool2, debt: BigNumberish) => {
     return _createDebtToken(loanFactory, owner, owner, pool, borrower, debt)
@@ -69,7 +80,7 @@ describe('SAFU', () => {
       feeToken: token,
       feePool: pool,
       poolFactory,
-      lender,
+      ftlAgency,
       loanFactory,
       tru,
       stkTru,
@@ -78,8 +89,6 @@ describe('SAFU', () => {
       borrowingMutex,
     } = await setupTruefi2(owner, _provider, { oneInch: oneInch }))
 
-    loan = await createLoan(loanFactory, borrower, pool, parseUSDC(1000), YEAR, 1000)
-
     await token.mint(owner.address, parseUSDC(1e7))
     await token.approve(pool.address, parseUSDC(1e7))
     await pool.connect(owner).join(parseUSDC(1e7))
@@ -87,7 +96,10 @@ describe('SAFU', () => {
     await creditOracle.setScore(borrower.address, 255)
     await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
 
-    await lender.connect(borrower).fund(loan.address)
+    await ftlAgency.allowBorrower(borrower.address)
+    const tx = ftlAgency.connect(borrower).fund(pool.address, parseUSDC(1000), YEAR, 1000)
+    loan = await extractLoanTokenAddress(tx, owner, loanFactory)
+
     await loan.connect(borrower).withdraw(borrower.address)
 
     await tru.mint(owner.address, parseTRU(1e7))
@@ -152,7 +164,6 @@ describe('SAFU', () => {
 
       beforeEach(async () => {
         await token.mint(safu.address, defaultAmount)
-        await loanFactory.setLender(owner.address)
         await loanFactory.setCreditAgency(owner.address)
         await pool.setCreditAgency(owner.address)
         debtToken = await createDebtToken(pool, defaultAmount)
@@ -222,7 +233,6 @@ describe('SAFU', () => {
           const [pool2, token2] = await createSupportedPool(poolFactory)
           await token2.mint(safu.address, defaultAmount)
 
-          await loanFactory.setLender(owner.address)
           await loanFactory.setCreditAgency(owner.address)
           await pool.setCreditAgency(owner.address)
           await pool2.setCreditAgency(owner.address)
@@ -280,7 +290,6 @@ describe('SAFU', () => {
           const [pool2, token2] = await createSupportedPool(poolFactory)
           await token2.mint(safu.address, defaultAmount.div(2))
 
-          await loanFactory.setLender(owner.address)
           await loanFactory.setCreditAgency(owner.address)
           await pool.setCreditAgency(owner.address)
           await pool2.setCreditAgency(owner.address)
@@ -326,7 +335,7 @@ describe('SAFU', () => {
           await stkTru.stake(parseTRU(1e7))
 
           await safu.liquidate([loan.address])
-          expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(4400))
+          expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(4320))
         })
       })
 
@@ -351,7 +360,7 @@ describe('SAFU', () => {
           await stkTru.stake(parseTRU(1e7))
 
           await safu.liquidate([loan.address])
-          expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(22e2))
+          expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(2120))
         })
       })
     })
@@ -459,7 +468,7 @@ describe('SAFU', () => {
 
     it('burns loan tokens', async () => {
       await safu.liquidate([loan.address])
-      await expect(() => safu.redeem(loan.address)).changeTokenBalance(loan, safu, parseUSDC(1100).mul(-1))
+      await expect(() => safu.redeem(loan.address)).changeTokenBalance(loan, safu, parseUSDC(1080).mul(-1))
     })
 
     it('redeems available tokens', async () => {
