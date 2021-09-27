@@ -1078,6 +1078,18 @@ describe('TrueFiPool2', () => {
 
       expect(await tusdPool.liquidRatio(parseEth(1e5).div(2))).to.eq(BigNumber.from(100_00).sub(poolUtilization))
     })
+
+    describe('setUtilization', () => {
+      [0, 10, 25, 75, 100].map((utilization) => {
+        it(`sets utilization to ${utilization} percent`, async () => {
+          await setUtilization(utilization)
+          const poolValue = await tusdPool.poolValue()
+          const liquidValue = await tusdPool.liquidValue()
+          const poolUtilization = poolValue.sub(liquidValue).mul(10_000).div(poolValue)
+          expect(poolUtilization).to.eq(utilization * 100)
+        })
+      })
+    })
   })
 
   describe('addDebt', () => {
