@@ -632,7 +632,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      */
     function addDebt(IDebtToken debtToken, uint256 amount) external override {
         require(
-            msg.sender == address(creditAgency) || ftlAgency.loanFactory().isLoanToken(msg.sender),
+            msg.sender == address(creditAgency) || ftlAgency.loanFactory().isLoanToken(ILoanToken2(msg.sender)),
             "TruePool: Only TrueCreditAgency and Loans can add debtTokens"
         );
         debtValue = debtValue.add(amount);

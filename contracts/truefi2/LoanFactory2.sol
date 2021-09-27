@@ -124,7 +124,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
 
     modifier onlyTCAOrLoanToken() {
         require(
-            msg.sender == address(creditAgency) || isLoanToken[msg.sender],
+            msg.sender == address(creditAgency) || isLoanToken[ILoanToken2(msg.sender)],
             "LoanFactory: Caller is neither credit agency nor loan"
         );
         _;
@@ -190,19 +190,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         require(ltImplementationAddress != address(0), "LoanFactory: Loan token implementation should be set");
 
         LoanToken2 newToken = LoanToken2(Clones.clone(ltImplementationAddress));
-        newToken.initialize(
-            _pool,
-            borrowingMutex,
-            _borrower,
-            lender,
-            ftlAgency,
-            admin,
-            this,
-            creditOracle,
-            _amount,
-            _term,
-            _apy
-        );
+        newToken.initialize(_pool, borrowingMutex, _borrower, lender, ftlAgency, admin, this, creditOracle, _amount, _term, _apy);
         isLoanToken[newToken] = true;
 
         emit LoanTokenCreated(newToken);
