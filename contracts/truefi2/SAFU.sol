@@ -88,7 +88,7 @@ contract SAFU is ISAFU, UpgradeableClaimable {
      */
     function liquidate(IDebtToken[] calldata loans) external onlyOwner {
         for (uint256 i = 0; i < loans.length; i++) {
-            require(loanFactory.isCreatedByFactory(address(loans[i])), "SAFU: Unknown loan");
+            require(loanFactory.isCreatedByFactory(loans[i]), "SAFU: Unknown loan");
             require(loans[i].status() == IDebtToken.Status.Defaulted, "SAFU: Loan is not defaulted");
         }
 
@@ -128,7 +128,7 @@ contract SAFU is ISAFU, UpgradeableClaimable {
      * @param loan Loan token to be redeemed
      */
     function redeem(IDebtToken loan) public onlyOwner {
-        require(loanFactory.isCreatedByFactory(address(loan)), "SAFU: Unknown loan");
+        require(loanFactory.isCreatedByFactory(loan), "SAFU: Unknown loan");
         uint256 amountToBurn = tokenBalance(loan);
         uint256 balanceBeforeRedeem = tokenBalance(loan.token());
         loan.redeem(amountToBurn);
@@ -142,7 +142,8 @@ contract SAFU is ISAFU, UpgradeableClaimable {
      * @param amount Amount of deficiency tokens to be reclaimed
      */
     function reclaim(IDebtToken loan, uint256 amount) external override {
-        require(loanFactory.isCreatedByFactory(address(loan)), "SAFU: Unknown loan");
+        require(loanFactory.isCreatedByFactory(loan), "SAFU: Unknown loan");
+
         address poolAddress = address(loan.pool());
         require(msg.sender == poolAddress, "SAFU: caller is not the loan's pool");
         require(tokenBalance(loan) == 0, "SAFU: Loan has to be fully redeemed by SAFU");
@@ -169,10 +170,10 @@ contract SAFU is ISAFU, UpgradeableClaimable {
     }
 
     function _poolLiquidate(ITrueFiPool2 pool, IDebtToken loan) internal {
-        if (loanFactory.isLoanToken(address(loan))) {
+        if (loanFactory.isLoanToken(loan)) {
             pool.liquidateLoan(loan);
         }
-        if (loanFactory.isDebtToken(address(loan))) {
+        if (loanFactory.isDebtToken(loan)) {
             pool.liquidateDebt(loan);
         }
     }

@@ -77,6 +77,10 @@ describe('PoolFactory', () => {
     it('sets allowAll to false', async () => {
       expect(await factory.allowAll()).to.eq(false)
     })
+
+    it('sets maxPools to 10', async () => {
+      expect(await factory.maxPools()).to.equal(10)
+    })
   })
 
   describe('createPool', () => {
@@ -339,6 +343,13 @@ describe('PoolFactory', () => {
         .to.be.revertedWith('PoolFactory: Pool is already supported')
     })
 
+    it('reverts if there are too many pools', async () => {
+      const pool3 = await factory.pool(token3.address)
+      await factory.setMaxPools(2)
+      await expect(factory.supportPool(pool3))
+        .to.be.revertedWith('PoolFactory: Pools number has reached the limit')
+    })
+
     it('adds pools to array', async () => {
       const pool1 = await factory.pool(token1.address)
       const pool2 = await factory.pool(token2.address)
@@ -525,6 +536,24 @@ describe('PoolFactory', () => {
       await expect(factory.setSafuAddress(otherWallet.address))
         .to.emit(factory, 'SafuChanged')
         .withArgs(otherWallet.address)
+    })
+  })
+
+  describe('setMaxPools', () => {
+    it('reverts if not called by the owner', async () => {
+      await expect(factory.connect(borrower).setMaxPools(1))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('changes maximum pools capacity', async () => {
+      await factory.setMaxPools(1)
+      expect(await factory.maxPools()).to.eq(1)
+    })
+
+    it('emits event', async () => {
+      await expect(factory.setMaxPools(1))
+        .to.emit(factory, 'MaxPoolsChanged')
+        .withArgs(1)
     })
   })
 
