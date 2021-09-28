@@ -3,11 +3,9 @@ import {
   LoanFactory2,
   LoanToken2__factory,
   TrueFiPool2,
-  FixedTermLoanAgency,
 } from 'contracts'
 import { BigNumberish, Wallet } from 'ethers'
-import { deployMockContract } from 'ethereum-waffle'
-import { connectMockContract, extractLoanTokenAddress, parseEth } from 'utils'
+import { connectMockContract } from 'utils'
 import { TrueRateAdjusterJson } from 'build'
 import { MAX_APY } from './constants'
 
@@ -17,16 +15,6 @@ export const createLoan = async function (factory: LoanFactory2, creator: Wallet
   const loanTx = await factory.connect(creator).createLoanToken(pool.address, amount, duration, MAX_APY)
   const loanAddress = (await loanTx.wait()).events[0].args.contractAddress
   return new LoanToken2__factory(creator).attach(loanAddress)
-}
-
-export const createLoanViaAgency = async function (ftlAgency: FixedTermLoanAgency, factory: LoanFactory2, creator: Wallet, pool: TrueFiPool2, amount: BigNumberish, duration: BigNumberish, apy: BigNumberish) {
-  const mockRateAdjuster = await deployMockContract(creator, TrueRateAdjusterJson.abi)
-  await mockRateAdjuster.mock.fixedTermLoanAdjustment.returns(apy)
-  await mockRateAdjuster.mock.rate.returns(0)
-  await mockRateAdjuster.mock.borrowLimit.returns(parseEth(100_000_000))
-  await ftlAgency.setRateAdjuster(mockRateAdjuster.address)
-  const tx = ftlAgency.connect(creator).fund(pool.address, amount, duration, MAX_APY)
-  return extractLoanTokenAddress(tx, creator, factory)
 }
 
 export const createDebtToken = async (loanFactory: LoanFactory2, tca: Wallet, owner: Wallet, pool: TrueFiPool2, borrower: Wallet, debt: BigNumberish) => {
