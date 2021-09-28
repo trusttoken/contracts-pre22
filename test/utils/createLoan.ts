@@ -13,7 +13,7 @@ export const createLoan = async function (factory: LoanFactory2, creator: Wallet
   const mockRateAdjuster = connectMockContract(await factory.rateAdjuster(), factory.signer, TrueRateAdjusterJson.abi)
   await mockRateAdjuster.mock.fixedTermLoanAdjustment.returns(apy)
   const loanTx = await factory.connect(creator).createLoanToken(pool.address, amount, duration, MAX_APY)
-  const loanAddress = (await loanTx.wait()).events[0].args.contractAddress
+  const loanAddress = (await loanTx.wait()).events[0].args.loanToken
   return new LoanToken2__factory(creator).attach(loanAddress)
 }
 
@@ -21,5 +21,5 @@ export const createDebtToken = async (loanFactory: LoanFactory2, creditAgency: W
   await loanFactory.setCreditAgency(creditAgency.address)
   const tx = await loanFactory.connect(creditAgency).createDebtToken(pool.address, borrower.address, debt)
   const creationEvent = (await tx.wait()).events[1]
-  return DebtToken__factory.connect(creationEvent.args.contractAddress, owner)
+  return DebtToken__factory.connect(creationEvent.args.debtToken, owner)
 }

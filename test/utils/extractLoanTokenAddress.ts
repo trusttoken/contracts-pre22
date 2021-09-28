@@ -12,5 +12,5 @@ export async function extractLoanTokenAddress (pendingTx: Promise<ContractTransa
     .filter(({ address }) => address === loanFactory.address)
     .map((e) => iface.parseLog(e))
     .find(({ eventFragment }) => eventFragment.name === 'LoanTokenCreated')
-    .args.contractAddress, owner)
+    .args.loanToken, owner)
 }
