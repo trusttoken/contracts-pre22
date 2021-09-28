@@ -6,7 +6,7 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {ITimeAveragedBaseRateOracle} from "./interface/ITimeAveragedBaseRateOracle.sol";
-import {ITrueRateAdjuster} from "./interface/ITrueRateAdjuster.sol";
+import {ICreditModel} from "./interface/ICreditModel.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {TrueFiFixed64x64} from "./libraries/TrueFiFixed64x64.sol";
 
@@ -15,8 +15,8 @@ interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
 }
 
 /**
- * @title TrueFi Rate Adjuster
- * @dev Rate Adjuster for interest rates in the TrueFi Protocol
+ * @title TrueFi Credit Model
+ * @dev Credit Model for interest rates in the TrueFi Protocol
  * https://github.com/trusttoken/truefi-spec/blob/master/TrueFi2.0.md#lines-of-credit
  *
  * - Extracts interest rate calculations into a separate contract
@@ -24,7 +24,7 @@ interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
  * - Calculates borrow limits for Lines of Credit and Term Loans
  * - Includes some adjustable parameters for changing models
  */
-contract TrueRateAdjuster is ITrueRateAdjuster, UpgradeableClaimable {
+contract CreditModel is ICreditModel, UpgradeableClaimable {
     using SafeMath for uint256;
     using TrueFiFixed64x64 for int128;
 

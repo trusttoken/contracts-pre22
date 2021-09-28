@@ -10,7 +10,7 @@ import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {ILoanToken2, IDebtToken} from "./interface/ILoanToken2.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
-import {ITrueRateAdjuster} from "./interface/ITrueRateAdjuster.sol";
+import {ICreditModel} from "./interface/ICreditModel.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
 import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
 import {ILineOfCreditAgency} from "./interface/ILineOfCreditAgency.sol";
@@ -42,7 +42,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
 
     address public admin;
 
-    ITrueRateAdjuster public rateAdjuster;
+    ICreditModel public creditModel;
     ITrueFiCreditOracle public creditOracle;
     IBorrowingMutex public borrowingMutex;
     ILoanToken2 public loanTokenImplementation;
@@ -70,7 +70,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
 
     event CreditOracleChanged(ITrueFiCreditOracle creditOracle);
 
-    event RateAdjusterChanged(ITrueRateAdjuster rateAdjuster);
+    event CreditModelChanged(ICreditModel creditModel);
 
     event BorrowingMutexChanged(IBorrowingMutex borrowingMutex);
 
@@ -96,7 +96,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         address _lender,
         IFixedTermLoanAgency _ftlAgency,
         address _liquidator,
-        ITrueRateAdjuster _rateAdjuster,
+        ICreditModel _creditModel,
         ITrueFiCreditOracle _creditOracle,
         IBorrowingMutex _borrowingMutex,
         ILineOfCreditAgency _creditAgency
@@ -106,7 +106,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         ftlAgency = _ftlAgency;
         admin = msg.sender;
         liquidator = _liquidator;
-        rateAdjuster = _rateAdjuster;
+        creditModel = _creditModel;
         creditOracle = _creditOracle;
         borrowingMutex = _borrowingMutex;
         creditAgency = _creditAgency;
@@ -142,8 +142,8 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         uint256 _term
     ) internal view returns (uint256) {
         uint8 borrowerScore = creditOracle.score(borrower);
-        uint256 fixedTermLoanAdjustment = rateAdjuster.fixedTermLoanAdjustment(_term);
-        return rateAdjuster.rate(pool, borrowerScore, amount).add(fixedTermLoanAdjustment);
+        uint256 fixedTermLoanAdjustment = creditModel.fixedTermLoanAdjustment(_term);
+        return creditModel.rate(pool, borrowerScore, amount).add(fixedTermLoanAdjustment);
     }
 
     /**
@@ -232,10 +232,10 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         emit CreditOracleChanged(_creditOracle);
     }
 
-    function setRateAdjuster(ITrueRateAdjuster _rateAdjuster) external onlyAdmin {
-        require(address(_rateAdjuster) != address(0), "LoanFactory: Cannot set rate adjuster to zero address");
-        rateAdjuster = _rateAdjuster;
-        emit RateAdjusterChanged(_rateAdjuster);
+    function setCreditModel(ICreditModel _creditModel) external onlyAdmin {
+        require(address(_creditModel) != address(0), "LoanFactory: Cannot set credit model to zero address");
+        creditModel = _creditModel;
+        emit CreditModelChanged(_creditModel);
     }
 
     function setBorrowingMutex(IBorrowingMutex _mutex) external onlyAdmin {

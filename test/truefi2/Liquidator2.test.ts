@@ -17,7 +17,7 @@ import {
   MockTrueFiPoolOracle,
   MockTrueFiPoolOracle__factory,
   TrueFiCreditOracle__factory,
-  TrueRateAdjuster,
+  CreditModel,
 } from 'contracts'
 
 import { solidity } from 'ethereum-waffle'
@@ -61,7 +61,7 @@ describe('Liquidator2', () => {
   let debtToken2: DebtToken
   let creditOracle: TrueFiCreditOracle
   let tusdOracle: MockTrueFiPoolOracle
-  let rateAdjuster: TrueRateAdjuster
+  let creditModel: CreditModel
 
   let timeTravel: (time: number) => void
 
@@ -92,7 +92,7 @@ describe('Liquidator2', () => {
       standardPool: tusdPool,
       creditOracle,
       standardTokenOracle: tusdOracle,
-      rateAdjuster,
+      creditModel,
     } = await setupTruefi2(owner, _provider))
 
     loan = await createLoan(loanFactory, borrower, usdcPool, parseUSDC(1000), YEAR, 1000)
@@ -116,7 +116,7 @@ describe('Liquidator2', () => {
     await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
     await ftlAgency.allowBorrower(borrower.address)
 
-    await rateAdjuster.setRiskPremium(400)
+    await creditModel.setRiskPremium(400)
   })
 
   describe('Initializer', () => {
