@@ -26,11 +26,11 @@ export const setUtilization = async (
   const poolValue = await pool.poolValue()
   const utilizationAmount = poolValue.mul(utilization).div(100)
   if (utilization <= 15) {
-    await ftlAgency.connect(borrower1).fund(pool.address, utilizationAmount, DAY, 2000)
+    await ftlAgency.connect(borrower1).borrow(pool.address, utilizationAmount, DAY, 2000)
     return
   }
   if (utilization <= 30) {
-    await ftlAgency.connect(borrower1).fund(pool.address, poolValue.mul(15).div(100), DAY, 2000)
+    await ftlAgency.connect(borrower1).borrow(pool.address, poolValue.mul(15).div(100), DAY, 2000)
   } else {
     // bump liquidity temporarily to bypass
     // loan amount restriction of 15% pool value
@@ -38,7 +38,7 @@ export const setUtilization = async (
     await tusd.connect(owner).approve(pool.address, poolValue.mul(9))
     await pool.connect(owner).join(poolValue.mul(9))
 
-    await ftlAgency.connect(borrower1).fund(pool.address, utilizationAmount, DAY, 2000)
+    await ftlAgency.connect(borrower1).borrow(pool.address, utilizationAmount, DAY, 2000)
 
     await pool.connect(owner).liquidExit(poolValue.mul(89).div(10))
   }
@@ -55,5 +55,5 @@ export const setUtilization = async (
   if (loanAmount.gt(liquidityLeft)) {
     loanAmount = liquidityLeft
   }
-  await ftlAgency.connect(borrower2).fund(pool.address, loanAmount, DAY, 50000)
+  await ftlAgency.connect(borrower2).borrow(pool.address, loanAmount, DAY, 50000)
 }

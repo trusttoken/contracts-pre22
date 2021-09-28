@@ -7,7 +7,7 @@ import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
-import {ITrueRateAdjuster} from "./interface/ITrueRateAdjuster.sol";
+import {ICreditModel} from "./interface/ICreditModel.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {ITrueCreditAgency} from "./interface/ITrueCreditAgency.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
@@ -27,14 +27,14 @@ interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
  * - Tracks interest rates and cumulative interest owed
  * - Data is grouped by score in "buckets" for scalability
  * - poke() functions used to update state for buckets
- * - Uses TrueRateAdjuster to calculate rates & limits
+ * - Uses CreditModel to calculate rates & limits
  * - Responsible for approving borrowing from TrueFi pools using Lines of Credit
  */
 contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     using SafeERC20 for ERC20;
     using SafeMath for uint256;
 
-    enum DefaultReason {NotAllowed, Ineligible, BelowMinScore, InterestOverdue, TimeLimitExceeded}
+    enum DefaultReason {NotAllowed, Ineligible, BelowMinScore, InterestOverdue, BorrowLimitExceeded}
 
     /// @dev credit scores are uint8
     uint8 constant MAX_CREDIT_SCORE = 255;
@@ -104,8 +104,8 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     /// @dev period over which regular interest payments must be made
     uint256 public interestRepaymentPeriod;
 
-    /// @dev rate adjuster
-    ITrueRateAdjuster public rateAdjuster;
+    /// @dev credit model
+    ICreditModel public creditModel;
 
     /// @dev credit oracle
     ITrueFiCreditOracle public creditOracle;
@@ -137,8 +137,8 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     /// @dev emit `pool` and `oracle` when base rate oracle changed
     event BaseRateOracleChanged(ITrueFiPool2 pool, ITimeAveragedBaseRateOracle oracle);
 
-    /// @dev emit `newRateAdjuster` when rate adjuster changed
-    event TrueRateAdjusterChanged(ITrueRateAdjuster newRateAdjuster);
+    /// @dev emit `newCreditModel` when credit model changed
+    event CreditModelChanged(ICreditModel newCreditModel);
 
     /// @dev emit `newPoolFactory` when pool factory changed
     event PoolFactoryChanged(IPoolFactory newPoolFactory);
@@ -169,14 +169,14 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     /// @dev initialize
     function initialize(
         ITrueFiCreditOracle _creditOracle,
-        ITrueRateAdjuster _rateAdjuster,
+        ICreditModel _creditModel,
         IBorrowingMutex _borrowingMutex,
         IPoolFactory _poolFactory,
         ILoanFactory2 _loanFactory
     ) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
         creditOracle = _creditOracle;
-        rateAdjuster = _rateAdjuster;
+        creditModel = _creditModel;
         borrowingMutex = _borrowingMutex;
         poolFactory = _poolFactory;
         loanFactory = _loanFactory;
@@ -190,11 +190,11 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         _;
     }
 
-    /// @dev Set rateAdjuster to `newRateAdjuster` and update state
-    function setRateAdjuster(ITrueRateAdjuster newRateAdjuster) external onlyOwner {
-        rateAdjuster = newRateAdjuster;
+    /// @dev Set creditModel to `newCreditModel` and update state
+    function setCreditModel(ICreditModel newCreditModel) external onlyOwner {
+        creditModel = newCreditModel;
         pokeAll();
-        emit TrueRateAdjusterChanged(newRateAdjuster);
+        emit CreditModelChanged(newCreditModel);
     }
 
     /// @dev Set poolFactory to `newPoolFactory` and update state
@@ -255,24 +255,24 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         return (oldScore, newScore);
     }
 
-    /// @dev Get credit score adjustment from rate adjuster
+    /// @dev Get credit score adjustment from credit model
     function creditScoreAdjustmentRate(ITrueFiPool2 pool, address borrower) public view returns (uint256) {
-        return rateAdjuster.creditScoreAdjustmentRate(creditScore[pool][borrower]);
+        return creditModel.creditScoreAdjustmentRate(creditScore[pool][borrower]);
     }
 
-    /// @dev Get utilization adjustment from rate adjuster
+    /// @dev Get utilization adjustment from credit model
     function utilizationAdjustmentRate(ITrueFiPool2 pool) public view returns (uint256) {
-        return rateAdjuster.utilizationAdjustmentRate(pool, 0);
+        return creditModel.utilizationAdjustmentRate(pool, 0);
     }
 
-    /// @dev Get pool basic rate from rate adjuster
+    /// @dev Get pool basic rate from credit model
     function poolBasicRate(ITrueFiPool2 pool) public view returns (uint256) {
-        return rateAdjuster.poolBasicRate(pool, 0);
+        return creditModel.poolBasicRate(pool, 0);
     }
 
-    /// @dev Get borrow limit adjustment from rate adjuster
+    /// @dev Get borrow limit adjustment from credit model
     function borrowLimitAdjustment(uint8 score) public view returns (uint256) {
-        return rateAdjuster.borrowLimitAdjustment(score);
+        return creditModel.borrowLimitAdjustment(score);
     }
 
     /**
@@ -291,14 +291,14 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     }
 
     /**
-     * @dev Get borrow limit for `borrower` in `pool` using rate adjuster
+     * @dev Get borrow limit for `borrower` in `pool` using credit model
      * @param pool Pool to get borrow limit for
      * @param borrower Borrower to get borrow limit for
      * @return borrow limit for `borrower` in `pool`
      */
     function borrowLimit(ITrueFiPool2 pool, address borrower) public view returns (uint256) {
         return
-            rateAdjuster.borrowLimit(
+            creditModel.borrowLimit(
                 pool,
                 creditOracle.score(borrower),
                 creditOracle.maxBorrowerLimit(borrower),
@@ -308,7 +308,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
 
     function isOverLimit(ITrueFiPool2 pool, address borrower) public view returns (bool) {
         return
-            rateAdjuster.isOverLimit(
+            creditModel.isOverLimit(
                 pool,
                 creditOracle.score(borrower),
                 creditOracle.maxBorrowerLimit(borrower),
@@ -317,11 +317,11 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
     }
 
     /**
-     * @dev Get current rate for `borrower` in `pool` from rate adjuster
+     * @dev Get current rate for `borrower` in `pool` from credit model
      * @return current rate for `borrower` in `pool`
      */
     function currentRate(ITrueFiPool2 pool, address borrower) external view returns (uint256) {
-        return rateAdjuster.rate(pool, creditScore[pool][borrower], 0);
+        return creditModel.rate(pool, creditScore[pool][borrower], 0);
     }
 
     /**
@@ -389,6 +389,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
      * @param amount Amount of tokens to repay
      */
     function repay(ITrueFiPool2 pool, uint256 amount) public {
+        require(poolFactory.isSupportedPool(pool), "TrueCreditAgency: The pool is not supported");
         uint256 currentDebt = borrowed[pool][msg.sender];
         uint256 accruedInterest = interest(pool, msg.sender);
         require(currentDebt.add(accruedInterest) >= amount, "TrueCreditAgency: Cannot repay over the debt");
@@ -453,7 +454,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
             }
             uint256 _overBorrowLimitTime = overBorrowLimitTime[pool][borrower];
             if (_overBorrowLimitTime != 0 && defaultTime >= _overBorrowLimitTime) {
-                _enterDefault(borrower, DefaultReason.TimeLimitExceeded);
+                _enterDefault(borrower, DefaultReason.BorrowLimitExceeded);
                 return;
             }
         }
@@ -504,6 +505,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
      * @param pool Pool to update state for
      */
     function poke(ITrueFiPool2 pool) public {
+        require(poolFactory.isSupportedPool(pool), "TrueCreditAgency: The pool is not supported for poking");
         uint256 bitMap = usedBucketsBitmap;
         uint256 timeNow = block.timestamp;
         // get basic pool rate
@@ -557,7 +559,7 @@ contract TrueCreditAgency is UpgradeableClaimable, ITrueCreditAgency {
         poolTotalInterest[pool] = poolTotalInterest[pool].add(bucket.totalBorrowed.mul(newInterestPerShare));
         bucket.cumulativeInterestPerShare = bucket.cumulativeInterestPerShare.add(newInterestPerShare);
 
-        bucket.rate = rateAdjuster.combinedRate(poolRate, rateAdjuster.creditScoreAdjustmentRate(bucketNumber));
+        bucket.rate = creditModel.combinedRate(poolRate, creditModel.creditScoreAdjustmentRate(bucketNumber));
         bucket.timestamp = uint128(timeNow);
     }
 
