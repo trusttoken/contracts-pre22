@@ -122,7 +122,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         _;
     }
 
-    modifier onlyTCA() {
+    modifier onlyLineOfCreditAgency() {
         require(msg.sender == address(creditAgency), "LoanFactory: Caller is not the credit agency");
         _;
     }
@@ -210,7 +210,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         ITrueFiPool2 _pool,
         address _borrower,
         uint256 _debt
-    ) external override onlyTCA returns (IDebtToken) {
+    ) external override onlyLineOfCreditAgency returns (IDebtToken) {
         address dtImplementationAddress = address(debtTokenImplementation);
         require(dtImplementationAddress != address(0), "LoanFactory: Debt token implementation should be set");
 

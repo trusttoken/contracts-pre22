@@ -1040,7 +1040,7 @@ describe('LineOfCreditAgency', () => {
       })
     })
 
-    describe('makes LoC repaid from TCA point of view', () => {
+    describe('makes LoC repaid from CreditAgency point of view', () => {
       beforeEach(async () => {
         await creditAgency.allowBorrower(borrower.address, false)
       })

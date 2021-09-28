@@ -17,9 +17,9 @@ export const createLoan = async function (factory: LoanFactory2, creator: Wallet
   return new LoanToken2__factory(creator).attach(loanAddress)
 }
 
-export const createDebtToken = async (loanFactory: LoanFactory2, tca: Wallet, owner: Wallet, pool: TrueFiPool2, borrower: Wallet, debt: BigNumberish) => {
-  await loanFactory.setCreditAgency(tca.address)
-  const tx = await loanFactory.connect(tca).createDebtToken(pool.address, borrower.address, debt)
+export const createDebtToken = async (loanFactory: LoanFactory2, creditAgency: Wallet, owner: Wallet, pool: TrueFiPool2, borrower: Wallet, debt: BigNumberish) => {
+  await loanFactory.setCreditAgency(creditAgency.address)
+  const tx = await loanFactory.connect(creditAgency).createDebtToken(pool.address, borrower.address, debt)
   const creationEvent = (await tx.wait()).events[1]
   return DebtToken__factory.connect(creationEvent.args.contractAddress, owner)
 }
