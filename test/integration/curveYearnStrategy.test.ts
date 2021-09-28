@@ -20,7 +20,7 @@ import { mock1Inch_CYS } from './data'
 
 use(solidity)
 
-describe('[Skip CI] Curve Yearn Pool Strategy', () => {
+describe('Curve Yearn Pool Strategy', () => {
   const USDC_HOLDER = '0x55fe002aeff02f77364de339a1292923a15844b8'
   const USDC_ADDRESS = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
   const provider = forkChain('https://eth-mainnet.alchemyapi.io/v2/Vc3xNXIWdxEbDOToa69DhWeyhgFVBDWl', [CONTRACTS_OWNER, USDC_HOLDER, ETHER_HOLDER], 13287798)
@@ -87,7 +87,7 @@ describe('[Skip CI] Curve Yearn Pool Strategy', () => {
     expect(await usdc.balanceOf(pool.address)).to.be.gte(amount.mul(999).div(1000)) // Curve fees
   }).timeout(10000000)
 
-  it('[Skip CI] Mine CRV on Curve gauge and sell on 1Inch, CRV is not part of value', async () => {
+  it('Mine CRV on Curve gauge and sell on 1Inch, CRV is not part of value', async () => {
     await retry(() => pool.flush(amount))
     await timeTravel(provider, DAY * 10)
 

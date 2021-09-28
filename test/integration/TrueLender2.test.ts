@@ -103,7 +103,7 @@ describe('TrueLender2', () => {
     await borrowingMutex.allowLocker(lender.address, true)
   })
 
-  it('[Skip CI] ensure max 1% swap fee slippage', async () => {
+  it('ensure max 1% swap fee slippage', async () => {
     const tx = await loanFactory.createLoanToken(tusdLoanPool.address, parseEth(1_000_000), DAY * 90, MAX_APY)
     const creationEvent = (await tx.wait()).events[0]
     const { loanToken } = creationEvent.args
