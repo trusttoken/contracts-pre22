@@ -32,7 +32,7 @@ import {
   MockTrueFiPoolOracle__factory,
   Safu,
   Safu__factory,
-  TrueRateAdjuster__factory,
+  CreditModel__factory,
   BorrowingMutex__factory,
 } from 'contracts'
 import { ICurveGaugeJson, ICurveMinterJson, TrueRatingAgencyV2Json } from 'build'
@@ -502,11 +502,11 @@ describe('TrueFiPool', () => {
 
     const factory = await new PoolFactory__factory(owner).deploy()
     const lender2 = await new TrueLender2__factory(owner).deploy()
-    const rateAdjuster = await new TrueRateAdjuster__factory(owner).deploy()
+    const creditModel = await new CreditModel__factory(owner).deploy()
     const borrowingMutex = await new BorrowingMutex__factory(owner).deploy()
     await borrowingMutex.initialize()
     await borrowingMutex.allowLocker(lender2.address, true)
-    await lender2.initialize(mockStakingPool.address, factory.address, AddressZero, AddressZero, rateAdjuster.address, borrowingMutex.address)
+    await lender2.initialize(mockStakingPool.address, factory.address, AddressZero, AddressZero, creditModel.address, borrowingMutex.address)
     await factory.initialize(implementationReference.address, lender2.address, AddressZero, safu.address)
     await factory.addLegacyPool(pool.address)
     const usdc = await new MockErc20Token__factory(owner).deploy()

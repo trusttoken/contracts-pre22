@@ -1,4 +1,4 @@
-## `ITrueRateAdjuster`
+## `ICreditModel`
 
 
 
