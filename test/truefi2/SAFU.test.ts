@@ -36,6 +36,7 @@ import {
   MockErc20Token__factory,
   MockTrueFiPoolOracle__factory,
   MockErc20Token,
+  TrueRateAdjuster,
 } from 'contracts'
 
 import {
