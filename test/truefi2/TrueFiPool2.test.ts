@@ -236,7 +236,7 @@ describe('TrueFiPool2', () => {
         .to.be.revertedWith('Ownable: caller is not the owner')
     })
 
-    it('properly changes Credit Agency address', async () => {
+    it('properly changes FixedTermLoanAgency address', async () => {
       await tusdPool.setFixedTermLoanAgency(AddressZero)
       expect(await tusdPool.ftlAgency()).to.equal(AddressZero)
       await tusdPool.setFixedTermLoanAgency(ftlAgency.address)
