@@ -58,13 +58,14 @@ describe('SAFU', () => {
   let stkTru: StkTruToken
   let creditOracle: TrueFiCreditOracle
   let borrowingMutex: BorrowingMutex
+  let rateAdjuster: TrueRateAdjuster
 
   let timeTravel: (time: number) => void
 
   const YEAR = DAY * 365
   const defaultedLoanCloseTime = YEAR + 3 * DAY
 
-  const defaultAmount = parseUSDC(1080)
+  const defaultAmount = parseUSDC(1100)
 
   const createDebtToken = async (pool: TrueFiPool2, debt: BigNumberish) => {
     return _createDebtToken(loanFactory, owner, owner, pool, borrower, debt)
@@ -87,6 +88,7 @@ describe('SAFU', () => {
       liquidator,
       creditOracle,
       borrowingMutex,
+      rateAdjuster,
     } = await setupTruefi2(owner, _provider, { oneInch: oneInch }))
 
     await token.mint(owner.address, parseUSDC(1e7))
@@ -95,6 +97,7 @@ describe('SAFU', () => {
 
     await creditOracle.setScore(borrower.address, 255)
     await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
+    await rateAdjuster.setRiskPremium(400)
 
     await ftlAgency.allowBorrower(borrower.address)
     const tx = ftlAgency.connect(borrower).fund(pool.address, parseUSDC(1000), YEAR, 1000)
@@ -335,7 +338,7 @@ describe('SAFU', () => {
           await stkTru.stake(parseTRU(1e7))
 
           await safu.liquidate([loan.address])
-          expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(4320))
+          expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(4400))
         })
       })
 
@@ -360,7 +363,7 @@ describe('SAFU', () => {
           await stkTru.stake(parseTRU(1e7))
 
           await safu.liquidate([loan.address])
-          expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(2120))
+          expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(22e2))
         })
       })
     })
@@ -468,7 +471,7 @@ describe('SAFU', () => {
 
     it('burns loan tokens', async () => {
       await safu.liquidate([loan.address])
-      await expect(() => safu.redeem(loan.address)).changeTokenBalance(loan, safu, parseUSDC(1080).mul(-1))
+      await expect(() => safu.redeem(loan.address)).changeTokenBalance(loan, safu, parseUSDC(1100).mul(-1))
     })
 
     it('redeems available tokens', async () => {
