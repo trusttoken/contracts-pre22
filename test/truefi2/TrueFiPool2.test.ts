@@ -18,7 +18,7 @@ import {
   MockTrueCurrency__factory,
   FixedTermLoanAgency,
 } from 'contracts'
-import { MockProvider, solidity, deployMockContract } from 'ethereum-waffle'
+import { MockProvider, solidity } from 'ethereum-waffle'
 import { BigNumber, Wallet } from 'ethers'
 import { AddressZero } from '@ethersproject/constants'
 import {
@@ -32,9 +32,7 @@ import {
   setupTruefi2,
   timeTravel as _timeTravel,
   YEAR,
-  createLoanViaAgency,
 } from 'utils'
-import { TrueRateAdjusterJson } from 'build'
 import { Deployer, setupDeploy } from 'scripts/utils'
 import { beforeEach } from 'mocha'
 
@@ -737,18 +735,12 @@ describe('TrueFiPool2', () => {
 
     it('in order to borrow from pool it has to have liquidity', async () => {
       await setUtilization(90)
-
+      const fakeFTLAgency = borrower
       const amount = (await tusdPool.poolValue()).div(10).add(1)
-      const mockRateAdjuster = await deployMockContract(owner, TrueRateAdjusterJson.abi)
-      await mockRateAdjuster.mock.fixedTermLoanAdjustment.returns(0)
-      await mockRateAdjuster.mock.rate.returns(0)
-      await mockRateAdjuster.mock.borrowLimit.returns(parseEth(100_000_000))
-      await ftlAgency.setRateAdjuster(mockRateAdjuster.address)
-
-      await expect(ftlAgency.connect(borrower).fund(tusdPool.address, amount, DAY, 50000))
+      await tusdPool.setFixedTermLoanAgency(fakeFTLAgency.address)
+      await expect(tusdPool.connect(fakeFTLAgency).borrow(amount))
         .to.be.revertedWith('TrueFiPool: Insufficient liquidity')
-
-      await expect(ftlAgency.connect(borrower).fund(tusdPool.address, 500000, DAY, 50000))
+      await expect(tusdPool.connect(fakeFTLAgency).borrow(500000))
         .not.to.be.reverted
     })
 
@@ -780,7 +772,8 @@ describe('TrueFiPool2', () => {
       await tusd.approve(tusdPool.address, parseEth(100))
       await tusdPool.join(parseEth(100))
 
-      loan = await createLoanViaAgency(ftlAgency, loanFactory, borrower, tusdPool, 100_000, DAY, 0)
+      const tx = ftlAgency.connect(borrower).fund(tusdPool.address, 100_000, 1800, 1000)
+      loan = await extractLoanTokenAddress(tx, owner, loanFactory)
       await payBack(tusd, loan)
       await loan.settle()
     })
