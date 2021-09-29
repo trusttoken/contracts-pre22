@@ -263,6 +263,14 @@
     "chainlinkTruUsdtOracle": {
       "txHash": "0xc3ce64ee9b04b63eded1334e46e95e9048332eaa97cd59ac470d219175a03462",
       "address": "0xc02E05C671Cad8C27F7e64fD6898e75a8D4CC2B0"
+    },
+    "trueFiVault": {
+      "txHash": "0xd3b0cf2ac7331e9fb5e5c4ade75ac7fad427502f5e4a6858adee960306340e11",
+      "address": "0xfA15a30EDa728E3cDc628BA7c703039543C8e42f"
+    },
+    "trueFiVault_proxy": {
+      "txHash": "0x0ee506d990d6dd15707e0257d4051388e5d6cb52ecebce3fec6bf3dd175c4610",
+      "address": "0x9BE7163Bb1842270f5dd20cB7F346702314E16Fd"
     }
   }
 }
