@@ -5,7 +5,7 @@ import {
   TrueFiPool2,
 } from 'contracts'
 import { BigNumberish, Wallet } from 'ethers'
-import { connectMockContract } from 'utils/connectMockContract'
+import { connectMockContract } from 'utils'
 import { CreditModelJson } from 'build'
 import { MAX_APY } from './constants'
 

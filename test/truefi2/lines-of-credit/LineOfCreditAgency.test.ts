@@ -11,7 +11,7 @@ import {
   LineOfCreditAgency__factory,
   TrueFiCreditOracle,
   TrueFiPool2,
-  TrueLender2,
+  FixedTermLoanAgency,
   CreditModel,
 } from 'contracts'
 import {
@@ -45,7 +45,7 @@ describe('LineOfCreditAgency', () => {
   let usdcPool: TrueFiPool2
   let loanFactory: LoanFactory2
   let creditModel: CreditModel
-  let lender: TrueLender2
+  let ftlAgency: FixedTermLoanAgency
   let creditOracle: TrueFiCreditOracle
   let tusdBaseRateOracle: TimeAveragedBaseRateOracle
   let mockSpotOracle: MockContract
@@ -75,7 +75,7 @@ describe('LineOfCreditAgency', () => {
       feeToken: usdc,
       feePool: usdcPool,
       loanFactory,
-      lender,
+      ftlAgency,
       creditAgency,
       creditOracle,
       standardBaseRateOracle: tusdBaseRateOracle,
@@ -1225,27 +1225,14 @@ describe('LineOfCreditAgency', () => {
     const setUtilization = (utilization: number) => (
       _setUtilization(
         tusd,
-        loanFactory,
         owner,
         borrower2,
-        lender,
+        ftlAgency,
         owner,
         tusdPool,
         utilization,
       )
     )
-
-    describe('setUtilization', () => {
-      [0, 10, 25, 75, 100].map((utilization) => {
-        it(`sets utilization to ${utilization} percent`, async () => {
-          await setUtilization(utilization)
-          const poolValue = await tusdPool.poolValue()
-          const liquidValue = await tusdPool.liquidValue()
-          const poolUtilization = poolValue.sub(liquidValue).mul(10_000).div(poolValue)
-          expect(poolUtilization).to.eq(utilization * 100)
-        })
-      })
-    })
 
     it('utilizationAdjustmentRate', async () => {
       await setUtilization(70)

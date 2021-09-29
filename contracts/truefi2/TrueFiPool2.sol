@@ -599,7 +599,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      */
     function liquidateLoan(IDebtToken loan) external override {
         require(msg.sender == address(safu), "TrueFiPool: Should be called by SAFU");
-        lender.transferAllLoanTokens(ILoanToken2(address(loan)), address(safu));
+        ftlAgency.transferAllLoanTokens(ILoanToken2(address(loan)), address(safu));
     }
 
     /**
