@@ -17,7 +17,6 @@ import { expect, use } from 'chai'
 import { solidity } from 'ethereum-waffle'
 import { DAY, expectScaledCloseTo, timeTravel } from 'utils'
 import { mock1Inch_CYS } from './data'
-import { Provider } from 'web3/providers'
 import { JsonRpcSigner, Web3Provider } from '@ethersproject/providers'
 
 use(solidity)
