@@ -1,5 +1,16 @@
 import { expect } from 'chai'
-import { beforeEachWithFixture, createLoan, DAY, parseTRU, parseUSDC, parseEth, setupTruefi2, timeTravel as _timeTravel, createDebtToken as _createDebtToken } from 'utils'
+import {
+  beforeEachWithFixture,
+  createLoan,
+  DAY,
+  parseTRU,
+  parseUSDC,
+  parseEth,
+  setupTruefi2,
+  timeTravel as _timeTravel,
+  createDebtToken as _createDebtToken,
+  extractLoanTokenAddress,
+} from 'utils'
 import { BigNumberish, utils, Wallet } from 'ethers'
 import { AddressZero } from '@ethersproject/constants'
 
@@ -19,12 +30,13 @@ import {
   TrueFiPool2,
   TrueFiPool2__factory,
   PoolFactory,
-  TrueLender2,
+  FixedTermLoanAgency,
   TrueFiCreditOracle,
   DebtToken,
   MockErc20Token__factory,
   MockTrueFiPoolOracle__factory,
   MockErc20Token,
+  CreditModel,
 } from 'contracts'
 
 import {
@@ -40,13 +52,14 @@ describe('SAFU', () => {
   let loanFactory: LoanFactory2
   let pool: TrueFiPool2
   let poolFactory: PoolFactory
-  let lender: TrueLender2
+  let ftlAgency: FixedTermLoanAgency
   let oneInch: Mock1InchV3
   let liquidator: Liquidator2
   let tru: MockTrueCurrency
   let stkTru: StkTruToken
   let creditOracle: TrueFiCreditOracle
   let borrowingMutex: BorrowingMutex
+  let creditModel: CreditModel
 
   let timeTravel: (time: number) => void
 
@@ -69,18 +82,18 @@ describe('SAFU', () => {
       feeToken: token,
       feePool: pool,
       poolFactory,
-      lender,
+      ftlAgency,
       loanFactory,
       tru,
       stkTru,
       liquidator,
       creditOracle,
       borrowingMutex,
+      creditModel,
     } = await setupTruefi2(owner, _provider, { oneInch: oneInch }))
 
     const legacyLoanTokenImpl = await new LegacyLoanToken2__factory(owner).deploy()
     await loanFactory.setLoanTokenImplementation(legacyLoanTokenImpl.address)
-    loan = await createLoan(loanFactory, borrower, pool, parseUSDC(1000), YEAR, 1000) as any
 
     await token.mint(owner.address, parseUSDC(1e7))
     await token.approve(pool.address, parseUSDC(1e7))
@@ -88,8 +101,12 @@ describe('SAFU', () => {
 
     await creditOracle.setScore(borrower.address, 255)
     await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
+    await creditModel.setRiskPremium(400)
 
-    await lender.connect(borrower).fund(loan.address)
+    await ftlAgency.allowBorrower(borrower.address)
+    const tx = ftlAgency.connect(borrower).borrow(pool.address, parseUSDC(1000), YEAR, 1000)
+    loan = await extractLoanTokenAddress(tx, owner, loanFactory)
+
     await loan.connect(borrower).withdraw(borrower.address)
 
     await tru.mint(owner.address, parseTRU(1e7))
@@ -154,7 +171,6 @@ describe('SAFU', () => {
 
       beforeEach(async () => {
         await token.mint(safu.address, defaultAmount)
-        await loanFactory.setLender(owner.address)
         await loanFactory.setCreditAgency(owner.address)
         await pool.setCreditAgency(owner.address)
         debtToken = await createDebtToken(pool, defaultAmount)
@@ -224,7 +240,6 @@ describe('SAFU', () => {
           const [pool2, token2] = await createSupportedPool(poolFactory)
           await token2.mint(safu.address, defaultAmount)
 
-          await loanFactory.setLender(owner.address)
           await loanFactory.setCreditAgency(owner.address)
           await pool.setCreditAgency(owner.address)
           await pool2.setCreditAgency(owner.address)
@@ -282,7 +297,6 @@ describe('SAFU', () => {
           const [pool2, token2] = await createSupportedPool(poolFactory)
           await token2.mint(safu.address, defaultAmount.div(2))
 
-          await loanFactory.setLender(owner.address)
           await loanFactory.setCreditAgency(owner.address)
           await pool.setCreditAgency(owner.address)
           await pool2.setCreditAgency(owner.address)
