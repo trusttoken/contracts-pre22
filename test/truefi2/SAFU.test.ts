@@ -105,7 +105,7 @@ describe('SAFU', () => {
 
     await ftlAgency.allowBorrower(borrower.address)
     const tx = ftlAgency.connect(borrower).borrow(pool.address, parseUSDC(1000), YEAR, 1000)
-    loan = await extractLoanTokenAddress(tx, owner, loanFactory)
+    loan = await extractLoanTokenAddress(tx, owner, loanFactory) as any
 
     await loan.connect(borrower).withdraw(borrower.address)
 
