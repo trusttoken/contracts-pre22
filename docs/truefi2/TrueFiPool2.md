@@ -10,7 +10,7 @@ After exiting, an account will need to wait for LoanTokens to expire and burn th
 It is recommended to perform a zap or swap tokens on Uniswap for increased liquidity
 Funds are managed through an external function to save gas on deposits
 
-### `onlyLenderOrTrueCreditAgency()`
+### `onlyLenderOrLineOfCreditAgency()`
 
 
 
@@ -63,7 +63,7 @@ Allow pausing of deposits in case of emergency
 
 Change SAFU address
 
-### `setCreditAgency(contract ITrueCreditAgency _creditAgency)` (external)
+### `setCreditAgency(contract ILineOfCreditAgency _creditAgency)` (external)
 
 
 
@@ -372,7 +372,7 @@ Emitted when SAFU address is changed
 Emitted when pool reclaims deficit from SAFU
 
 
-### `CreditAgencyChanged(contract ITrueCreditAgency newCreditAgency)`
+### `CreditAgencyChanged(contract ILineOfCreditAgency newCreditAgency)`
 
 
 

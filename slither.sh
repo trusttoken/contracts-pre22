@@ -13,7 +13,7 @@ CONTRACTS=(
   'TrueMultiFarm'
   'TrueFiPool2'
   'TrueFiCreditOracle'
-  'TrueCreditAgency'
+  'LineOfCreditAgency'
   'TimeAveragedBaseRateOracle'
   'SpotBaseRateOracle'
   'SAFU'
