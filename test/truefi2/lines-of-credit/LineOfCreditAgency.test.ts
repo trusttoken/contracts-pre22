@@ -7,8 +7,8 @@ import {
   MockUsdc,
   PoolFactory,
   TimeAveragedBaseRateOracle,
-  TrueCreditAgency,
-  TrueCreditAgency__factory,
+  LineOfCreditAgency,
+  LineOfCreditAgency__factory,
   TrueFiCreditOracle,
   TrueFiPool2,
   FixedTermLoanAgency,
@@ -33,12 +33,12 @@ import { setupDeploy } from 'scripts/utils'
 
 use(solidity)
 
-describe('TrueCreditAgency', () => {
+describe('LineOfCreditAgency', () => {
   let provider: MockProvider
   let owner: Wallet
   let borrower: Wallet
   let borrower2: Wallet
-  let creditAgency: TrueCreditAgency
+  let creditAgency: LineOfCreditAgency
   let tusd: MockTrueCurrency
   let tusdPool: TrueFiPool2
   let usdc: MockUsdc
@@ -149,7 +149,7 @@ describe('TrueCreditAgency', () => {
 
     it('cannot be set to zero address', async () => {
       await expect(creditAgency.setPoolFactory(AddressZero))
-        .to.be.revertedWith('TrueCreditAgency: PoolFactory cannot be set to zero address')
+        .to.be.revertedWith('LineOfCreditAgency: PoolFactory cannot be set to zero address')
     })
 
     it('pool factory is properly set', async () => {
@@ -172,7 +172,7 @@ describe('TrueCreditAgency', () => {
 
     it('cannot be set to zero address', async () => {
       await expect(creditAgency.setLoanFactory(AddressZero))
-        .to.be.revertedWith('TrueCreditAgency: LoanFactory cannot be set to zero address')
+        .to.be.revertedWith('LineOfCreditAgency: LoanFactory cannot be set to zero address')
     })
 
     it('loan factory is properly set', async () => {
@@ -380,21 +380,21 @@ describe('TrueCreditAgency', () => {
     it('fails if borrower is not whitelisted', async () => {
       await creditAgency.allowBorrower(borrower.address, false)
       await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000))
-        .to.be.revertedWith('TrueCreditAgency: Sender is not allowed to borrow')
+        .to.be.revertedWith('LineOfCreditAgency: Sender is not allowed to borrow')
     })
 
     it('fails if borrower has credit score below required', async () => {
       await creditOracle.setScore(borrower.address, 191)
       await creditAgency.setMinCreditScore(192)
       await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000))
-        .to.be.revertedWith('TrueCreditAgency: Borrower has credit score below minimum')
+        .to.be.revertedWith('LineOfCreditAgency: Borrower has credit score below minimum')
     })
 
     it('fails if the credit score was not updated for too long', async () => {
       await creditOracle.connect(owner).setEligibleForDuration(borrower.address, DAY * 15)
       await timeTravel(DAY * 16)
       await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000))
-        .to.be.revertedWith('TrueCreditAgency: Sender not eligible to borrow')
+        .to.be.revertedWith('LineOfCreditAgency: Sender not eligible to borrow')
     })
 
     it('fails if borrower has missed the repay time', async () => {
@@ -402,7 +402,7 @@ describe('TrueCreditAgency', () => {
       await creditAgency.connect(borrower).borrow(tusdPool.address, 500)
       await timeTravel(DAY * 16)
       await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 500))
-        .to.be.revertedWith('TrueCreditAgency: Sender has overdue interest in this pool')
+        .to.be.revertedWith('LineOfCreditAgency: Sender has overdue interest in this pool')
     })
 
     it('fails if borrower mutex is already locked', async () => {
@@ -415,7 +415,7 @@ describe('TrueCreditAgency', () => {
 
     it('fails if borrower mutex is already locked and borrower has some debt', async () => {
       const deployContract = setupDeploy(owner)
-      const faultyCreditAgency = await deployContract(TrueCreditAgency__factory)
+      const faultyCreditAgency = await deployContract(LineOfCreditAgency__factory)
       const faultyBorrowingMutex = await deployContract(MockBorrowingMutex__factory)
 
       await faultyCreditAgency.initialize(creditOracle.address, creditModel.address, faultyBorrowingMutex.address, poolFactory.address, loanFactory.address)
@@ -427,13 +427,13 @@ describe('TrueCreditAgency', () => {
       await faultyBorrowingMutex.lock(borrower.address, owner.address)
 
       await expect(faultyCreditAgency.connect(borrower).borrow(tusdPool.address, 1000))
-        .to.be.revertedWith('TrueCreditAgency: Borrower cannot open two simultaneous debt positions')
+        .to.be.revertedWith('LineOfCreditAgency: Borrower cannot open two simultaneous debt positions')
     })
 
     it('cannot borrow from the pool that is not whitelisted', async () => {
       await poolFactory.unsupportPool(tusdPool.address)
       await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000))
-        .to.be.revertedWith('TrueCreditAgency: The pool is not supported for borrowing')
+        .to.be.revertedWith('LineOfCreditAgency: The pool is not supported for borrowing')
     })
 
     it('updates nextInterestRepayTime', async () => {
@@ -474,12 +474,12 @@ describe('TrueCreditAgency', () => {
 
       expect(await creditAgency.borrowLimit(tusdPool.address, borrower.address)).to.eq(parseEth(80.51))
       await expect(creditAgency.connect(borrower).borrow(tusdPool.address, parseEth(80.51).add(1)))
-        .to.be.revertedWith('TrueCreditAgency: Borrow amount cannot exceed borrow limit')
+        .to.be.revertedWith('LineOfCreditAgency: Borrow amount cannot exceed borrow limit')
 
       await creditAgency.connect(borrower).borrow(tusdPool.address, parseEth(75))
 
       await expect(creditAgency.connect(borrower).borrow(tusdPool.address, parseEth(5.51).add(1)))
-        .to.be.revertedWith('TrueCreditAgency: Borrow amount cannot exceed borrow limit')
+        .to.be.revertedWith('LineOfCreditAgency: Borrow amount cannot exceed borrow limit')
     })
 
     it('correctly handles the case when credit score is changing', async () => {
@@ -572,7 +572,7 @@ describe('TrueCreditAgency', () => {
     it('fails if pool is not supported', async () => {
       await poolFactory.unsupportPool(tusdPool.address)
       await expect(creditAgency.poke(tusdPool.address))
-        .to.be.revertedWith('TrueCreditAgency: The pool is not supported for poking')
+        .to.be.revertedWith('LineOfCreditAgency: The pool is not supported for poking')
     })
   })
 
@@ -587,13 +587,13 @@ describe('TrueCreditAgency', () => {
 
     it('cannot repay more than debt', async () => {
       await expect(creditAgency.connect(borrower).repay(tusdPool.address, 2000))
-        .to.be.revertedWith('TrueCreditAgency: Cannot repay over the debt')
+        .to.be.revertedWith('LineOfCreditAgency: Cannot repay over the debt')
     })
 
     it('fails if pool is not supported', async () => {
       await poolFactory.unsupportPool(usdcPool.address)
       await expect(creditAgency.connect(borrower).repay(usdcPool.address, 500))
-        .to.be.revertedWith('TrueCreditAgency: The pool is not supported')
+        .to.be.revertedWith('LineOfCreditAgency: The pool is not supported')
     })
 
     it('repays debt to the pool', async () => {
@@ -988,12 +988,12 @@ describe('TrueCreditAgency', () => {
         await creditAgency.connect(borrower).repayInFull(tusdPool.address)
         await creditAgency.connect(borrower).repayInFull(usdcPool.address)
         await expect(creditAgency.enterDefault(borrower.address))
-          .to.be.revertedWith('TrueCreditAgency: Cannot default a borrower with no open debt position')
+          .to.be.revertedWith('LineOfCreditAgency: Cannot default a borrower with no open debt position')
       })
 
       it('has no reason to default', async () => {
         await expect(creditAgency.enterDefault(borrower.address))
-          .to.be.revertedWith('TrueCreditAgency: Borrower has no reason to enter default at this time')
+          .to.be.revertedWith('LineOfCreditAgency: Borrower has no reason to enter default at this time')
       })
     })
 
@@ -1040,7 +1040,7 @@ describe('TrueCreditAgency', () => {
       })
     })
 
-    describe('makes LoC repaid from TCA point of view', () => {
+    describe('makes LoC repaid from CreditAgency point of view', () => {
       beforeEach(async () => {
         await creditAgency.allowBorrower(borrower.address, false)
       })

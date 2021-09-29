@@ -12,7 +12,7 @@ import {
   Safu,
   DeficiencyToken__factory,
   DeficiencyToken,
-  TrueCreditAgency,
+  LineOfCreditAgency,
   TrueFiCreditOracle,
   CreditModel,
   MockTrueCurrency__factory,
@@ -44,7 +44,7 @@ describe('TrueFiPool2', () => {
   let borrower: Wallet
   let borrower2: Wallet
   let borrower3: Wallet
-  let creditAgency: TrueCreditAgency
+  let creditAgency: LineOfCreditAgency
   let creditOracle: TrueFiCreditOracle
   let tusd: MockTrueCurrency
   let tusdPool: TrueFiPool2
@@ -239,7 +239,7 @@ describe('TrueFiPool2', () => {
         .to.be.revertedWith('Ownable: caller is not the owner')
     })
 
-    it('properly changes Credit Agency address', async () => {
+    it('properly changes FixedTermLoanAgency address', async () => {
       await tusdPool.setFixedTermLoanAgency(AddressZero)
       expect(await tusdPool.ftlAgency()).to.equal(AddressZero)
       await tusdPool.setFixedTermLoanAgency(ftlAgency.address)
@@ -1037,7 +1037,7 @@ describe('TrueFiPool2', () => {
     })
 
     it('reverts if not called by creditAgency', async () => {
-      await expect(tusdPool.connect(borrower).addDebt(debtToken.address, amount)).to.be.revertedWith('TruePool: Only TrueCreditAgency can add debtTokens')
+      await expect(tusdPool.connect(borrower).addDebt(debtToken.address, amount)).to.be.revertedWith('TruePool: Only LineOfCreditAgency can add debtTokens')
     })
   })
 })

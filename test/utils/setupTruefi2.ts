@@ -20,7 +20,7 @@ import {
   TestTrueLender,
   TimeAveragedBaseRateOracle,
   TimeAveragedBaseRateOracle__factory,
-  TrueCreditAgency__factory,
+  LineOfCreditAgency__factory,
   TrueFiCreditOracle__factory,
   TrueFiPool2__factory,
   TrueLender2,
@@ -57,7 +57,7 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
   const safu = await deployContract(Safu__factory)
   const creditModel = await deployContract(CreditModel__factory)
   const mockCreditModel = await deployMockContract(owner, CreditModelJson.abi)
-  const creditAgency = await deployContract(TrueCreditAgency__factory)
+  const creditAgency = await deployContract(LineOfCreditAgency__factory)
   const borrowingMutex = await deployContract(BorrowingMutex__factory)
 
   const poolFactory = await deployContract(PoolFactory__factory)

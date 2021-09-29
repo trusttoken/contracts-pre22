@@ -1,4 +1,4 @@
-import { DebtToken__factory, LoanFactory2, MockTrueCurrency, Safu, StkTruToken, TrueCreditAgency, TrueFiCreditOracle, TrueFiPool2 } from 'contracts'
+import { DebtToken__factory, LoanFactory2, MockTrueCurrency, Safu, StkTruToken, LineOfCreditAgency, TrueFiCreditOracle, TrueFiPool2 } from 'contracts'
 import { expect, use } from 'chai'
 import { MockProvider, solidity } from 'ethereum-waffle'
 import { ContractTransaction, Wallet } from 'ethers'
@@ -20,7 +20,7 @@ describe('Lines Of Credit flow', () => {
   let owner: Wallet
   let borrower: Wallet
   let staker: Wallet
-  let creditAgency: TrueCreditAgency
+  let creditAgency: LineOfCreditAgency
   let tusd: MockTrueCurrency
   let pool: TrueFiPool2
   let loanFactory: LoanFactory2
