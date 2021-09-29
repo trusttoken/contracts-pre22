@@ -12,9 +12,9 @@ import {
   Safu,
   DeficiencyToken__factory,
   DeficiencyToken,
-  TrueCreditAgency,
+  LineOfCreditAgency,
   TrueFiCreditOracle,
-  TrueRateAdjuster,
+  CreditModel,
   MockTrueCurrency__factory,
   FixedTermLoanAgency,
   LegacyLoanToken2__factory,
@@ -44,7 +44,7 @@ describe('TrueFiPool2', () => {
   let borrower: Wallet
   let borrower2: Wallet
   let borrower3: Wallet
-  let creditAgency: TrueCreditAgency
+  let creditAgency: LineOfCreditAgency
   let creditOracle: TrueFiCreditOracle
   let tusd: MockTrueCurrency
   let tusdPool: TrueFiPool2
@@ -57,7 +57,7 @@ describe('TrueFiPool2', () => {
   let poolStrategy1: MockStrategy
   let poolStrategy2: MockStrategy
   let badPoolStrategy: BadStrategy
-  let rateAdjuster: TrueRateAdjuster
+  let creditModel: CreditModel
   let ftlAgency: FixedTermLoanAgency
 
   let timeTravel: (time: number) => void
@@ -69,7 +69,7 @@ describe('TrueFiPool2', () => {
     timeTravel = (time: number) => _timeTravel(_provider, time)
     provider = _provider
 
-    ;({
+    ; ({
       standardToken: tusd,
       lender,
       standardPool: tusdPool,
@@ -78,7 +78,7 @@ describe('TrueFiPool2', () => {
       safu,
       creditAgency,
       creditOracle,
-      rateAdjuster,
+      creditModel,
       ftlAgency,
     } = await setupTruefi2(owner, provider))
 
@@ -92,7 +92,7 @@ describe('TrueFiPool2', () => {
 
     await tusdPool.setCreditAgency(creditAgency.address)
     await tusdPool.setFixedTermLoanAgency(ftlAgency.address)
-    await rateAdjuster.setRiskPremium(700)
+    await creditModel.setRiskPremium(700)
 
     for (const wallet of [borrower, borrower2, borrower3]) {
       await creditOracle.setScore(wallet.address, 255)
@@ -240,7 +240,7 @@ describe('TrueFiPool2', () => {
         .to.be.revertedWith('Ownable: caller is not the owner')
     })
 
-    it('properly changes Credit Agency address', async () => {
+    it('properly changes FixedTermLoanAgency address', async () => {
       await tusdPool.setFixedTermLoanAgency(AddressZero)
       expect(await tusdPool.ftlAgency()).to.equal(AddressZero)
       await tusdPool.setFixedTermLoanAgency(ftlAgency.address)
@@ -1118,7 +1118,7 @@ describe('TrueFiPool2', () => {
     })
 
     it('reverts if not called by creditAgency or any loan', async () => {
-      await expect(tusdPool.connect(borrower).addDebt(debtToken.address, amount)).to.be.revertedWith('TruePool: Only TrueCreditAgency and Loans can add debtTokens')
+      await expect(tusdPool.connect(borrower).addDebt(debtToken.address, amount)).to.be.revertedWith('TruePool: Only LineOfCreditAgency and Loans can add debtTokens')
     })
   })
 })

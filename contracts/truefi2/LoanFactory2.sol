@@ -10,10 +10,10 @@ import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {ILoanToken2, IDebtToken} from "./interface/ILoanToken2.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
-import {ITrueRateAdjuster} from "./interface/ITrueRateAdjuster.sol";
+import {ICreditModel} from "./interface/ICreditModel.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
 import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
-import {ITrueCreditAgency} from "./interface/ITrueCreditAgency.sol";
+import {ILineOfCreditAgency} from "./interface/ILineOfCreditAgency.sol";
 
 import {LoanToken2, IERC20} from "./LoanToken2.sol";
 import {DebtToken} from "./DebtToken.sol";
@@ -42,11 +42,11 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
 
     address public admin;
 
-    ITrueRateAdjuster public rateAdjuster;
+    ICreditModel public creditModel;
     ITrueFiCreditOracle public creditOracle;
     IBorrowingMutex public borrowingMutex;
     ILoanToken2 public loanTokenImplementation;
-    ITrueCreditAgency public creditAgency;
+    ILineOfCreditAgency public creditAgency;
     IDebtToken public debtTokenImplementation;
 
     // @dev Track valid debtTokens
@@ -70,13 +70,13 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
 
     event CreditOracleChanged(ITrueFiCreditOracle creditOracle);
 
-    event RateAdjusterChanged(ITrueRateAdjuster rateAdjuster);
+    event CreditModelChanged(ICreditModel creditModel);
 
     event BorrowingMutexChanged(IBorrowingMutex borrowingMutex);
 
     event LoanTokenImplementationChanged(ILoanToken2 loanTokenImplementation);
 
-    event CreditAgencyChanged(ITrueCreditAgency creditAgency);
+    event CreditAgencyChanged(ILineOfCreditAgency creditAgency);
 
     event LenderChanged(address lender);
 
@@ -96,17 +96,17 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         address _lender,
         IFixedTermLoanAgency _ftlAgency,
         address _liquidator,
-        ITrueRateAdjuster _rateAdjuster,
+        ICreditModel _creditModel,
         ITrueFiCreditOracle _creditOracle,
         IBorrowingMutex _borrowingMutex,
-        ITrueCreditAgency _creditAgency
+        ILineOfCreditAgency _creditAgency
     ) external initializer {
         poolFactory = _poolFactory;
         lender = _lender;
         ftlAgency = _ftlAgency;
         admin = msg.sender;
         liquidator = _liquidator;
-        rateAdjuster = _rateAdjuster;
+        creditModel = _creditModel;
         creditOracle = _creditOracle;
         borrowingMutex = _borrowingMutex;
         creditAgency = _creditAgency;
@@ -122,7 +122,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         _;
     }
 
-    modifier onlyTCAOrLoanToken() {
+    modifier onlyLineOfCreditAgencyOrLoanToken() {
         require(
             msg.sender == address(creditAgency) || isLoanToken[ILoanToken2(msg.sender)],
             "LoanFactory: Caller is neither credit agency nor loan"
@@ -145,8 +145,8 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         uint256 _term
     ) internal view returns (uint256) {
         uint8 borrowerScore = creditOracle.score(borrower);
-        uint256 fixedTermLoanAdjustment = rateAdjuster.fixedTermLoanAdjustment(_term);
-        return rateAdjuster.rate(pool, borrowerScore, amount).add(fixedTermLoanAdjustment);
+        uint256 fixedTermLoanAdjustment = creditModel.fixedTermLoanAdjustment(_term);
+        return creditModel.rate(pool, borrowerScore, amount).add(fixedTermLoanAdjustment);
     }
 
     /**
@@ -201,7 +201,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         ITrueFiPool2 _pool,
         address _borrower,
         uint256 _debt
-    ) external override onlyTCAOrLoanToken returns (IDebtToken) {
+    ) external override onlyLineOfCreditAgencyOrLoanToken returns (IDebtToken) {
         address dtImplementationAddress = address(debtTokenImplementation);
         require(dtImplementationAddress != address(0), "LoanFactory: Debt token implementation should be set");
 
@@ -223,10 +223,10 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         emit CreditOracleChanged(_creditOracle);
     }
 
-    function setRateAdjuster(ITrueRateAdjuster _rateAdjuster) external onlyAdmin {
-        require(address(_rateAdjuster) != address(0), "LoanFactory: Cannot set rate adjuster to zero address");
-        rateAdjuster = _rateAdjuster;
-        emit RateAdjusterChanged(_rateAdjuster);
+    function setCreditModel(ICreditModel _creditModel) external onlyAdmin {
+        require(address(_creditModel) != address(0), "LoanFactory: Cannot set credit model to zero address");
+        creditModel = _creditModel;
+        emit CreditModelChanged(_creditModel);
     }
 
     function setBorrowingMutex(IBorrowingMutex _mutex) external onlyAdmin {
@@ -241,7 +241,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         emit LoanTokenImplementationChanged(_implementation);
     }
 
-    function setCreditAgency(ITrueCreditAgency _creditAgency) external onlyAdmin {
+    function setCreditAgency(ILineOfCreditAgency _creditAgency) external onlyAdmin {
         require(address(_creditAgency) != address(0), "LoanFactory: Cannot set credit agency to zero address");
         creditAgency = _creditAgency;
         emit CreditAgencyChanged(_creditAgency);

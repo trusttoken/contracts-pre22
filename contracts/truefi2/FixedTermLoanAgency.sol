@@ -22,7 +22,7 @@ import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {ITrueRatingAgency} from "../truefi/interface/ITrueRatingAgency.sol";
 import {IERC20WithDecimals} from "./interface/IERC20WithDecimals.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
-import {ITrueRateAdjuster} from "./interface/ITrueRateAdjuster.sol";
+import {ICreditModel} from "./interface/ICreditModel.sol";
 import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
 
 interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
@@ -85,7 +85,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
 
     uint8 public longTermLoanScoreThreshold;
 
-    ITrueRateAdjuster public rateAdjuster;
+    ICreditModel public creditModel;
 
     // mutex ensuring there's only one running loan or credit line for borrower
     IBorrowingMutex public borrowingMutex;
@@ -185,7 +185,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
         IPoolFactory _poolFactory,
         I1Inch3 __1inch,
         ITrueFiCreditOracle _creditOracle,
-        ITrueRateAdjuster _rateAdjuster,
+        ICreditModel _creditModel,
         IBorrowingMutex _borrowingMutex,
         ILoanFactory2 _loanFactory
     ) public initializer {
@@ -195,7 +195,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
         poolFactory = _poolFactory;
         _1inch = __1inch;
         creditOracle = _creditOracle;
-        rateAdjuster = _rateAdjuster;
+        creditModel = _creditModel;
         borrowingMutex = _borrowingMutex;
         loanFactory = _loanFactory;
 
@@ -309,8 +309,8 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
         uint256 term
     ) public view returns (uint256) {
         uint8 borrowerScore = creditOracle.score(borrower);
-        uint256 fixedTermLoanAdjustment = rateAdjuster.fixedTermLoanAdjustment(term);
-        return rateAdjuster.rate(pool, borrowerScore, amount).add(fixedTermLoanAdjustment);
+        uint256 fixedTermLoanAdjustment = creditModel.fixedTermLoanAdjustment(term);
+        return creditModel.rate(pool, borrowerScore, amount).add(fixedTermLoanAdjustment);
     }
 
     /**
@@ -429,7 +429,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
     }
 
     /**
-     * @dev Get borrow limit for `borrower` in `pool` using rate adjuster
+     * @dev Get borrow limit for `borrower` in `pool` using credit model
      * @param pool Pool to get borrow limit for
      * @param borrower Borrower to get borrow limit for
      * @return borrow limit for `borrower` in `pool`
@@ -437,7 +437,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
     function borrowLimit(ITrueFiPool2 pool, address borrower) public view returns (uint256) {
         uint8 poolDecimals = ITrueFiPool2WithDecimals(address(pool)).decimals();
         return
-            rateAdjuster.borrowLimit(
+            creditModel.borrowLimit(
                 pool,
                 creditOracle.score(borrower),
                 creditOracle.maxBorrowerLimit(borrower),

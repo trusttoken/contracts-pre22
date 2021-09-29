@@ -1,4 +1,4 @@
-## `TrueCreditAgency`
+## `LineOfCreditAgency`
 
 
 
@@ -7,7 +7,7 @@ https://github.com/trusttoken/truefi-spec/blob/master/TrueFi2.0.md#lines-of-cred
 - Tracks interest rates and cumulative interest owed
 - Data is grouped by score in "buckets" for scalability
 - poke() functions used to update state for buckets
-- Uses TrueRateAdjuster to calculate rates & limits
+- Uses CreditModel to calculate rates & limits
 - Responsible for approving borrowing from TrueFi pools using Lines of Credit
 
 ### `onlyAllowedBorrowers()`
@@ -17,17 +17,17 @@ https://github.com/trusttoken/truefi-spec/blob/master/TrueFi2.0.md#lines-of-cred
 modifier for only whitelisted borrowers
 
 
-### `initialize(contract ITrueFiCreditOracle _creditOracle, contract ITrueRateAdjuster _rateAdjuster)` (public)
+### `initialize(contract ITrueFiCreditOracle _creditOracle, contract ICreditModel _creditModel)` (public)
 
 
 
 initialize
 
-### `setRateAdjuster(contract ITrueRateAdjuster newRateAdjuster)` (external)
+### `setCreditModel(contract ICreditModel newcreditModel)` (external)
 
 
 
-Set rateAdjuster to `newRateAdjuster` and update state
+Set creditModel to `newCreditModel` and update state
 
 ### `setInterestRepaymentPeriod(uint256 newPeriod)` (external)
 
@@ -73,19 +73,19 @@ Internal function to update `borrower` credit score for `pool` using credit orac
 
 
 
-Get credit score adjustment from rate adjuster
+Get credit score adjustment from credit model
 
 ### `utilizationAdjustmentRate(contract ITrueFiPool2 pool) → uint256` (public)
 
 
 
-Get utilization adjustment from rate adjuster
+Get utilization adjustment from credit model
 
 ### `borrowLimitAdjustment(uint8 score) → uint256` (public)
 
 
 
-Get borrow limit adjustment from rate adjuster
+Get borrow limit adjustment from credit model
 
 ### `totalTVL(uint8 decimals) → uint256` (public)
 
@@ -105,14 +105,14 @@ Get total amount borrowed for `borrower` from lines of credit in USD
 
 
 
-Get borrow limit for `borrower` in `pool` using rate adjuster
+Get borrow limit for `borrower` in `pool` using credit model
 
 
 ### `currentRate(contract ITrueFiPool2 pool, address borrower) → uint256` (external)
 
 
 
-Get current rate for `borrower` in `pool` from rate adjuster
+Get current rate for `borrower` in `pool` from credit model
 
 
 ### `interest(contract ITrueFiPool2 pool, address borrower) → uint256` (public)
@@ -202,28 +202,28 @@ Get value of a single line of credit for `borrower` in `pool`
 Move borrower from one bucket to another when borrower score changes
 
 
-### `_takeOutOfBucket(contract ITrueFiPool2 pool, struct TrueCreditAgency.CreditScoreBucket bucket, uint8 bucketNumber, address borrower) → uint256 totalBorrowerInterest` (internal)
+### `_takeOutOfBucket(contract ITrueFiPool2 pool, struct LineOfCreditAgency.CreditScoreBucket bucket, uint8 bucketNumber, address borrower) → uint256 totalBorrowerInterest` (internal)
 
 
 
 Internal function to take `borrower` out of a bucket
 
 
-### `_putIntoBucket(contract ITrueFiPool2 pool, struct TrueCreditAgency.CreditScoreBucket bucket, uint8 bucketNumber, address borrower)` (internal)
+### `_putIntoBucket(contract ITrueFiPool2 pool, struct LineOfCreditAgency.CreditScoreBucket bucket, uint8 bucketNumber, address borrower)` (internal)
 
 
 
 Internal function to put borrower into a bucket
 
 
-### `_totalBorrowerInterest(contract ITrueFiPool2 pool, struct TrueCreditAgency.CreditScoreBucket bucket, address borrower) → uint256` (internal)
+### `_totalBorrowerInterest(contract ITrueFiPool2 pool, struct LineOfCreditAgency.CreditScoreBucket bucket, address borrower) → uint256` (internal)
 
 
 
 Internal helper to calculate total borrower interest in a pool based on bucket share
 
 
-### `_interest(contract ITrueFiPool2 pool, struct TrueCreditAgency.CreditScoreBucket bucket, address borrower) → uint256` (internal)
+### `_interest(contract ITrueFiPool2 pool, struct LineOfCreditAgency.CreditScoreBucket bucket, address borrower) → uint256` (internal)
 
 
 
@@ -261,11 +261,11 @@ Called after "payWithoutTransfer" functions to satisfy check-effects interaction
 
 emit `pool` and `oracle` when base rate oracle changed
 
-### `TrueRateAdjusterChanged(contract ITrueRateAdjuster newRateAdjuster)`
+### `CreditModelChanged(contract ICreditModel newCreditModel)`
 
 
 
-emit `newRateAdjuster` when rate adjuster changed
+emit `newCreditModel` when credit model changed
 
 ### `BorrowerAllowed(address who, bool isAllowed)`
 

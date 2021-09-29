@@ -15,7 +15,7 @@ import {IDebtToken, ILoanToken2} from "./interface/ILoanToken2.sol";
 import {IPauseableContract} from "../common/interface/IPauseableContract.sol";
 import {ISAFU} from "./interface/ISAFU.sol";
 import {IDeficiencyToken} from "./interface/IDeficiencyToken.sol";
-import {ITrueCreditAgency} from "./interface/ITrueCreditAgency.sol";
+import {ILineOfCreditAgency} from "./interface/ILineOfCreditAgency.sol";
 
 import {ABDKMath64x64} from "../truefi/Log.sol";
 import {OneInchExchange} from "./libraries/OneInchExchange.sol";
@@ -90,7 +90,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
 
     ISAFU public safu;
 
-    ITrueCreditAgency public creditAgency;
+    ILineOfCreditAgency public creditAgency;
 
     uint256 public debtValue;
 
@@ -243,7 +243,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      * @dev Emitted when Credit Agency address is changed
      * @param newCreditAgency New Credit Agency address
      */
-    event CreditAgencyChanged(ITrueCreditAgency newCreditAgency);
+    event CreditAgencyChanged(ILineOfCreditAgency newCreditAgency);
 
     event FixedTermLoanAgencyChanged(IFixedTermLoanAgency newFTLAgency);
 
@@ -257,7 +257,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     /**
      * @dev only TrueLender, FixedTermLoanAgency, or CreditAgency can perform borrowing or repaying
      */
-    modifier onlyLenderOrFTLAgencyOrTrueCreditAgency() {
+    modifier onlyLenderOrFTLAgencyOrLineOfCreditAgency() {
         require(
             msg.sender == address(lender) || msg.sender == address(ftlAgency) || msg.sender == address(creditAgency),
             "TrueFiPool: Caller is not the lender, ftlAgency, or creditAgency"
@@ -307,7 +307,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
         emit SafuChanged(_safu);
     }
 
-    function setCreditAgency(ITrueCreditAgency _creditAgency) external onlyOwner {
+    function setCreditAgency(ILineOfCreditAgency _creditAgency) external onlyOwner {
         creditAgency = _creditAgency;
         emit CreditAgencyChanged(_creditAgency);
     }
@@ -538,7 +538,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      * @dev Remove liquidity from strategy if necessary and transfer to lender
      * @param amount amount for lender to withdraw
      */
-    function borrow(uint256 amount) external override onlyLenderOrFTLAgencyOrTrueCreditAgency {
+    function borrow(uint256 amount) external override onlyLenderOrFTLAgencyOrLineOfCreditAgency {
         require(amount <= liquidValue(), "TrueFiPool: Insufficient liquidity");
         if (amount > 0) {
             ensureSufficientLiquidity(amount);
@@ -553,7 +553,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      * @dev repay debt by transferring tokens to the contract
      * @param currencyAmount amount to repay
      */
-    function repay(uint256 currencyAmount) external override onlyLenderOrFTLAgencyOrTrueCreditAgency {
+    function repay(uint256 currencyAmount) external override onlyLenderOrFTLAgencyOrLineOfCreditAgency {
         token.safeTransferFrom(msg.sender, address(this), currencyAmount);
         emit Repaid(msg.sender, currencyAmount);
     }
@@ -633,7 +633,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     function addDebt(IDebtToken debtToken, uint256 amount) external override {
         require(
             msg.sender == address(creditAgency) || ftlAgency.loanFactory().isLoanToken(ILoanToken2(msg.sender)),
-            "TruePool: Only TrueCreditAgency and Loans can add debtTokens"
+            "TruePool: Only LineOfCreditAgency and Loans can add debtTokens"
         );
         debtValue = debtValue.add(amount);
         debtToken.safeTransferFrom(msg.sender, address(this), amount);

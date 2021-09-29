@@ -1,8 +1,8 @@
-## `TrueRateAdjuster`
+## `CreditModel`
 
 
 
-Rate Adjuster for interest rates in the TrueFi Protocol
+Credit Model for interest rates in the TrueFi Protocol
 https://github.com/trusttoken/truefi-spec/blob/master/TrueFi2.0.md#lines-of-credit
 - Extracts interest rate calculations into a separate contract
 - Calculates interest rates for Lines of Credit and Term Loans
