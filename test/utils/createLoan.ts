@@ -1,14 +1,10 @@
 import {
   DebtToken__factory,
-  FixedTermLoanAgency__factory,
   LoanFactory2,
   LoanToken2__factory,
   TrueFiPool2,
 } from 'contracts'
 import { BigNumberish, Wallet } from 'ethers'
-import { connectMockContract } from 'utils'
-import { CreditModelJson, FixedTermLoanAgencyJson } from 'build'
-import { MAX_APY } from './constants'
 
 export const createLoan = async function (factory: LoanFactory2, creator: Wallet, pool: TrueFiPool2, amount: BigNumberish, duration: BigNumberish, apy: BigNumberish) {
   const fakeFTLA = creator

@@ -1,7 +1,7 @@
 import { expect, use } from 'chai'
-import { BigNumber, BigNumberish, Wallet } from 'ethers'
+import { BigNumberish, Wallet } from 'ethers'
 
-import { beforeEachWithFixture, DAY, MAX_APY, parseEth, setupTruefi2, createDebtToken as _createDebtToken } from 'utils'
+import { beforeEachWithFixture, DAY, parseEth, setupTruefi2, createDebtToken as _createDebtToken } from 'utils'
 
 import {
   BorrowingMutex,
@@ -10,7 +10,6 @@ import {
   FixedTermLoanAgency__factory,
   LoanFactory2,
   TrueFiPool2,
-  TrueFiPool2__factory,
   TrueLender2,
   Liquidator2,
   PoolFactory,
@@ -27,8 +26,7 @@ import {
   DebtToken,
   DebtToken__factory,
 } from 'contracts'
-import { PoolFactoryJson, TrueFiCreditOracleJson, CreditModelJson } from 'build'
-import { deployMockContract, solidity } from 'ethereum-waffle'
+import { solidity } from 'ethereum-waffle'
 import { AddressZero } from '@ethersproject/constants'
 
 use(solidity)
@@ -45,10 +43,8 @@ describe('LoanFactory2', () => {
   let poolFactory: PoolFactory
   let poolToken: MockTrueCurrency
   let loanFactory: LoanFactory2
-  let loanToken: LoanToken2
   let creditModel: CreditModel
   let creditOracle: TrueFiCreditOracle
-  let borrowerCreditScore: number
   let borrowingMutex: BorrowingMutex
   let creditAgency: LineOfCreditAgency
 
@@ -81,13 +77,10 @@ describe('LoanFactory2', () => {
     } = await setupTruefi2(owner, _provider))
     await loanFactory.setCreditModel(creditModel.address)
     await creditOracle.setScore(borrower.address, 255)
-    borrowerCreditScore = await creditOracle.score(borrower.address)
 
     await poolToken.mint(depositor.address, parseEth(10_000))
     await poolToken.connect(depositor).approve(pool.address, parseEth(10_000))
     await pool.connect(depositor).join(parseEth(10_000))
-
-    loanToken = await createFTLALoanToken(pool, borrower, parseEth(1_000), 15 * DAY, 1000)
   })
 
   describe('initializer', () => {
