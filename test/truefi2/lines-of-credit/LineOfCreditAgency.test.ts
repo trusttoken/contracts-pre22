@@ -17,7 +17,7 @@ import {
 import {
   beforeEachWithFixture,
   DAY,
-  expectScaledCloseTo,
+  expectScaledCloseTo, extractDebtTokens,
   parseEth,
   parseUSDC,
   setupTruefi2,
@@ -1064,26 +1064,15 @@ describe('LineOfCreditAgency', () => {
         await creditAgency.allowBorrower(borrower.address, false)
       })
 
-      async function extractDebtTokens (pendingTx: Promise<ContractTransaction>) {
-        const tx = await pendingTx
-        const receipt = await tx.wait()
-        const iface = loanFactory.interface
-        return Promise.all(receipt.events
-          .filter(({ address }) => address === loanFactory.address)
-          .map((e) => iface.parseLog(e))
-          .filter(({ eventFragment }) => eventFragment.name === 'DebtTokenCreated')
-          .map((e) => DebtToken__factory.connect(e.args.debtToken, owner)))
-      }
-
       it('creates DebtToken with expected params', async () => {
-        const debtTokens = await extractDebtTokens(creditAgency.enterDefault(borrower.address))
+        const debtTokens = await extractDebtTokens(loanFactory, owner, creditAgency.enterDefault(borrower.address))
         expect(await debtTokens[1].pool()).to.eq(tusdPool.address)
         expect(await debtTokens[1].borrower()).to.eq(borrower.address)
         expect(await debtTokens[1].debt()).to.eq(1000)
       })
 
       it('creates multiple DebtTokens for different pools', async () => {
-        const debtTokens = await extractDebtTokens(creditAgency.enterDefault(borrower.address))
+        const debtTokens = await extractDebtTokens(loanFactory, owner, creditAgency.enterDefault(borrower.address))
         expect(debtTokens.length).to.eq(2)
         expect(await debtTokens[0].pool()).to.eq(usdcPool.address)
         expect(await debtTokens[1].pool()).to.eq(tusdPool.address)
@@ -1091,7 +1080,7 @@ describe('LineOfCreditAgency', () => {
 
       it('only creates DebtTokens for pools with nonzero debt', async () => {
         await creditAgency.connect(borrower).repayInFull(usdcPool.address)
-        const debtTokens = await extractDebtTokens(creditAgency.enterDefault(borrower.address))
+        const debtTokens = await extractDebtTokens(loanFactory, owner, creditAgency.enterDefault(borrower.address))
         expect(debtTokens.length).to.eq(1)
         expect(await debtTokens[0].pool()).to.eq(tusdPool.address)
       })

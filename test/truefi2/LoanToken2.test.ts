@@ -2,7 +2,7 @@ import { expect, use } from 'chai'
 import { MockProvider, solidity } from 'ethereum-waffle'
 import { BigNumber, BigNumberish, ContractTransaction, Wallet } from 'ethers'
 
-import { beforeEachWithFixture, expectScaledCloseTo, parseEth, timeTravel } from 'utils'
+import { beforeEachWithFixture, expectScaledCloseTo, extractDebtTokens, parseEth, timeTravel } from 'utils'
 
 import {
   BorrowingMutex,
@@ -305,7 +305,9 @@ describe('LoanToken2', () => {
       await withdraw(borrower)
       await token.mint(loanToken.address, parseEth(1099))
       await timeTravel(provider, defaultedLoanCloseTime)
-      await expect(loanToken.enterDefault()).to.emit(loanToken, 'Defaulted')
+      const tx = loanToken.enterDefault()
+      const [debtToken] = await extractDebtTokens(loanFactory, lender, tx)
+      await expect(tx).to.emit(loanToken, 'Defaulted').withArgs(debtToken.address, parseEth(1))
     })
 
     it('keeps the mutex locked', async () => {
