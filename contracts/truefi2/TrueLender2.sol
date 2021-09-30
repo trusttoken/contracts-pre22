@@ -20,6 +20,7 @@ import {I1Inch3} from "./interface/I1Inch3.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {ITrueRatingAgency} from "../truefi/interface/ITrueRatingAgency.sol";
 import {IERC20WithDecimals} from "./interface/IERC20WithDecimals.sol";
+import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
 
 interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
     function decimals() external view returns (uint8);
@@ -86,6 +87,8 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
 
     // minimum prediction market voting period
     uint256 public DEPRECATED__votingPeriod;
+
+    ITrueFiCreditOracle public DEPRECATED__creditOracle;
 
     uint256 public maxLoanTerm;
 
@@ -443,5 +446,6 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         DEPRECATED__minVotes = type(uint256).max;
         DEPRECATED__minRatio = type(uint256).max;
         DEPRECATED__votingPeriod = type(uint256).max;
+        DEPRECATED__creditOracle = ITrueFiCreditOracle(address(0));
     }
 }

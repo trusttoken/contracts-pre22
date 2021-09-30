@@ -562,5 +562,9 @@ describe('TrueLender2', () => {
     it('sets deprecated votingPeriod to max value', async () => {
       expect(await lender.DEPRECATED__votingPeriod()).to.equal(constants.MaxUint256)
     })
+
+    it('sets deprecated creditOracle to zero address', async () => {
+      expect(await lender.DEPRECATED__creditOracle()).to.equal(AddressZero)
+    })
   })
 })
