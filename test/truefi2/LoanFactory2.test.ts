@@ -52,13 +52,6 @@ describe('LoanFactory2', () => {
   let borrowingMutex: BorrowingMutex
   let creditAgency: LineOfCreditAgency
 
-  const createLoan = async (amount: BigNumberish, term: BigNumberish) => {
-    const tx = await loanFactory.connect(borrower).createLoanToken(pool.address, amount, term, MAX_APY)
-    const creationEvent = (await tx.wait()).events[0]
-    const { loanToken } = creationEvent.args
-    return LoanToken2__factory.connect(loanToken, owner)
-  }
-
   const createFTLALoanToken = async (pool: TrueFiPool2, borrower: Wallet, amount: BigNumberish, term: BigNumberish, apy: BigNumberish) => {
     await loanFactory.setFixedTermLoanAgency(ftla.address)
     const tx = await loanFactory.connect(ftla).createFTLALoanToken(pool.address, borrower.address, amount, term, apy)
@@ -94,7 +87,7 @@ describe('LoanFactory2', () => {
     await poolToken.connect(depositor).approve(pool.address, parseEth(10_000))
     await pool.connect(depositor).join(parseEth(10_000))
 
-    loanToken = await createLoan(parseEth(1_000), 100)
+    loanToken = await createFTLALoanToken(pool, borrower, parseEth(1_000), 15 * DAY, 1000)
   })
 
   describe('initializer', () => {
@@ -124,125 +117,6 @@ describe('LoanFactory2', () => {
 
     it('sets creditAgency', async () => {
       expect(await loanFactory.creditAgency()).to.eq(creditAgency.address)
-    })
-  })
-
-  describe('createLoanToken', () => {
-    it('deploys loan token contract', async () => {
-      expect(await loanToken.amount()).to.equal(parseEth(1_000))
-      expect(await loanToken.term()).to.equal(100)
-      expect(await loanToken.lender()).to.equal(lender.address)
-      expect(await loanToken.liquidator()).to.equal(liquidator.address)
-    })
-
-    it('marks deployed contract as loan token', async () => {
-      expect(await loanFactory.isLoanToken(loanToken.address)).to.be.true
-    })
-
-    it('prevents 0 loans', async () => {
-      await expect(loanFactory.connect(borrower).createLoanToken(pool.address, 0, 100, MAX_APY))
-        .to.be.revertedWith('LoanFactory: Loans of amount 0, will not be approved')
-    })
-
-    it('prevents 0 time loans', async () => {
-      await expect(loanFactory.connect(borrower).createLoanToken(pool.address, parseEth(123), 0, MAX_APY))
-        .to.be.revertedWith('LoanFactory: Loans cannot have instantaneous term of repay')
-    })
-
-    it('prevents fake pool loans', async () => {
-      const fakePool = await new TrueFiPool2__factory(owner).deploy()
-      await expect(loanFactory.connect(borrower).createLoanToken(fakePool.address, parseEth(123), DAY, MAX_APY))
-        .to.be.revertedWith('LoanFactory: Pool is not supported by PoolFactory')
-    })
-
-    it('prevents unsupported pool loans', async () => {
-      await poolFactory.unsupportPool(pool.address)
-      await expect(loanFactory.connect(borrower).createLoanToken(pool.address, parseEth(123), DAY, MAX_APY))
-        .to.be.revertedWith('LoanFactory: Pool is not supported by PoolFactory')
-    })
-
-    it('prevents apy higher than limit', async () => {
-      await expect(loanFactory.connect(borrower).createLoanToken(pool.address, parseEth(1_000), 15 * DAY, 510))
-        .to.be.revertedWith('LoanFactory: Calculated apy is higher than max apy')
-
-      await expect(loanFactory.connect(borrower).createLoanToken(pool.address, parseEth(1_000), 15 * DAY, 511))
-        .not.to.be.reverted
-    })
-
-    it('prevents token creation when there is no token implementation', async () => {
-      const factory = await new LoanFactory2__factory(owner).deploy()
-      const mockPoolFactory = await deployMockContract(owner, PoolFactoryJson.abi)
-      const mockCreditOracle = await deployMockContract(owner, TrueFiCreditOracleJson.abi)
-      const mockCreditModel = await deployMockContract(owner, CreditModelJson.abi)
-      await factory.initialize(
-        mockPoolFactory.address,
-        AddressZero, AddressZero, AddressZero, mockCreditModel.address, mockCreditOracle.address, AddressZero, AddressZero,
-      )
-      await mockPoolFactory.mock.isSupportedPool.withArgs(AddressZero).returns(true)
-      await mockCreditOracle.mock.score.withArgs(borrower.address).returns(0)
-      await mockCreditModel.mock.fixedTermLoanAdjustment.withArgs(15 * DAY).returns(0)
-      await mockCreditModel.mock.rate.withArgs(AddressZero, 0, parseEth(123)).returns(0)
-      await expect(factory.connect(borrower).createLoanToken(AddressZero, parseEth(123), 15 * DAY, MAX_APY))
-        .to.be.revertedWith('LoanFactory: Loan token implementation should be set')
-    })
-
-    it('fails when loan token initialize signature differs from expected', async () => {
-      const testLoanToken = await new TestLoanToken__factory(owner).deploy()
-      await loanFactory.connect(owner).setLoanTokenImplementation(testLoanToken.address)
-      await expect(loanFactory.connect(borrower).createLoanToken(pool.address, parseEth(123), 15 * DAY, MAX_APY))
-        .to.be.revertedWith('Transaction reverted: function selector was not recognized and there\'s no fallback function')
-    })
-
-    describe('apy is set properly', () => {
-      const term = 15 * DAY
-
-      describe('for different pro forma utilization ratios', () => {
-        it('low pro forma utilization', async () => {
-          const loan = await createLoan(parseEth(1_000), term)
-          expect(await loan.apy()).to.equal(511)
-        })
-
-        it('mid pro forma utilization (some funds were removed from the pool)', async () => {
-          await pool.connect(depositor).liquidExit(parseEth(5_000))
-          const loan = await createLoan(parseEth(3_000), term)
-          expect(await loan.apy()).to.equal(762)
-        })
-
-        it('high pro forma utilization', async () => {
-          const loan = await createLoan(parseEth(8_000), term)
-          expect(await loan.apy()).to.equal(1700)
-        })
-      })
-
-      describe('for different terms', () => {
-        let rateWithoutFixedTermLoanAdjustment: BigNumber
-        let fixedTermLoanAdjustmentCoefficient: BigNumber
-
-        const amount = parseEth(1_000)
-
-        beforeEach(async () => {
-          rateWithoutFixedTermLoanAdjustment = await creditModel.rate(pool.address, borrowerCreditScore, amount)
-          fixedTermLoanAdjustmentCoefficient = await creditModel.fixedTermLoanAdjustmentCoefficient()
-        })
-
-        it('short term', async () => {
-          const loan = await createLoan(amount, 15 * DAY)
-          expect(await loan.apy())
-            .to.equal(rateWithoutFixedTermLoanAdjustment)
-        })
-
-        it('mid term', async () => {
-          const loan = await createLoan(amount, 45 * DAY)
-          expect(await loan.apy())
-            .to.equal(rateWithoutFixedTermLoanAdjustment.add(fixedTermLoanAdjustmentCoefficient))
-        })
-
-        it('long term', async () => {
-          const loan = await createLoan(amount, 185 * DAY)
-          expect(await loan.apy())
-            .to.equal(rateWithoutFixedTermLoanAdjustment.add((fixedTermLoanAdjustmentCoefficient.mul(6))))
-        })
-      })
     })
   })
 
@@ -353,7 +227,7 @@ describe('LoanFactory2', () => {
   describe('isCreatedByFactory', () => {
     describe('returns true for', () => {
       it('loan token created by factory', async () => {
-        const loanToken = await createLoan(parseEth(1), DAY)
+        const loanToken = await createFTLALoanToken(pool, borrower, parseEth(1), DAY, 1000)
         expect(await loanFactory.isCreatedByFactory(loanToken.address)).to.eq(true)
       })
 
