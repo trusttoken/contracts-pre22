@@ -36,7 +36,7 @@ describe('TrueFiPool2', () => {
     const lender = await deployContract(TrueLender2__factory)
     await lender.initialize(AddressZero, poolFactory.address, AddressZero, AddressZero, AddressZero, AddressZero)
 
-    await poolFactory.initialize(implementationReference.address, lender.address, AddressZero, AddressZero)
+    await poolFactory.initialize(implementationReference.address, lender.address, AddressZero, AddressZero, AddressZero)
     await poolFactory.allowToken(USDC_ADDRESS, true)
     const usdc = Erc20Mock__factory.connect(USDC_ADDRESS, owner)
     await poolFactory.createPool(usdc.address)

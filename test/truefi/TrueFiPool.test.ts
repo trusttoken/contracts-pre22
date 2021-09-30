@@ -507,7 +507,7 @@ describe('TrueFiPool', () => {
     await borrowingMutex.initialize()
     await borrowingMutex.allowLocker(lender2.address, true)
     await lender2.initialize(mockStakingPool.address, factory.address, AddressZero, AddressZero, creditModel.address, borrowingMutex.address)
-    await factory.initialize(implementationReference.address, lender2.address, AddressZero, safu.address)
+    await factory.initialize(implementationReference.address, lender2.address, AddressZero, safu.address, AddressZero)
     await factory.addLegacyPool(pool.address)
     const usdc = await new MockErc20Token__factory(owner).deploy()
     await factory.setAllowAll(true)
