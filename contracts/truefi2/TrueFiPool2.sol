@@ -447,7 +447,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
         uint256 mintedAmount = mint(amount.sub(fee));
         claimableFees = claimableFees.add(fee);
 
-        // TODO: tx.origin will be depricated in a future ethereum upgrade
+        // TODO: tx.origin will be deprecated in a future ethereum upgrade
         latestJoinBlock[tx.origin] = block.number;
         token.safeTransferFrom(msg.sender, address(this), amount);
 
@@ -642,7 +642,10 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      * @dev CreditAgency transfers DebtToken to the pool
      */
     function addDebt(IDebtToken debtToken, uint256 amount) external override {
-        require(msg.sender == address(creditAgency), "TruePool: Only LineOfCreditAgency can add debtTokens");
+        require(
+            msg.sender == address(creditAgency) || ftlAgency.loanFactory().isLoanToken(ILoanToken2(msg.sender)),
+            "TruePool: Only LineOfCreditAgency and Loans can add debtTokens"
+        );
         debtValue = debtValue.add(amount);
         debtToken.safeTransferFrom(msg.sender, address(this), amount);
 

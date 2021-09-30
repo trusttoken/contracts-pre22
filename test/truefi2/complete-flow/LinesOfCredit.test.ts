@@ -1,10 +1,19 @@
-import { DebtToken__factory, LoanFactory2, MockTrueCurrency, Safu, StkTruToken, LineOfCreditAgency, TrueFiCreditOracle, TrueFiPool2 } from 'contracts'
+import {
+  LineOfCreditAgency,
+  LoanFactory2,
+  MockTrueCurrency,
+  Safu,
+  StkTruToken,
+  TrueFiCreditOracle,
+  TrueFiPool2,
+} from 'contracts'
 import { expect, use } from 'chai'
 import { MockProvider, solidity } from 'ethereum-waffle'
-import { ContractTransaction, Wallet } from 'ethers'
+import { Wallet } from 'ethers'
 import {
   beforeEachWithFixture,
   DAY,
+  extractDebtTokens,
   parseEth,
   parseTRU,
   setupTruefi2,
@@ -29,17 +38,6 @@ describe('Lines Of Credit flow', () => {
   let tru: MockTrueCurrency
   let stkTru: StkTruToken
   let timeTravel: (time: number) => void
-
-  async function extractDebtTokens (pendingTx: Promise<ContractTransaction>) {
-    const tx = await pendingTx
-    const receipt = await tx.wait()
-    const iface = loanFactory.interface
-    return Promise.all(receipt.events
-      .filter(({ address }) => address === loanFactory.address)
-      .map((e) => iface.parseLog(e))
-      .filter(({ eventFragment }) => eventFragment.name === 'DebtTokenCreated')
-      .map((e) => DebtToken__factory.connect(e.args.debtToken, owner)))
-  }
 
   beforeEachWithFixture(async (wallets, _provider) => {
     [owner, borrower, staker] = wallets
@@ -95,7 +93,7 @@ describe('Lines Of Credit flow', () => {
 
     // 2 months without repayment pass and the line gets defaulted
     await timeTravel(MONTH * 2)
-    const debtToken = (await extractDebtTokens(creditAgency.enterDefault(borrower.address)))[0]
+    const debtToken = (await extractDebtTokens(loanFactory, owner, creditAgency.enterDefault(borrower.address)))[0]
 
     const poolValueBefore = await pool.poolValue()
     await safu.liquidate([debtToken.address])
