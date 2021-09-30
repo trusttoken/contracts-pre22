@@ -6,7 +6,8 @@ import {
   BadStrategy,
   BadStrategy__factory,
   TrueFiPool2,
-  TrueLender2,
+  TestTrueLender,
+  TestTrueLender__factory,
   MockTrueCurrency,
   LoanFactory2,
   Safu,
@@ -50,7 +51,7 @@ describe('TrueFiPool2', () => {
   let tusdPool: TrueFiPool2
   let usdcPool: TrueFiPool2
   let loanFactory: LoanFactory2
-  let lender: TrueLender2
+  let lender: TestTrueLender
   let loan: LoanToken2
   let safu: Safu
   let deployContract: Deployer
@@ -68,6 +69,7 @@ describe('TrueFiPool2', () => {
     deployContract = setupDeploy(owner)
     timeTravel = (time: number) => _timeTravel(_provider, time)
     provider = _provider
+    lender = await deployContract(TestTrueLender__factory)
 
     ; ({
       standardToken: tusd,
@@ -80,7 +82,7 @@ describe('TrueFiPool2', () => {
       creditOracle,
       creditModel,
       ftlAgency,
-    } = await setupTruefi2(owner, provider))
+    } = await setupTruefi2(owner, provider, { lender: lender }))
 
     poolStrategy1 = await deployContract(MockStrategy__factory, tusd.address, tusdPool.address)
     poolStrategy2 = await deployContract(MockStrategy__factory, tusd.address, tusdPool.address)
