@@ -1,7 +1,7 @@
 import { expect, use } from 'chai'
 import { MockProvider, solidity } from 'ethereum-waffle'
 import { BigNumber, Wallet } from 'ethers'
-import { beforeEachWithFixture, DAY, parseTRU, timeTravel, timeTravelTo } from 'utils'
+import { beforeEachWithFixture, DAY, parseTRU, timeTravel } from 'utils'
 
 import {
   Erc20Mock,
@@ -50,19 +50,16 @@ describe('TrueFiVault', () => {
     const distributor = await new LinearTrueDistributor__factory(owner).deploy()
     await stkTru.initialize(tru.address, tfUsd.address, feeToken.address, distributor.address, liquidator.address)
 
-    const vaultStart = (await provider.getBlock('latest')).timestamp + DAY
     trueFiVault = await new TrueFiVault__factory(owner).deploy()
     await tru.approve(trueFiVault.address, TRU_AMOUNT.add(STKTRU_AMOUNT))
     await trueFiVault.initialize(
       beneficiary.address,
       TRU_AMOUNT.add(STKTRU_AMOUNT),
-      vaultStart,
       tru.address,
       stkTru.address,
     )
 
     await trueFiVault.connect(beneficiary).stake(STKTRU_AMOUNT)
-    await timeTravelTo(provider, vaultStart)
   })
 
   describe('Constructor', () => {
@@ -76,35 +73,13 @@ describe('TrueFiVault', () => {
 
     it('delegates stkTRU to beneficiary', async () => {
       const vault = await new TrueFiVault__factory(owner).deploy()
-      const vaultStart = (await provider.getBlock('latest')).timestamp + DAY
       await vault.initialize(
         beneficiary.address,
         0,
-        vaultStart,
         tru.address,
         stkTru.address,
       )
       expect('delegate').to.be.calledOnContractWith(stkTru, [beneficiary.address])
-    })
-
-    it('checks vault start time', async () => {
-      const vault = await new TrueFiVault__factory(owner).deploy()
-      const now = (await provider.getBlock('latest')).timestamp
-      await expect(vault.initialize(
-        beneficiary.address,
-        0,
-        now - 10,
-        tru.address,
-        stkTru.address,
-      )).to.be.revertedWith('TrueFiVault: lock start in the past')
-
-      await expect(vault.initialize(
-        beneficiary.address,
-        0,
-        now * 2,
-        tru.address,
-        stkTru.address,
-      )).to.be.revertedWith('TrueFiVault: lock start too far in the future')
     })
   })
 
