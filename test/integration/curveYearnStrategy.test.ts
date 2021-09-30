@@ -17,22 +17,24 @@ import { expect, use } from 'chai'
 import { solidity } from 'ethereum-waffle'
 import { DAY, expectScaledCloseTo, timeTravel } from 'utils'
 import { mock1Inch_CYS } from './data'
+import { JsonRpcSigner, Web3Provider } from '@ethersproject/providers'
 
 use(solidity)
 
-describe('[Skip CI] Curve Yearn Pool Strategy', () => {
+describe('Curve Yearn Pool Strategy', () => {
   const USDC_HOLDER = '0x55fe002aeff02f77364de339a1292923a15844b8'
   const USDC_ADDRESS = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
-  const provider = forkChain('https://eth-mainnet.alchemyapi.io/v2/Vc3xNXIWdxEbDOToa69DhWeyhgFVBDWl', [CONTRACTS_OWNER, USDC_HOLDER, ETHER_HOLDER], 13287798)
-  const owner = provider.getSigner(CONTRACTS_OWNER)
-  const holder = provider.getSigner(USDC_HOLDER)
-  const deployContract = setupDeploy(owner)
   const amount = utils.parseUnits('10000', 8)
 
   const GAUGE = '0xfa712ee4788c042e2b7bb55e6cb8ec569c4530c1'
   const CURVE_POOL = '0xbbc81d23ea2c3ec7e56d39296f0cbb648873a5d3'
   const MINTER = '0xd061d61a4d941c39e5453435b6345dc261c2fce0'
   const ONE_INCH = '0x11111112542d85b3ef69ae05771c2dccff4faa26'
+
+  let provider: Web3Provider
+  let owner: JsonRpcSigner
+  let holder: JsonRpcSigner
+  let deployContract: any
 
   let usdc: Erc20
   let pool: TrueFiPool2
@@ -52,6 +54,11 @@ describe('[Skip CI] Curve Yearn Pool Strategy', () => {
   }
 
   beforeEach(async () => {
+    provider = forkChain('https://eth-mainnet.alchemyapi.io/v2/Vc3xNXIWdxEbDOToa69DhWeyhgFVBDWl', [CONTRACTS_OWNER, USDC_HOLDER, ETHER_HOLDER], 13287798)
+    owner = provider.getSigner(CONTRACTS_OWNER)
+    holder = provider.getSigner(USDC_HOLDER)
+    deployContract = setupDeploy(owner)
+
     await provider.getSigner(ETHER_HOLDER).sendTransaction({
       value: utils.parseEther('1000'),
       to: CONTRACTS_OWNER,
@@ -87,7 +94,7 @@ describe('[Skip CI] Curve Yearn Pool Strategy', () => {
     expect(await usdc.balanceOf(pool.address)).to.be.gte(amount.mul(999).div(1000)) // Curve fees
   }).timeout(10000000)
 
-  it('[Skip CI] Mine CRV on Curve gauge and sell on 1Inch, CRV is not part of value', async () => {
+  it('Mine CRV on Curve gauge and sell on 1Inch, CRV is not part of value', async () => {
     await retry(() => pool.flush(amount))
     await timeTravel(provider, DAY * 10)
 
