@@ -52,6 +52,9 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
 
     mapping(ITrueFiPool2 => ILoanToken2[]) public poolLoans;
 
+    // maximum amount of loans lender can handle at once
+    uint256 public DEPRECATED__maxLoans;
+
     // which part of interest should be paid to the stakers
     uint256 public fee;
 
@@ -435,6 +438,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     }
 
     function deprecate() external {
+        DEPRECATED__maxLoans = type(uint256).max;
         DEPRECATED__ratingAgency = ITrueRatingAgency(address(0));
         DEPRECATED__minVotes = type(uint256).max;
         DEPRECATED__minRatio = type(uint256).max;

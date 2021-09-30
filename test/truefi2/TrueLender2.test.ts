@@ -543,6 +543,10 @@ describe('TrueLender2', () => {
       await lender.deprecate()
     })
 
+    it('sets deprecated maxLoans to max value', async () => {
+      expect(await lender.DEPRECATED__maxLoans()).to.equal(constants.MaxUint256)
+    })
+
     it('sets deprecated ratingAgency to zero address', async () => {
       expect(await lender.DEPRECATED__ratingAgency()).to.equal(AddressZero)
     })
