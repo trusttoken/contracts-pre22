@@ -1,23 +1,24 @@
-import { BigNumber, BigNumberish, ContractTransaction, Wallet } from 'ethers'
+import { BigNumber, BigNumberish, Wallet } from 'ethers'
 import {
-  BorrowingMutex, DebtToken__factory,
+  BorrowingMutex,
+  CreditModel,
+  FixedTermLoanAgency,
+  LineOfCreditAgency,
+  LineOfCreditAgency__factory,
   LoanFactory2,
   MockBorrowingMutex__factory,
   MockTrueCurrency,
   MockUsdc,
   PoolFactory,
   TimeAveragedBaseRateOracle,
-  LineOfCreditAgency,
-  LineOfCreditAgency__factory,
   TrueFiCreditOracle,
   TrueFiPool2,
-  FixedTermLoanAgency,
-  CreditModel,
 } from 'contracts'
 import {
   beforeEachWithFixture,
   DAY,
-  expectScaledCloseTo, extractDebtTokens,
+  expectScaledCloseTo,
+  extractDebtTokens,
   parseEth,
   parseUSDC,
   setupTruefi2,
