@@ -32,12 +32,6 @@ Initialize this contract and set currency token
 
 
 
-### `createLoanToken(contract ITrueFiPool2 _pool, uint256 _amount, uint256 _term, uint256 _apy)` (external)
-
-
-
-Deploy LoanToken with parameters
-
 
 ### `setCreditOracle(contract ITrueFiCreditOracle _creditOracle)` (external)
 
