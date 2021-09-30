@@ -143,6 +143,8 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @param _borrower Borrower address
      * @param _lender Lender address
      * @param _ftlAgency FixedTermLoanAgency address
+     * @param _admin Admin account for loan. Admin can enable transfers on the token which are blocked by default.
+     * @param _loanFactory LoanFactory to create DebtTokens in case of default
      * @param _amount Borrow amount of loaned tokens
      * @param _term Loan length
      * @param _apy Loan APY
@@ -173,9 +175,9 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         apy = _apy;
         lender = _lender;
         ftlAgency = _ftlAgency;
+        loanFactory = _loanFactory;
         creditOracle = _creditOracle;
         debt = interest(amount);
-        loanFactory = _loanFactory;
     }
 
     /**
@@ -292,7 +294,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
             return 0;
         }
 
-        if (status >= Status.Defaulted) {
+        if (status == Status.Defaulted || status == Status.Liquidated) {
             return _amount.mul(_balance()).div(totalSupply());
         }
 
