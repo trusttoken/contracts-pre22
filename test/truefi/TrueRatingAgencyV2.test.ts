@@ -718,7 +718,6 @@ describe('TrueRatingAgencyV2', () => {
           usdcPool.address,
           borrowingMutex.address,
           owner.address,
-          owner.address,
           AddressZero,
           owner.address,
           AddressZero,

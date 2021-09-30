@@ -81,7 +81,7 @@ describe('LoanToken2', () => {
     borrowingMutex = await deployContract(lender, BorrowingMutex__factory)
     await borrowingMutex.initialize()
     await borrowingMutex.allowLocker(lender.address, true)
-    await loanFactory.initialize(poolFactory.address, lender.address, AddressZero, AddressZero, AddressZero, AddressZero, borrowingMutex.address, AddressZero)
+    await loanFactory.initialize(poolFactory.address, AddressZero, AddressZero, AddressZero, AddressZero, borrowingMutex.address, AddressZero)
     const debtToken = await deployContract(lender, DebtToken__factory)
     await loanFactory.setDebtTokenImplementation(debtToken.address)
     loanToken = await new LoanToken2__factory(lender).deploy()
@@ -89,7 +89,6 @@ describe('LoanToken2', () => {
       poolAddress,
       borrowingMutex.address,
       borrower.address,
-      lender.address,
       AddressZero,
       lender.address,
       loanFactory.address,
@@ -700,7 +699,7 @@ describe('LoanToken2', () => {
   describe('Debt calculation', () => {
     const getDebt = async (amount: number, termInMonths: number, apy: number) => {
       const contract = await new LoanToken2__factory(borrower).deploy()
-      await contract.initialize(poolAddress, borrowingMutex.address, borrower.address, lender.address, AddressZero, lender.address, lender.address, AddressZero, parseEth(amount.toString()), termInMonths * averageMonthInSeconds, apy)
+      await contract.initialize(poolAddress, borrowingMutex.address, borrower.address, AddressZero, lender.address, lender.address, AddressZero, parseEth(amount.toString()), termInMonths * averageMonthInSeconds, apy)
       return Number.parseInt(formatEther(await contract.debt()))
     }
 

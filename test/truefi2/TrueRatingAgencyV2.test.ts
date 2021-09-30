@@ -299,7 +299,7 @@ describe('TrueRatingAgencyV2', () => {
 
     it('reverts if token was not created with LoanFactory', async () => {
       const fakeLoanToken = await new LoanToken2__factory(owner).deploy()
-      await fakeLoanToken.initialize(tusdPool.address, AddressZero, owner.address, owner.address, AddressZero, owner.address, liquidator.address, AddressZero, 5_000_000, yearInSeconds * 2, 1000)
+      await fakeLoanToken.initialize(tusdPool.address, owner.address, owner.address, AddressZero, owner.address, liquidator.address, AddressZero, 5_000_000, yearInSeconds * 2, 1000)
       await expect(submit(fakeLoanToken.address)).to.be.revertedWith('TrueRatingAgencyV2: Only LoanTokens created via LoanFactory are supported')
     })
 
