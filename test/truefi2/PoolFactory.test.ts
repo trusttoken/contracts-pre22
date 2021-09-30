@@ -2,19 +2,23 @@ import { expect, use } from 'chai'
 import {
   ImplementationReference,
   ImplementationReference__factory,
+  LoanFactory2,
+  LoanFactory2__factory,
   MockErc20Token,
   MockErc20Token__factory,
+  MockUsdStableCoinOracle__factory,
   OwnedProxyWithReference,
   OwnedProxyWithReference__factory,
+  PoolFactory,
+  PoolFactory__factory,
+  Safu,
+  Safu__factory,
   TestFixedTermLoanAgency,
   TestFixedTermLoanAgency__factory,
   TestTrueLender,
   TestTrueLender__factory,
-  PoolFactory,
-  PoolFactory__factory,
   TrueFiPool2,
   TrueFiPool2__factory,
-  MockUsdStableCoinOracle__factory, Safu__factory, Safu,
 } from 'contracts'
 import { solidity } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
@@ -40,6 +44,7 @@ describe('PoolFactory', () => {
   let trueLenderInstance2: TestTrueLender
   let ftlAgencyInstance1: TestFixedTermLoanAgency
   let ftlAgencyInstance2: TestFixedTermLoanAgency
+  let loanFactory: LoanFactory2
 
   beforeEachWithFixture(async (wallets) => {
     [owner, otherWallet, borrower] = wallets
@@ -56,11 +61,13 @@ describe('PoolFactory', () => {
     ftlAgencyInstance1 = await new TestFixedTermLoanAgency__factory(owner).deploy()
     ftlAgencyInstance2 = await new TestFixedTermLoanAgency__factory(owner).deploy()
     safu = await new Safu__factory(owner).deploy()
+    loanFactory = await new LoanFactory2__factory(owner).deploy()
     await factory.initialize(
       implementationReference.address,
       trueLenderInstance1.address,
       ftlAgencyInstance1.address,
       safu.address,
+      loanFactory.address,
     )
   })
 
@@ -72,6 +79,10 @@ describe('PoolFactory', () => {
     it('sets pool implementation address', async () => {
       expect(await factory.poolImplementationReference()).to.eq(implementationReference.address)
       expect(await implementationReference.attach(await factory.poolImplementationReference()).implementation()).to.eq(poolImplementation.address)
+    })
+
+    it('sets loan factory', async () => {
+      expect(await factory.loanFactory()).to.eq(loanFactory.address)
     })
 
     it('sets allowAll to false', async () => {
@@ -127,6 +138,10 @@ describe('PoolFactory', () => {
 
     it('true lender is set correctly', async () => {
       expect(await pool.lender()).to.eq(trueLenderInstance1.address)
+    })
+
+    it('loan factory is set correctly', async () => {
+      expect(await pool.loanFactory()).to.eq(loanFactory.address)
     })
 
     it('fixed term loan agency is set correctly', async () => {
@@ -248,6 +263,10 @@ describe('PoolFactory', () => {
 
     it('fixed term loan agency is set correctly', async () => {
       expect(await pool.ftlAgency()).to.eq(ftlAgencyInstance1.address)
+    })
+
+    it('loan factory is set correctly', async () => {
+      expect(await pool.loanFactory()).to.eq(loanFactory.address)
     })
 
     it('cannot create pool for token that already has a pool', async () => {

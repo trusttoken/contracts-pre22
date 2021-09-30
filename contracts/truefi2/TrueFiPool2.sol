@@ -16,6 +16,7 @@ import {IPauseableContract} from "../common/interface/IPauseableContract.sol";
 import {ISAFU} from "./interface/ISAFU.sol";
 import {IDeficiencyToken} from "./interface/IDeficiencyToken.sol";
 import {ILineOfCreditAgency} from "./interface/ILineOfCreditAgency.sol";
+import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
 
 import {ABDKMath64x64} from "../truefi/Log.sol";
 import {OneInchExchange} from "./libraries/OneInchExchange.sol";
@@ -96,6 +97,8 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
 
     IFixedTermLoanAgency public ftlAgency;
 
+    ILoanFactory2 public loanFactory;
+
     // ======= STORAGE DECLARATION END ===========
 
     /**
@@ -113,6 +116,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
         ITrueLender2 _lender,
         IFixedTermLoanAgency _ftlAgency,
         ISAFU _safu,
+        ILoanFactory2 _loanFactory,
         address __owner
     ) external override initializer {
         ERC20.__ERC20_initialize(concat("TrueFi ", _token.name()), concat("tf", _token.symbol()));
@@ -122,6 +126,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
         lender = _lender;
         ftlAgency = _ftlAgency;
         safu = _safu;
+        loanFactory = _loanFactory;
     }
 
     /**
@@ -132,6 +137,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
         ITrueLender2 _lender,
         IFixedTermLoanAgency _ftlAgency,
         ISAFU _safu,
+        ILoanFactory2 _loanFactory,
         address __owner,
         string memory borrowerName,
         string memory borrowerSymbol
@@ -146,6 +152,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
         lender = _lender;
         ftlAgency = _ftlAgency;
         safu = _safu;
+        loanFactory = _loanFactory;
     }
 
     /**
@@ -245,7 +252,17 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      */
     event CreditAgencyChanged(ILineOfCreditAgency newCreditAgency);
 
+    /**
+     * @dev Emitted when Fixed Term Loan Agency address is changed
+     * @param newFTLAgency New Fixed Term Loan Agency address
+     */
     event FixedTermLoanAgencyChanged(IFixedTermLoanAgency newFTLAgency);
+
+    /**
+     * @dev Emitted when Loan Factory address is changed
+     * @param newLoanFactory New Loan Factory address
+     */
+    event LoanFactoryChanged(ILoanFactory2 newLoanFactory);
 
     /**
      * @dev Emitted when DebtTokens are added to the pool
@@ -315,6 +332,11 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     function setFixedTermLoanAgency(IFixedTermLoanAgency _ftlAgency) external onlyOwner {
         ftlAgency = _ftlAgency;
         emit FixedTermLoanAgencyChanged(_ftlAgency);
+    }
+
+    function setLoanFactory(ILoanFactory2 _loanFactory) external onlyOwner {
+        loanFactory = _loanFactory;
+        emit LoanFactoryChanged(_loanFactory);
     }
 
     /**
@@ -632,7 +654,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      */
     function addDebt(IDebtToken debtToken, uint256 amount) external override {
         require(
-            msg.sender == address(creditAgency) || ftlAgency.loanFactory().isLoanToken(ILoanToken2(msg.sender)),
+            msg.sender == address(creditAgency) || loanFactory.isLoanToken(ILoanToken2(msg.sender)),
             "TruePool: Only LineOfCreditAgency and Loans can add debtTokens"
         );
         debtValue = debtValue.add(amount);
