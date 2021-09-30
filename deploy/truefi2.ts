@@ -80,7 +80,7 @@ deploy({}, (_, config) => {
     safu.initialize(loanFactory2, liquidator2, oneInch)
   })
   runIf(poolFactory.isInitialized().not(), () => {
-    poolFactory.initialize(implementationReference, trueLender2, ftlAgency, safu)
+    poolFactory.initialize(implementationReference, trueLender2, ftlAgency, safu, loanFactory2)
   })
   runIf(trueLender2.isInitialized().not(), () => {
     trueLender2.initialize(stkTruToken, poolFactory, oneInch, trueFiCreditOracle, AddressZero, borrowingMutex)
