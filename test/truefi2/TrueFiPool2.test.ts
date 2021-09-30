@@ -6,7 +6,6 @@ import {
   BadStrategy,
   BadStrategy__factory,
   TrueFiPool2,
-  TrueLender2,
   MockTrueCurrency,
   LoanFactory2,
   Safu,
@@ -17,6 +16,8 @@ import {
   CreditModel,
   MockTrueCurrency__factory,
   FixedTermLoanAgency,
+  TestTrueLender,
+  TestTrueLender__factory,
 } from 'contracts'
 import { MockProvider, solidity } from 'ethereum-waffle'
 import { BigNumber, Wallet } from 'ethers'
@@ -50,7 +51,7 @@ describe('TrueFiPool2', () => {
   let tusdPool: TrueFiPool2
   let usdcPool: TrueFiPool2
   let loanFactory: LoanFactory2
-  let lender: TrueLender2
+  let lender: TestTrueLender
   let loan: LoanToken2
   let safu: Safu
   let deployContract: Deployer
@@ -69,6 +70,8 @@ describe('TrueFiPool2', () => {
     timeTravel = (time: number) => _timeTravel(_provider, time)
     provider = _provider
 
+    lender = await deployContract(TestTrueLender__factory)
+
     ; ({
       standardToken: tusd,
       lender,
@@ -80,7 +83,7 @@ describe('TrueFiPool2', () => {
       creditOracle,
       creditModel,
       ftlAgency,
-    } = await setupTruefi2(owner, provider))
+    } = await setupTruefi2(owner, provider, { lender: lender }))
 
     poolStrategy1 = await deployContract(MockStrategy__factory, tusd.address, tusdPool.address)
     poolStrategy2 = await deployContract(MockStrategy__factory, tusd.address, tusdPool.address)
@@ -411,16 +414,18 @@ describe('TrueFiPool2', () => {
 
       it('when there are ongoing loans in both trueLender and FTLA, pool value contains both', async () => {
         loan = await createLoan(loanFactory, borrower, tusdPool, 500000, DAY, 1000)
-        await lender.connect(borrower).fund(loan.address)
+        await tusd.mint(lender.address, 500000)
+        await lender.connect(borrower).fundWithOwnFunds(loan.address)
+
         await ftlAgency.allowBorrower(borrower2.address)
         await ftlAgency.connect(borrower2).borrow(tusdPool.address, 5000, YEAR, 10000)
-        expect(await tusdPool.liquidValue()).to.equal(joinAmount.sub(500000).sub(5000))
+        expect(await tusdPool.liquidValue()).to.equal(joinAmount.sub(5000))
         expect(await tusdPool.loansValue()).to.equal(500000 + 5000)
-        expect(await tusdPool.poolValue()).to.equal(joinAmount)
+        expect(await tusdPool.poolValue()).to.equal(joinAmount.add(500000))
 
         await timeTravel(DAY * 2)
         expect(await tusdPool.loansValue()).to.equal(505139)
-        expect(await tusdPool.poolValue()).to.equal(joinAmount.add(139))
+        expect(await tusdPool.poolValue()).to.equal(joinAmount.add(139).add((500000)))
       })
 
       it('when pool has some deficiency value', async () => {
@@ -717,12 +722,18 @@ describe('TrueFiPool2', () => {
       await tusdPool.join(parseEth(100))
     })
 
-    it('only lender and creditAgency can borrow from pool', async () => {
+    it('only ftlAgency and creditAgency can borrow from pool', async () => {
       await expect(tusdPool.connect(owner.address).borrow(0))
-        .to.be.revertedWith('TrueFiPool: Caller is not the lender, ftlAgency, or creditAgency')
+        .to.be.revertedWith('TrueFiPool: Caller is neither the ftlAgency nor creditAgency')
     })
 
-    it('lender can borrow funds', async () => {
+    it('lender cannot borrow funds', async () => {
+      loan = await createLoan(loanFactory, borrower, tusdPool, 500000, DAY, 1000)
+      await expect(lender.connect(borrower).fund(loan.address))
+        .to.be.revertedWith('TrueFiPool: Caller is neither the ftlAgency nor creditAgency')
+    })
+
+    it('ftlAgency can borrow funds', async () => {
       await ftlAgency.connect(borrower).borrow(tusdPool.address, 500000, DAY * 365, 2000)
       expect('borrow').to.be.calledOnContract(tusdPool)
     })
@@ -777,12 +788,12 @@ describe('TrueFiPool2', () => {
       await loan.settle()
     })
 
-    it('only lender and creditAgency can repay to pool', async () => {
+    it('only ftlAgency and creditAgency can repay to pool', async () => {
       await expect(tusdPool.connect(owner.address).repay(0))
         .to.be.revertedWith('TrueFiPool: Caller is not the lender, ftlAgency, or creditAgency')
     })
 
-    it('lender can repay funds', async () => {
+    it('ftlAgency can repay funds', async () => {
       await ftlAgency.reclaim(loan.address, '0x')
       expect('repay').to.be.calledOnContract(tusdPool)
     })
