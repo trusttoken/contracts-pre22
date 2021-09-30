@@ -788,9 +788,21 @@ describe('TrueFiPool2', () => {
       await loan.settle()
     })
 
-    it('only ftlAgency and creditAgency can repay to pool', async () => {
+    it('only lender, ftlAgency and creditAgency can repay to pool', async () => {
       await expect(tusdPool.connect(owner.address).repay(0))
         .to.be.revertedWith('TrueFiPool: Caller is not the lender, ftlAgency, or creditAgency')
+    })
+
+    it('lender can repay', async () => {
+      loan = await createLoan(loanFactory, borrower, tusdPool, 500000, DAY, 1000)
+      await tusd.mint(lender.address, 500000)
+      await lender.connect(borrower).fundWithOwnFunds(loan.address)
+      await timeTravel(DAY)
+      const debt = await loan.debt()
+      await tusd.mint(loan.address, debt)
+      await loan.settle()
+      await lender.reclaim(loan.address, '0x')
+      expect('repay').to.be.calledOnContract(tusdPool)
     })
 
     it('ftlAgency can repay funds', async () => {
