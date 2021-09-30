@@ -175,6 +175,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
     }
 
     function setLoanFactory(ILoanFactory2 _loanFactory) external onlyOwner {
+        require(address(_loanFactory) != address(0), "PoolFactory: loanFactory is zero address");
         loanFactory = _loanFactory;
         emit LoanFactoryChanged(_loanFactory);
     }

@@ -335,6 +335,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     }
 
     function setLoanFactory(ILoanFactory2 _loanFactory) external onlyOwner {
+        require(address(_loanFactory) != address(0), "TrueFiPool2: loanFactory is zero address");
         loanFactory = _loanFactory;
         emit LoanFactoryChanged(_loanFactory);
     }

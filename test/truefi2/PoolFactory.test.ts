@@ -94,6 +94,36 @@ describe('PoolFactory', () => {
     })
   })
 
+  describe('setLoanFactory', () => {
+    it('can be called by owner', async () => {
+      await expect(factory.setLoanFactory(loanFactory.address))
+        .not.to.be.reverted
+    })
+
+    it('cannot be called by unauthorized address', async () => {
+      await expect(factory.connect(borrower).setLoanFactory(loanFactory.address))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('properly changes loanFactory address', async () => {
+      const newAddress = Wallet.createRandom().address
+      await factory.setLoanFactory(newAddress)
+      expect(await factory.loanFactory()).to.equal(newAddress)
+      await factory.setLoanFactory(loanFactory.address)
+      expect(await factory.loanFactory()).to.equal(loanFactory.address)
+    })
+
+    it('cannot be called with zero address', async () => {
+      await expect(factory.setLoanFactory(AddressZero)).to.be.revertedWith('PoolFactory: loanFactory is zero address')
+    })
+
+    it('emits proper event', async () => {
+      await expect(factory.setLoanFactory(loanFactory.address))
+        .to.emit(factory, 'LoanFactoryChanged')
+        .withArgs(loanFactory.address)
+    })
+  })
+
   describe('createPool', () => {
     let creationEventArgs: any
     let proxy: OwnedProxyWithReference
