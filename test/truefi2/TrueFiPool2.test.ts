@@ -905,8 +905,7 @@ describe('TrueFiPool2', () => {
       const legacyLoanImpl = await new LegacyLoanToken2__factory(owner).deploy()
       await loanFactory.setLoanTokenImplementation(legacyLoanImpl.address)
       const tx = ftlAgency.connect(borrower).borrow(tusdPool.address, 100000, DAY, 1000)
-      loan =
-      await extractLoanTokenAddress(tx, owner, loanFactory)
+      loan = await extractLoanTokenAddress(tx, owner, loanFactory)
     })
 
     it('can only be performed by the SAFU', async () => {
