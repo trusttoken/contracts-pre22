@@ -17,7 +17,6 @@ import {ITrueLender2} from "./interface/ITrueLender2.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {I1Inch3} from "./interface/I1Inch3.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
-import {ITrueRatingAgency} from "../truefi/interface/ITrueRatingAgency.sol";
 import {IERC20WithDecimals} from "./interface/IERC20WithDecimals.sol";
 
 /**
@@ -48,7 +47,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     mapping(ITrueFiPool2 => ILoanToken2[]) public poolLoans;
 
     // maximum amount of loans lender can handle at once
-    uint256 public DEPRECATED__maxLoans;
+    uint256 private DEPRECATED__maxLoans;
 
     // which part of interest should be paid to the stakers
     uint256 public fee;
@@ -57,7 +56,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
 
     IPoolFactory public factory;
 
-    ITrueRatingAgency public DEPRECATED__ratingAgency;
+    address private DEPRECATED__ratingAgency;
 
     I1Inch3 public _1inch;
 
@@ -341,6 +340,6 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
 
     function deprecate() external {
         DEPRECATED__maxLoans = type(uint256).max;
-        DEPRECATED__ratingAgency = ITrueRatingAgency(address(0));
+        DEPRECATED__ratingAgency = address(0);
     }
 }
