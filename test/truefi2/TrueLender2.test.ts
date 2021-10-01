@@ -137,6 +137,9 @@ describe('TrueLender2', () => {
     await creditOracle.setCreditUpdatePeriod(YEAR)
     await creditOracle.setScore(borrower.address, 255)
     await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(1e8))
+
+    await token1.mint(lender.address, parseEth(1e7))
+    await token2.mint(lender.address, parseEth(1e7))
   })
 
   const approveLoanRating = async function (loan: LoanToken2) {
@@ -325,7 +328,7 @@ describe('TrueLender2', () => {
   describe('Funding', () => {
     describe('reverts if', () => {
       it('transaction not called by the borrower', async () => {
-        await expect(lender.fund(loan1.address)).to.be.revertedWith('TrueLender: Sender is not borrower')
+        await expect(lender.fundWithOwnFunds(loan1.address)).to.be.revertedWith('TrueLender: Sender is not borrower')
       })
 
       it('loan was created for unknown pool', async () => {
@@ -343,19 +346,19 @@ describe('TrueLender2', () => {
           DAY,
           100,
         )
-        await expect(lender.connect(borrower).fund(badLoan.address)).to.be.revertedWith('TrueLender: Pool not supported by the factory')
+        await expect(lender.connect(borrower).fundWithOwnFunds(badLoan.address)).to.be.revertedWith('TrueLender: Pool not supported by the factory')
       })
 
       it('loan was created for unsupported pool', async () => {
         await poolFactory.unsupportPool(pool1.address)
-        await expect(lender.connect(borrower).fund(loan1.address)).to.be.revertedWith('TrueLender: Pool not supported by the factory')
+        await expect(lender.connect(borrower).fundWithOwnFunds(loan1.address)).to.be.revertedWith('TrueLender: Pool not supported by the factory')
       })
 
       it('there are too many loans for given pool', async () => {
         await lender.setLoansLimit(1)
         await approveLoanRating(loan1)
-        await lender.connect(borrower).fund(loan1.address)
-        await expect(lender.connect(borrower).fund(loan1.address)).to.be.revertedWith('TrueLender: Loans number has reached the limit')
+        await lender.connect(borrower).fundWithOwnFunds(loan1.address)
+        await expect(lender.connect(borrower).fundWithOwnFunds(loan1.address)).to.be.revertedWith('TrueLender: Loans number has reached the limit')
       })
 
       it('loan term exceeds max term', async () => {
@@ -365,7 +368,7 @@ describe('TrueLender2', () => {
         await lender.setLongTermLoanThreshold(DAY * 365 - 1)
         await lender.setMaxLoanTerm(DAY * 365 - 1)
 
-        await expect(lender.connect(borrower).fund(loan1.address))
+        await expect(lender.connect(borrower).fundWithOwnFunds(loan1.address))
           .to.be.revertedWith('TrueLender: Loan\'s term is too long')
       })
 
@@ -376,7 +379,7 @@ describe('TrueLender2', () => {
         await creditOracle.setScore(borrower.address, 199)
         await lender.setLongTermLoanThreshold(DAY)
 
-        await expect(lender.connect(borrower).fund(loan1.address))
+        await expect(lender.connect(borrower).fundWithOwnFunds(loan1.address))
           .to.be.revertedWith('TrueLender: Credit score is too low for loan\'s term')
       })
 
@@ -384,23 +387,23 @@ describe('TrueLender2', () => {
         const amountToFund = parseEth(1e7).mul(15).div(100).add(1) // 15% of pool value + 1
         const badLoan = await createLoan(loanFactory, borrower, pool1, amountToFund, YEAR, 100)
         await approveLoanRating(badLoan)
-        await expect(lender.connect(borrower).fund(badLoan.address))
+        await expect(lender.connect(borrower).fundWithOwnFunds(badLoan.address))
           .to.be.revertedWith('TrueLender: Loan amount cannot exceed borrow limit')
       })
 
       it('taking new loans is locked by mutex', async () => {
         await borrowingMutex.allowLocker(owner.address, true)
         await borrowingMutex.lock(borrower.address, owner.address)
-        await expect(lender.connect(borrower).fund(loan1.address))
+        await expect(lender.connect(borrower).fundWithOwnFunds(loan1.address))
           .to.be.revertedWith('TrueLender: There is an ongoing loan or credit line')
       })
 
       it('borrower is not eligible', async () => {
         await creditOracle.setIneligible(borrower.address)
-        await expect(lender.connect(borrower).fund(loan1.address))
+        await expect(lender.connect(borrower).fundWithOwnFunds(loan1.address))
           .to.be.revertedWith('TrueLender: Sender is not eligible for loan')
         await creditOracle.setOnHold(borrower.address)
-        await expect(lender.connect(borrower).fund(loan1.address))
+        await expect(lender.connect(borrower).fundWithOwnFunds(loan1.address))
           .to.be.revertedWith('TrueLender: Sender is not eligible for loan')
       })
     })
@@ -413,33 +416,33 @@ describe('TrueLender2', () => {
       it('borrower is allowed to have a long term loan', async () => {
         await creditOracle.setScore(borrower.address, 200)
         await lender.setLongTermLoanThreshold(DAY)
-        await expect(lender.connect(borrower).fund(loan1.address))
+        await expect(lender.connect(borrower).fundWithOwnFunds(loan1.address))
           .not.to.be.reverted
       })
 
-      it('borrows tokens from pool', async () => {
+      xit('borrows tokens from pool', async () => {
         const poolValueBefore = await pool1.liquidValue()
         const borrowedAmount = await loan1.amount()
-        await lender.connect(borrower).fund(loan1.address)
+        await lender.connect(borrower).fundWithOwnFunds(loan1.address)
         expect(poolValueBefore.sub(await pool1.liquidValue())).to.eq(borrowedAmount)
       })
 
       it('borrows receivedAmount from pool and transfers to the loan', async () => {
-        await expect(lender.connect(borrower).fund(loan1.address))
-          .to.emit(token1, 'Transfer')
-          .withArgs(pool1.address, lender.address, 100000)
+        await expect(lender.connect(borrower).fundWithOwnFunds(loan1.address))
+          // .to.emit(token1, 'Transfer')
+          // .withArgs(pool1.address, lender.address, 100000)
           .and.to.emit(token1, 'Transfer')
           .withArgs(lender.address, loan1.address, 100000)
         expect(await loan1.balance()).to.equal(100000)
       })
 
       it('locks borrowing mutex', async () => {
-        await lender.connect(borrower).fund(loan1.address)
+        await lender.connect(borrower).fundWithOwnFunds(loan1.address)
         expect(await borrowingMutex.locker(borrower.address)).to.equal(loan1.address)
       })
 
       it('emits event', async () => {
-        await expect(lender.connect(borrower).fund(loan1.address))
+        await expect(lender.connect(borrower).fundWithOwnFunds(loan1.address))
           .to.emit(lender, 'Funded')
           .withArgs(pool1.address, loan1.address, 100000)
       })
@@ -457,9 +460,9 @@ describe('TrueLender2', () => {
       await approveLoanRating(newLoan1)
       await approveLoanRating(loan1)
       await approveLoanRating(loan2)
-      await lender.connect(borrower).fund(loan1.address)
-      await lender.connect(borrower).fund(newLoan1.address)
-      await lender.connect(borrower).fund(loan2.address)
+      await lender.connect(borrower).fundWithOwnFunds(loan1.address)
+      await lender.connect(borrower).fundWithOwnFunds(newLoan1.address)
+      await lender.connect(borrower).fundWithOwnFunds(loan2.address)
     })
 
     it('shows correct value for a newly added loan', async () => {
@@ -492,7 +495,7 @@ describe('TrueLender2', () => {
 
     beforeEach(async () => {
       await approveLoanRating(loan1)
-      await lender.connect(borrower).fund(loan1.address)
+      await lender.connect(borrower).fundWithOwnFunds(loan1.address)
       await lender.setFee(0)
     })
 
@@ -558,8 +561,8 @@ describe('TrueLender2', () => {
         await approveLoanRating(newLoan1)
         await approveLoanRating(loan2)
 
-        await lender.connect(borrower).fund(newLoan1.address)
-        await lender.connect(borrower).fund(loan2.address)
+        await lender.connect(borrower).fundWithOwnFunds(newLoan1.address)
+        await lender.connect(borrower).fundWithOwnFunds(loan2.address)
       })
 
       it('removes oldest loan from the array', async () => {
@@ -596,7 +599,7 @@ describe('TrueLender2', () => {
 
         newLoan1 = await createLoan(loanFactory, borrower, pool1, parseEth(100000), YEAR, 100)
         await approveLoanRating(newLoan1)
-        await lender.connect(borrower).fund(newLoan1.address)
+        await lender.connect(borrower).fundWithOwnFunds(newLoan1.address)
 
         await lender.setFee(1000)
         await oneInch.setOutputAmount(parseEth(25))
@@ -685,7 +688,7 @@ describe('TrueLender2', () => {
 
         loanTokens.push(newLoan1)
         await approveLoanRating(newLoan1)
-        await lender.connect(borrower).fund(newLoan1.address)
+        await lender.connect(borrower).fundWithOwnFunds(newLoan1.address)
       }
     })
 
@@ -711,7 +714,7 @@ describe('TrueLender2', () => {
   describe('transferAllLoanTokens', () => {
     beforeEach(async () => {
       await approveLoanRating(loan1)
-      await lender.connect(borrower).fund(loan1.address)
+      await lender.connect(borrower).fundWithOwnFunds(loan1.address)
       await lender.setFee(0)
     })
 
