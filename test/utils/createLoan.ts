@@ -5,14 +5,13 @@ import {
   TrueFiPool2,
 } from 'contracts'
 import { BigNumberish, Wallet } from 'ethers'
-import { connectMockContract } from 'utils'
-import { CreditModelJson } from 'build'
-import { MAX_APY } from './constants'
 
 export const createLoan = async function (factory: LoanFactory2, creator: Wallet, pool: TrueFiPool2, amount: BigNumberish, duration: BigNumberish, apy: BigNumberish) {
-  const mockCreditModel = connectMockContract(await factory.creditModel(), factory.signer, CreditModelJson.abi)
-  await mockCreditModel.mock.fixedTermLoanAdjustment.returns(apy)
-  const loanTx = await factory.connect(creator).createLoanToken(pool.address, amount, duration, MAX_APY)
+  const fakeFTLA = creator
+  const originalFTLA_address = await factory.ftlAgency()
+  await factory.setFixedTermLoanAgency(fakeFTLA.address)
+  const loanTx = await factory.connect(fakeFTLA).createFTLALoanToken(pool.address, creator.address, amount, duration, apy)
+  await factory.setFixedTermLoanAgency(originalFTLA_address)
   const loanAddress = (await loanTx.wait()).events[0].args.loanToken
   return new LoanToken2__factory(creator).attach(loanAddress)
 }

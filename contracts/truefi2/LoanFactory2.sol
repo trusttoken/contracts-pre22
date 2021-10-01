@@ -149,26 +149,6 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         return creditModel.rate(pool, borrowerScore, amount).add(fixedTermLoanAdjustment);
     }
 
-    /**
-     * @dev Deploy LoanToken with parameters
-     * @param _amount Amount to borrow
-     * @param _term Length of loan
-     */
-    function createLoanToken(
-        ITrueFiPool2 _pool,
-        uint256 _amount,
-        uint256 _term,
-        uint256 _maxApy
-    ) external override {
-        require(_amount > 0, "LoanFactory: Loans of amount 0, will not be approved");
-        require(_term > 0, "LoanFactory: Loans cannot have instantaneous term of repay");
-        require(poolFactory.isSupportedPool(_pool), "LoanFactory: Pool is not supported by PoolFactory");
-        uint256 apy = rate(_pool, msg.sender, _amount, _term);
-        require(apy <= _maxApy, "LoanFactory: Calculated apy is higher than max apy");
-
-        _createFTLALoanToken(_pool, msg.sender, _amount, _term, apy);
-    }
-
     function createFTLALoanToken(
         ITrueFiPool2 _pool,
         address _borrower,
@@ -176,16 +156,6 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         uint256 _term,
         uint256 _apy
     ) external override onlyFTLA returns (ILoanToken2) {
-        return _createFTLALoanToken(_pool, _borrower, _amount, _term, _apy);
-    }
-
-    function _createFTLALoanToken(
-        ITrueFiPool2 _pool,
-        address _borrower,
-        uint256 _amount,
-        uint256 _term,
-        uint256 _apy
-    ) private returns (ILoanToken2) {
         address ltImplementationAddress = address(loanTokenImplementation);
         require(ltImplementationAddress != address(0), "LoanFactory: Loan token implementation should be set");
 
