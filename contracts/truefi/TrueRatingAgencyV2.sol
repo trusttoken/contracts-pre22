@@ -10,7 +10,6 @@ import {IVoteTokenWithERC20} from "../governance/interface/IVoteToken.sol";
 
 import {Ownable} from "../common/UpgradeableOwnable.sol";
 import {IArbitraryDistributor} from "./interface/IArbitraryDistributor.sol";
-import {ILoanFactory} from "./interface/ILoanFactory.sol";
 import {ILoanToken2, IDebtToken} from "../truefi2/interface/ILoanToken2.sol";
 import {ITrueRatingAgencyV2} from "./interface/ITrueRatingAgencyV2.sol";
 
@@ -71,7 +70,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
     IBurnableERC20 public TRU;
     IVoteTokenWithERC20 public stkTRU;
     IArbitraryDistributor public distributor;
-    ILoanFactory private DEPRECATED__factory;
+    address private DEPRECATED__factory;
 
     /**
      * @dev % multiplied by 100. e.g. 10.5% = 1050
@@ -91,7 +90,6 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
     event RatersRewardFactorChanged(uint256 ratersRewardFactor);
     event RewardMultiplierChanged(uint256 newRewardMultiplier);
     event Claimed(address loanToken, address rater, uint256 claimedReward);
-    event LoanFactoryChanged(address newLoanFactory);
 
     /**
      * @dev Only loans that have been funded
