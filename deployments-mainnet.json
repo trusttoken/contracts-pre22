@@ -267,10 +267,6 @@
     "trueFiVault": {
       "txHash": "0xd3b0cf2ac7331e9fb5e5c4ade75ac7fad427502f5e4a6858adee960306340e11",
       "address": "0xfA15a30EDa728E3cDc628BA7c703039543C8e42f"
-    },
-    "trueFiVault_proxy": {
-      "txHash": "0xe96d57ed210658ad4b392e1b5546fcbcbfaaa9a04c956dafb38257592f05b0a8",
-      "address": "0x95BE1e23Db4Dc0A4b2Fa0AB3D0f3E22E66B57210"
     }
   }
 }
