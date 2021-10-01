@@ -192,28 +192,6 @@ describe('TrueRatingAgencyV2', () => {
     })
   })
 
-  describe('Whitelisting', () => {
-    it('changes whitelist status', async () => {
-      expect(await rater.allowedSubmitters(otherWallet.address)).to.be.false
-      await rater.allow(otherWallet.address, true)
-      expect(await rater.allowedSubmitters(otherWallet.address)).to.be.true
-      await rater.allow(otherWallet.address, false)
-      expect(await rater.allowedSubmitters(otherWallet.address)).to.be.false
-    })
-
-    it('emits event', async () => {
-      await expect(rater.allow(otherWallet.address, true))
-        .to.emit(rater, 'Allowed').withArgs(otherWallet.address, true)
-      await expect(rater.allow(otherWallet.address, false))
-        .to.emit(rater, 'Allowed').withArgs(otherWallet.address, false)
-    })
-
-    it('reverts when performed by not allowed account', async () => {
-      await expect(rater.connect(otherWallet).allow(otherWallet.address, true))
-        .to.be.revertedWith('TrueRatingAgencyV2: Cannot change allowances')
-    })
-  })
-
   describe('Claim', () => {
     const rewardMultiplier = 1
     beforeEach(async () => {
@@ -226,7 +204,6 @@ describe('TrueRatingAgencyV2', () => {
 
       await rater.setRewardMultiplier(rewardMultiplier)
       await tusd.approve(loanToken.address, parseEth(5e6))
-      await rater.allow(owner.address, true)
       await rater.submit(loanToken.address)
     })
 

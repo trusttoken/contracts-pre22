@@ -134,7 +134,6 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
   await ftlAgency.setFee(0)
   await ftlAgency.setMaxLoanTerm(YEAR * 10)
   await ftlAgency.setLongTermLoanThreshold(YEAR * 10)
-  await rater.allowChangingAllowances(owner.address, true)
 
   await tru.initialize()
   await stkTru.initialize(tru.address, feePool.address, feePool.address, linearDistributor.address, liquidator.address)

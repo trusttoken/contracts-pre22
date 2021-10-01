@@ -85,11 +85,10 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
     // are submissions paused?
     bool public DEPRECATED__submissionPauseStatus;
 
-    mapping(address => bool) public canChangeAllowance;
+    mapping(address => bool) public DEPRECATED__canChangeAllowance;
 
     // ======= STORAGE DECLARATION END ============
 
-    event CanChangeAllowanceChanged(address indexed who, bool status);
     event Allowed(address indexed who, bool status);
     event RatersRewardFactorChanged(uint256 ratersRewardFactor);
     event RewardMultiplierChanged(uint256 newRewardMultiplier);
@@ -246,25 +245,6 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
         )
     {
         return (getVotingStart(id), getTotalNoRatings(id), getTotalYesRatings(id));
-    }
-
-    /**
-     * @dev Allows addresses to whitelist borrowers
-     */
-    function allowChangingAllowances(address who, bool status) external onlyOwner {
-        canChangeAllowance[who] = status;
-        emit CanChangeAllowanceChanged(who, status);
-    }
-
-    /**
-     * @dev Whitelist borrowers to submit loans for rating
-     * @param who Account to whitelist
-     * @param status Flag to whitelist accounts
-     */
-    function allow(address who, bool status) external {
-        require(canChangeAllowance[msg.sender], "TrueRatingAgencyV2: Cannot change allowances");
-        allowedSubmitters[who] = status;
-        emit Allowed(who, status);
     }
 
     /**
