@@ -92,10 +92,6 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
     event CanChangeAllowanceChanged(address indexed who, bool status);
     event Allowed(address indexed who, bool status);
     event RatersRewardFactorChanged(uint256 ratersRewardFactor);
-    event LoanSubmitted(address id);
-    event LoanRetracted(address id);
-    event Rated(address loanToken, address rater, bool choice, uint256 stake);
-    event Withdrawn(address loanToken, address rater, uint256 stake, uint256 received, uint256 burned);
     event RewardMultiplierChanged(uint256 newRewardMultiplier);
     event Claimed(address loanToken, address rater, uint256 claimedReward);
     event LoanFactoryChanged(address newLoanFactory);
