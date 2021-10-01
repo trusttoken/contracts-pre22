@@ -76,45 +76,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     // basis precision: 10000 = 100%
     uint256 public swapFeeSlippage;
 
-    // ===== Voting parameters =====
-
-    // How many votes are needed for a loan to be approved
-    uint256 public DEPRECATED__minVotes;
-
-    // Minimum ratio of yes votes to total votes for a loan to be approved
-    // basis precision: 10000 = 100%
-    uint256 public DEPRECATED__minRatio;
-
-    // minimum prediction market voting period
-    uint256 public DEPRECATED__votingPeriod;
-
-    ITrueFiCreditOracle public DEPRECATED__creditOracle;
-
-    uint256 public maxLoanTerm;
-
-    uint256 public longTermLoanThreshold;
-
-    uint8 public longTermLoanScoreThreshold;
-
     // ======= STORAGE DECLARATION END ============
-
-    /**
-     * @dev Emitted when max loan term changed
-     * @param maxLoanTerm New max loan term
-     */
-    event MaxLoanTermChanged(uint256 maxLoanTerm);
-
-    /**
-     * @dev Emitted when long term loan's minimal term changed
-     * @param longTermLoanThreshold New long term loan minimal term
-     */
-    event LongTermLoanThresholdChanged(uint256 longTermLoanThreshold);
-
-    /**
-     * @dev Emitted when minimal credit score threshold for long term loan changed
-     * @param longTermLoanScoreThreshold New minimal credit score threshold for long term loan
-     */
-    event LongTermLoanScoreThresholdChanged(uint256 longTermLoanScoreThreshold);
 
     /**
      * @dev Emitted when loan fee is changed
@@ -162,36 +124,6 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
 
         swapFeeSlippage = 100; // 1%
         fee = 1000;
-        maxLoanTerm = 180 days;
-        longTermLoanThreshold = 90 days;
-        longTermLoanScoreThreshold = 200;
-    }
-
-    /**
-     * @dev Set max loan term. Only owner can change parameters.
-     * @param _maxLoanTerm New maxLoanTerm
-     */
-    function setMaxLoanTerm(uint256 _maxLoanTerm) external onlyOwner {
-        maxLoanTerm = _maxLoanTerm;
-        emit MaxLoanTermChanged(_maxLoanTerm);
-    }
-
-    /**
-     * @dev Set minimal term of a long term loan. Only owner can change parameters.
-     * @param _longTermLoanThreshold New longTermLoanThreshold
-     */
-    function setLongTermLoanThreshold(uint256 _longTermLoanThreshold) external onlyOwner {
-        longTermLoanThreshold = _longTermLoanThreshold;
-        emit LongTermLoanThresholdChanged(_longTermLoanThreshold);
-    }
-
-    /**
-     * @dev Set long term loan credit score threshold. Only owner can change parameters.
-     * @param _longTermLoanScoreThreshold New longTermLoanScoreThreshold
-     */
-    function setLongTermLoanScoreThreshold(uint8 _longTermLoanScoreThreshold) external onlyOwner {
-        longTermLoanScoreThreshold = _longTermLoanScoreThreshold;
-        emit LongTermLoanScoreThresholdChanged(_longTermLoanScoreThreshold);
     }
 
     /**
@@ -443,9 +375,5 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     function deprecate() external {
         DEPRECATED__maxLoans = type(uint256).max;
         DEPRECATED__ratingAgency = ITrueRatingAgency(address(0));
-        DEPRECATED__minVotes = type(uint256).max;
-        DEPRECATED__minRatio = type(uint256).max;
-        DEPRECATED__votingPeriod = type(uint256).max;
-        DEPRECATED__creditOracle = ITrueFiCreditOracle(address(0));
     }
 }
