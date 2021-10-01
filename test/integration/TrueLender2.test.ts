@@ -27,7 +27,7 @@ import { mock1Inch_TL2 } from './data'
 
 use(solidity)
 
-describe('TrueLender2', () => {
+xdescribe('TrueLender2', () => {
   const USDC_ADDRESS = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
   const USDT_ADDRESS = '0xdAC17F958D2ee523a2206206994597C13D831ec7'
   const TUSD_ADDRESS = '0x0000000000085d4780B73119b644AE5ecd22b376'
@@ -71,7 +71,7 @@ describe('TrueLender2', () => {
     await borrowingMutex.initialize()
 
     lender = await deployContract(TrueLender2__factory)
-    await lender.initialize(stkTru.address, poolFactory.address, INCH_ADDRESS, mockCreditOracle.address, mockCreditModel.address, borrowingMutex.address)
+    await lender.initialize(stkTru.address, poolFactory.address, INCH_ADDRESS)
 
     await poolFactory.initialize(implementationReference.address, lender.address, AddressZero, AddressZero, AddressZero)
 
