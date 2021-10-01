@@ -8,4 +8,8 @@ contract TestTrueRatingAgencyV2 is TrueRatingAgencyV2 {
         loans[id].prediction[true] = loans[id].prediction[true].add(stake);
         loans[id].ratings[msg.sender][true] = loans[id].ratings[msg.sender][true].add(stake);
     }
+
+    function submit(address id) external {
+        loans[id] = Loan({creator: msg.sender, timestamp: block.timestamp, blockNumber: block.number, reward: 0});
+    }
 }

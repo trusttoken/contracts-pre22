@@ -1,7 +1,6 @@
 import { expect, use } from 'chai'
 import { BigNumber, BigNumberish, Contract, Wallet } from 'ethers'
 import { deployMockContract, solidity } from 'ethereum-waffle'
-import { AddressZero } from '@ethersproject/constants'
 
 import {
   beforeEachWithFixture,
@@ -24,11 +23,9 @@ import {
   ArbitraryDistributor,
   MockUsdc,
   LoanToken2,
-  LoanToken2__factory,
   LoanFactory2,
   TrueFiPool2,
   TrueLender2,
-  Liquidator2,
   TrueFiCreditOracle,
   TestTrueRatingAgencyV2__factory,
 } from 'contracts'
@@ -45,7 +42,6 @@ describe('TrueRatingAgencyV2', () => {
   let owner: Wallet
   let otherWallet: Wallet
 
-  let liquidator: Liquidator2
   let rater: TrueRatingAgencyV2
   let trustToken: MockTrueCurrency
   let stakedTrustToken: StkTruToken
@@ -80,7 +76,6 @@ describe('TrueRatingAgencyV2', () => {
     rater = await deployContract(TestTrueRatingAgencyV2__factory)
 
     ; ({
-      liquidator,
       rater,
       tru: trustToken,
       stkTru: stakedTrustToken,
@@ -116,9 +111,6 @@ describe('TrueRatingAgencyV2', () => {
     await creditOracle.setScore(owner.address, 255)
     await creditOracle.setMaxBorrowerLimit(owner.address, parseEth(100_000_000))
   })
-
-  const submit = async (loanTokenAddress: string, wallet = owner) =>
-    rater.connect(wallet).submit(loanTokenAddress, { gasLimit: 4_000_000 })
 
   describe('Initializer', () => {
     it('sets trust token address', async () => {
@@ -222,61 +214,6 @@ describe('TrueRatingAgencyV2', () => {
     })
   })
 
-  describe('Submitting/Retracting loan', () => {
-    beforeEach(async () => {
-      await rater.allow(owner.address, true)
-    })
-
-    it('reverts when creator is not whitelisted', async () => {
-      await expect(submit(loanToken.address, otherWallet))
-        .to.be.revertedWith('TrueRatingAgencyV2: Sender is not allowed to submit')
-    })
-
-    it('reverts when creator is not a borrower', async () => {
-      await rater.allow(otherWallet.address, true)
-      await expect(submit(loanToken.address, otherWallet))
-        .to.be.revertedWith('TrueRatingAgencyV2: Sender is not borrower')
-    })
-
-    it('reverts when submissions are paused', async () => {
-      await rater.pauseSubmissions(true)
-      await expect(submit(loanToken.address, owner))
-        .to.be.revertedWith('TrueRatingAgencyV2: New submissions are paused')
-      await rater.pauseSubmissions(false)
-      await expect(submit(loanToken.address, owner))
-        .not.to.be.reverted
-    })
-
-    it('creates loan', async () => {
-      await submit(loanToken.address)
-
-      const loan = await rater.loans(loanToken.address)
-      expect(loan.timestamp).to.be.gt(0)
-      expect(loan.reward).to.be.equal(0)
-      expect(loan.creator).to.equal(owner.address)
-      expect(await rater.claimable(loanToken.address, owner.address)).to.equal(0)
-      expect(await rater.getTotalYesRatings(loanToken.address)).to.be.equal(0)
-      expect(await rater.getTotalNoRatings(loanToken.address)).to.be.equal(0)
-    })
-
-    it('emits event on creation', async () => {
-      await expect(submit(loanToken.address))
-        .to.emit(rater, 'LoanSubmitted').withArgs(loanToken.address)
-    })
-
-    it('reverts if token was not created with LoanFactory', async () => {
-      const fakeLoanToken = await new LoanToken2__factory(owner).deploy()
-      await fakeLoanToken.initialize(tusdPool.address, AddressZero, owner.address, owner.address, AddressZero, owner.address, liquidator.address, AddressZero, 5_000_000, yearInSeconds * 2, 1000)
-      await expect(submit(fakeLoanToken.address)).to.be.revertedWith('TrueRatingAgencyV2: Only LoanTokens created via LoanFactory are supported')
-    })
-
-    it('reverts on attempt of creating the same loan twice', async () => {
-      await submit(loanToken.address)
-      await expect(submit(loanToken.address))
-        .to.be.revertedWith('TrueRatingAgencyV2: Loan was already created')
-    })
-  })
-
   describe('Claim', () => {
     const rewardMultiplier = 1
     beforeEach(async () => {
@@ -290,7 +227,7 @@ describe('TrueRatingAgencyV2', () => {
       await rater.setRewardMultiplier(rewardMultiplier)
       await tusd.approve(loanToken.address, parseEth(5e6))
       await rater.allow(owner.address, true)
-      await submit(loanToken.address)
+      await rater.submit(loanToken.address)
     })
 
     const expectRoughTrustTokenBalanceChangeAfterClaim = async (expectedChange: BigNumberish, wallet: Wallet = owner) => {

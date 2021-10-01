@@ -11,7 +11,5 @@ interface ITrueRatingAgencyV2 {
             uint256
         );
 
-    function submit(address id) external;
-
     function claim(address id, address voter) external;
 }

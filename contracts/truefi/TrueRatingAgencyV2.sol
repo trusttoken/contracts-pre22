@@ -282,19 +282,6 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
     }
 
     /**
-     * @dev Submit a loan for rating
-     * Cannot submit the same loan twice
-     * @param id Loan ID
-     */
-    function submit(address id) external override onlyAllowedSubmitters onlyNotExistingLoans(id) {
-        require(!submissionPauseStatus, "TrueRatingAgencyV2: New submissions are paused");
-        require(ILoanToken2(id).borrower() == msg.sender, "TrueRatingAgencyV2: Sender is not borrower");
-        require(factory.isLoanToken(id), "TrueRatingAgencyV2: Only LoanTokens created via LoanFactory are supported");
-        loans[id] = Loan({creator: msg.sender, timestamp: block.timestamp, blockNumber: block.number, reward: 0});
-        emit LoanSubmitted(id);
-    }
-
-    /**
      * @dev Internal view to convert values to 8 decimals precision
      * @param input Value to convert to TRU precision
      * @return output TRU amount
