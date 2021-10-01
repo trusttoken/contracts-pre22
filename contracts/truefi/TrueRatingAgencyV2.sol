@@ -334,22 +334,6 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
     }
 
     /**
-     * @dev Rate YES on a loan by staking TRU
-     * @param id Loan ID
-     */
-    function yes(address id) external override onlyPendingLoans(id) {
-        rate(id, true);
-    }
-
-    /**
-     * @dev Rate NO on a loan by staking TRU
-     * @param id Loan ID
-     */
-    function no(address id) external override onlyPendingLoans(id) {
-        rate(id, false);
-    }
-
-    /**
      * @dev Internal view to convert values to 8 decimals precision
      * @param input Value to convert to TRU precision
      * @return output TRU amount

@@ -28,6 +28,8 @@ import {
   CreditModel__factory,
   TrueRatingAgencyV2__factory,
   DebtToken__factory,
+  TrueRatingAgencyV2,
+  TestTrueRatingAgencyV2,
 } from 'contracts'
 import { Wallet } from 'ethers'
 import { parseTRU, timeTravelTo, YEAR } from '.'
@@ -51,7 +53,7 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
   // ====== DEPLOY ======
   const liquidator = await deployContract(Liquidator2__factory)
   const loanFactory = await deployContract(LoanFactory2__factory)
-  const rater = await deployContract(TrueRatingAgencyV2__factory)
+  const rater: TrueRatingAgencyV2 & TestTrueRatingAgencyV2 = customDeployed?.rater ? customDeployed.rater : await deployContract(TrueRatingAgencyV2__factory)
   const lender: TrueLender2 & TestTrueLender = customDeployed?.lender ? customDeployed.lender : await deployContract(TrueLender2__factory)
   const ftlAgency: FixedTermLoanAgency & TestFixedTermLoanAgency = customDeployed?.ftlAgency ? customDeployed.ftlAgency : await deployContract(FixedTermLoanAgency__factory)
   const safu = await deployContract(Safu__factory)
