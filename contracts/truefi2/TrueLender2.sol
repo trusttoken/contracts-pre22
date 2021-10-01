@@ -15,16 +15,10 @@ import {IDebtToken} from "../truefi2/interface/ILoanToken2.sol";
 import {IStakingPool} from "../truefi/interface/IStakingPool.sol";
 import {ITrueLender2} from "./interface/ITrueLender2.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
-import {ITrueFiPoolOracle} from "./interface/ITrueFiPoolOracle.sol";
 import {I1Inch3} from "./interface/I1Inch3.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {ITrueRatingAgency} from "../truefi/interface/ITrueRatingAgency.sol";
 import {IERC20WithDecimals} from "./interface/IERC20WithDecimals.sol";
-import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
-
-interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
-    function decimals() external view returns (uint8);
-}
 
 /**
  * @title TrueLender v2.0
