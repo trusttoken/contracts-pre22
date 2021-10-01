@@ -13,7 +13,5 @@ interface ITrueRatingAgencyV2 {
 
     function submit(address id) external;
 
-    function resetCastRatings(address id) external;
-
     function claim(address id, address voter) external;
 }

@@ -295,45 +295,6 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
     }
 
     /**
-     * @dev Rate on a loan by staking TRU
-     * @param id Loan ID
-     * @param choice Rater choice. false = NO, true = YES
-     */
-    function rate(address id, bool choice) internal {
-        uint256 stake = stkTRU.getPriorVotes(msg.sender, loans[id].blockNumber);
-        require(stake > 0, "TrueRatingAgencyV2: Cannot rate with empty balance");
-
-        resetCastRatings(id);
-
-        loans[id].prediction[choice] = loans[id].prediction[choice].add(stake);
-        loans[id].ratings[msg.sender][choice] = loans[id].ratings[msg.sender][choice].add(stake);
-
-        emit Rated(id, msg.sender, choice, stake);
-    }
-
-    /**
-     * @dev Internal function to help reset ratings
-     * @param id Loan ID
-     * @param choice Boolean representing choice
-     */
-    function _resetCastRatings(address id, bool choice) internal {
-        loans[id].prediction[choice] = loans[id].prediction[choice].sub(loans[id].ratings[msg.sender][choice]);
-        loans[id].ratings[msg.sender][choice] = 0;
-    }
-
-    /**
-     * @dev Cancel ratings of msg.sender
-     * @param id ID to cancel ratings for
-     */
-    function resetCastRatings(address id) public override onlyPendingLoans(id) {
-        if (getYesRate(id, msg.sender) > 0) {
-            _resetCastRatings(id, true);
-        } else if (getNoRate(id, msg.sender) > 0) {
-            _resetCastRatings(id, false);
-        }
-    }
-
-    /**
      * @dev Internal view to convert values to 8 decimals precision
      * @param input Value to convert to TRU precision
      * @return output TRU amount
