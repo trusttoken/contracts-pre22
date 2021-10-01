@@ -88,7 +88,7 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
   await loanFactory.setLoanTokenImplementation(loanTokenImplementation.address)
   await loanFactory.setDebtTokenImplementation(debtTokenImplementation.address)
   await arbitraryDistributor.initialize(rater.address, tru.address, parseTRU(15e6))
-  await rater.initialize(tru.address, stkTru.address, arbitraryDistributor.address, loanFactory.address)
+  await rater.initialize(tru.address, stkTru.address, arbitraryDistributor.address)
   await borrowingMutex.initialize()
   await lender.initialize(stkTru.address, poolFactory.address, customDeployed?.oneInch ? customDeployed.oneInch.address : AddressZero)
   await ftlAgency.initialize(stkTru.address, poolFactory.address, customDeployed?.oneInch ? customDeployed.oneInch.address : AddressZero, creditOracle.address, creditModel.address, borrowingMutex.address, loanFactory.address)

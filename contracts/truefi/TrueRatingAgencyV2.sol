@@ -12,7 +12,6 @@ import {Ownable} from "../common/UpgradeableOwnable.sol";
 import {IArbitraryDistributor} from "./interface/IArbitraryDistributor.sol";
 import {ILoanFactory} from "./interface/ILoanFactory.sol";
 import {ILoanToken2, IDebtToken} from "../truefi2/interface/ILoanToken2.sol";
-import {ITrueFiPool} from "./interface/ITrueFiPool.sol";
 import {ITrueRatingAgencyV2} from "./interface/ITrueRatingAgencyV2.sol";
 
 /**
@@ -72,7 +71,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
     IBurnableERC20 public TRU;
     IVoteTokenWithERC20 public stkTRU;
     IArbitraryDistributor public distributor;
-    ILoanFactory public factory;
+    ILoanFactory private DEPRECATED__factory;
 
     /**
      * @dev % multiplied by 100. e.g. 10.5% = 1050
@@ -107,13 +106,11 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
      * Distributor contract decides how much TRU is rewarded to stakers
      * @param _TRU TRU contract
      * @param _distributor Distributor contract
-     * @param _factory Factory contract for deploying tokens
      */
     function initialize(
         IBurnableERC20 _TRU,
         IVoteTokenWithERC20 _stkTRU,
-        IArbitraryDistributor _distributor,
-        ILoanFactory _factory
+        IArbitraryDistributor _distributor
     ) public initializer {
         require(address(this) == _distributor.beneficiary(), "TrueRatingAgencyV2: Invalid distributor beneficiary");
         Ownable.initialize();
@@ -121,18 +118,8 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
         TRU = _TRU;
         stkTRU = _stkTRU;
         distributor = _distributor;
-        factory = _factory;
 
         ratersRewardFactor = 10000;
-    }
-
-    /**
-     * @dev Set new loan factory.
-     * @param _factory New LoanFactory contract address
-     */
-    function setLoanFactory(ILoanFactory _factory) external onlyOwner {
-        factory = _factory;
-        emit LoanFactoryChanged(address(_factory));
     }
 
     /**

@@ -105,7 +105,6 @@ describe('TrueFi', () => {
       'TRU',
       'stkTRU',
       'distributor',
-      'factory',
       'ratersRewardFactor',
       'rewardMultiplier',
     ])

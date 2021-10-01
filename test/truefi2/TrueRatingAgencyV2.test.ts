@@ -1,5 +1,5 @@
 import { expect, use } from 'chai'
-import { BigNumber, BigNumberish, Contract, Wallet } from 'ethers'
+import { BigNumber, BigNumberish, Wallet } from 'ethers'
 import { deployMockContract, solidity } from 'ethereum-waffle'
 
 import {
@@ -32,7 +32,6 @@ import {
 } from 'contracts'
 
 import {
-  ILoanFactoryJson,
   ArbitraryDistributorJson,
 } from 'build'
 import { setupDeploy } from 'scripts/utils'
@@ -124,7 +123,7 @@ describe('TrueRatingAgencyV2', () => {
       const mockDistributor = await deployMockContract(owner, ArbitraryDistributorJson.abi)
       await mockDistributor.mock.beneficiary.returns(owner.address)
       const newRater = await new TrueRatingAgencyV2__factory(owner).deploy()
-      await expect(newRater.initialize(trustToken.address, stakedTrustToken.address, mockDistributor.address, loanFactory.address)).to.be.revertedWith('TrueRatingAgencyV2: Invalid distributor beneficiary')
+      await expect(newRater.initialize(trustToken.address, stakedTrustToken.address, mockDistributor.address)).to.be.revertedWith('TrueRatingAgencyV2: Invalid distributor beneficiary')
     })
   })
 
@@ -166,30 +165,6 @@ describe('TrueRatingAgencyV2', () => {
 
       it('must be called by owner', async () => {
         await expect(rater.connect(otherWallet).setRewardMultiplier(1234))
-          .to.be.revertedWith('Ownable: caller is not the owner')
-      })
-    })
-
-    describe('setLoanFactory', () => {
-      let newMockFactory: Contract
-
-      beforeEach(async () => {
-        newMockFactory = await deployMockContract(owner, ILoanFactoryJson.abi)
-      })
-
-      it('changes factory', async () => {
-        await rater.setLoanFactory(newMockFactory.address)
-        expect(await rater.factory())
-          .to.equal(newMockFactory.address)
-      })
-
-      it('emits LoanFactoryChanged', async () => {
-        await expect(rater.setLoanFactory(newMockFactory.address))
-          .to.emit(rater, 'LoanFactoryChanged').withArgs(newMockFactory.address)
-      })
-
-      it('must be called by owner', async () => {
-        await expect(rater.connect(otherWallet).setLoanFactory(newMockFactory.address))
           .to.be.revertedWith('Ownable: caller is not the owner')
       })
     })
