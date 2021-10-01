@@ -103,7 +103,6 @@ describe('TrueFi', () => {
     const existingLoan = '0x583F674b8E2c36807E7371b2D27849F0E98549cc'
 
     await upgradeSuite(TEST_STATE_BLOCK_NUMBER, TrueRatingAgencyV2__factory, '0x05461334340568075bE35438b221A3a0D261Fb6b', [
-      (contract) => contract.allowedSubmitters(allowedSubmitter),
       (contract) => contract.loans(existingLoan),
       'TRU',
       'stkTRU',
