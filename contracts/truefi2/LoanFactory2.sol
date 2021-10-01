@@ -153,16 +153,6 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         uint256 _term,
         uint256 _apy
     ) external override onlyFTLA returns (ILoanToken2) {
-        return _createFTLALoanToken(_pool, _borrower, _amount, _term, _apy);
-    }
-
-    function _createFTLALoanToken(
-        ITrueFiPool2 _pool,
-        address _borrower,
-        uint256 _amount,
-        uint256 _term,
-        uint256 _apy
-    ) private returns (ILoanToken2) {
         address ltImplementationAddress = address(loanTokenImplementation);
         require(ltImplementationAddress != address(0), "LoanFactory: Loan token implementation should be set");
 
