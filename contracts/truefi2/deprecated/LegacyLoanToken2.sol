@@ -124,7 +124,6 @@ contract LegacyLoanToken2 is ILoanToken2, ERC20 {
      * @dev Create a Loan
      * @param _pool Pool to lend from
      * @param _borrower Borrower address
-     * @param _lender Lender address
      * @param _ftlAgency FixedTermLoanAgency address
      * @param _liquidator Liquidator address
      * @param _amount Borrow amount of loaned tokens
@@ -135,7 +134,6 @@ contract LegacyLoanToken2 is ILoanToken2, ERC20 {
         ITrueFiPool2 _pool,
         IBorrowingMutex _mutex,
         address _borrower,
-        address _lender,
         IFixedTermLoanAgency _ftlAgency,
         address _admin,
         address _liquidator,
@@ -144,7 +142,6 @@ contract LegacyLoanToken2 is ILoanToken2, ERC20 {
         uint256 _term,
         uint256 _apy
     ) external initializer {
-        require(_lender != address(0), "LoanToken2: Lender is not set");
         ERC20.__ERC20_initialize("TrueFi Loan Token", "LOAN");
 
         pool = _pool;
@@ -156,9 +153,12 @@ contract LegacyLoanToken2 is ILoanToken2, ERC20 {
         amount = _amount;
         term = _term;
         apy = _apy;
-        lender = _lender;
         ftlAgency = _ftlAgency;
         debt = interest(amount);
+    }
+
+    function setLender(address _lender) external {
+        lender = _lender;
     }
 
     /**

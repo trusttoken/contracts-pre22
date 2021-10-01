@@ -18,7 +18,7 @@ import {
   CreditModel,
   MockTrueCurrency__factory,
   FixedTermLoanAgency,
-  LegacyLoanToken2__factory,
+  LegacyLoanToken2__factory, LegacyLoanToken2,
 } from 'contracts'
 import { MockProvider, solidity } from 'ethereum-waffle'
 import { BigNumber, Wallet } from 'ethers'
@@ -446,8 +446,11 @@ describe('TrueFiPool2', () => {
       })
 
       it('when there are ongoing loans in both trueLender and FTLA, pool value contains both', async () => {
-        loan = await createLoan(loanFactory, borrower, tusdPool, 500000, DAY, 1000)
-        await lender.connect(borrower).fund(loan.address)
+        const legacyLoanImpl = await new LegacyLoanToken2__factory(owner).deploy()
+        await loanFactory.setLoanTokenImplementation(legacyLoanImpl.address)
+        const legacyLoan = LegacyLoanToken2__factory.connect((await createLoan(loanFactory, borrower, tusdPool, 500000, DAY, 1000)).address, owner)
+        await legacyLoan.setLender(lender.address)
+        await lender.connect(borrower).fund(legacyLoan.address)
         await ftlAgency.allowBorrower(borrower2.address)
         await ftlAgency.connect(borrower2).borrow(tusdPool.address, 5000, YEAR, 10000)
         expect(await tusdPool.liquidValue()).to.equal(joinAmount.sub(500000).sub(5000))

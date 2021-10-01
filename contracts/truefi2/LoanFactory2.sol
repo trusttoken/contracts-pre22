@@ -37,7 +37,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     mapping(IDebtToken => bool) public override isLoanToken;
 
     IPoolFactory public poolFactory;
-    address public DEPRECATED__lender;
+    address DEPRECATED__lender;
     address public liquidator;
 
     address public admin;

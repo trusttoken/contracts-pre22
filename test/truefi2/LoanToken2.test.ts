@@ -89,7 +89,7 @@ describe('LoanToken2', () => {
       poolAddress,
       borrowingMutex.address,
       borrower.address,
-      AddressZero,
+      lender.address,
       lender.address,
       loanFactory.address,
       creditOracle.address,
@@ -674,18 +674,18 @@ describe('LoanToken2', () => {
 
   describe('Whitelisting', () => {
     it('reverts when not whitelisted before funding', async () => {
-      await expect(loanToken.connect(other).allowTransfer(other.address, true)).to.be.revertedWith('LoanToken2: This can be performed only by lender')
+      await expect(loanToken.connect(other).allowTransfer(other.address, true)).to.be.revertedWith('LoanToken2: This can be performed only by ftlAgency')
     })
 
     it('reverts when not whitelisted not by a lender', async () => {
       await fund()
-      await expect(loanToken.connect(other).allowTransfer(other.address, true)).to.be.revertedWith('LoanToken2: This can be performed only by lender')
+      await expect(loanToken.connect(other).allowTransfer(other.address, true)).to.be.revertedWith('LoanToken2: This can be performed only by ftlAgency')
     })
 
     it('non-whitelisted address cannot transfer', async () => {
       await fund()
       await loanToken.transfer(other.address, 10)
-      await expect(loanToken.connect(other).transfer(lender.address, 2)).to.be.revertedWith('LoanToken2: This can be performed only by lender, ftlAgency, or accounts allowed to transfer')
+      await expect(loanToken.connect(other).transfer(lender.address, 2)).to.be.revertedWith('LoanToken2: This can be performed only by ftlAgency, or accounts allowed to transfer')
     })
 
     it('whitelisted address can transfer', async () => {
