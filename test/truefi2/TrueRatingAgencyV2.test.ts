@@ -25,7 +25,8 @@ import {
   LoanToken2,
   LoanFactory2,
   TrueFiPool2,
-  TrueLender2,
+  TestTrueLender,
+  TestTrueLender__factory,
   TrueFiCreditOracle,
   TestTrueRatingAgencyV2__factory,
 } from 'contracts'
@@ -51,7 +52,7 @@ describe('TrueRatingAgencyV2', () => {
   let tusd: MockTrueCurrency
   let usdc: MockUsdc
 
-  let lender: TrueLender2
+  let lender: TestTrueLender
   let loanToken: LoanToken2
   let loanFactory: LoanFactory2
   let tusdPool: TrueFiPool2
@@ -75,6 +76,8 @@ describe('TrueRatingAgencyV2', () => {
     const deployContract = setupDeploy(owner)
     rater = await deployContract(TestTrueRatingAgencyV2__factory)
 
+    lender = await new TestTrueLender__factory(owner).deploy()
+
     ; ({
       rater,
       tru: trustToken,
@@ -87,7 +90,7 @@ describe('TrueRatingAgencyV2', () => {
       feePool: usdcPool,
       standardPool: tusdPool,
       creditOracle,
-    } = await setupTruefi2(owner, _provider, { rater: rater }))
+    } = await setupTruefi2(owner, _provider, { lender: lender, rater: rater }))
 
     await rater.setRatersRewardFactor(10000)
 
