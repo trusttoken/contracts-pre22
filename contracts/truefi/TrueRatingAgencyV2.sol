@@ -66,7 +66,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
     // REMOVAL OR REORDER OF VARIABLES WILL RESULT
     // ========= IN STORAGE CORRUPTION ===========
 
-    mapping(address => bool) public DEPRECATED__allowedSubmitters;
+    mapping(address => bool) private DEPRECATED__allowedSubmitters;
     mapping(address => Loan) public loans;
 
     IBurnableERC20 public TRU;
@@ -83,9 +83,9 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
     uint256 public rewardMultiplier;
 
     // are submissions paused?
-    bool public DEPRECATED__submissionPauseStatus;
+    bool private DEPRECATED__submissionPauseStatus;
 
-    mapping(address => bool) public DEPRECATED__canChangeAllowance;
+    mapping(address => bool) private DEPRECATED__canChangeAllowance;
 
     // ======= STORAGE DECLARATION END ============
 
