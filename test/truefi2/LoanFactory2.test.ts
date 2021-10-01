@@ -132,7 +132,7 @@ describe('LoanFactory2', () => {
       expect(await loanToken.amount()).to.equal(parseEth(1_000))
       expect(await loanToken.term()).to.equal(100)
       expect(await loanToken.lender()).to.equal(lender.address)
-      expect(await loanToken.liquidator()).to.equal(liquidator.address)
+      expect(await loanToken.loanFactory()).to.equal(loanFactory.address)
     })
 
     it('marks deployed contract as loan token', async () => {
@@ -288,7 +288,7 @@ describe('LoanFactory2', () => {
         expect(await loanToken.lender()).to.eq(lender.address)
         expect(await loanToken.ftlAgency()).to.eq(ftla.address)
         expect(await loanToken.admin()).to.eq(owner.address)
-        expect(await loanToken.liquidator()).to.eq(liquidator.address)
+        expect(await loanToken.loanFactory()).to.eq(loanFactory.address)
         expect(await loanToken.amount()).to.eq(parseEth(1))
         expect(await loanToken.term()).to.eq(15 * DAY)
         expect(await loanToken.apy()).to.eq(1000)
@@ -309,9 +309,9 @@ describe('LoanFactory2', () => {
     })
 
     describe('reverts if', () => {
-      it('caller is not CreditAgency', async () => {
+      it('caller is not CreditAgency or loan', async () => {
         await expect(loanFactory.connect(borrower).createDebtToken(pool.address, borrower.address, parseEth(1)))
-          .to.be.revertedWith('LoanFactory: Caller is not the credit agency')
+          .to.be.revertedWith('LoanFactory: Caller is neither credit agency nor loan')
       })
 
       it('there is no token implementation', async () => {

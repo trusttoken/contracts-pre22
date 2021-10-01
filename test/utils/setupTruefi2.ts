@@ -91,7 +91,7 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
   await lender.initialize(stkTru.address, poolFactory.address, customDeployed?.oneInch ? customDeployed.oneInch.address : AddressZero)
   await ftlAgency.initialize(stkTru.address, poolFactory.address, customDeployed?.oneInch ? customDeployed.oneInch.address : AddressZero, creditOracle.address, creditModel.address, borrowingMutex.address, loanFactory.address)
   await safu.initialize(loanFactory.address, liquidator.address, customDeployed?.oneInch ? customDeployed.oneInch.address : AddressZero)
-  await poolFactory.initialize(implementationReference.address, lender.address, ftlAgency.address, safu.address)
+  await poolFactory.initialize(implementationReference.address, lender.address, ftlAgency.address, safu.address, loanFactory.address)
   await creditModel.initialize(poolFactory.address)
   await creditAgency.initialize(creditOracle.address, creditModel.address, borrowingMutex.address, poolFactory.address, loanFactory.address)
   await standardBaseRateOracle.initialize(mockSpotOracle.address, standardToken.address, DAY)

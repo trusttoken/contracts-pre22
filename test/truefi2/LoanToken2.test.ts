@@ -2,16 +2,21 @@ import { expect, use } from 'chai'
 import { MockProvider, solidity } from 'ethereum-waffle'
 import { BigNumber, BigNumberish, ContractTransaction, Wallet } from 'ethers'
 
-import { beforeEachWithFixture, expectScaledCloseTo, parseEth, timeTravel } from 'utils'
+import { beforeEachWithFixture, expectScaledCloseTo, extractDebtTokens, parseEth, timeTravel } from 'utils'
 
 import {
-  BorrowingMutex, BorrowingMutex__factory,
+  BorrowingMutex,
+  BorrowingMutex__factory,
+  DebtToken__factory,
+  FixedTermLoanAgency__factory,
   ImplementationReference__factory,
   LoanToken2,
   LoanToken2__factory,
   MockTrueCurrency,
   MockTrueCurrency__factory,
   PoolFactory__factory,
+  TestLoanFactory,
+  TestLoanFactory__factory,
   TrueFiCreditOracle__factory,
   TrueFiPool2__factory,
 } from 'contracts'
@@ -45,6 +50,7 @@ describe('LoanToken2', () => {
   let poolAddress: string
   let provider: MockProvider
   let borrowingMutex: BorrowingMutex
+  let loanFactory: TestLoanFactory
 
   async function fund () {
     const tx = await loanToken.fund()
@@ -61,10 +67,13 @@ describe('LoanToken2', () => {
     await token.mint(lender.address, parseEth(1000))
 
     const poolFactory = await deployContract(lender, PoolFactory__factory)
+    loanFactory = await deployContract(lender, TestLoanFactory__factory)
     const poolImplementation = await deployContract(lender, TrueFiPool2__factory)
     const implementationReference = await deployContract(lender, ImplementationReference__factory, [poolImplementation.address])
     const creditOracle = await deployContract(lender, TrueFiCreditOracle__factory)
-    await poolFactory.initialize(implementationReference.address, AddressZero, AddressZero, AddressZero)
+    const ftlAgency = await deployContract(lender, FixedTermLoanAgency__factory)
+    await ftlAgency.initialize(AddressZero, AddressZero, AddressZero, AddressZero, AddressZero, AddressZero, loanFactory.address)
+    await poolFactory.initialize(implementationReference.address, AddressZero, ftlAgency.address, AddressZero, loanFactory.address)
     await poolFactory.allowToken(token.address, true)
     await poolFactory.createPool(token.address)
     await creditOracle.initialize()
@@ -72,7 +81,9 @@ describe('LoanToken2', () => {
     borrowingMutex = await deployContract(lender, BorrowingMutex__factory)
     await borrowingMutex.initialize()
     await borrowingMutex.allowLocker(lender.address, true)
-
+    await loanFactory.initialize(poolFactory.address, lender.address, AddressZero, AddressZero, AddressZero, AddressZero, borrowingMutex.address, AddressZero)
+    const debtToken = await deployContract(lender, DebtToken__factory)
+    await loanFactory.setDebtTokenImplementation(debtToken.address)
     loanToken = await new LoanToken2__factory(lender).deploy()
     await loanToken.initialize(
       poolAddress,
@@ -81,12 +92,13 @@ describe('LoanToken2', () => {
       lender.address,
       AddressZero,
       lender.address,
-      lender.address, // easier testing purposes
+      loanFactory.address,
       creditOracle.address,
       parseEth(1000),
       yearInSeconds,
       1000,
     )
+    await loanFactory.setIsLoanToken(loanToken.address)
     await token.approve(loanToken.address, parseEth(1000))
   })
 
@@ -293,7 +305,9 @@ describe('LoanToken2', () => {
       await withdraw(borrower)
       await token.mint(loanToken.address, parseEth(1099))
       await timeTravel(provider, defaultedLoanCloseTime)
-      await expect(loanToken.enterDefault()).to.emit(loanToken, 'Defaulted').withArgs(parseEth(1099))
+      const tx = loanToken.enterDefault()
+      const [debtToken] = await extractDebtTokens(loanFactory, lender, tx)
+      await expect(tx).to.emit(loanToken, 'Defaulted').withArgs(debtToken.address, parseEth(1))
     })
 
     it('keeps the mutex locked', async () => {
@@ -305,44 +319,32 @@ describe('LoanToken2', () => {
       expect(await borrowingMutex.isUnlocked(borrower.address)).to.be.false
       expect(await borrowingMutex.locker(borrower.address)).to.equal(loanToken.address)
     })
+
+    it('mints new DebtTokens and transfers them to the pool', async () => {
+      await fund()
+      await withdraw(borrower)
+      await timeTravel(provider, defaultedLoanCloseTime)
+      await loanToken.enterDefault()
+      const debtToken = DebtToken__factory.connect(await loanToken.debtToken(), lender)
+      expect(await debtToken.balanceOf(poolAddress)).to.equal(parseEth(1100))
+    })
+
+    it('after partial repayment, mints debtTokens for rest which is not repaid', async () => {
+      await fund()
+      await withdraw(borrower)
+      await timeTravel(provider, defaultedLoanCloseTime)
+      await token.mint(loanToken.address, parseEth(550))
+      await loanToken.enterDefault()
+      const debtToken = DebtToken__factory.connect(await loanToken.debtToken(), lender)
+      expect(await debtToken.balanceOf(poolAddress)).to.equal(parseEth(550))
+      expect(await loanToken.value(await loanToken.totalSupply())).to.equal(parseEth(550))
+    })
   })
 
   describe('liquidate', () => {
-    it('reverts when status is not defaulted', async () => {
+    it('reverts because liquidation is not supported', async () => {
       await expect(loanToken.liquidate())
-        .to.be.revertedWith('LoanToken2: Current status should be Defaulted')
-
-      await fund()
-      await expect(loanToken.liquidate())
-        .to.be.revertedWith('LoanToken2: Current status should be Defaulted')
-
-      await withdraw(borrower)
-      await expect(loanToken.liquidate())
-        .to.be.revertedWith('LoanToken2: Current status should be Defaulted')
-
-      await timeTravel(provider, defaultedLoanCloseTime)
-      await expect(loanToken.liquidate())
-        .to.be.revertedWith('LoanToken2: Current status should be Defaulted')
-    })
-
-    it('reverts if not called by liquidator', async () => {
-      await fund()
-      await withdraw(borrower)
-      await timeTravel(provider, defaultedLoanCloseTime)
-      await loanToken.enterDefault()
-
-      await expect(loanToken.connect(borrower).liquidate())
-        .to.be.revertedWith('LoanToken2: Caller is not the liquidator')
-    })
-
-    it('sets status to liquidated', async () => {
-      await fund()
-      await withdraw(borrower)
-      await timeTravel(provider, defaultedLoanCloseTime)
-      await loanToken.enterDefault()
-
-      await loanToken.liquidate()
-      expect(await loanToken.status()).to.equal(LoanTokenStatus.Liquidated)
+        .to.be.revertedWith('LoanToken2: Direct liquidation has been deprecated')
     })
   })
 
@@ -791,9 +793,18 @@ describe('LoanToken2', () => {
       await loanToken.settle()
       expect(await loanToken.value(loanTokenBalance)).to.be.equal(parseEth(1100))
     })
+
+    it('loan partially repaid, defaulted', async () => {
+      await withdraw(borrower)
+      await timeTravel(provider, defaultedLoanCloseTime)
+      await token.mint(loanToken.address, parseEth(123))
+      expect(await loanToken.value(loanTokenBalance)).to.be.equal(parseEth(1100))
+      await loanToken.enterDefault()
+      expect(await loanToken.value(loanTokenBalance)).to.be.equal(parseEth(123))
+    })
   })
 
   it('version', async () => {
-    expect(await loanToken.version()).to.equal(6)
+    expect(await loanToken.version()).to.equal(7)
   })
 })

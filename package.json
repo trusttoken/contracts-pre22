@@ -25,7 +25,7 @@
     "test:true-currencies": "mocha 'test/true-currencies/*.ts'",
     "test:true-gold": "mocha 'test/true-gold/*.ts'",
     "test:truefi": "mocha 'test/truefi/**/*.ts'",
-    "test:truefi2": "mocha 'test/truefi2/**/*.ts' --exclude test/truefi2/lines-of-credit/**/*.ts test/truefi2/complete-flow/**/*.ts",
+    "test:truefi2": "NODE_OPTIONS='--max-old-space-size=5120' mocha 'test/truefi2/**/*.ts' --exclude test/truefi2/lines-of-credit/**/*.ts test/truefi2/complete-flow/**/*.ts",
     "test:lines-of-credit": "mocha test/truefi2/lines-of-credit/**/*.ts",
     "test:complete-flow": "mocha test/truefi2/complete-flow/**/*.ts",
     "test:trusttoken": "mocha 'test/trusttoken/*.ts'",
