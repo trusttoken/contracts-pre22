@@ -127,8 +127,6 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
   await creditOracle.setManager(owner.address)
 
   await lender.setFee(0)
-  await lender.setMaxLoanTerm(YEAR * 10)
-  await lender.setLongTermLoanThreshold(YEAR * 10)
   await ftlAgency.setFee(0)
   await ftlAgency.setMaxLoanTerm(YEAR * 10)
   await ftlAgency.setLongTermLoanThreshold(YEAR * 10)

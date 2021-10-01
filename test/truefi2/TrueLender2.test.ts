@@ -35,7 +35,7 @@ import { BorrowingMutexJson, LoanToken2Json, Mock1InchV3Json } from 'build'
 
 import { deployMockContract, solidity } from 'ethereum-waffle'
 import { AddressZero } from '@ethersproject/constants'
-import { BigNumber, BigNumberish, constants, utils, Wallet } from 'ethers'
+import { BigNumber, BigNumberish, utils, Wallet } from 'ethers'
 
 use(solidity)
 
@@ -152,66 +152,9 @@ describe('TrueLender2', () => {
     it('sets the pool factory address', async () => {
       expect(await lender.factory()).to.equal(poolFactory.address)
     })
-
-    it('default params', async () => {
-      expect(await lender.maxLoanTerm()).to.equal(YEAR * 10)
-      expect(await lender.longTermLoanThreshold()).to.equal(YEAR * 10)
-      expect(await lender.longTermLoanScoreThreshold()).to.equal(200)
-    })
   })
 
   describe('Parameters set up', () => {
-    describe('setMaxLoanTerm', () => {
-      it('changes maxLoanTerm', async () => {
-        await lender.setMaxLoanTerm(DAY)
-        expect(await lender.maxLoanTerm()).to.equal(DAY)
-      })
-
-      it('emits MaxLoanTermChanged', async () => {
-        await expect(lender.setMaxLoanTerm(DAY))
-          .to.emit(lender, 'MaxLoanTermChanged').withArgs(DAY)
-      })
-
-      it('must be called by owner', async () => {
-        await expect(lender.connect(borrower).setMaxLoanTerm(DAY))
-          .to.be.revertedWith('Ownable: caller is not the owner')
-      })
-    })
-
-    describe('setLongTermLoanThreshold', () => {
-      it('changes longTermLoanThreshold', async () => {
-        await lender.setLongTermLoanThreshold(DAY)
-        expect(await lender.longTermLoanThreshold()).to.equal(DAY)
-      })
-
-      it('emits LongTermLoanThresholdChanged', async () => {
-        await expect(lender.setLongTermLoanThreshold(DAY))
-          .to.emit(lender, 'LongTermLoanThresholdChanged').withArgs(DAY)
-      })
-
-      it('must be called by owner', async () => {
-        await expect(lender.connect(borrower).setLongTermLoanThreshold(DAY))
-          .to.be.revertedWith('Ownable: caller is not the owner')
-      })
-    })
-
-    describe('setLongTermLoanScoreThreshold', () => {
-      it('changes longTermLoanScoreThreshold', async () => {
-        await lender.setLongTermLoanScoreThreshold(100)
-        expect(await lender.longTermLoanScoreThreshold()).to.equal(100)
-      })
-
-      it('emits LongTermLoanScoreThresholdChanged', async () => {
-        await expect(lender.setLongTermLoanScoreThreshold(100))
-          .to.emit(lender, 'LongTermLoanScoreThresholdChanged').withArgs(100)
-      })
-
-      it('must be called by owner', async () => {
-        await expect(lender.connect(borrower).setLongTermLoanScoreThreshold(100))
-          .to.be.revertedWith('Ownable: caller is not the owner')
-      })
-    })
-
     describe('setFee', () => {
       it('changes fee', async () => {
         await lender.setFee(1234)
@@ -535,36 +478,6 @@ describe('TrueLender2', () => {
       expect(await lender.loans(pool1.address)).to.deep.equal([loan1.address])
       await lender.testTransferAllLoanTokens(loan1.address, owner.address)
       expect(await lender.loans(pool1.address)).to.deep.equal([])
-    })
-  })
-
-  describe('deprecate', () => {
-    beforeEach(async () => {
-      await lender.deprecate()
-    })
-
-    it('sets deprecated maxLoans to max value', async () => {
-      expect(await lender.DEPRECATED__maxLoans()).to.equal(constants.MaxUint256)
-    })
-
-    it('sets deprecated ratingAgency to zero address', async () => {
-      expect(await lender.DEPRECATED__ratingAgency()).to.equal(AddressZero)
-    })
-
-    it('sets deprecated minVotes to max value', async () => {
-      expect(await lender.DEPRECATED__minVotes()).to.equal(constants.MaxUint256)
-    })
-
-    it('sets deprecated minRatio to max value', async () => {
-      expect(await lender.DEPRECATED__minRatio()).to.equal(constants.MaxUint256)
-    })
-
-    it('sets deprecated votingPeriod to max value', async () => {
-      expect(await lender.DEPRECATED__votingPeriod()).to.equal(constants.MaxUint256)
-    })
-
-    it('sets deprecated creditOracle to zero address', async () => {
-      expect(await lender.DEPRECATED__creditOracle()).to.equal(AddressZero)
     })
   })
 })
