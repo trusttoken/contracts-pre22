@@ -66,7 +66,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
     // REMOVAL OR REORDER OF VARIABLES WILL RESULT
     // ========= IN STORAGE CORRUPTION ===========
 
-    mapping(address => bool) public allowedSubmitters;
+    mapping(address => bool) public DEPRECATED__allowedSubmitters;
     mapping(address => Loan) public loans;
 
     IBurnableERC20 public TRU;
@@ -89,43 +89,10 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
 
     // ======= STORAGE DECLARATION END ============
 
-    event Allowed(address indexed who, bool status);
     event RatersRewardFactorChanged(uint256 ratersRewardFactor);
     event RewardMultiplierChanged(uint256 newRewardMultiplier);
     event Claimed(address loanToken, address rater, uint256 claimedReward);
     event LoanFactoryChanged(address newLoanFactory);
-
-    /**
-     * @dev Only whitelisted borrowers can submit for credit ratings
-     */
-    modifier onlyAllowedSubmitters() {
-        require(allowedSubmitters[msg.sender], "TrueRatingAgencyV2: Sender is not allowed to submit");
-        _;
-    }
-
-    /**
-     * @dev Only loan submitter can perform certain actions
-     */
-    modifier onlyCreator(address id) {
-        require(loans[id].creator == msg.sender, "TrueRatingAgencyV2: Not sender's loan");
-        _;
-    }
-
-    /**
-     * @dev Cannot submit the same loan multiple times
-     */
-    modifier onlyNotExistingLoans(address id) {
-        require(status(id) == LoanStatus.Void, "TrueRatingAgencyV2: Loan was already created");
-        _;
-    }
-
-    /**
-     * @dev Only loans in Pending state
-     */
-    modifier onlyPendingLoans(address id) {
-        require(status(id) == LoanStatus.Pending, "TrueRatingAgencyV2: Loan is not currently pending");
-        _;
-    }
 
     /**
      * @dev Only loans that have been funded
