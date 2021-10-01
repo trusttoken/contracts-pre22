@@ -73,7 +73,7 @@ xdescribe('TrueLender2', () => {
     lender = await deployContract(TrueLender2__factory)
     await lender.initialize(stkTru.address, poolFactory.address, INCH_ADDRESS, mockCreditOracle.address, mockCreditModel.address, borrowingMutex.address)
 
-    await poolFactory.initialize(implementationReference.address, lender.address, AddressZero, AddressZero)
+    await poolFactory.initialize(implementationReference.address, lender.address, AddressZero, AddressZero, AddressZero)
 
     await poolFactory.allowToken(USDC_ADDRESS, true)
     usdc = Erc20Mock__factory.connect(USDC_ADDRESS, owner)
