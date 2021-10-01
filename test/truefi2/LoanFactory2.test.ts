@@ -10,7 +10,6 @@ import {
   FixedTermLoanAgency__factory,
   LoanFactory2,
   TrueFiPool2,
-  TrueLender2,
   Liquidator2,
   PoolFactory,
   LoanFactory2__factory,
@@ -37,7 +36,6 @@ describe('LoanFactory2', () => {
   let depositor: Wallet
   let ftla: Wallet
   let fakeCreditAgency: Wallet
-  let lender: TrueLender2
   let liquidator: Liquidator2
   let pool: TrueFiPool2
   let poolFactory: PoolFactory
@@ -67,7 +65,6 @@ describe('LoanFactory2', () => {
       standardPool: pool,
       standardToken: poolToken,
       loanFactory,
-      lender,
       liquidator,
       poolFactory,
       creditModel,

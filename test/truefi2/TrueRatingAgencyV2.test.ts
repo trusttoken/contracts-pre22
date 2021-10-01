@@ -95,6 +95,7 @@ describe('TrueRatingAgencyV2', () => {
     } = await setupTruefi2(owner, _provider, { lender: lender }))
 
     await rater.setRatersRewardFactor(10000)
+    await loanFactory.setFixedTermLoanAgency(lender.address)
 
     loanToken = await createLoan(loanFactory, owner, tusdPool, 5_000_000, yearInSeconds * 2, 1000)
 

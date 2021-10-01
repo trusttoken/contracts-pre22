@@ -92,6 +92,8 @@ describe('TrueLender2', () => {
       borrowingMutex,
     } = await setupTruefi2(owner, _provider, { lender: lender, oneInch: oneInch }))
 
+    await loanFactory.setFixedTermLoanAgency(lender.address)
+
     token1 = await deployContract(owner, MockErc20Token__factory)
     token2 = await deployContract(owner, MockErc20Token__factory)
 

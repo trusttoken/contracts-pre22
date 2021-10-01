@@ -18,7 +18,7 @@ import {
   CreditModel,
   MockTrueCurrency__factory,
   FixedTermLoanAgency,
-  LegacyLoanToken2__factory, LegacyLoanToken2,
+  LegacyLoanToken2__factory,
 } from 'contracts'
 import { MockProvider, solidity } from 'ethereum-waffle'
 import { BigNumber, Wallet } from 'ethers'
