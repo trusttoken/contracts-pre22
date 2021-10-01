@@ -14,17 +14,10 @@ import {ILoanToken2} from "./interface/ILoanToken2.sol";
 import {IDebtToken} from "../truefi2/interface/ILoanToken2.sol";
 import {IStakingPool} from "../truefi/interface/IStakingPool.sol";
 import {ITrueLender2} from "./interface/ITrueLender2.sol";
-import {ITrueFiPool2, ITrueFiPoolOracle, I1Inch3} from "./interface/ITrueFiPool2.sol";
+import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
+import {I1Inch3} from "./interface/I1Inch3.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
-import {ITrueRatingAgency} from "../truefi/interface/ITrueRatingAgency.sol";
 import {IERC20WithDecimals} from "./interface/IERC20WithDecimals.sol";
-import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
-import {ICreditModel} from "./interface/ICreditModel.sol";
-import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
-
-interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
-    function decimals() external view returns (uint8);
-}
 
 /**
  * @title TrueLender v2.0
@@ -54,7 +47,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     mapping(ITrueFiPool2 => ILoanToken2[]) public poolLoans;
 
     // maximum amount of loans lender can handle at once
-    uint256 public maxLoans;
+    uint256 private DEPRECATED__maxLoans;
 
     // which part of interest should be paid to the stakers
     uint256 public fee;
@@ -63,7 +56,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
 
     IPoolFactory public factory;
 
-    ITrueRatingAgency public DEPRECATED__ratingAgency;
+    address private DEPRECATED__ratingAgency;
 
     I1Inch3 public _1inch;
 
@@ -76,56 +69,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     // basis precision: 10000 = 100%
     uint256 public swapFeeSlippage;
 
-    // ===== Voting parameters =====
-
-    // How many votes are needed for a loan to be approved
-    uint256 public DEPRECATED__minVotes;
-
-    // Minimum ratio of yes votes to total votes for a loan to be approved
-    // basis precision: 10000 = 100%
-    uint256 public DEPRECATED__minRatio;
-
-    // minimum prediction market voting period
-    uint256 public DEPRECATED__votingPeriod;
-
-    ITrueFiCreditOracle public creditOracle;
-
-    uint256 public maxLoanTerm;
-
-    uint256 public longTermLoanThreshold;
-
-    uint8 public longTermLoanScoreThreshold;
-
-    ICreditModel public creditModel;
-
-    // mutex ensuring there's only one running loan or credit line for borrower
-    IBorrowingMutex public borrowingMutex;
-
     // ======= STORAGE DECLARATION END ============
-
-    /**
-     * @dev Emitted when loans limit is changed
-     * @param maxLoans new maximum amount of loans
-     */
-    event LoansLimitChanged(uint256 maxLoans);
-
-    /**
-     * @dev Emitted when max loan term changed
-     * @param maxLoanTerm New max loan term
-     */
-    event MaxLoanTermChanged(uint256 maxLoanTerm);
-
-    /**
-     * @dev Emitted when long term loan's minimal term changed
-     * @param longTermLoanThreshold New long term loan minimal term
-     */
-    event LongTermLoanThresholdChanged(uint256 longTermLoanThreshold);
-
-    /**
-     * @dev Emitted when minimal credit score threshold for long term loan changed
-     * @param longTermLoanScoreThreshold New minimal credit score threshold for long term loan
-     */
-    event LongTermLoanScoreThresholdChanged(uint256 longTermLoanScoreThreshold);
 
     /**
      * @dev Emitted when loan fee is changed
@@ -140,30 +84,11 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     event FeePoolChanged(ITrueFiPool2 newFeePool);
 
     /**
-     * @dev Emitted when credit oracle is changed
-     * @param newCreditOracle New credit oracle address
-     */
-    event CreditOracleChanged(ITrueFiCreditOracle newCreditOracle);
-
-    /**
-     * @dev Emitted when a loan is funded
-     * @param loanToken LoanToken contract which was funded
-     * @param amount Amount funded
-     */
-    event Funded(address indexed pool, address loanToken, uint256 amount);
-
-    /**
      * @dev Emitted when funds are reclaimed from the LoanToken contract
      * @param loanToken LoanToken from which funds were reclaimed
      * @param amount Amount repaid
      */
     event Reclaimed(address indexed pool, address loanToken, uint256 amount);
-
-    /**
-     * @dev Emitted when borrowingMutex address is changed
-     * @param borrowingMutex new borrowingMutex address
-     */
-    event BorrowingMutexChanged(IBorrowingMutex borrowingMutex);
 
     /**
      * @dev Can be only called by a pool
@@ -182,81 +107,16 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     function initialize(
         IStakingPool _stakingPool,
         IPoolFactory _factory,
-        I1Inch3 __1inch,
-        ITrueFiCreditOracle _creditOracle,
-        ICreditModel _creditModel,
-        IBorrowingMutex _borrowingMutex
+        I1Inch3 __1inch
     ) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
 
         stakingPool = _stakingPool;
         factory = _factory;
         _1inch = __1inch;
-        creditOracle = _creditOracle;
-        creditModel = _creditModel;
-        borrowingMutex = _borrowingMutex;
 
         swapFeeSlippage = 100; // 1%
         fee = 1000;
-        maxLoans = 100;
-        maxLoanTerm = 180 days;
-        longTermLoanThreshold = 90 days;
-        longTermLoanScoreThreshold = 200;
-    }
-
-    /**
-     * @dev Set new credit oracle address.
-     * Only owner can change credit oracle
-     * @param _creditOracle new credit oracle
-     */
-    function setCreditOracle(ITrueFiCreditOracle _creditOracle) external onlyOwner {
-        creditOracle = _creditOracle;
-        emit CreditOracleChanged(_creditOracle);
-    }
-
-    /**
-     * @dev set borrowingMutex
-     * @param newMutex borrowing mutex address to be set
-     */
-    function setBorrowingMutex(IBorrowingMutex newMutex) public onlyOwner {
-        borrowingMutex = newMutex;
-        emit BorrowingMutexChanged(newMutex);
-    }
-
-    /**
-     * @dev Set max loan term. Only owner can change parameters.
-     * @param _maxLoanTerm New maxLoanTerm
-     */
-    function setMaxLoanTerm(uint256 _maxLoanTerm) external onlyOwner {
-        maxLoanTerm = _maxLoanTerm;
-        emit MaxLoanTermChanged(_maxLoanTerm);
-    }
-
-    /**
-     * @dev Set minimal term of a long term loan. Only owner can change parameters.
-     * @param _longTermLoanThreshold New longTermLoanThreshold
-     */
-    function setLongTermLoanThreshold(uint256 _longTermLoanThreshold) external onlyOwner {
-        longTermLoanThreshold = _longTermLoanThreshold;
-        emit LongTermLoanThresholdChanged(_longTermLoanThreshold);
-    }
-
-    /**
-     * @dev Set long term loan credit score threshold. Only owner can change parameters.
-     * @param _longTermLoanScoreThreshold New longTermLoanScoreThreshold
-     */
-    function setLongTermLoanScoreThreshold(uint8 _longTermLoanScoreThreshold) external onlyOwner {
-        longTermLoanScoreThreshold = _longTermLoanScoreThreshold;
-        emit LongTermLoanScoreThresholdChanged(_longTermLoanScoreThreshold);
-    }
-
-    /**
-     * @dev Set new loans limit. Only owner can change parameters.
-     * @param newLoansLimit New loans limit
-     */
-    function setLoansLimit(uint256 newLoansLimit) external onlyOwner {
-        maxLoans = newLoansLimit;
-        emit LoansLimitChanged(maxLoans);
     }
 
     /**
@@ -287,44 +147,6 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
      */
     function loans(ITrueFiPool2 pool) public view returns (ILoanToken2[] memory result) {
         result = poolLoans[pool];
-    }
-
-    /**
-     * @dev Fund a loan
-     * LoanToken should be created by the LoanFactory over the pool
-     * than was also created by the PoolFactory.
-     * Method should be called by the loan borrower
-     *
-     * When called, lender takes funds from the pool, gives it to the loan and holds all LoanTokens
-     * Origination fee is transferred to the stake
-     *
-     * @param loanToken LoanToken to fund
-     */
-    function fund(ILoanToken2 loanToken) external {
-        require(msg.sender == loanToken.borrower(), "TrueLender: Sender is not borrower");
-        ITrueFiPool2 pool = loanToken.pool();
-
-        require(factory.isSupportedPool(pool), "TrueLender: Pool not supported by the factory");
-        require(loanToken.token() == pool.token(), "TrueLender: Loan and pool token mismatch");
-        require(poolLoans[pool].length < maxLoans, "TrueLender: Loans number has reached the limit");
-        require(borrowingMutex.isUnlocked(msg.sender), "TrueLender: There is an ongoing loan or credit line");
-        require(creditOracle.status(msg.sender) == ITrueFiCreditOracle.Status.Eligible, "TrueLender: Sender is not eligible for loan");
-
-        uint256 term = loanToken.term();
-        require(isTermBelowMax(term), "TrueLender: Loan's term is too long");
-        require(isCredibleForTerm(term), "TrueLender: Credit score is too low for loan's term");
-
-        uint256 amount = loanToken.amount();
-        require(amount <= borrowLimit(pool, loanToken.borrower()), "TrueLender: Loan amount cannot exceed borrow limit");
-
-        poolLoans[pool].push(loanToken);
-        pool.borrow(amount);
-        pool.token().safeApprove(address(loanToken), amount);
-        loanToken.fund();
-
-        borrowingMutex.lock(msg.sender, address(loanToken));
-
-        emit Funded(address(pool), address(loanToken), amount);
     }
 
     /**
@@ -370,50 +192,6 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         // If we reach this, it means loanToken was not present in _loans array
         // This prevents invalid loans from being reclaimed
         revert("TrueLender: This loan has not been funded by the lender");
-    }
-
-    /**
-     * @dev Get total amount borrowed for `borrower` from fixed term loans in USD
-     * @param borrower Borrower to get amount borrowed for
-     * @param decimals Precision to use when calculating total borrowed
-     * @return Total amount borrowed for `borrower` in USD
-     */
-    function totalBorrowed(address borrower, uint8 decimals) public view returns (uint256) {
-        uint256 borrowSum;
-        uint256 resultPrecision = uint256(10)**decimals;
-
-        // loop through loans and sum amount borrowed accounting for precision
-        ITrueFiPool2[] memory pools = factory.getSupportedPools();
-        for (uint256 i = 0; i < pools.length; i++) {
-            ITrueFiPool2 pool = pools[i];
-            uint256 poolPrecision = uint256(10)**ITrueFiPool2WithDecimals(address(pool)).decimals();
-            ILoanToken2[] memory _loans = poolLoans[pool];
-            for (uint256 j = 0; j < _loans.length; j++) {
-                ILoanToken2 loan = _loans[j];
-                if (address(loan.borrower()) == borrower) {
-                    uint256 loanValue = loan.value(loan.balanceOf(address(this)));
-                    borrowSum = borrowSum.add(loanValue.mul(resultPrecision).div(poolPrecision));
-                }
-            }
-        }
-        return borrowSum;
-    }
-
-    /**
-     * @dev Get borrow limit for `borrower` in `pool` using credit model
-     * @param pool Pool to get borrow limit for
-     * @param borrower Borrower to get borrow limit for
-     * @return borrow limit for `borrower` in `pool`
-     */
-    function borrowLimit(ITrueFiPool2 pool, address borrower) public view returns (uint256) {
-        uint8 poolDecimals = ITrueFiPool2WithDecimals(address(pool)).decimals();
-        return
-            creditModel.borrowLimit(
-                pool,
-                creditOracle.score(borrower),
-                creditOracle.maxBorrowerLimit(borrower),
-                totalBorrowed(borrower, poolDecimals)
-            );
     }
 
     /**
@@ -560,21 +338,8 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         loan.safeTransfer(recipient, numerator.mul(loan.balanceOf(address(this))).div(denominator));
     }
 
-    function isCredibleForTerm(uint256 term) internal view returns (bool) {
-        if (term > longTermLoanThreshold) {
-            return creditOracle.score(msg.sender) >= longTermLoanScoreThreshold;
-        }
-        return true;
-    }
-
-    function isTermBelowMax(uint256 term) internal view returns (bool) {
-        return term <= maxLoanTerm;
-    }
-
     function deprecate() external {
-        DEPRECATED__ratingAgency = ITrueRatingAgency(address(0));
-        DEPRECATED__minVotes = type(uint256).max;
-        DEPRECATED__minRatio = type(uint256).max;
-        DEPRECATED__votingPeriod = type(uint256).max;
+        DEPRECATED__maxLoans = type(uint256).max;
+        DEPRECATED__ratingAgency = address(0);
     }
 }

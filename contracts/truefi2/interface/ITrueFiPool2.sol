@@ -8,6 +8,7 @@ import {IDebtToken} from "../interface/ILoanToken2.sol";
 import {ITrueFiPoolOracle} from "./ITrueFiPoolOracle.sol";
 import {I1Inch3} from "./I1Inch3.sol";
 import {ISAFU} from "./ISAFU.sol";
+import {ILoanFactory2} from "./ILoanFactory2.sol";
 
 interface ITrueFiPool2 is IERC20 {
     function initialize(
@@ -15,6 +16,7 @@ interface ITrueFiPool2 is IERC20 {
         ITrueLender2 _lender,
         IFixedTermLoanAgency _ftlAgency,
         ISAFU safu,
+        ILoanFactory2 _loanFactory,
         address __owner
     ) external;
 
@@ -23,6 +25,7 @@ interface ITrueFiPool2 is IERC20 {
         ITrueLender2 _lender,
         IFixedTermLoanAgency _ftlAgency,
         ISAFU safu,
+        ILoanFactory2 _loanFactory,
         address __owner,
         string memory borrowerName,
         string memory borrowerSymbol

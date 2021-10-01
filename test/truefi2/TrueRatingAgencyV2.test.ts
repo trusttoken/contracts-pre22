@@ -27,7 +27,8 @@ import {
   LoanToken2__factory,
   LoanFactory2,
   TrueFiPool2,
-  TrueLender2,
+  TestTrueLender,
+  TestTrueLender__factory,
   Liquidator2,
   TrueFiCreditOracle,
 } from 'contracts'
@@ -53,7 +54,7 @@ describe('TrueRatingAgencyV2', () => {
   let tusd: MockTrueCurrency
   let usdc: MockUsdc
 
-  let lender: TrueLender2
+  let lender: TestTrueLender
   let loanToken: LoanToken2
   let loanFactory: LoanFactory2
   let tusdPool: TrueFiPool2
@@ -76,6 +77,8 @@ describe('TrueRatingAgencyV2', () => {
     [owner, otherWallet] = _wallets
     timeTravel = (time: number) => _timeTravel(_provider, time)
 
+    lender = await new TestTrueLender__factory(owner).deploy()
+
     ; ({
       liquidator,
       rater,
@@ -89,7 +92,7 @@ describe('TrueRatingAgencyV2', () => {
       feePool: usdcPool,
       standardPool: tusdPool,
       creditOracle,
-    } = await setupTruefi2(owner, _provider))
+    } = await setupTruefi2(owner, _provider, { lender: lender }))
 
     await rater.setRatersRewardFactor(10000)
 
@@ -112,6 +115,9 @@ describe('TrueRatingAgencyV2', () => {
 
     await creditOracle.setScore(owner.address, 255)
     await creditOracle.setMaxBorrowerLimit(owner.address, parseEth(100_000_000))
+
+    await tusd.mint(lender.address, parseEth(1e7))
+    await usdc.mint(lender.address, parseUSDC(1e7))
   })
 
   const submit = async (loanTokenAddress: string, wallet = owner) =>

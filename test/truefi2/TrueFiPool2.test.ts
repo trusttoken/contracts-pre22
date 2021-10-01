@@ -70,6 +70,7 @@ describe('TrueFiPool2', () => {
     deployContract = setupDeploy(owner)
     timeTravel = (time: number) => _timeTravel(_provider, time)
     provider = _provider
+    lender = await deployContract(TestTrueLender__factory)
 
     lender = await deployContract(TestTrueLender__factory)
 
@@ -254,6 +255,36 @@ describe('TrueFiPool2', () => {
       await expect(tusdPool.setFixedTermLoanAgency(ftlAgency.address))
         .to.emit(tusdPool, 'FixedTermLoanAgencyChanged')
         .withArgs(ftlAgency.address)
+    })
+  })
+
+  describe('setLoanFactory', () => {
+    it('can be called by owner', async () => {
+      await expect(tusdPool.setLoanFactory(loanFactory.address))
+        .not.to.be.reverted
+    })
+
+    it('cannot be called by unauthorized address', async () => {
+      await expect(tusdPool.connect(borrower).setLoanFactory(loanFactory.address))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('properly changes loanFactory address', async () => {
+      const newAddress = Wallet.createRandom().address
+      await tusdPool.setLoanFactory(newAddress)
+      expect(await tusdPool.loanFactory()).to.equal(newAddress)
+      await tusdPool.setLoanFactory(loanFactory.address)
+      expect(await tusdPool.loanFactory()).to.equal(loanFactory.address)
+    })
+
+    it('cannot be called with zero address', async () => {
+      await expect(tusdPool.setLoanFactory(AddressZero)).to.be.revertedWith('TrueFiPool2: loanFactory is zero address')
+    })
+
+    it('emits proper event', async () => {
+      await expect(tusdPool.setLoanFactory(loanFactory.address))
+        .to.emit(tusdPool, 'LoanFactoryChanged')
+        .withArgs(loanFactory.address)
     })
   })
 
