@@ -111,7 +111,6 @@ describe('TrueFi', () => {
       'factory',
       'ratersRewardFactor',
       'rewardMultiplier',
-      'submissionPauseStatus',
     ])
   })
 

@@ -83,7 +83,7 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
     uint256 public rewardMultiplier;
 
     // are submissions paused?
-    bool public submissionPauseStatus;
+    bool public DEPRECATED__submissionPauseStatus;
 
     mapping(address => bool) public canChangeAllowance;
 
@@ -98,7 +98,6 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
     event Withdrawn(address loanToken, address rater, uint256 stake, uint256 received, uint256 burned);
     event RewardMultiplierChanged(uint256 newRewardMultiplier);
     event Claimed(address loanToken, address rater, uint256 claimedReward);
-    event SubmissionPauseStatusChanged(bool status);
     event LoanFactoryChanged(address newLoanFactory);
 
     /**
@@ -270,15 +269,6 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
         require(canChangeAllowance[msg.sender], "TrueRatingAgencyV2: Cannot change allowances");
         allowedSubmitters[who] = status;
         emit Allowed(who, status);
-    }
-
-    /**
-     * @dev Pause submitting loans for rating
-     * @param status Flag of the status
-     */
-    function pauseSubmissions(bool status) public onlyOwner {
-        submissionPauseStatus = status;
-        emit SubmissionPauseStatusChanged(status);
     }
 
     /**
