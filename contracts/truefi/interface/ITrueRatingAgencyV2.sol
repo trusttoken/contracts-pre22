@@ -13,8 +13,6 @@ interface ITrueRatingAgencyV2 {
 
     function submit(address id) external;
 
-    function retract(address id) external;
-
     function resetCastRatings(address id) external;
 
     function yes(address id) external;

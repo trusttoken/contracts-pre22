@@ -295,19 +295,6 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
     }
 
     /**
-     * @dev Remove Loan from rating agency
-     * Can only be retracted by loan creator
-     * @param id Loan ID
-     */
-    function retract(address id) external override onlyPendingLoans(id) onlyCreator(id) {
-        loans[id].creator = address(0);
-        loans[id].prediction[true] = 0;
-        loans[id].prediction[false] = 0;
-
-        emit LoanRetracted(id);
-    }
-
-    /**
      * @dev Rate on a loan by staking TRU
      * @param id Loan ID
      * @param choice Rater choice. false = NO, true = YES

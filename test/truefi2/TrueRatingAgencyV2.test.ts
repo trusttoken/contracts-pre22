@@ -261,39 +261,6 @@ describe('TrueRatingAgencyV2', () => {
         .to.emit(rater, 'LoanSubmitted').withArgs(loanToken.address)
     })
 
-    it('emits event on removal', async () => {
-      await submit(loanToken.address)
-
-      await expect(rater.retract(loanToken.address))
-        .to.emit(rater, 'LoanRetracted').withArgs(loanToken.address)
-    })
-
-    it('loan can be removed by borrower', async () => {
-      await submit(loanToken.address)
-      await rater.retract(loanToken.address)
-
-      const loan = await rater.loans(loanToken.address)
-      expect(loan.timestamp).to.gt(0)
-      expect(loan.creator).to.equal(AddressZero)
-      expect(await rater.getTotalYesRatings(loanToken.address)).to.be.equal(0)
-      expect(await rater.getTotalNoRatings(loanToken.address)).to.be.equal(0)
-    })
-
-    it('retracting does not remove information about ratings', async () => {
-      await submit(loanToken.address)
-      await rater.yes(loanToken.address)
-      await rater.retract(loanToken.address)
-      expect(await rater.getYesRate(loanToken.address, owner.address)).to.be.equal(stake)
-    })
-
-    it('if loan is retracted, stakers total rate-based prediction is lost', async () => {
-      await submit(loanToken.address)
-      await rater.yes(loanToken.address)
-      await rater.retract(loanToken.address)
-      expect(await rater.getTotalYesRatings(loanToken.address)).to.be.equal(0)
-      expect(await rater.getTotalNoRatings(loanToken.address)).to.be.equal(0)
-    })
-
     it('reverts if token was not created with LoanFactory', async () => {
       const fakeLoanToken = await new LoanToken2__factory(owner).deploy()
       await fakeLoanToken.initialize(tusdPool.address, AddressZero, owner.address, owner.address, AddressZero, owner.address, liquidator.address, AddressZero, 5_000_000, yearInSeconds * 2, 1000)
@@ -304,35 +271,6 @@ describe('TrueRatingAgencyV2', () => {
       await submit(loanToken.address)
       await expect(submit(loanToken.address))
         .to.be.revertedWith('TrueRatingAgencyV2: Loan was already created')
-    })
-
-    it('does not allow to resubmit retracted loan', async () => {
-      await submit(loanToken.address)
-      await rater.retract(loanToken.address)
-      await expect(submit(loanToken.address))
-        .to.be.revertedWith('TrueRatingAgencyV2: Loan was already created')
-    })
-
-    it('retracting is only possible until loan is funded (only pending phase)', async () => {
-      await submit(loanToken.address)
-      await rater.yes(loanToken.address)
-      await timeTravel(7 * DAY + 1)
-      await lender.fund(loanToken.address)
-      await expect(rater.retract(loanToken.address))
-        .to.be.revertedWith('TrueRatingAgencyV2: Loan is not currently pending')
-    })
-
-    it('throws when removing not pending loan', async () => {
-      await expect(rater.retract(loanToken.address))
-        .to.be.revertedWith('TrueRatingAgencyV2: Loan is not currently pending')
-    })
-
-    it('cannot remove loan created by someone else', async () => {
-      await rater.allow(otherWallet.address, true)
-      await submit(loanToken.address)
-
-      await expect(rater.connect(otherWallet).retract(loanToken.address))
-        .to.be.revertedWith('TrueRatingAgencyV2: Not sender\'s loan')
     })
   })
 
