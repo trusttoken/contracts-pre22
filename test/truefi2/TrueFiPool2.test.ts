@@ -19,6 +19,7 @@ import {
   TestTrueLender,
   TestTrueLender__factory,
   LegacyLoanToken2__factory,
+  BorrowingMutex,
 } from 'contracts'
 import { MockProvider, solidity } from 'ethereum-waffle'
 import { BigNumber, Wallet } from 'ethers'
@@ -61,6 +62,7 @@ describe('TrueFiPool2', () => {
   let badPoolStrategy: BadStrategy
   let creditModel: CreditModel
   let ftlAgency: FixedTermLoanAgency
+  let borrowingMutex: BorrowingMutex
 
   let timeTravel: (time: number) => void
   let setUtilization: (utilization: number) => void
@@ -70,7 +72,6 @@ describe('TrueFiPool2', () => {
     deployContract = setupDeploy(owner)
     timeTravel = (time: number) => _timeTravel(_provider, time)
     provider = _provider
-    lender = await deployContract(TestTrueLender__factory)
 
     lender = await deployContract(TestTrueLender__factory)
 
@@ -85,6 +86,7 @@ describe('TrueFiPool2', () => {
       creditOracle,
       creditModel,
       ftlAgency,
+      borrowingMutex,
     } = await setupTruefi2(owner, provider, { lender: lender }))
 
     poolStrategy1 = await deployContract(MockStrategy__factory, tusd.address, tusdPool.address)
@@ -116,6 +118,8 @@ describe('TrueFiPool2', () => {
         utilization,
       )
     )
+
+    await borrowingMutex.allowLocker(owner.address, true)
   })
 
   const currencyBalanceOf = async (pool: TrueFiPool2) => (
@@ -450,7 +454,7 @@ describe('TrueFiPool2', () => {
       it('when there are ongoing loans in both trueLender and FTLA, pool value contains both', async () => {
         loan = await createLoan(loanFactory, borrower, tusdPool, 500000, DAY, 1000)
         await tusd.mint(lender.address, 500000)
-        await lender.connect(borrower).fundWithOwnFunds(loan.address)
+        await lender.connect(borrower).fund(loan.address)
 
         await ftlAgency.allowBorrower(borrower2.address)
         await ftlAgency.connect(borrower2).borrow(tusdPool.address, 5000, YEAR, 10000)
@@ -764,12 +768,6 @@ describe('TrueFiPool2', () => {
         .to.be.revertedWith('TrueFiPool: Caller is neither the ftlAgency nor creditAgency')
     })
 
-    it('lender cannot borrow funds', async () => {
-      loan = await createLoan(loanFactory, borrower, tusdPool, 500000, DAY, 1000)
-      await expect(lender.connect(borrower).fund(loan.address))
-        .to.be.revertedWith('TrueFiPool: Caller is neither the ftlAgency nor creditAgency')
-    })
-
     it('ftlAgency can borrow funds', async () => {
       await ftlAgency.connect(borrower).borrow(tusdPool.address, 500000, DAY * 365, 2000)
       expect('borrow').to.be.calledOnContract(tusdPool)
@@ -832,8 +830,9 @@ describe('TrueFiPool2', () => {
 
     it('lender can repay', async () => {
       loan = await createLoan(loanFactory, borrower, tusdPool, 500000, DAY, 1000)
+      await borrowingMutex.lock(borrower.address, loan.address)
       await tusd.mint(lender.address, 500000)
-      await lender.connect(borrower).fundWithOwnFunds(loan.address)
+      await lender.connect(borrower).fund(loan.address)
       await timeTravel(DAY)
       const debt = await loan.debt()
       await tusd.mint(loan.address, debt)
