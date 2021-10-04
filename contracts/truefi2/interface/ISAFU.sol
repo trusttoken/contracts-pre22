@@ -2,7 +2,7 @@
 pragma solidity 0.6.10;
 
 import {IDeficiencyToken} from "./IDeficiencyToken.sol";
-import {IDebtToken} from "./ILoanToken2.sol";
+import {IDebtToken} from "./IDebtToken.sol";
 
 interface ISAFU {
     function poolDeficit(address pool) external view returns (uint256);

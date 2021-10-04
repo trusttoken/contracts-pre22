@@ -13,7 +13,7 @@ import {ILineOfCreditAgency} from "./interface/ILineOfCreditAgency.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
 import {ITimeAveragedBaseRateOracle} from "./interface/ITimeAveragedBaseRateOracle.sol";
 import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
-import {IDebtToken} from "./interface/ILoanToken2.sol";
+import {IDebtToken} from "./interface/IDebtToken.sol";
 
 interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
     function decimals() external view returns (uint8);
