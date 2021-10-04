@@ -29,7 +29,7 @@ interface ILoanToken2 is IERC20 {
     function redeem(uint256) external;
 
     function borrower() external view returns (address);
-    
+
     function debt() external view returns (uint256);
 
     function status() external view returns (Status);
