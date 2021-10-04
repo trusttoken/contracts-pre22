@@ -157,7 +157,7 @@ contract LegacyLoanToken2 is ILoanToken2, ERC20 {
         debt = interest(amount);
     }
 
-    function setLender(address _lender) external onlyAdmin {
+    function setLender(address _lender) external {
         lender = _lender;
     }
 
