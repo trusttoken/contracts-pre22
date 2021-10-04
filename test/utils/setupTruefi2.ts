@@ -28,6 +28,8 @@ import {
   CreditModel__factory,
   TrueRatingAgencyV2__factory,
   DebtToken__factory,
+  TrueRatingAgencyV2,
+  TestTrueRatingAgencyV2,
 } from 'contracts'
 import { Wallet } from 'ethers'
 import { parseTRU, timeTravelTo, YEAR } from '.'
@@ -51,7 +53,7 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
   // ====== DEPLOY ======
   const liquidator = await deployContract(Liquidator2__factory)
   const loanFactory = await deployContract(LoanFactory2__factory)
-  const rater = await deployContract(TrueRatingAgencyV2__factory)
+  const rater: TrueRatingAgencyV2 & TestTrueRatingAgencyV2 = customDeployed?.rater ? customDeployed.rater : await deployContract(TrueRatingAgencyV2__factory)
   const lender: TrueLender2 & TestTrueLender = customDeployed?.lender ? customDeployed.lender : await deployContract(TrueLender2__factory)
   const ftlAgency: FixedTermLoanAgency & TestFixedTermLoanAgency = customDeployed?.ftlAgency ? customDeployed.ftlAgency : await deployContract(FixedTermLoanAgency__factory)
   const safu = await deployContract(Safu__factory)
@@ -86,7 +88,7 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
   await loanFactory.setLoanTokenImplementation(loanTokenImplementation.address)
   await loanFactory.setDebtTokenImplementation(debtTokenImplementation.address)
   await arbitraryDistributor.initialize(rater.address, tru.address, parseTRU(15e6))
-  await rater.initialize(tru.address, stkTru.address, arbitraryDistributor.address, loanFactory.address)
+  await rater.initialize(tru.address, stkTru.address, arbitraryDistributor.address)
   await borrowingMutex.initialize()
   await lender.initialize(stkTru.address, poolFactory.address, customDeployed?.oneInch ? customDeployed.oneInch.address : AddressZero)
   await ftlAgency.initialize(stkTru.address, poolFactory.address, customDeployed?.oneInch ? customDeployed.oneInch.address : AddressZero, creditOracle.address, creditModel.address, borrowingMutex.address, loanFactory.address)
@@ -130,7 +132,6 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
   await ftlAgency.setFee(0)
   await ftlAgency.setMaxLoanTerm(YEAR * 10)
   await ftlAgency.setLongTermLoanThreshold(YEAR * 10)
-  await rater.allowChangingAllowances(owner.address, true)
 
   await tru.initialize()
   await stkTru.initialize(tru.address, feePool.address, feePool.address, linearDistributor.address, liquidator.address)

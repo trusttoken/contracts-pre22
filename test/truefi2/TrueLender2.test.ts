@@ -29,7 +29,7 @@ import {
   TrueFiCreditOracle,
   TrueFiPool2,
   TrueFiPool2__factory,
-  TrueRatingAgencyV2, LegacyLoanToken2__factory,
+  LegacyLoanToken2__factory,
 } from 'contracts'
 
 import { BorrowingMutexJson, LegacyLoanToken2Json, Mock1InchV3Json } from 'build'
@@ -52,7 +52,6 @@ describe('TrueLender2', () => {
   let feePool: TrueFiPool2
   let poolOracle: MockTrueFiPoolOracle
 
-  let rater: TrueRatingAgencyV2
   let lender: TestTrueLender
   let creditOracle: TrueFiCreditOracle
 
@@ -85,7 +84,6 @@ describe('TrueLender2', () => {
       loanFactory,
       feePool,
       standardTokenOracle: poolOracle,
-      rater,
       poolFactory,
       stkTru,
       tru,
@@ -128,7 +126,6 @@ describe('TrueLender2', () => {
     await pool1.join(parseEth(1e7))
     await pool2.join(parseEth(1e7))
 
-    await rater.allow(borrower.address, true)
     await tru.mint(owner.address, parseTRU(15e6))
 
     await tru.approve(stkTru.address, parseTRU(15e6))
@@ -142,13 +139,6 @@ describe('TrueLender2', () => {
     await creditOracle.setScore(borrower.address, 255)
     await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(1e8))
   })
-
-  const approveLoanRating = async function (loan: LegacyLoanToken2) {
-    await rater.connect(borrower).submit(loan.address)
-    await rater.yes(loan.address)
-
-    await timeTravel(7 * DAY + 1)
-  }
 
   describe('Initializer', () => {
     it('sets the staking pool address', async () => {
@@ -210,9 +200,6 @@ describe('TrueLender2', () => {
     beforeEach(async () => {
       const newLoan1 = await createLegacyLoan(loanFactory, borrower, pool1, 100000, DAY, 100)
 
-      await approveLoanRating(newLoan1)
-      await approveLoanRating(loan1)
-      await approveLoanRating(loan2)
       await lender.connect(borrower).fund(loan1.address)
       await lender.connect(borrower).fund(newLoan1.address)
       await lender.connect(borrower).fund(loan2.address)
@@ -249,7 +236,6 @@ describe('TrueLender2', () => {
     }
 
     beforeEach(async () => {
-      await approveLoanRating(loan1)
       await lender.connect(borrower).fund(loan1.address)
       await lender.setFee(0)
     })
@@ -312,9 +298,6 @@ describe('TrueLender2', () => {
 
         newLoan1 = await createLegacyLoan(loanFactory, borrower, pool1, 100000, DAY, 100)
 
-        await approveLoanRating(newLoan1)
-        await approveLoanRating(loan2)
-
         await lender.connect(borrower).fund(newLoan1.address)
         await lender.connect(borrower).fund(loan2.address)
       })
@@ -351,7 +334,6 @@ describe('TrueLender2', () => {
         await mockMutex.mock.unlock.returns()
 
         newLoan1 = await createLegacyLoan(loanFactory, borrower, pool1, parseEth(100000), YEAR, 100)
-        await approveLoanRating(newLoan1)
         await lender.connect(borrower).fund(newLoan1.address)
 
         await lender.setFee(1000)
@@ -439,7 +421,6 @@ describe('TrueLender2', () => {
         const newLoan1 = await createLegacyLoan(loanFactory, borrower, pool1, 100000, DAY, 100)
 
         loanTokens.push(newLoan1)
-        await approveLoanRating(newLoan1)
         await lender.connect(borrower).fund(newLoan1.address)
       }
     })
@@ -465,7 +446,6 @@ describe('TrueLender2', () => {
 
   describe('transferAllLoanTokens', () => {
     beforeEach(async () => {
-      await approveLoanRating(loan1)
       await lender.connect(borrower).fund(loan1.address)
       await lender.setFee(0)
     })

@@ -82,6 +82,6 @@ deploy({}, (_, config) => {
     ratingAgencyV2Distributor.initialize(trueRatingAgencyV2, trustToken)
   })
   runIf(trueRatingAgencyV2.isInitialized().not(), () => {
-    trueRatingAgencyV2.initialize(trustToken, stkTruToken, ratingAgencyV2Distributor, AddressZero)
+    trueRatingAgencyV2.initialize(trustToken, stkTruToken, ratingAgencyV2Distributor)
   })
 })
