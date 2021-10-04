@@ -11,7 +11,6 @@ import {IVoteTokenWithERC20} from "../governance/interface/IVoteToken.sol";
 import {Ownable} from "../common/UpgradeableOwnable.sol";
 import {IArbitraryDistributor} from "./interface/IArbitraryDistributor.sol";
 import {ILoanFactory} from "./interface/ILoanFactory.sol";
-import {IDebtToken} from "../truefi2/interface/IDebtToken.sol";
 import {ILoanToken2} from "../truefi2/interface/ILoanToken2.sol";
 import {ITrueFiPool} from "./interface/ITrueFiPool.sol";
 import {ITrueRatingAgencyV2} from "./interface/ITrueRatingAgencyV2.sol";
