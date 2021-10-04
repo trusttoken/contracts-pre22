@@ -2,7 +2,7 @@
 pragma solidity 0.6.10;
 
 import {ERC20} from "../common/UpgradeableERC20.sol";
-import {IDebtToken} from "./interface/ILoanToken2.sol";
+import {IDebtToken} from "./interface/IDebtToken.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";

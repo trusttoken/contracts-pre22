@@ -5,18 +5,17 @@ import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
-import {ILoanToken2} from "./interface/ILoanToken2.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {IStakingPool} from "../truefi/interface/IStakingPool.sol";
 import {ITrueFiPoolOracle} from "./interface/ITrueFiPoolOracle.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
-import {IDebtToken} from "../truefi2/interface/ILoanToken2.sol";
+import {IDebtToken} from "../truefi2/interface/IDebtToken.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 /**
  * @title Liquidator2
- * @notice Liquidate LoanTokens with this Contract
+ * @notice Liquidate DebtTokens with this Contract
  * @dev When a Loan becomes defaulted, Liquidator allows to
  * compensate pool participants, by transferring some of TRU to the pool
  */

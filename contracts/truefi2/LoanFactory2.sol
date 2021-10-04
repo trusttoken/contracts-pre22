@@ -7,7 +7,8 @@ import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {IFixedTermLoanAgency} from "./interface/IFixedTermLoanAgency.sol";
 import {Initializable} from "../common/Initializable.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
-import {ILoanToken2, IDebtToken} from "./interface/ILoanToken2.sol";
+import {ILoanToken2} from "./interface/ILoanToken2.sol";
+import {IDebtToken} from "./interface/IDebtToken.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {ICreditModel} from "./interface/ICreditModel.sol";
@@ -34,7 +35,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     // ========= IN STORAGE CORRUPTION ===========
 
     // @dev Track Valid LoanTokens
-    mapping(IDebtToken => bool) public override isLoanToken;
+    mapping(ILoanToken2 => bool) public override isLoanToken;
 
     IPoolFactory public poolFactory;
     address public lender;

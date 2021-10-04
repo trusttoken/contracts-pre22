@@ -5,32 +5,9 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ERC20} from "../../common/UpgradeableERC20.sol";
 import {ITrueFiPool2} from "./ITrueFiPool2.sol";
 
-// These two interfaces have to stay in a single file due to a flattener bug that causes IDebtToken to be declared before ILoanToken2
-interface IDebtToken is IERC20 {
+interface ILoanToken2 is IERC20 {
     enum Status {Awaiting, Funded, Withdrawn, Settled, Defaulted, Liquidated}
 
-    function borrower() external view returns (address);
-
-    function debt() external view returns (uint256);
-
-    function pool() external view returns (ITrueFiPool2);
-
-    function status() external view returns (Status);
-
-    function redeem(uint256 _amount) external;
-
-    function liquidate() external;
-
-    function repaid() external view returns (uint256);
-
-    function balance() external view returns (uint256);
-
-    function token() external view returns (ERC20);
-
-    function version() external pure returns (uint8);
-}
-
-interface ILoanToken2 is IDebtToken {
     function term() external view returns (uint256);
 
     function apy() external view returns (uint256);

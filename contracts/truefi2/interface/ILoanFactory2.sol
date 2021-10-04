@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {ILoanToken2, IDebtToken} from "./ILoanToken2.sol";
+import {ILoanToken2} from "./ILoanToken2.sol";
+import {IDebtToken} from "./IDebtToken.sol";
 import {ITrueFiPool2} from "./ITrueFiPool2.sol";
 
 interface ILoanFactory2 {
