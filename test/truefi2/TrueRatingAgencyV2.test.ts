@@ -13,7 +13,7 @@ import {
   parseUSDC,
   DAY,
   setupTruefi2,
-  createLoan,
+  createLegacyLoan,
 } from 'utils'
 
 import {
@@ -23,20 +23,20 @@ import {
   StkTruToken,
   ArbitraryDistributor,
   MockUsdc,
-  LoanToken2,
   LoanToken2__factory,
   LoanFactory2,
   TrueFiPool2,
   TestTrueLender,
   TestTrueLender__factory,
   Liquidator2,
-  TrueFiCreditOracle,
+  TrueFiCreditOracle, LegacyLoanToken2__factory, LegacyLoanToken2,
 } from 'contracts'
 
 import {
   ILoanFactoryJson,
   ArbitraryDistributorJson,
 } from 'build'
+import { deployContract } from 'scripts/utils/deployContract'
 
 use(solidity)
 
@@ -55,7 +55,7 @@ describe('TrueRatingAgencyV2', () => {
   let usdc: MockUsdc
 
   let lender: TestTrueLender
-  let loanToken: LoanToken2
+  let loanToken: LegacyLoanToken2
   let loanFactory: LoanFactory2
   let tusdPool: TrueFiPool2
   let usdcPool: TrueFiPool2
@@ -94,10 +94,12 @@ describe('TrueRatingAgencyV2', () => {
       creditOracle,
     } = await setupTruefi2(owner, _provider, { lender: lender }))
 
-    await rater.setRatersRewardFactor(10000)
-    await loanFactory.setFixedTermLoanAgency(lender.address)
+    const legacyLtImpl = await deployContract(owner, LegacyLoanToken2__factory)
+    await loanFactory.setLoanTokenImplementation(legacyLtImpl.address)
 
-    loanToken = await createLoan(loanFactory, owner, tusdPool, 5_000_000, yearInSeconds * 2, 1000)
+    await rater.setRatersRewardFactor(10000)
+
+    loanToken = await createLegacyLoan(lender, loanFactory, owner, tusdPool, 5_000_000, yearInSeconds * 2, 1000)
 
     await tusd.approve(loanToken.address, 5_000_000)
 
@@ -522,7 +524,7 @@ describe('TrueRatingAgencyV2', () => {
   describe('Claim', () => {
     const rewardMultiplier = 1
     beforeEach(async () => {
-      loanToken = await createLoan(loanFactory, owner, tusdPool, parseEth(5e6), yearInSeconds * 2, 100)
+      loanToken = await createLegacyLoan(lender, loanFactory, owner, tusdPool, parseEth(5e6), yearInSeconds * 2, 100)
 
       await trustToken.mint(otherWallet.address, parseTRU(15e7))
       await trustToken.connect(otherWallet).approve(stakedTrustToken.address, parseTRU(15e7))
