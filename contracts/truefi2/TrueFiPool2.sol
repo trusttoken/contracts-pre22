@@ -242,10 +242,10 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
 
     /**
      * @dev Emitted when pool reclaims deficit from SAFU
-     * @param loan Loan for which the deficit was reclaimed
+     * @param debt Debt for which the deficit was reclaimed
      * @param deficit Amount reclaimed
      */
-    event DeficitReclaimed(ILoanToken2 loan, uint256 deficit);
+    event DeficitReclaimed(IDebtToken debt, uint256 deficit);
 
     /**
      * @dev Emitted when Credit Agency address is changed
@@ -641,7 +641,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     /**
      * @dev Function called when loan's debt is repaid to SAFU, pool has a deficit value towards that loan
      */
-    function reclaimDeficit(ILoanToken2 loan) external {
+    function reclaimDeficit(IDebtToken loan) external {
         IDeficiencyToken dToken = safu.deficiencyToken(loan);
         require(address(dToken) != address(0), "TrueFiPool2: No deficiency token found for loan");
         uint256 deficit = dToken.balanceOf(address(this));

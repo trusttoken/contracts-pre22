@@ -22,7 +22,7 @@ interface ILoanFactory2 {
 
     function isCreatedByFactory(IDebtToken) external view returns (bool);
 
-    function isLoanToken(IDebtToken) external view returns (bool);
+    function isLoanToken(ILoanToken2) external view returns (bool);
 
     function isDebtToken(IDebtToken) external view returns (bool);
 }

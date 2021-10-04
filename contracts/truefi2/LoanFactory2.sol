@@ -185,7 +185,8 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     }
 
     function isCreatedByFactory(IDebtToken loan) external override view returns (bool) {
-        return isLoanToken[loan] || isDebtToken[loan];
+        // For legacy LoanTokens
+        return isLoanToken[ILoanToken2(address(loan))] || isDebtToken[loan];
     }
 
     function setCreditOracle(ITrueFiCreditOracle _creditOracle) external onlyAdmin {

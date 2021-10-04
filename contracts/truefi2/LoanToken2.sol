@@ -382,10 +382,6 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         emit Defaulted(debtToken, unpaidDebt);
     }
 
-    function liquidate() external override {
-        revert("LoanToken2: Direct liquidation has been deprecated");
-    }
-
     /**
      * @dev Redeem LoanToken balances for underlying token
      * Can only call this function after the loan is Closed

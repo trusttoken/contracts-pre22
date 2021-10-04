@@ -11,6 +11,7 @@ import {DeficiencyToken} from "./DeficiencyToken.sol";
 import {IDeficiencyToken} from "./interface/IDeficiencyToken.sol";
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {IDebtToken} from "../truefi2/interface/IDebtToken.sol";
+import {ILoanToken2} from "../truefi2/interface/ILoanToken2.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
 import {ILiquidator2} from "./interface/ILiquidator2.sol";
@@ -170,7 +171,8 @@ contract SAFU is ISAFU, UpgradeableClaimable {
     }
 
     function _poolLiquidate(ITrueFiPool2 pool, IDebtToken loan) internal {
-        if (loanFactory.isLoanToken(loan)) {
+        // For legacy LoanTokens:
+        if (loanFactory.isLoanToken(ILoanToken2(address(loan)))) {
             pool.liquidateLoan(loan);
         }
         if (loanFactory.isDebtToken(loan)) {
