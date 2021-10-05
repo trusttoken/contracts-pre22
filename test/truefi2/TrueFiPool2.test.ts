@@ -18,8 +18,8 @@ import {
   FixedTermLoanAgency,
   TestTrueLender,
   TestTrueLender__factory,
-  LegacyLoanToken2__factory,
   BorrowingMutex,
+  TestLegacyLoanToken2__factory,
 } from 'contracts'
 import { MockProvider, solidity } from 'ethereum-waffle'
 import { BigNumber, Wallet } from 'ethers'
@@ -452,9 +452,9 @@ describe('TrueFiPool2', () => {
       })
 
       it('when there are ongoing loans in both trueLender and FTLA, pool value contains both', async () => {
-        const legacyLoanImpl = await new LegacyLoanToken2__factory(owner).deploy()
+        const legacyLoanImpl = await new TestLegacyLoanToken2__factory(owner).deploy()
         await loanFactory.setLoanTokenImplementation(legacyLoanImpl.address)
-        const legacyLoan = LegacyLoanToken2__factory.connect((await createLoan(loanFactory, borrower, tusdPool, 500000, DAY, 1000)).address, owner)
+        const legacyLoan = TestLegacyLoanToken2__factory.connect((await createLoan(loanFactory, borrower, tusdPool, 500000, DAY, 1000)).address, owner)
         await legacyLoan.setLender(lender.address)
         await tusd.mint(lender.address, 500000)
         await lender.connect(borrower).fund(legacyLoan.address)
@@ -831,9 +831,9 @@ describe('TrueFiPool2', () => {
     })
 
     it('lender can repay', async () => {
-      const legacyLoanImpl = await new LegacyLoanToken2__factory(owner).deploy()
+      const legacyLoanImpl = await new TestLegacyLoanToken2__factory(owner).deploy()
       await loanFactory.setLoanTokenImplementation(legacyLoanImpl.address)
-      const legacyLoan = LegacyLoanToken2__factory.connect((await createLoan(loanFactory, borrower, tusdPool, 500000, DAY, 1000)).address, owner)
+      const legacyLoan = TestLegacyLoanToken2__factory.connect((await createLoan(loanFactory, borrower, tusdPool, 500000, DAY, 1000)).address, owner)
       await legacyLoan.setLender(lender.address)
       await borrowingMutex.lock(borrower.address, legacyLoan.address)
       await tusd.mint(lender.address, 500000)
@@ -960,7 +960,7 @@ describe('TrueFiPool2', () => {
     beforeEach(async () => {
       await tusd.approve(tusdPool.address, parseEth(100))
       await tusdPool.join(parseEth(100))
-      const legacyLoanImpl = await new LegacyLoanToken2__factory(owner).deploy()
+      const legacyLoanImpl = await new TestLegacyLoanToken2__factory(owner).deploy()
       await loanFactory.setLoanTokenImplementation(legacyLoanImpl.address)
       const tx = ftlAgency.connect(borrower).borrow(tusdPool.address, 100000, DAY, 1000)
       loan = await extractLoanTokenAddress(tx, owner, loanFactory)

@@ -28,8 +28,8 @@ import {
   TestTrueLender__factory,
   TrueFiCreditOracle,
   TestTrueRatingAgencyV2__factory,
-  LegacyLoanToken2__factory,
-  LegacyLoanToken2,
+  TestLegacyLoanToken2__factory,
+  TestLegacyLoanToken2,
 } from 'contracts'
 
 import {
@@ -53,7 +53,7 @@ describe('TrueRatingAgencyV2', () => {
   let usdc: MockUsdc
 
   let lender: TestTrueLender
-  let loanToken: LegacyLoanToken2
+  let loanToken: TestLegacyLoanToken2
   let loanFactory: LoanFactory2
   let tusdPool: TrueFiPool2
   let usdcPool: TrueFiPool2
@@ -91,7 +91,7 @@ describe('TrueRatingAgencyV2', () => {
       creditOracle,
     } = await setupTruefi2(owner, _provider, { lender: lender, rater: rater }))
 
-    const legacyLtImpl = await deployContract(LegacyLoanToken2__factory)
+    const legacyLtImpl = await deployContract(TestLegacyLoanToken2__factory)
     await loanFactory.setLoanTokenImplementation(legacyLtImpl.address)
 
     await rater.setRatersRewardFactor(10000)

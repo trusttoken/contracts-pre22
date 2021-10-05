@@ -1,5 +1,5 @@
 import {
-  DebtToken__factory, LegacyLoanToken2, LegacyLoanToken2__factory,
+  DebtToken__factory, TestLegacyLoanToken2, TestLegacyLoanToken2__factory,
   LoanFactory2,
   LoanToken2__factory,
   TrueFiPool2,
@@ -23,8 +23,8 @@ export const createDebtToken = async (loanFactory: LoanFactory2, creditAgency: W
   return DebtToken__factory.connect(creationEvent.args.debtToken, owner)
 }
 
-export const createLegacyLoan = async (lender: Contract, ...args: Parameters<typeof createLoan>): Promise<LegacyLoanToken2> => {
-  const loan = LegacyLoanToken2__factory.connect((await createLoan(...args)).address, args[1])
+export const createLegacyLoan = async (lender: Contract, ...args: Parameters<typeof createLoan>): Promise<TestLegacyLoanToken2> => {
+  const loan = TestLegacyLoanToken2__factory.connect((await createLoan(...args)).address, args[1])
   await loan.setLender(lender.address)
   return loan
 }
