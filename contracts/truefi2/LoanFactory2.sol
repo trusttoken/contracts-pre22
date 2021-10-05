@@ -37,7 +37,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     mapping(IDebtToken => bool) public override isLoanToken;
 
     IPoolFactory public poolFactory;
-    address public lender;
+    address private DEPRECATED__lender;
     address public liquidator;
 
     address public admin;
@@ -78,8 +78,6 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
 
     event CreditAgencyChanged(ILineOfCreditAgency creditAgency);
 
-    event LenderChanged(address lender);
-
     event DebtTokenImplementationChanged(IDebtToken debtTokenImplementation);
 
     event FixedTermLoanAgencyChanged(IFixedTermLoanAgency ftlAgency);
@@ -87,13 +85,11 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     /**
      * @dev Initialize this contract and set currency token
      * @param _poolFactory PoolFactory address
-     * @param _lender Lender address
      * @param _ftlAgency FixedTermLoanAgency address
      * @param _liquidator Liquidator address
      */
     function initialize(
         IPoolFactory _poolFactory,
-        address _lender,
         IFixedTermLoanAgency _ftlAgency,
         address _liquidator,
         ICreditModel _creditModel,
@@ -102,7 +98,6 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         ILineOfCreditAgency _creditAgency
     ) external initializer {
         poolFactory = _poolFactory;
-        lender = _lender;
         ftlAgency = _ftlAgency;
         admin = msg.sender;
         liquidator = _liquidator;
@@ -149,26 +144,6 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         return creditModel.rate(pool, borrowerScore, amount).add(fixedTermLoanAdjustment);
     }
 
-    /**
-     * @dev Deploy LoanToken with parameters
-     * @param _amount Amount to borrow
-     * @param _term Length of loan
-     */
-    function createLoanToken(
-        ITrueFiPool2 _pool,
-        uint256 _amount,
-        uint256 _term,
-        uint256 _maxApy
-    ) external override {
-        require(_amount > 0, "LoanFactory: Loans of amount 0, will not be approved");
-        require(_term > 0, "LoanFactory: Loans cannot have instantaneous term of repay");
-        require(poolFactory.isSupportedPool(_pool), "LoanFactory: Pool is not supported by PoolFactory");
-        uint256 apy = rate(_pool, msg.sender, _amount, _term);
-        require(apy <= _maxApy, "LoanFactory: Calculated apy is higher than max apy");
-
-        _createFTLALoanToken(_pool, msg.sender, _amount, _term, apy);
-    }
-
     function createFTLALoanToken(
         ITrueFiPool2 _pool,
         address _borrower,
@@ -176,21 +151,11 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         uint256 _term,
         uint256 _apy
     ) external override onlyFTLA returns (ILoanToken2) {
-        return _createFTLALoanToken(_pool, _borrower, _amount, _term, _apy);
-    }
-
-    function _createFTLALoanToken(
-        ITrueFiPool2 _pool,
-        address _borrower,
-        uint256 _amount,
-        uint256 _term,
-        uint256 _apy
-    ) private returns (ILoanToken2) {
         address ltImplementationAddress = address(loanTokenImplementation);
         require(ltImplementationAddress != address(0), "LoanFactory: Loan token implementation should be set");
 
         LoanToken2 newToken = LoanToken2(Clones.clone(ltImplementationAddress));
-        newToken.initialize(_pool, borrowingMutex, _borrower, lender, ftlAgency, admin, this, creditOracle, _amount, _term, _apy);
+        newToken.initialize(_pool, borrowingMutex, _borrower, ftlAgency, admin, this, creditOracle, _amount, _term, _apy);
         isLoanToken[newToken] = true;
 
         emit LoanTokenCreated(newToken);
@@ -245,12 +210,6 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         require(address(_creditAgency) != address(0), "LoanFactory: Cannot set credit agency to zero address");
         creditAgency = _creditAgency;
         emit CreditAgencyChanged(_creditAgency);
-    }
-
-    function setLender(address _lender) external onlyAdmin {
-        require(_lender != address(0), "LoanFactory: Cannot set lender to zero address");
-        lender = _lender;
-        emit LenderChanged(_lender);
     }
 
     function setDebtTokenImplementation(IDebtToken _implementation) external onlyAdmin {

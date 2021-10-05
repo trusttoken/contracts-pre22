@@ -452,10 +452,12 @@ describe('TrueFiPool2', () => {
       })
 
       it('when there are ongoing loans in both trueLender and FTLA, pool value contains both', async () => {
-        loan = await createLoan(loanFactory, borrower, tusdPool, 500000, DAY, 1000)
+        const legacyLoanImpl = await new LegacyLoanToken2__factory(owner).deploy()
+        await loanFactory.setLoanTokenImplementation(legacyLoanImpl.address)
+        const legacyLoan = LegacyLoanToken2__factory.connect((await createLoan(loanFactory, borrower, tusdPool, 500000, DAY, 1000)).address, owner)
+        await legacyLoan.setLender(lender.address)
         await tusd.mint(lender.address, 500000)
-        await lender.connect(borrower).fund(loan.address)
-
+        await lender.connect(borrower).fund(legacyLoan.address)
         await ftlAgency.allowBorrower(borrower2.address)
         await ftlAgency.connect(borrower2).borrow(tusdPool.address, 5000, YEAR, 10000)
         expect(await tusdPool.liquidValue()).to.equal(joinAmount.sub(5000))
@@ -829,15 +831,18 @@ describe('TrueFiPool2', () => {
     })
 
     it('lender can repay', async () => {
-      loan = await createLoan(loanFactory, borrower, tusdPool, 500000, DAY, 1000)
-      await borrowingMutex.lock(borrower.address, loan.address)
+      const legacyLoanImpl = await new LegacyLoanToken2__factory(owner).deploy()
+      await loanFactory.setLoanTokenImplementation(legacyLoanImpl.address)
+      const legacyLoan = LegacyLoanToken2__factory.connect((await createLoan(loanFactory, borrower, tusdPool, 500000, DAY, 1000)).address, owner)
+      await legacyLoan.setLender(lender.address)
+      await borrowingMutex.lock(borrower.address, legacyLoan.address)
       await tusd.mint(lender.address, 500000)
-      await lender.connect(borrower).fund(loan.address)
+      await lender.connect(borrower).fund(legacyLoan.address)
       await timeTravel(DAY)
-      const debt = await loan.debt()
-      await tusd.mint(loan.address, debt)
-      await loan.settle()
-      await lender.reclaim(loan.address, '0x')
+      const debt = await legacyLoan.debt()
+      await tusd.mint(legacyLoan.address, debt)
+      await legacyLoan.settle()
+      await lender.reclaim(legacyLoan.address, '0x')
       expect('repay').to.be.calledOnContract(tusdPool)
     })
 

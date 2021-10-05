@@ -51,7 +51,6 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     uint256 public override apy;
 
     uint256 public override start;
-    address public override lender;
     uint256 public override debt;
 
     uint256 public redeemed;
@@ -141,7 +140,6 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @dev Create a Loan
      * @param _pool Pool to lend from
      * @param _borrower Borrower address
-     * @param _lender Lender address
      * @param _ftlAgency FixedTermLoanAgency address
      * @param _admin Admin account for loan. Admin can enable transfers on the token which are blocked by default.
      * @param _loanFactory LoanFactory to create DebtTokens in case of default
@@ -153,7 +151,6 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         ITrueFiPool2 _pool,
         IBorrowingMutex _mutex,
         address _borrower,
-        address _lender,
         IFixedTermLoanAgency _ftlAgency,
         address _admin,
         ILoanFactory2 _loanFactory,
@@ -162,7 +159,6 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         uint256 _term,
         uint256 _apy
     ) external initializer {
-        require(_lender != address(0), "LoanToken2: Lender is not set");
         ERC20.__ERC20_initialize("TrueFi Loan Token", "LOAN");
 
         pool = _pool;
@@ -173,7 +169,6 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         amount = _amount;
         term = _term;
         apy = _apy;
-        lender = _lender;
         ftlAgency = _ftlAgency;
         loanFactory = _loanFactory;
         creditOracle = _creditOracle;
@@ -245,24 +240,21 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     }
 
     /**
-     * @dev Only whitelisted accounts or lender
+     * @dev Only whitelisted accounts or ftlAgency
      */
     modifier onlyWhoCanTransfer(address sender) {
         require(
-            transferable || sender == lender || sender == address(ftlAgency) || canTransfer[sender],
-            "LoanToken2: This can be performed only by lender, ftlAgency, or accounts allowed to transfer"
+            transferable || sender == address(ftlAgency) || canTransfer[sender],
+            "LoanToken2: This can be performed only by ftlAgency, or accounts allowed to transfer"
         );
         _;
     }
 
     /**
-     * @dev Only lender can perform certain actions
+     * @dev Only ftlAgency can perform certain actions
      */
-    modifier onlyLenderOrFTLAgency() {
-        require(
-            msg.sender == lender || msg.sender == address(ftlAgency),
-            "LoanToken2: This can be performed only by lender or ftlAgency"
-        );
+    modifier onlyFTLAgency() {
+        require(msg.sender == address(ftlAgency), "LoanToken2: This can be performed only by ftlAgency");
         _;
     }
 
@@ -311,9 +303,9 @@ contract LoanToken2 is ILoanToken2, ERC20 {
 
     /**
      * @dev Fund a loan
-     * Set status, start time, lender
+     * Set status, start time, mint tokens
      */
-    function fund() external override onlyAwaiting onlyLenderOrFTLAgency {
+    function fund() external override onlyAwaiting onlyFTLAgency {
         status = Status.Funded;
         start = block.timestamp;
         _mint(msg.sender, debt);
@@ -327,7 +319,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @param account address to allow transfers for
      * @param _status true allows transfers, false disables transfers
      */
-    function allowTransfer(address account, bool _status) external override onlyLenderOrFTLAgency {
+    function allowTransfer(address account, bool _status) external override onlyFTLAgency {
         canTransfer[account] = _status;
         emit TransferAllowanceChanged(account, _status);
     }
@@ -520,5 +512,9 @@ contract LoanToken2 is ILoanToken2, ERC20 {
 
     function decimals() public override view returns (uint8) {
         return token.decimals();
+    }
+
+    function lender() external override view returns (address) {
+        return address(ftlAgency);
     }
 }

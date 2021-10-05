@@ -92,7 +92,7 @@ deploy({}, (_, config) => {
     liquidator2.initialize(stkTruToken, trustToken, loanFactory2, poolFactory, AddressZero, AddressZero)
   })
   runIf(loanFactory2.isInitialized().not(), () => {
-    loanFactory2.initialize(poolFactory, trueLender2, ftlAgency, liquidator2, AddressZero, trueFiCreditOracle, borrowingMutex, AddressZero)
+    loanFactory2.initialize(poolFactory, ftlAgency, liquidator2, AddressZero, trueFiCreditOracle, borrowingMutex, AddressZero)
   })
   runIf(trueFiCreditOracle.isInitialized().not(), () => {
     trueFiCreditOracle.initialize()

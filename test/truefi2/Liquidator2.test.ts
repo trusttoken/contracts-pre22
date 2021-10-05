@@ -307,7 +307,7 @@ describe('Liquidator2', () => {
         const creditOracle = await deployContract(TrueFiCreditOracle__factory)
         await creditOracle.initialize()
         const fakeLoan = await deployContract(LegacyLoanToken2__factory)
-        await fakeLoan.initialize(usdcPool.address, borrowingMutex.address, borrower.address, borrower.address, AddressZero, owner.address, liquidator.address, creditOracle.address, parseUSDC(1000), YEAR, 1000)
+        await fakeLoan.initialize(usdcPool.address, borrowingMutex.address, borrower.address, borrower.address, owner.address, liquidator.address, creditOracle.address, parseUSDC(1000), YEAR, 1000)
         await usdc.connect(borrower).approve(fakeLoan.address, parseUSDC(1000))
         await fakeLoan.connect(borrower).fund()
         await borrowingMutex.lock(borrower.address, await fakeLoan.address)
@@ -496,7 +496,7 @@ describe('Liquidator2', () => {
 
     it('providing empty list of loans does not slash tru', async () => {
       const balanceBefore = await tru.balanceOf(stkTru.address)
-      liquidator.connect(assurance).liquidate([])
+      await liquidator.connect(assurance).liquidate([])
       expect(await tru.balanceOf(stkTru.address)).to.eq(balanceBefore)
     })
   })
