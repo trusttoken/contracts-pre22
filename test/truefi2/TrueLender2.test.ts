@@ -1,6 +1,7 @@
 import { expect, use } from 'chai'
 import {
   beforeEachWithFixture,
+  createLegacyLoan as _createLegacyLoan,
   createLoan,
   DAY,
   parseEth,
@@ -13,7 +14,7 @@ import { deployContract } from 'scripts/utils/deployContract'
 import {
   BorrowingMutex,
   LoanFactory2,
-  LoanToken2,
+  LegacyLoanToken2,
   Mock1InchV3,
   Mock1InchV3__factory,
   MockErc20Token,
@@ -28,9 +29,10 @@ import {
   TrueFiCreditOracle,
   TrueFiPool2,
   TrueFiPool2__factory,
+  LegacyLoanToken2__factory,
 } from 'contracts'
 
-import { BorrowingMutexJson, LoanToken2Json, Mock1InchV3Json } from 'build'
+import { BorrowingMutexJson, LegacyLoanToken2Json, Mock1InchV3Json } from 'build'
 
 import { deployMockContract, solidity } from 'ethereum-waffle'
 import { AddressZero } from '@ethersproject/constants'
@@ -43,8 +45,8 @@ describe('TrueLender2', () => {
   let borrower: Wallet
 
   let loanFactory: LoanFactory2
-  let loan1: LoanToken2
-  let loan2: LoanToken2
+  let loan1: LegacyLoanToken2
+  let loan2: LegacyLoanToken2
   let pool1: TrueFiPool2
   let pool2: TrueFiPool2
   let feePool: TrueFiPool2
@@ -69,6 +71,8 @@ describe('TrueLender2', () => {
 
   let timeTravel: (time: number) => void
 
+  const createLegacyLoan = (...args: Parameters<typeof createLoan>) => _createLegacyLoan(lender, ...args)
+
   beforeEachWithFixture(async (wallets, _provider) => {
     ([owner, borrower] = wallets)
     timeTravel = (time: number) => _timeTravel(_provider, time)
@@ -88,6 +92,9 @@ describe('TrueLender2', () => {
       creditOracle,
       borrowingMutex,
     } = await setupTruefi2(owner, _provider, { lender: lender, oneInch: oneInch }))
+
+    const legacyLtImpl = await deployContract(owner, LegacyLoanToken2__factory)
+    await loanFactory.setLoanTokenImplementation(legacyLtImpl.address)
 
     token1 = await deployContract(owner, MockErc20Token__factory)
     token2 = await deployContract(owner, MockErc20Token__factory)
@@ -124,9 +131,9 @@ describe('TrueLender2', () => {
     await tru.approve(stkTru.address, parseTRU(15e6))
     await stkTru.stake(parseTRU(15e6))
     await timeTravel(1)
-    loan1 = await createLoan(loanFactory, borrower, pool1, 100000, YEAR, 100)
+    loan1 = await createLegacyLoan(loanFactory, borrower, pool1, 100000, YEAR, 100)
 
-    loan2 = await createLoan(loanFactory, borrower, pool2, 500000, YEAR, 1000)
+    loan2 = await createLegacyLoan(loanFactory, borrower, pool2, 500000, YEAR, 1000)
 
     await creditOracle.setCreditUpdatePeriod(YEAR)
     await creditOracle.setScore(borrower.address, 255)
@@ -191,7 +198,7 @@ describe('TrueLender2', () => {
 
   describe('value', () => {
     beforeEach(async () => {
-      const newLoan1 = await createLoan(loanFactory, borrower, pool1, 100000, DAY, 100)
+      const newLoan1 = await createLegacyLoan(loanFactory, borrower, pool1, 100000, DAY, 100)
 
       await lender.connect(borrower).fund(loan1.address)
       await lender.connect(borrower).fund(newLoan1.address)
@@ -220,7 +227,7 @@ describe('TrueLender2', () => {
   })
 
   describe('Reclaiming', () => {
-    const payBack = async (token: MockErc20Token, loan: LoanToken2) => {
+    const payBack = async (token: MockErc20Token, loan: LegacyLoanToken2) => {
       const balance = await loan.balance()
       const debt = await loan.debt()
       await token.mint(loan.address, debt.sub(balance))
@@ -239,7 +246,7 @@ describe('TrueLender2', () => {
     })
 
     it('reverts if loan has not been previously funded', async () => {
-      const mockLoanToken = await deployMockContract(owner, LoanToken2Json.abi)
+      const mockLoanToken = await deployMockContract(owner, LegacyLoanToken2Json.abi)
       await mockLoanToken.mock.status.returns(3)
       await mockLoanToken.mock.pool.returns(pool1.address)
       await expect(lender.reclaim(mockLoanToken.address, '0x'))
@@ -278,7 +285,7 @@ describe('TrueLender2', () => {
     })
 
     describe('Removes loan from array', () => {
-      let newLoan1: LoanToken2
+      let newLoan1: LegacyLoanToken2
       beforeEach(async () => {
         const mockMutex = await deployMockContract(owner, BorrowingMutexJson.abi)
         await loanFactory.setBorrowingMutex(mockMutex.address)
@@ -289,7 +296,7 @@ describe('TrueLender2', () => {
         await payBack(token1, loan1)
         await loan1.settle()
 
-        newLoan1 = await createLoan(loanFactory, borrower, pool1, 100000, DAY, 100)
+        newLoan1 = await createLegacyLoan(loanFactory, borrower, pool1, 100000, DAY, 100)
 
         await lender.connect(borrower).fund(newLoan1.address)
         await lender.connect(borrower).fund(loan2.address)
@@ -318,7 +325,7 @@ describe('TrueLender2', () => {
 
     describe('With fees', () => {
       let fee: BigNumber
-      let newLoan1: LoanToken2
+      let newLoan1: LegacyLoanToken2
       beforeEach(async () => {
         const mockMutex = await deployMockContract(owner, BorrowingMutexJson.abi)
         await loanFactory.setBorrowingMutex(mockMutex.address)
@@ -326,7 +333,7 @@ describe('TrueLender2', () => {
         await mockMutex.mock.lock.returns()
         await mockMutex.mock.unlock.returns()
 
-        newLoan1 = await createLoan(loanFactory, borrower, pool1, parseEth(100000), YEAR, 100)
+        newLoan1 = await createLegacyLoan(loanFactory, borrower, pool1, parseEth(100000), YEAR, 100)
         await lender.connect(borrower).fund(newLoan1.address)
 
         await lender.setFee(1000)
@@ -401,7 +408,7 @@ describe('TrueLender2', () => {
   })
 
   describe('Distribute', () => {
-    const loanTokens: LoanToken2[] = []
+    const loanTokens: LegacyLoanToken2[] = []
 
     beforeEach(async () => {
       const mockMutex = await deployMockContract(owner, BorrowingMutexJson.abi)
@@ -411,7 +418,7 @@ describe('TrueLender2', () => {
       await mockMutex.mock.unlock.returns()
 
       for (let i = 0; i < 5; i++) {
-        const newLoan1 = await createLoan(loanFactory, borrower, pool1, 100000, DAY, 100)
+        const newLoan1 = await createLegacyLoan(loanFactory, borrower, pool1, 100000, DAY, 100)
 
         loanTokens.push(newLoan1)
         await lender.connect(borrower).fund(newLoan1.address)
