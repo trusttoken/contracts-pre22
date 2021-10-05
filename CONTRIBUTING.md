@@ -21,6 +21,8 @@ We encourage all developers to review all PRs.
 
 ## Git practices
 
+:fireworks: Write PR messages in an imperative mood, prepended by an emoji.
+
 Keep PRs as short and sweet as possible. This makes review easier and faster.
 Same advice goes for commits.
 
