@@ -132,14 +132,14 @@ describe('SAFU', () => {
 
       it('loan is not defaulted', async () => {
         await expect(safu.liquidate([loan.address]))
-          .to.be.revertedWith('SAFU: Loan is not defaulted')
+          .to.be.revertedWith('SAFU: Debt is not defaulted')
       })
 
       it('loan is not created by factory', async () => {
         const strangerLoan = await new LegacyLoanToken2__factory(owner).deploy()
         await strangerLoan.initialize(pool.address, borrowingMutex.address, owner.address, owner.address, AddressZero, owner.address, owner.address, AddressZero, 1000, 1, 1)
         await expect(safu.liquidate([strangerLoan.address]))
-          .to.be.revertedWith('SAFU: Unknown loan')
+          .to.be.revertedWith('SAFU: Unknown debt')
       })
 
       it('loan has already been liquidated', async () => {
@@ -149,7 +149,7 @@ describe('SAFU', () => {
 
         await safu.liquidate([loan.address])
         await expect(safu.liquidate([loan.address]))
-          .to.be.revertedWith('SAFU: Loan is not defaulted')
+          .to.be.revertedWith('SAFU: Debt is not defaulted')
       })
     })
 
@@ -386,23 +386,23 @@ describe('SAFU', () => {
         const strangerLoan = await new LegacyLoanToken2__factory(owner).deploy()
         await strangerLoan.initialize(pool.address, borrowingMutex.address, owner.address, owner.address, AddressZero, owner.address, owner.address, AddressZero, 1000, 1, 1)
         await expect(safu.reclaim(strangerLoan.address, 0))
-          .to.be.revertedWith('SAFU: Unknown loan')
+          .to.be.revertedWith('SAFU: Unknown debt')
       })
 
       it('caller is not loan pool', async () => {
         await expect(safu.connect(voter).reclaim(loan.address, 100))
-          .to.be.revertedWith('SAFU: caller is not the loan\'s pool')
+          .to.be.revertedWith('SAFU: caller is not the debt\'s pool')
       })
 
       it('loan was not fully redeemed by safu', async () => {
         await expect(pool.reclaimDeficit(loan.address))
-          .to.be.revertedWith('SAFU: Loan has to be fully redeemed by SAFU')
+          .to.be.revertedWith('SAFU: Debt has to be fully redeemed by SAFU')
       })
 
       it('loan does not have an associated deficiency token', async () => {
         const noSAFULoan = await createLoan(loanFactory, borrower, pool, parseUSDC(1000), YEAR, 1000)
         await expect(pool.reclaimDeficit(noSAFULoan.address))
-          .to.be.revertedWith('TrueFiPool2: No deficiency token found for loan')
+          .to.be.revertedWith('TrueFiPool2: No deficiency token found for debt')
       })
 
       it('caller does not have deficit tokens', async () => {
@@ -470,7 +470,7 @@ describe('SAFU', () => {
       const strangerLoan = await new LegacyLoanToken2__factory(owner).deploy()
       await strangerLoan.initialize(pool.address, borrowingMutex.address, owner.address, owner.address, AddressZero, owner.address, owner.address, AddressZero, 1000, 1, 1)
       await expect(safu.redeem(strangerLoan.address))
-        .to.be.revertedWith('SAFU: Unknown loan')
+        .to.be.revertedWith('SAFU: Unknown debt')
     })
 
     it('burns loan tokens', async () => {

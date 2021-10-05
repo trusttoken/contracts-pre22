@@ -270,10 +270,10 @@ describe('Liquidator2', () => {
           .to.not.be.reverted
 
         await expect(liquidator.connect(otherWallet).liquidate([loan.address]))
-          .to.be.revertedWith('Liquidator: Only SAFU contract can liquidate a loan')
+          .to.be.revertedWith('Liquidator: Only SAFU contract can liquidate a debt')
       })
 
-      it('loans are not of a single borrower', async () => {
+      it('debts are not of a single borrower', async () => {
         await creditOracle.setScore(owner.address, 255)
         await creditOracle.setMaxBorrowerLimit(owner.address, parseEth(100_000_000))
         await ftlAgency.allowBorrower(owner.address)
@@ -286,12 +286,12 @@ describe('Liquidator2', () => {
         await loan.enterDefault()
         await loan2.enterDefault()
         await expect(liquidator.connect(assurance).liquidate([loan.address, loan2.address]))
-          .to.be.revertedWith('Liquidator: Loans liquidated in a single transaction, have to have the same borrower')
+          .to.be.revertedWith('Liquidator: Debts liquidated in a single transaction, have to have the same borrower')
       })
 
       it('loan is not defaulted', async () => {
         await expect(liquidator.connect(assurance).liquidate([loan.address]))
-          .to.be.revertedWith('Liquidator: Loan must be defaulted')
+          .to.be.revertedWith('Liquidator: Debt must be defaulted')
 
         await timeTravel(defaultedLoanCloseTime)
         await loan.enterDefault()
@@ -299,7 +299,7 @@ describe('Liquidator2', () => {
           .not.to.be.reverted
       })
 
-      it('loans are not created via factory', async () => {
+      it('debts are not created via factory', async () => {
         const deployContract = setupDeploy(owner)
         const borrowingMutex = await deployContract(BorrowingMutex__factory)
         await borrowingMutex.initialize()
@@ -316,7 +316,7 @@ describe('Liquidator2', () => {
         await loan.enterDefault()
 
         await expect(liquidator.connect(assurance).liquidate([loan.address, fakeLoan.address]))
-          .to.be.revertedWith('Liquidator: Unknown loan')
+          .to.be.revertedWith('Liquidator: Unknown debt')
       })
 
       it('all pools have to be supported', async () => {
@@ -325,11 +325,11 @@ describe('Liquidator2', () => {
           .to.be.revertedWith('Liquidator: Pool not supported for default protection')
       })
 
-      it('attempting to default the same loan twice', async () => {
+      it('attempting to default the same debt twice', async () => {
         await timeTravel(defaultedLoanCloseTime)
         await loan.enterDefault()
         await expect(liquidator.connect(assurance).liquidate([loan.address, loan.address]))
-          .to.be.revertedWith('Liquidator: Loan must be defaulted')
+          .to.be.revertedWith('Liquidator: Debt must be defaulted')
       })
     })
 
@@ -494,7 +494,7 @@ describe('Liquidator2', () => {
       })
     })
 
-    it('providing empty list of loans does not slash tru', async () => {
+    it('providing empty list of debts does not slash tru', async () => {
       const balanceBefore = await tru.balanceOf(stkTru.address)
       liquidator.connect(assurance).liquidate([])
       expect(await tru.balanceOf(stkTru.address)).to.eq(balanceBefore)
