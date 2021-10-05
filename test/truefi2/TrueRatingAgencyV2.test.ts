@@ -115,6 +115,9 @@ describe('TrueRatingAgencyV2', () => {
 
     await creditOracle.setScore(owner.address, 255)
     await creditOracle.setMaxBorrowerLimit(owner.address, parseEth(100_000_000))
+
+    await tusd.mint(lender.address, parseEth(1e7))
+    await usdc.mint(lender.address, parseUSDC(1e7))
   })
 
   describe('Initializer', () => {

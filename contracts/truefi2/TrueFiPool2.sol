@@ -272,6 +272,17 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     event DebtAdded(IDebtToken debtToken, uint256 amount);
 
     /**
+     * @dev only FixedTermLoanAgency, or CreditAgency can perform borrowing or repaying
+     */
+    modifier onlyAgencies() {
+        require(
+            msg.sender == address(ftlAgency) || msg.sender == address(creditAgency),
+            "TrueFiPool: Caller is neither the ftlAgency nor creditAgency"
+        );
+        _;
+    }
+
+    /**
      * @dev only TrueLender, FixedTermLoanAgency, or CreditAgency can perform borrowing or repaying
      */
     modifier onlyLenderOrFTLAgencyOrLineOfCreditAgency() {
@@ -561,7 +572,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      * @dev Remove liquidity from strategy if necessary and transfer to lender
      * @param amount amount for lender to withdraw
      */
-    function borrow(uint256 amount) external override onlyLenderOrFTLAgencyOrLineOfCreditAgency {
+    function borrow(uint256 amount) external override onlyAgencies {
         require(amount <= liquidValue(), "TrueFiPool: Insufficient liquidity");
         if (amount > 0) {
             ensureSufficientLiquidity(amount);

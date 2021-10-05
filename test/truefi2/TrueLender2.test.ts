@@ -138,6 +138,9 @@ describe('TrueLender2', () => {
     await creditOracle.setCreditUpdatePeriod(YEAR)
     await creditOracle.setScore(borrower.address, 255)
     await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(1e8))
+
+    await token1.mint(lender.address, parseEth(1e7))
+    await token2.mint(lender.address, parseEth(1e7))
   })
 
   describe('Initializer', () => {
