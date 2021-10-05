@@ -267,6 +267,26 @@
     "trueFiVault": {
       "txHash": "0xd3b0cf2ac7331e9fb5e5c4ade75ac7fad427502f5e4a6858adee960306340e11",
       "address": "0xfA15a30EDa728E3cDc628BA7c703039543C8e42f"
+    },
+    "tusd_TrueFiPool2_proxy": {
+      "txHash": "0x8493d3f3d6d8415e7f9c9c64e37d5b6ea1bd2130c10c606b7e9ba0fecbb7ed8e",
+      "address": "0x97cE06c3e3D027715b2d6C22e67D5096000072E5"
+    },
+    "usdc_TrueFiPool2_proxy": {
+      "txHash": "0xb21186ddb51c1a8b73fbc7abbd9ade04b873c139efc4ea9afe926f0c142c5bcf",
+      "address": "0xA991356d261fbaF194463aF6DF8f0464F8f1c742"
+    },
+    "usdt_TrueFiPool2_proxy": {
+      "txHash": "0xe4d353c8f2cd6f68b302ebe07d4c7eac64dc00a6a58255310f40090604913a3d",
+      "address": "0x6002b1dcB26E7B1AA797A17551C6F487923299d7"
+    },
+    "owner_GnosisSafe": {
+      "txHash": "0xbca307667f617ffe0c29d7e5dc30e8d2ff09e47885aac4153e0834656a78ba86",
+      "address": "0x16cEa306506c387713C70b9C1205fd5aC997E78E"
+    },
+    "credit_GnosisSafe": {
+      "txHash": "0x047b535f120eb7db474db32bb81ba23eb3a67539f0410ee6b1f294e34eab4c01",
+      "address": "0x11B03b01Bdd76E59825bC00Be255E4311533CBAd"
     }
   }
 }
