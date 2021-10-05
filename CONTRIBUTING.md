@@ -7,16 +7,15 @@ Otherwise here are some development practices we strive to adhere to.
 
 ## Workflow
 
-We track releases with our `master` branch, and we integrate most changes to our
-`dev` branch. File pull requests against `dev` to have your code reviewed. Every
-`dev` pull request must
+We track releases with semver tags, and we develop directly on our `main` branch.
+File pull requests against `main` to have your code reviewed. Every
+`main` pull request must
 
-1. pass all CircleCI checks
+1. pass required CircleCI checks
 2. be approved:
-  - by @hal909, if it's a feature, refactor, or bug fix.
-  - by any other reviewer with write access, if it's obvious and minor (e.g.,
-merge conflicts, documentation, typo/style fixes, lint fixes, etc.). If you're
-unsure whether your PR counts, then it's not obvious and minor.
+  - by 3 Contributors for [deployments-mainnet.json](deployments-mainnet.json).
+  - by 2 Contributors for smart contract code.
+  - by 1 Contributor for tests and documentation.
 
 We encourage all developers to review all PRs.
 
@@ -28,7 +27,7 @@ Same advice goes for commits.
 We squash PRs before merging, so keep the subject lines of commits brief but
 informative.
 
-Rebasing your branch against `dev` is okay before review. But after someone has
+Rebasing your branch against `main` is okay before review. But after someone has
 commented, please merge any new changes. This helps avoid rebase headaches and
 preserve PR comment history.
 
@@ -42,44 +41,34 @@ for over 1 month may be deleted without notice.
 
 All Solidity functions must be unit tested before merging.
 
-Feel free to run either of the following commands from `dev` at any time and
-submit PRs for obvious minor review:
+Feel free to run the following command from `main` at any time and submit a PR
+for obvious minor review:
 
 ```sh
 $ yarn docs
 ```
 
-```sh
-$ yarn flatten
-```
-
 ## Deploying
 
-Feel free to deploy up-to-date `dev` contracts to Ropsten at any time from a
+Feel free to deploy up-to-date `main` contracts to Rinkeby at any time from a
 clean branch.
 
 1. Test the deployment locally with the `--dry-run` flag to confirm the
 update can succeed:
 
 ```sh
-$ PRIVATE_KEY={0x123} yarn deploy:truefi --network ropsten --dry-run
+$ yarn deploy:truefi2 --network rinkeby --dry-run
 ```
-
-Note that PRIVATE_KEY might require ownership of the respective contracts.
-If you want to deploy your own version of TrueFi from scratch, delete
-`deployments.json` or try another testnet.
 
 2. Then deploy and verify the contracts on Etherscan:
 
 ```sh
-$ PRIVATE_KEY={0x123} yarn deploy:truefi --network ropsten --verify
+$ yarn deploy:truefi2 --network rinkeby --verify
 ```
 
-3. This should update addresses in [deployments.json](deployments.json).
+3. This should update addresses in [deployments-rinkeby.json](deployments-rinkeby.json).
 Confirm these updates are correct before submitting a PR with the updates for
 review.
-
-4. Don't forget to update the Ropsten spreadsheet tab with your new addresses!
 
 ## Code style
 

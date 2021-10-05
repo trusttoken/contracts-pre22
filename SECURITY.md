@@ -6,7 +6,7 @@ Our smart contracts are under active development. As such, we only support the m
 
 | Version | Supported          |
 | ------- | ------------------ |
-| master  | :white_check_mark: |
+| main    | :white_check_mark: |
 
 ## Reporting a Vulnerability
 
