@@ -291,6 +291,10 @@
     "tru_GnosisSafe": {
       "txHash": "0x1c0be8a95406eb762a099f778430387b34c09daf41e6f009fc4395e476a44db3",
       "address": "0x4A10ab6Af3A7d1FEa49aADc99059d581B3fba7E7"
+    },
+    "config_GnosisSafe": {
+      "txHash": "0xcd99bbfb3ffb39fe9324dfc9b066c50c05063fac2c87cc8456dbfd508893f992",
+      "address": "0xf0aE09d3ABdF3641e2eB4cD45cf56873296a02CB"
     }
   }
 }
