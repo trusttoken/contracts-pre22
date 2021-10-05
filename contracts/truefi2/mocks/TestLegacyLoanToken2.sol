@@ -153,7 +153,6 @@ contract TestLegacyLoanToken2 is ILoanToken2, ERC20 {
         amount = _amount;
         term = _term;
         apy = _apy;
-
         ftlAgency = _ftlAgency;
         debt = interest(amount);
     }
