@@ -138,22 +138,22 @@ contract Liquidator2 is UpgradeableClaimable {
     }
 
     /**
-     * @dev Liquidates a defaulted Loan, withdraws a portion of tru from staking pool
+     * @dev Liquidates a defaulted Debt, withdraws a portion of tru from staking pool
      * then transfers tru to TrueFiPool as compensation
-     * @param debts Loan to be liquidated
+     * @param debts Debts to be liquidated
      */
     function liquidate(IDebtToken[] calldata debts) external {
         require(msg.sender == SAFU, "Liquidator: Only SAFU contract can liquidate a debt");
         require(
-            allLoansHaveSameBorrower(debts),
-            "Liquidator: Loans liquidated in a single transaction, have to have the same borrower"
+            allDebtsHaveSameBorrower(debts),
+            "Liquidator: Debts liquidated in a single transaction, have to have the same borrower"
         );
         uint256 totalDefaultedValue;
 
         for (uint256 i = 0; i < debts.length; i++) {
             IDebtToken debt = debts[i];
             require(loanFactory.isCreatedByFactory(debt), "Liquidator: Unknown debt");
-            require(debt.status() == IDebtToken.Status.Defaulted, "Liquidator: Loan must be defaulted");
+            require(debt.status() == IDebtToken.Status.Defaulted, "Liquidator: Debt must be defaulted");
             ITrueFiPool2 pool = ITrueFiPool2(debt.pool());
             require(poolFactory.isSupportedPool(pool), "Liquidator: Pool not supported for default protection");
 
@@ -185,7 +185,7 @@ contract Liquidator2 is UpgradeableClaimable {
         return oracle.tokenToUsd(defaultedValue);
     }
 
-    function allLoansHaveSameBorrower(IDebtToken[] calldata debts) internal view returns (bool) {
+    function allDebtsHaveSameBorrower(IDebtToken[] calldata debts) internal view returns (bool) {
         if (debts.length <= 1) {
             return true;
         }
