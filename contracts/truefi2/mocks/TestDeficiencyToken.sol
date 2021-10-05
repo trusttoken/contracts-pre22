@@ -9,7 +9,7 @@ import {IDebtToken} from "../interface/IDebtToken.sol";
  * @dev Helper contract to test the burning feature of DeficiencyToken
  */
 contract TestDeficiencyToken is DeficiencyToken {
-    constructor(IDebtToken _loan, uint256 _amount) public DeficiencyToken(_loan, _amount) {}
+    constructor(IDebtToken _debt, uint256 _amount) public DeficiencyToken(_debt, _amount) {}
 
     function mint(address account, uint256 amount) external {
         _mint(account, amount);

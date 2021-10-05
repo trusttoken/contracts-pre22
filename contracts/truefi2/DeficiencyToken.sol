@@ -16,17 +16,17 @@ contract DeficiencyToken is IDeficiencyToken, ERC20 {
     using SafeMath for uint256;
     using SafeERC20 for ERC20;
 
-    IDebtToken public override loan;
+    IDebtToken public override debt;
 
     /**
      * @dev Create Deficiency
-     * @param _debt Defaulted loans address
+     * @param _debt Defaulted debts address
      * @param _amount Amount of underlying pool token's that are owed to the pool
      */
     constructor(IDebtToken _debt, uint256 _amount) public {
         ERC20.__ERC20_initialize("TrueFi Deficiency Token", "DEF");
 
-        loan = _debt;
+        debt = _debt;
         _mint(address(_debt.pool()), _amount);
     }
 

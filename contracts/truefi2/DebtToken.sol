@@ -30,7 +30,7 @@ contract DebtToken is IDebtToken, ERC20 {
     event Redeemed(address receiver, uint256 burnedAmount, uint256 redeemedAmount);
 
     /**
-     * @dev Emitted when loan gets liquidated
+     * @dev Emitted when debt gets liquidated
      */
     event Liquidated();
 
@@ -53,7 +53,6 @@ contract DebtToken is IDebtToken, ERC20 {
 
     /**
      * @dev Redeem DebtToken balances for underlying token
-     * Can only call this function after the loan is Closed
      * @param _amount amount to redeem
      */
     function redeem(uint256 _amount) external override {
@@ -73,7 +72,7 @@ contract DebtToken is IDebtToken, ERC20 {
     }
 
     /**
-     * @dev Liquidate the loan if it has defaulted
+     * @dev Liquidate the debt if it has defaulted
      */
     function liquidate() external override {
         require(status == Status.Defaulted, "DebtToken: Current status should be Defaulted");

@@ -42,28 +42,28 @@ contract SAFU is ISAFU, UpgradeableClaimable {
     // ======= STORAGE DECLARATION END ============
 
     /**
-     * @dev Emitted when a loan is redeemed
-     * @param loan Loan that has been liquidated
-     * @param burnedAmount Amount of loan tokens that were burned
+     * @dev Emitted when a debt is redeemed
+     * @param debt Debt that has been liquidated
+     * @param burnedAmount Amount of debt tokens that were burned
      * @param redeemedAmount Amount of tokens that were received
      */
-    event Redeemed(IDebtToken loan, uint256 burnedAmount, uint256 redeemedAmount);
+    event Redeemed(IDebtToken debt, uint256 burnedAmount, uint256 redeemedAmount);
 
     /**
-     * @dev Emitted when a loan gets liquidated
-     * @param loan Loan that has been liquidated
+     * @dev Emitted when a debt gets liquidated
+     * @param debt Debt that has been liquidated
      * @param repaid Amount repaid to the pool
      * @param deficiencyToken Deficiency token representing a deficit that is owed to the pool by SAFU
      * @param deficit Deficit amount that SAFU still owes the pool
      */
-    event Liquidated(IDebtToken loan, uint256 repaid, IDeficiencyToken deficiencyToken, uint256 deficit);
+    event Liquidated(IDebtToken debt, uint256 repaid, IDeficiencyToken deficiencyToken, uint256 deficit);
 
     /**
-     * @dev Emitted when a loan deficit is reclaimed
-     * @param loan Defaulted loan, which deficit was reclaimed
+     * @dev Emitted when a debt deficit is reclaimed
+     * @param debt Defaulted debt, which deficit was reclaimed
      * @param reclaimed Amount reclaimed by the pool
      */
-    event Reclaimed(IDebtToken loan, uint256 reclaimed);
+    event Reclaimed(IDebtToken debt, uint256 reclaimed);
 
     /**
      * @dev Emitted when SAFU swaps assets
@@ -82,25 +82,25 @@ contract SAFU is ISAFU, UpgradeableClaimable {
     }
 
     /**
-     * @dev Liquidates defaulted loans, withdraws a portion of tru from staking pool
-     * then tries to cover the loans with own funds, to compensate TrueFiPool
+     * @dev Liquidates defaulted debts, withdraws a portion of tru from staking pool
+     * then tries to cover the debts with own funds, to compensate TrueFiPool
      * If SAFU does not have enough funds, deficit is saved to be redeemed later
-     * @param loans Loans to be liquidated
+     * @param debts Loans to be liquidated
      */
-    function liquidate(IDebtToken[] calldata loans) external onlyOwner {
-        for (uint256 i = 0; i < loans.length; i++) {
-            require(loanFactory.isCreatedByFactory(loans[i]), "SAFU: Unknown loan");
-            require(loans[i].status() == IDebtToken.Status.Defaulted, "SAFU: Loan is not defaulted");
+    function liquidate(IDebtToken[] calldata debts) external onlyOwner {
+        for (uint256 i = 0; i < debts.length; i++) {
+            require(loanFactory.isCreatedByFactory(debts[i]), "SAFU: Unknown loan");
+            require(debts[i].status() == IDebtToken.Status.Defaulted, "SAFU: Loan is not defaulted");
         }
 
-        liquidator.liquidate(loans);
+        liquidator.liquidate(debts);
 
-        for (uint256 i = 0; i < loans.length; i++) {
-            ITrueFiPool2 pool = ITrueFiPool2(loans[i].pool());
+        for (uint256 i = 0; i < debts.length; i++) {
+            ITrueFiPool2 pool = ITrueFiPool2(debts[i].pool());
             IERC20 token = IERC20(pool.token());
 
-            _poolLiquidate(pool, loans[i]);
-            uint256 owedToPool = loans[i].debt().mul(tokenBalance(loans[i])).div(loans[i].totalSupply());
+            _poolLiquidate(pool, debts[i]);
+            uint256 owedToPool = debts[i].debt().mul(tokenBalance(debts[i])).div(debts[i].totalSupply());
             uint256 safuTokenBalance = tokenBalance(token);
             uint256 deficit;
             uint256 toTransfer = owedToPool;
@@ -108,11 +108,11 @@ contract SAFU is ISAFU, UpgradeableClaimable {
             if (owedToPool > safuTokenBalance) {
                 deficit = owedToPool.sub(safuTokenBalance);
                 toTransfer = safuTokenBalance;
-                deficiencyToken[loans[i]] = new DeficiencyToken(loans[i], deficit);
-                poolDeficit[address(loans[i].pool())] = poolDeficit[address(loans[i].pool())].add(deficit);
+                deficiencyToken[debts[i]] = new DeficiencyToken(debts[i], deficit);
+                poolDeficit[address(debts[i].pool())] = poolDeficit[address(debts[i].pool())].add(deficit);
             }
             token.safeTransfer(address(pool), toTransfer);
-            emit Liquidated(loans[i], toTransfer, deficiencyToken[loans[i]], deficit);
+            emit Liquidated(debts[i], toTransfer, deficiencyToken[debts[i]], deficit);
         }
     }
 
@@ -125,38 +125,38 @@ contract SAFU is ISAFU, UpgradeableClaimable {
     }
 
     /**
-     * @dev Redeems a loan for underlying repaid debt
-     * @param loan Loan token to be redeemed
+     * @dev Redeems a repaid debt
+     * @param debt Debt token to be redeemed
      */
-    function redeem(IDebtToken loan) public onlyOwner {
-        require(loanFactory.isCreatedByFactory(loan), "SAFU: Unknown loan");
-        uint256 amountToBurn = tokenBalance(loan);
-        uint256 balanceBeforeRedeem = tokenBalance(loan.token());
-        loan.redeem(amountToBurn);
-        uint256 redeemedAmount = tokenBalance(loan.token()).sub(balanceBeforeRedeem);
-        emit Redeemed(loan, amountToBurn, redeemedAmount);
+    function redeem(IDebtToken debt) public onlyOwner {
+        require(loanFactory.isCreatedByFactory(debt), "SAFU: Unknown debt");
+        uint256 amountToBurn = tokenBalance(debt);
+        uint256 balanceBeforeRedeem = tokenBalance(debt.token());
+        debt.redeem(amountToBurn);
+        uint256 redeemedAmount = tokenBalance(debt.token()).sub(balanceBeforeRedeem);
+        emit Redeemed(debt, amountToBurn, redeemedAmount);
     }
 
     /**
-     * @dev Reclaims deficit funds, after a loan is repaid and transfers them to the pool
-     * @param loan Loan with a deficit to be reclaimed
+     * @dev Reclaims deficit funds, after a debt is repaid and transfers them to the pool
+     * @param debt Debt with a deficit to be reclaimed
      * @param amount Amount of deficiency tokens to be reclaimed
      */
-    function reclaim(IDebtToken loan, uint256 amount) external override {
-        require(loanFactory.isCreatedByFactory(loan), "SAFU: Unknown loan");
+    function reclaim(IDebtToken debt, uint256 amount) external override {
+        require(loanFactory.isCreatedByFactory(debt), "SAFU: Unknown debt");
 
-        address poolAddress = address(loan.pool());
-        require(msg.sender == poolAddress, "SAFU: caller is not the loan's pool");
-        require(tokenBalance(loan) == 0, "SAFU: Loan has to be fully redeemed by SAFU");
-        IDeficiencyToken dToken = deficiencyToken[loan];
-        require(address(dToken) != address(0), "SAFU: No deficiency token found for loan");
+        address poolAddress = address(debt.pool());
+        require(msg.sender == poolAddress, "SAFU: caller is not the debt's pool");
+        require(tokenBalance(debt) == 0, "SAFU: Loan has to be fully redeemed by SAFU");
+        IDeficiencyToken dToken = deficiencyToken[debt];
+        require(address(dToken) != address(0), "SAFU: No deficiency token found for debt");
         require(dToken.balanceOf(poolAddress) > 0, "SAFU: Pool does not have deficiency tokens to be reclaimed");
 
         poolDeficit[poolAddress] = poolDeficit[poolAddress].sub(amount);
         dToken.burnFrom(msg.sender, amount);
-        loan.token().safeTransfer(poolAddress, amount);
+        debt.token().safeTransfer(poolAddress, amount);
 
-        emit Reclaimed(loan, amount);
+        emit Reclaimed(debt, amount);
     }
 
     /**
@@ -170,13 +170,13 @@ contract SAFU is ISAFU, UpgradeableClaimable {
         emit Swapped(swapResult.amount, swapResult.srcToken, returnAmount, swapResult.dstToken);
     }
 
-    function _poolLiquidate(ITrueFiPool2 pool, IDebtToken loan) internal {
+    function _poolLiquidate(ITrueFiPool2 pool, IDebtToken debt) internal {
         // For legacy LoanTokens:
-        if (loanFactory.isLoanToken(ILoanToken2(address(loan)))) {
-            pool.liquidateLoan(loan);
+        if (loanFactory.isLoanToken(ILoanToken2(address(debt)))) {
+            pool.liquidateLoan(debt);
         }
-        if (loanFactory.isDebtToken(loan)) {
-            pool.liquidateDebt(loan);
+        if (loanFactory.isDebtToken(debt)) {
+            pool.liquidateDebt(debt);
         }
     }
 }

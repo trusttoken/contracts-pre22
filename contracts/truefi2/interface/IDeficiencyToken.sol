@@ -5,7 +5,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IDebtToken} from "./IDebtToken.sol";
 
 interface IDeficiencyToken is IERC20 {
-    function loan() external view returns (IDebtToken);
+    function debt() external view returns (IDebtToken);
 
     function burnFrom(address account, uint256 amount) external;
 
