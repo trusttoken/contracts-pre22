@@ -402,29 +402,21 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
 
     /**
      * @dev Get total amount borrowed for `borrower` from fixed term loans in USD
+     * Total borrowed amount would be 0 if no Fixed Term Loan is taken by the borrower at the moment
+     * And total loan amount + interest otherwise.
      * @param borrower Borrower to get amount borrowed for
      * @param decimals Precision to use when calculating total borrowed
      * @return Total amount borrowed for `borrower` in USD
      */
     function totalBorrowed(address borrower, uint8 decimals) public view returns (uint256) {
-        uint256 borrowSum;
+        address locker = borrowingMutex.locker(borrower);
+        if (!loanFactory.isLoanToken(IDebtToken(locker))) {
+            return 0;
+        }
+        uint256 borrowed = ILoanToken2(locker).debt();
         uint256 resultPrecision = uint256(10)**decimals;
 
-        // loop through loans and sum amount borrowed accounting for precision
-        ITrueFiPool2[] memory pools = poolFactory.getSupportedPools();
-        for (uint256 i = 0; i < pools.length; i++) {
-            ITrueFiPool2 pool = pools[i];
-            uint256 poolPrecision = uint256(10)**ITrueFiPool2WithDecimals(address(pool)).decimals();
-            ILoanToken2[] memory _loans = poolLoans[pool];
-            for (uint256 j = 0; j < _loans.length; j++) {
-                ILoanToken2 loan = _loans[j];
-                if (address(loan.borrower()) == borrower) {
-                    uint256 loanValue = loan.value(loan.balanceOf(address(this)));
-                    borrowSum = borrowSum.add(loanValue.mul(resultPrecision).div(poolPrecision));
-                }
-            }
-        }
-        return borrowSum;
+        return ILoanToken2(locker).pool().oracle().tokenToUsd(borrowed).mul(resultPrecision).div(1 ether);
     }
 
     /**

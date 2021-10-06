@@ -6,7 +6,7 @@ import {
   parseUSDC,
   setupTruefi2,
   timeTravel as _timeTravel,
-  extractLoanTokenAddress as _extractLoanTokenAddress,
+  extractLoanTokenAddress as _extractLoanTokenAddress, parseTRU,
 } from 'utils'
 import { deployContract } from 'scripts/utils/deployContract'
 import {
@@ -342,10 +342,10 @@ describe('FixedTermLoanAgency', () => {
     })
   })
 
-  describe('Borrowing', () => {
-    const borrow = async (connectedBorrower: Wallet, pool: Contract, amount: number | BigNumber, term: number) =>
-      ftlAgency.connect(connectedBorrower).borrow(pool.address, amount, term, await ftlAgency.rate(pool.address, connectedBorrower.address, amount, term))
+  const borrow = async (connectedBorrower: Wallet, pool: Contract, amount: number | BigNumber, term: number) =>
+    ftlAgency.connect(connectedBorrower).borrow(pool.address, amount, term, await ftlAgency.rate(pool.address, connectedBorrower.address, amount, term))
 
+  describe('Borrowing', () => {
     describe('reverts if', () => {
       it('borrower is not allowed', async () => {
         await ftlAgency.blockBorrower(borrower.address)
@@ -451,12 +451,43 @@ describe('FixedTermLoanAgency', () => {
     })
   })
 
+  describe('totalBorrowed', () => {
+    it('is 0 when no loans are taken by the borrower', async () => {
+      expect(await ftlAgency.totalBorrowed(borrower.address, 18)).to.equal(0)
+    })
+
+    it('equals total loan debt after loan is taken', async () => {
+      await creditOracle.setScore(borrower.address, 200)
+      await ftlAgency.setLongTermLoanThreshold(DAY)
+      await borrow(borrower, pool1, parseEth(100000), YEAR)
+      expect(await ftlAgency.totalBorrowed(borrower.address, 18)).to.equal(parseEth(110760))
+    })
+
+    it('repaying does not affect totalBorrowed value', async () => {
+      await creditOracle.setScore(borrower.address, 200)
+      await ftlAgency.setLongTermLoanThreshold(DAY)
+      await borrow(borrower, pool1, parseEth(100000), YEAR)
+      const loan = await borrowingMutex.locker(borrower.address)
+      expect(await ftlAgency.totalBorrowed(borrower.address, 18)).to.equal(parseEth(110760))
+      await token1.mint(loan, parseEth(1000))
+      expect(await ftlAgency.totalBorrowed(borrower.address, 18)).to.equal(parseEth(110760))
+    })
+
+    it('normalizes to decimal places', async () => {
+      await creditOracle.setScore(borrower.address, 200)
+      await ftlAgency.setLongTermLoanThreshold(DAY)
+      await borrow(borrower, pool1, parseEth(100000), YEAR)
+      expect(await ftlAgency.totalBorrowed(borrower.address, 8)).to.equal(parseTRU(110760))
+    })
+  })
+
   describe('value', () => {
     beforeEach(async () => {
       const mockMutex = await deployMockContract(owner, BorrowingMutexJson.abi)
       await ftlAgency.setBorrowingMutex(mockMutex.address)
       await mockMutex.mock.isUnlocked.returns(true)
       await mockMutex.mock.lock.returns()
+      await mockMutex.mock.locker.returns(AddressZero)
 
       await ftlAgency.connect(borrower).borrow(pool1.address, 100000, YEAR, 1000)
       await ftlAgency.connect(borrower).borrow(pool1.address, 100000, DAY, 1000)
@@ -553,6 +584,7 @@ describe('FixedTermLoanAgency', () => {
         await mockMutex.mock.isUnlocked.returns(true)
         await mockMutex.mock.lock.returns()
         await mockMutex.mock.unlock.returns()
+        await mockMutex.mock.locker.returns(AddressZero)
 
         await payBack(token1, loan)
         await loan.settle()
@@ -592,6 +624,7 @@ describe('FixedTermLoanAgency', () => {
         await mockMutex.mock.isUnlocked.returns(true)
         await mockMutex.mock.lock.returns()
         await mockMutex.mock.unlock.returns()
+        await mockMutex.mock.locker.returns(AddressZero)
 
         newLoan1 = await extractLoanTokenAddress(ftlAgency.connect(borrower).borrow(pool1.address, parseEth(100000), YEAR, 1000))
 
