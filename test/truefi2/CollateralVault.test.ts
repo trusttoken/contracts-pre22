@@ -2,7 +2,7 @@ import { expect, use } from 'chai'
 import { solidity } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
 import { setupDeploy } from 'scripts/utils'
-import { beforeEachWithFixture } from 'utils'
+import { beforeEachWithFixture, setupTruefi2 } from 'utils'
 import {
   CollateralVault,
   CollateralVault__factory,
@@ -20,25 +20,25 @@ use(solidity)
 
 describe('CollateralVault', () => {
   let owner: Wallet
+  let borrower: Wallet
 
   let tru: TrustToken
   let borrowingMutex: BorrowingMutex
-  let lineOfCreditAgency: LineOfCreditAgency
+  let creditAgency: LineOfCreditAgency
   let liquidator: Liquidator2
 
   let collateralVault: CollateralVault
 
-  beforeEachWithFixture(async (wallets) => {
-    [owner] = wallets
-    const deployContract = setupDeploy(owner)
+  beforeEachWithFixture(async (wallets, _provider) => {
+    [owner, borrower] = wallets
 
-    tru = await deployContract(TrustToken__factory)
-    borrowingMutex = await deployContract(BorrowingMutex__factory)
-    lineOfCreditAgency = await deployContract(LineOfCreditAgency__factory)
-    liquidator = await deployContract(Liquidator2__factory)
-
-    collateralVault = await deployContract(CollateralVault__factory)
-    await collateralVault.initialize(tru.address, borrowingMutex.address, lineOfCreditAgency.address, liquidator.address)
+    ; ({
+      tru,
+      borrowingMutex,
+      creditAgency,
+      liquidator,
+      collateralVault,
+    } = await setupTruefi2(owner, _provider))
   })
 
   describe('initializer', () => {
@@ -55,7 +55,7 @@ describe('CollateralVault', () => {
     })
 
     it('sets lineOfCreditAgency', async () => {
-      expect(await collateralVault.lineOfCreditAgency()).to.eq(lineOfCreditAgency.address)
+      expect(await collateralVault.lineOfCreditAgency()).to.eq(creditAgency.address)
     })
 
     it('sets liquidator', async () => {
