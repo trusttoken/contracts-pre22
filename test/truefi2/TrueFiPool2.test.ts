@@ -369,7 +369,6 @@ describe('TrueFiPool2', () => {
       await tusdPool.join(parseEth(1e7))
       const tx = ftlAgency.connect(borrower).borrow(tusdPool.address, 500000, DAY, 1000)
       loan = await extractLoanTokenAddress(tx, owner, loanFactory)
-      await loan.connect(borrower).withdraw(borrower.address)
       await timeTravel(DAY * 4)
       await loan.enterDefault()
       debt = await loan.debtToken()
@@ -472,7 +471,6 @@ describe('TrueFiPool2', () => {
       it('when pool has some deficiency value', async () => {
         const tx = ftlAgency.connect(borrower).borrow(tusdPool.address, 500000, DAY, 1000)
         loan = await extractLoanTokenAddress(tx, owner, loanFactory)
-        await loan.connect(borrower).withdraw(borrower.address)
         await timeTravel(DAY * 4)
         await loan.enterDefault()
         expect(await tusdPool.poolValue()).to.equal(joinAmount.add(136))
