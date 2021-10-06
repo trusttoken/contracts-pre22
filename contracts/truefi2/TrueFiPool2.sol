@@ -279,21 +279,18 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     /**
      * @dev only FixedTermLoanAgency, or CreditAgency can perform borrowing or repaying
      */
-    modifier onlyAgencies() {
-        require(
-            msg.sender == address(ftlAgency) || msg.sender == address(creditAgency),
-            "TrueFiPool: Caller is neither the ftlAgency nor creditAgency"
-        );
+    modifier onlyAllowedLocker() {
+        require(borrowingMutex.isAllowedToLock(msg.sender), "TrueFiPool: Caller is not an allowed locker");
         _;
     }
 
     /**
-     * @dev only TrueLender, FixedTermLoanAgency, or CreditAgency can perform borrowing or repaying
+     * @dev only TrueLender or an allowed locker can perform borrowing or repaying
      */
-    modifier onlyLenderOrFTLAgencyOrLineOfCreditAgency() {
+    modifier onlyLenderOrAllowedLocker() {
         require(
-            msg.sender == address(lender) || msg.sender == address(ftlAgency) || msg.sender == address(creditAgency),
-            "TrueFiPool: Caller is not the lender, ftlAgency, or creditAgency"
+            msg.sender == address(lender) || borrowingMutex.isAllowedToLock(msg.sender),
+            "TrueFiPool: Caller is not the lender or an allowed locker"
         );
         _;
     }
@@ -577,7 +574,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      * @dev Remove liquidity from strategy if necessary and transfer to lender
      * @param amount amount for lender to withdraw
      */
-    function borrow(uint256 amount) external override onlyAgencies {
+    function borrow(uint256 amount) external override onlyAllowedLocker {
         require(amount <= liquidValue(), "TrueFiPool: Insufficient liquidity");
         if (amount > 0) {
             ensureSufficientLiquidity(amount);
@@ -592,7 +589,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      * @dev repay debt by transferring tokens to the contract
      * @param currencyAmount amount to repay
      */
-    function repay(uint256 currencyAmount) external override onlyLenderOrFTLAgencyOrLineOfCreditAgency {
+    function repay(uint256 currencyAmount) external override onlyLenderOrAllowedLocker {
         token.safeTransferFrom(msg.sender, address(this), currencyAmount);
         emit Repaid(msg.sender, currencyAmount);
     }
