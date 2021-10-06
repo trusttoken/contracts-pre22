@@ -20,7 +20,7 @@ interface ILoanFactory2 {
         uint256 _debt
     ) external returns (IDebtToken);
 
-    function isCreatedByFactory(IDebtToken) external view returns (bool);
+    function isCreatedByFactory(address) external view returns (bool);
 
     function isLoanToken(ILoanToken2) external view returns (bool);
 
