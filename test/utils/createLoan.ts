@@ -31,7 +31,7 @@ const _createLoanTx = async function (factory: LoanFactory2, creator: Wallet, po
   const fakeFTLA = creator
   const originalFTLA_address = await factory.ftlAgency()
   await factory.setFixedTermLoanAgency(fakeFTLA.address)
-  const loanTx = await factory.connect(fakeFTLA).createFTLALoanToken(pool.address, creator.address, amount, duration, apy)
+  const loanTx = await factory.connect(fakeFTLA).createLoanToken(pool.address, creator.address, amount, duration, apy)
   await factory.setFixedTermLoanAgency(originalFTLA_address)
   return loanTx
 }
