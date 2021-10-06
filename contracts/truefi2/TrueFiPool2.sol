@@ -17,6 +17,7 @@ import {ISAFU} from "./interface/ISAFU.sol";
 import {IDeficiencyToken} from "./interface/IDeficiencyToken.sol";
 import {ILineOfCreditAgency} from "./interface/ILineOfCreditAgency.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
+import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
 
 import {ABDKMath64x64} from "../truefi/Log.sol";
 import {OneInchExchange} from "./libraries/OneInchExchange.sol";
@@ -99,6 +100,8 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
 
     ILoanFactory2 public loanFactory;
 
+    IBorrowingMutex public borrowingMutex;
+
     // ======= STORAGE DECLARATION END ===========
 
     /**
@@ -117,6 +120,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
         IFixedTermLoanAgency _ftlAgency,
         ISAFU _safu,
         ILoanFactory2 _loanFactory,
+        IBorrowingMutex _borrowingMutex,
         address __owner
     ) external override initializer {
         ERC20.__ERC20_initialize(concat("TrueFi ", _token.name()), concat("tf", _token.symbol()));
@@ -127,6 +131,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
         ftlAgency = _ftlAgency;
         safu = _safu;
         loanFactory = _loanFactory;
+        borrowingMutex = _borrowingMutex;
     }
 
     /**
@@ -346,7 +351,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     }
 
     function setLoanFactory(ILoanFactory2 _loanFactory) external onlyOwner {
-        require(address(_loanFactory) != address(0), "TrueFiPool2: loanFactory is zero address");
+        require(address(_loanFactory) != address(0), "TrueFiPool: loanFactory is zero address");
         loanFactory = _loanFactory;
         emit LoanFactoryChanged(_loanFactory);
     }

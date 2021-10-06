@@ -9,6 +9,7 @@ import {ITrueFiPoolOracle} from "./ITrueFiPoolOracle.sol";
 import {I1Inch3} from "./I1Inch3.sol";
 import {ISAFU} from "./ISAFU.sol";
 import {ILoanFactory2} from "./ILoanFactory2.sol";
+import {IBorrowingMutex} from "./IBorrowingMutex.sol";
 
 interface ITrueFiPool2 is IERC20 {
     function initialize(
@@ -17,6 +18,7 @@ interface ITrueFiPool2 is IERC20 {
         IFixedTermLoanAgency _ftlAgency,
         ISAFU safu,
         ILoanFactory2 _loanFactory,
+        IBorrowingMutex _borrowingMutex,
         address __owner
     ) external;
 
