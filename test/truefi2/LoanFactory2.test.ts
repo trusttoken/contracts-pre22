@@ -46,9 +46,9 @@ describe('LoanFactory2', () => {
   let borrowingMutex: BorrowingMutex
   let creditAgency: LineOfCreditAgency
 
-  const createFTLALoanToken = async (pool: TrueFiPool2, borrower: Wallet, amount: BigNumberish, term: BigNumberish, apy: BigNumberish) => {
+  const createLoanToken = async (pool: TrueFiPool2, borrower: Wallet, amount: BigNumberish, term: BigNumberish, apy: BigNumberish) => {
     await loanFactory.setFixedTermLoanAgency(ftla.address)
-    const tx = await loanFactory.connect(ftla).createFTLALoanToken(pool.address, borrower.address, amount, term, apy)
+    const tx = await loanFactory.connect(ftla).createLoanToken(pool.address, borrower.address, amount, term, apy)
     const creationEvent = (await tx.wait()).events[0]
     const { loanToken } = creationEvent.args
     return LoanToken2__factory.connect(loanToken, owner)
@@ -106,16 +106,16 @@ describe('LoanFactory2', () => {
     })
   })
 
-  describe('createFTLALoanToken', () => {
+  describe('createLoanToken', () => {
     let loanToken: LoanToken2
 
     beforeEach(async () => {
-      loanToken = await createFTLALoanToken(pool, borrower, parseEth(1), 15 * DAY, 1000)
+      loanToken = await createLoanToken(pool, borrower, parseEth(1), 15 * DAY, 1000)
     })
 
     describe('reverts if', () => {
       it('caller is not FTLA', async () => {
-        await expect(loanFactory.connect(borrower).createFTLALoanToken(pool.address, borrower.address, parseEth(1), 15 * DAY, 1000))
+        await expect(loanFactory.connect(borrower).createLoanToken(pool.address, borrower.address, parseEth(1), 15 * DAY, 1000))
           .to.be.revertedWith('LoanFactory: Caller is not the fixed term loan agency')
       })
 
@@ -124,14 +124,14 @@ describe('LoanFactory2', () => {
         await factory.initialize(
           AddressZero, ftla.address, AddressZero, AddressZero, AddressZero, AddressZero, AddressZero,
         )
-        await expect(factory.connect(ftla).createFTLALoanToken(pool.address, borrower.address, parseEth(1), 15 * DAY, 1000))
+        await expect(factory.connect(ftla).createLoanToken(pool.address, borrower.address, parseEth(1), 15 * DAY, 1000))
           .to.be.revertedWith('LoanFactory: Loan token implementation should be set')
       })
 
       it('loan token initialize signature differs from expected', async () => {
         const debtToken = await new DebtToken__factory(owner).deploy()
         await loanFactory.connect(owner).setLoanTokenImplementation(debtToken.address)
-        await expect(loanFactory.connect(ftla).createFTLALoanToken(pool.address, borrower.address, parseEth(1), 15 * DAY, 1000))
+        await expect(loanFactory.connect(ftla).createLoanToken(pool.address, borrower.address, parseEth(1), 15 * DAY, 1000))
           .to.be.revertedWith('Transaction reverted: function selector was not recognized and there\'s no fallback function')
       })
     })
@@ -209,7 +209,7 @@ describe('LoanFactory2', () => {
   describe('isCreatedByFactory', () => {
     describe('returns true for', () => {
       it('loan token created by factory', async () => {
-        const loanToken = await createFTLALoanToken(pool, borrower, parseEth(1), DAY, 1000)
+        const loanToken = await createLoanToken(pool, borrower, parseEth(1), DAY, 1000)
         expect(await loanFactory.isCreatedByFactory(loanToken.address)).to.eq(true)
       })
 

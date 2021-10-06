@@ -104,7 +104,7 @@ xdescribe('TrueLender2', () => {
   })
 
   it('ensure max 1% swap fee slippage', async () => {
-    const tx = await loanFactory.createLoanToken(tusdLoanPool.address, parseEth(1_000_000), DAY * 90, MAX_APY)
+    const tx = await loanFactory.createLoanToken_REMOVED(tusdLoanPool.address, parseEth(1_000_000), DAY * 90, MAX_APY)
     const creationEvent = (await tx.wait()).events[0]
     const { loanToken } = creationEvent.args
 
@@ -131,7 +131,7 @@ xdescribe('TrueLender2', () => {
   })
 
   it('funds tether loan tokens', async () => {
-    const tx = await loanFactory.createLoanToken(usdtLoanPool.address, 10_000_000, DAY * 50, MAX_APY)
+    const tx = await loanFactory.createLoanToken_REMOVED(usdtLoanPool.address, 10_000_000, DAY * 50, MAX_APY)
     const creationEvent = (await tx.wait()).events[0]
     const { loanToken } = creationEvent.args
 

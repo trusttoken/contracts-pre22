@@ -6,7 +6,7 @@ import {IDebtToken} from "./IDebtToken.sol";
 import {ITrueFiPool2} from "./ITrueFiPool2.sol";
 
 interface ILoanFactory2 {
-    function createFTLALoanToken(
+    function createLoanToken(
         ITrueFiPool2 _pool,
         address _borrower,
         uint256 _amount,

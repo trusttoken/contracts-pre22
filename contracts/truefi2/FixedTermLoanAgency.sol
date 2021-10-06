@@ -345,7 +345,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
         uint256 apy = rate(pool, borrower, amount, term);
         require(apy <= _maxApy, "FixedTermLoanAgency: Calculated apy is higher than max apy");
 
-        ILoanToken2 loanToken = loanFactory.createFTLALoanToken(pool, borrower, amount, term, apy);
+        ILoanToken2 loanToken = loanFactory.createLoanToken(pool, borrower, amount, term, apy);
         borrowingMutex.lock(borrower, address(loanToken));
         poolLoans[pool].push(loanToken);
         pool.borrow(amount);
