@@ -17,7 +17,7 @@ contract BorrowingMutex is IBorrowingMutex, UpgradeableClaimable {
 
     mapping(address => address) public override locker;
 
-    mapping(address => bool) public isAllowedToLock;
+    mapping(address => bool) public override isAllowedToLock;
 
     // ======= STORAGE DECLARATION END ===========
 

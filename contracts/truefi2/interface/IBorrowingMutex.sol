@@ -10,5 +10,7 @@ interface IBorrowingMutex {
 
     function isUnlocked(address borrower) external view returns (bool);
 
+    function isAllowedToLock(address locker) external view returns (bool);
+
     function locker(address borrower) external view returns (address);
 }

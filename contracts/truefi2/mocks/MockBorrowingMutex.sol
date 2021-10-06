@@ -7,6 +7,7 @@ import {IBorrowingMutex} from "../interface/IBorrowingMutex.sol";
 
 contract MockBorrowingMutex is IBorrowingMutex, UpgradeableClaimable {
     mapping(address => address) public override locker;
+    mapping(address => bool) public override isAllowedToLock;
 
     function initialize() external initializer {
         UpgradeableClaimable.initialize(msg.sender);
