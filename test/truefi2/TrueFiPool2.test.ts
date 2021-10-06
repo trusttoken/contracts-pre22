@@ -30,6 +30,7 @@ import {
   setUtilization as _setUtilization,
   extractLoanTokenAddress,
   createLoan,
+  createLegacyLoan,
   DAY,
   expectScaledCloseTo,
   setupTruefi2,
@@ -77,7 +78,6 @@ describe('TrueFiPool2', () => {
 
     ; ({
       standardToken: tusd,
-      lender,
       standardPool: tusdPool,
       feePool: usdcPool,
       loanFactory,
@@ -453,8 +453,7 @@ describe('TrueFiPool2', () => {
       it('when there are ongoing loans in both trueLender and FTLA, pool value contains both', async () => {
         const legacyLoanImpl = await new TestLegacyLoanToken2__factory(owner).deploy()
         await loanFactory.setLoanTokenImplementation(legacyLoanImpl.address)
-        const legacyLoan = TestLegacyLoanToken2__factory.connect((await createLoan(loanFactory, borrower, tusdPool, 500000, DAY, 1000)).address, owner)
-        await legacyLoan.setLender(lender.address)
+        const legacyLoan = await createLegacyLoan(lender, loanFactory, borrower, tusdPool, 500000, DAY, 1000)
         await tusd.mint(lender.address, 500000)
         await lender.connect(borrower).fund(legacyLoan.address)
         await ftlAgency.allowBorrower(borrower2.address)
@@ -831,8 +830,7 @@ describe('TrueFiPool2', () => {
     it('lender can repay', async () => {
       const legacyLoanImpl = await new TestLegacyLoanToken2__factory(owner).deploy()
       await loanFactory.setLoanTokenImplementation(legacyLoanImpl.address)
-      const legacyLoan = TestLegacyLoanToken2__factory.connect((await createLoan(loanFactory, borrower, tusdPool, 500000, DAY, 1000)).address, owner)
-      await legacyLoan.setLender(lender.address)
+      const legacyLoan = await createLegacyLoan(lender, loanFactory, borrower, tusdPool, 500000, DAY, 1000)
       await borrowingMutex.lock(borrower.address, legacyLoan.address)
       await tusd.mint(lender.address, 500000)
       await lender.connect(borrower).fund(legacyLoan.address)
