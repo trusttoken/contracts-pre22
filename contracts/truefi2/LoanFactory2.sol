@@ -144,7 +144,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         return creditModel.rate(pool, borrowerScore, amount).add(fixedTermLoanAdjustment);
     }
 
-    function createFTLALoanToken(
+    function createLoanToken(
         ITrueFiPool2 _pool,
         address _borrower,
         uint256 _amount,
