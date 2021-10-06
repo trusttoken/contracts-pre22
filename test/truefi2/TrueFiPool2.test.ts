@@ -282,7 +282,7 @@ describe('TrueFiPool2', () => {
     })
 
     it('cannot be called with zero address', async () => {
-      await expect(tusdPool.setLoanFactory(AddressZero)).to.be.revertedWith('TrueFiPool2: loanFactory is zero address')
+      await expect(tusdPool.setLoanFactory(AddressZero)).to.be.revertedWith('TrueFiPool: loanFactory is zero address')
     })
 
     it('emits proper event', async () => {
@@ -766,8 +766,9 @@ describe('TrueFiPool2', () => {
     })
 
     it('only ftlAgency and creditAgency can borrow from pool', async () => {
-      await expect(tusdPool.connect(owner.address).borrow(0))
-        .to.be.revertedWith('TrueFiPool: Caller is neither the ftlAgency nor creditAgency')
+      await borrowingMutex.allowLocker(owner.address, false)
+      await expect(tusdPool.connect(owner).borrow(0))
+        .to.be.revertedWith('TrueFiPool: Caller is not an allowed locker')
     })
 
     it('ftlAgency can borrow funds', async () => {
@@ -776,7 +777,7 @@ describe('TrueFiPool2', () => {
     })
 
     it('creditAgency can borrow funds', async () => {
-      await tusdPool.setCreditAgency(borrower.address)
+      await borrowingMutex.allowLocker(borrower.address, true)
       await expect(tusdPool.connect(borrower).borrow(100)).to.be.not.reverted
     })
 
@@ -784,7 +785,7 @@ describe('TrueFiPool2', () => {
       await setUtilization(90)
       const fakeFTLAgency = borrower
       const amount = (await tusdPool.poolValue()).div(10).add(1)
-      await tusdPool.setFixedTermLoanAgency(fakeFTLAgency.address)
+      await borrowingMutex.allowLocker(fakeFTLAgency.address, true)
       await expect(tusdPool.connect(fakeFTLAgency).borrow(amount))
         .to.be.revertedWith('TrueFiPool: Insufficient liquidity')
       await expect(tusdPool.connect(fakeFTLAgency).borrow(500000))
@@ -826,8 +827,9 @@ describe('TrueFiPool2', () => {
     })
 
     it('only lender, ftlAgency and creditAgency can repay to pool', async () => {
+      await borrowingMutex.allowLocker(owner.address, false)
       await expect(tusdPool.connect(owner.address).repay(0))
-        .to.be.revertedWith('TrueFiPool: Caller is not the lender, ftlAgency, or creditAgency')
+        .to.be.revertedWith('TrueFiPool: Caller is not the lender or an allowed locker')
     })
 
     it('lender can repay', async () => {
@@ -852,7 +854,7 @@ describe('TrueFiPool2', () => {
     })
 
     it('creditAgency can repay funds', async () => {
-      await tusdPool.setCreditAgency(borrower.address)
+      await borrowingMutex.allowLocker(borrower.address, true)
       await expect(tusdPool.connect(borrower).repay(0)).to.be.not.reverted
     })
 
