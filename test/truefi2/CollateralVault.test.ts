@@ -1,28 +1,21 @@
 import { expect, use } from 'chai'
 import { solidity } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
-import { setupDeploy } from 'scripts/utils'
 import { beforeEachWithFixture, setupTruefi2 } from 'utils'
 import {
-  CollateralVault,
-  CollateralVault__factory,
   BorrowingMutex,
-  BorrowingMutex__factory,
+  CollateralVault,
   LineOfCreditAgency,
-  LineOfCreditAgency__factory,
   Liquidator2,
-  Liquidator2__factory,
-  TrustToken,
-  TrustToken__factory,
+  MockTrueCurrency,
 } from 'contracts'
 
 use(solidity)
 
 describe('CollateralVault', () => {
   let owner: Wallet
-  let borrower: Wallet
 
-  let tru: TrustToken
+  let tru: MockTrueCurrency
   let borrowingMutex: BorrowingMutex
   let creditAgency: LineOfCreditAgency
   let liquidator: Liquidator2
@@ -30,7 +23,7 @@ describe('CollateralVault', () => {
   let collateralVault: CollateralVault
 
   beforeEachWithFixture(async (wallets, _provider) => {
-    [owner, borrower] = wallets
+    [owner] = wallets
 
     ; ({
       tru,
