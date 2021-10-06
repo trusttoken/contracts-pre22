@@ -7,7 +7,7 @@ import {
 import { BigNumberish, Contract, Wallet } from 'ethers'
 
 export const createLoan = async function (factory: LoanFactory2, creator: Wallet, pool: TrueFiPool2, amount: BigNumberish, duration: BigNumberish, apy: BigNumberish) {
-  const loanTx = await _createLoanTx(...args)
+  const loanTx = await _createLoanTx(factory, creator, pool, amount, duration, apy)
   const loanAddress = (await loanTx.wait()).events[1].args.loanToken
   return new LoanToken2__factory(creator).attach(loanAddress)
 }
