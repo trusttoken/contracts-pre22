@@ -51,6 +51,7 @@ describe('LoanToken2', () => {
   let provider: MockProvider
   let borrowingMutex: BorrowingMutex
   let loanFactory: TestLoanFactory
+  let creationTimestamp: BigNumber
 
   async function fund () {
     const tx = await loanToken.fund()
@@ -85,7 +86,7 @@ describe('LoanToken2', () => {
     const debtToken = await deployContract(lender, DebtToken__factory)
     await loanFactory.setDebtTokenImplementation(debtToken.address)
     loanToken = await new LoanToken2__factory(lender).deploy()
-    await loanToken.initialize(
+    const tx = await loanToken.initialize(
       poolAddress,
       borrowingMutex.address,
       borrower.address,
@@ -97,6 +98,8 @@ describe('LoanToken2', () => {
       yearInSeconds,
       1000,
     )
+    const { blockNumber } = await tx.wait()
+    creationTimestamp = (await provider.getBlock(blockNumber)).timestamp
     await loanFactory.setIsLoanToken(loanToken.address)
     await token.approve(loanToken.address, parseEth(1000))
   })
@@ -115,12 +118,16 @@ describe('LoanToken2', () => {
       expect(await loanToken.amount()).to.equal(parseEth(1000))
       expect(await loanToken.term()).to.equal(yearInSeconds)
       expect(await loanToken.apy()).to.equal(1000)
-      expect(await loanToken.start()).to.be.equal(0)
-      expect(await loanToken.status()).to.equal(LoanTokenStatus.Awaiting)
+      expect(await loanToken.start()).to.be.equal(creationTimestamp)
+      expect(await loanToken.status()).to.equal(LoanTokenStatus.Withdrawn)
     })
 
     it('sets borrowers debt', async () => {
       expect(await loanToken.debt()).to.equal(parseEth(1100))
+    })
+
+    it('mints tokens to ftlAgency', async () => {
+      expect(await loanToken.balanceOf(lender.address)).to.equal(parseEth(1100))
     })
 
     it('sets erc20 params', async () => {
