@@ -29,7 +29,6 @@ import {
   parseEth,
   setUtilization as _setUtilization,
   extractLoanTokenAddress,
-  createLoan,
   createLegacyLoan,
   DAY,
   expectScaledCloseTo,
