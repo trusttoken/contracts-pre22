@@ -305,17 +305,8 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         return amount.add(interest).mul(_amount).div(debt);
     }
 
-    /**
-     * @dev Fund a loan
-     * Set status, start time, mint tokens
-     */
-    function fund() external override onlyAwaiting onlyFTLAgency {
-        status = Status.Funded;
-        start = block.timestamp;
-        _mint(msg.sender, debt);
-        token.safeTransferFrom(msg.sender, address(this), amount);
-
-        emit Funded(msg.sender);
+    function fund() external override {
+        revert("LoanToken2: Direct funding has been deprecated");
     }
 
     /**
@@ -337,16 +328,8 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         emit TransferabilityChanged(_status);
     }
 
-    /**
-     * @dev Borrower calls this function to withdraw funds
-     * Sets the status of the loan to Withdrawn
-     * @param _beneficiary address to send funds to
-     */
-    function withdraw(address _beneficiary) external override onlyBorrower onlyFunded {
-        status = Status.Withdrawn;
-        token.safeTransfer(_beneficiary, amount);
-
-        emit Withdrawn(_beneficiary);
+    function withdraw(address) external override {
+        revert("LoanToken2: Direct withdrawal has been deprecated");
     }
 
     /**
