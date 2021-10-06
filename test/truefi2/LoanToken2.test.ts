@@ -73,7 +73,7 @@ describe('LoanToken2', () => {
     const creditOracle = await deployContract(lender, TrueFiCreditOracle__factory)
     const ftlAgency = await deployContract(lender, FixedTermLoanAgency__factory)
     await ftlAgency.initialize(AddressZero, AddressZero, AddressZero, AddressZero, AddressZero, AddressZero, loanFactory.address)
-    await poolFactory.initialize(implementationReference.address, AddressZero, ftlAgency.address, AddressZero, loanFactory.address)
+    await poolFactory.initialize(implementationReference.address, AddressZero, ftlAgency.address, AddressZero, loanFactory.address, AddressZero)
     await poolFactory.allowToken(token.address, true)
     await poolFactory.createPool(token.address)
     await creditOracle.initialize()
