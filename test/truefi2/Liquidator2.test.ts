@@ -68,9 +68,6 @@ describe('Liquidator2', () => {
   const YEAR = DAY * 365
   const defaultedLoanCloseTime = YEAR + 3 * DAY
 
-  const withdraw = async (loan: TestLegacyLoanToken2, wallet: Wallet, beneficiary = wallet.address) =>
-    loan.connect(wallet).withdraw(beneficiary)
-
   const createDebtToken = async (pool: TrueFiPool2, debt: BigNumberish) => {
     return _createDebtToken(loanFactory, owner, owner, pool, borrower, debt)
   }
@@ -258,7 +255,6 @@ describe('Liquidator2', () => {
       await tusdPool.connect(owner).join(parseEth(1e7))
       const tx = ftlAgency.connect(borrower).borrow(usdcPool.address, parseUSDC(1000), YEAR, 1000)
       loan = await extractLoanTokenAddress(tx, owner, loanFactory) as any
-      await withdraw(loan, borrower)
     })
 
     describe('reverts if', () => {
@@ -279,8 +275,6 @@ describe('Liquidator2', () => {
         await ftlAgency.allowBorrower(owner.address)
         const tx = ftlAgency.borrow(usdcPool.address, parseUSDC(1000), YEAR, 1000)
         const loan2 = await extractLoanTokenAddress(tx, owner, loanFactory)
-
-        await withdraw(loan2 as any, owner)
 
         await timeTravel(defaultedLoanCloseTime)
         await loan.enterDefault()
