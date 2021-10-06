@@ -7,11 +7,7 @@ import {
 import { BigNumberish, Contract, Wallet } from 'ethers'
 
 export const createLoan = async function (factory: LoanFactory2, creator: Wallet, pool: TrueFiPool2, amount: BigNumberish, duration: BigNumberish, apy: BigNumberish) {
-  const fakeFTLA = creator
-  const originalFTLA_address = await factory.ftlAgency()
-  await factory.setFixedTermLoanAgency(fakeFTLA.address)
-  const loanTx = await factory.connect(fakeFTLA).createFTLALoanToken(pool.address, creator.address, amount, duration, apy)
-  await factory.setFixedTermLoanAgency(originalFTLA_address)
+  const loanTx = await _createLoanTx(...args)
   const loanAddress = (await loanTx.wait()).events[1].args.loanToken
   return new LoanToken2__factory(creator).attach(loanAddress)
 }
@@ -24,7 +20,18 @@ export const createDebtToken = async (loanFactory: LoanFactory2, creditAgency: W
 }
 
 export const createLegacyLoan = async (lender: Contract, ...args: Parameters<typeof createLoan>): Promise<TestLegacyLoanToken2> => {
-  const loan = TestLegacyLoanToken2__factory.connect((await createLoan(...args)).address, args[1])
+  const loanTx = await _createLoanTx(...args)
+  const loanAddress = (await loanTx.wait()).events[0].args.loanToken
+  const loan = new TestLegacyLoanToken2__factory(args[1]).attach(loanAddress)
   await loan.setLender(lender.address)
   return loan
+}
+
+const _createLoanTx = async function (factory: LoanFactory2, creator: Wallet, pool: TrueFiPool2, amount: BigNumberish, duration: BigNumberish, apy: BigNumberish) {
+  const fakeFTLA = creator
+  const originalFTLA_address = await factory.ftlAgency()
+  await factory.setFixedTermLoanAgency(fakeFTLA.address)
+  const loanTx = await factory.connect(fakeFTLA).createFTLALoanToken(pool.address, creator.address, amount, duration, apy)
+  await factory.setFixedTermLoanAgency(originalFTLA_address)
+  return loanTx
 }
