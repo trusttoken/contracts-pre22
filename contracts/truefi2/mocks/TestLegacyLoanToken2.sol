@@ -7,7 +7,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 import {ERC20} from "../../common/UpgradeableERC20.sol";
 import {IFixedTermLoanAgency} from "../interface/IFixedTermLoanAgency.sol";
-import {ILoanToken2} from "../interface/ILoanToken2.sol";
+import {ITestLegacyLoanToken2} from "./ITestLegacyLoanToken2.sol";
 import {ITrueFiPool2} from "../interface/ITrueFiPool2.sol";
 import {IBorrowingMutex} from "../interface/IBorrowingMutex.sol";
 
@@ -18,7 +18,7 @@ import {IBorrowingMutex} from "../interface/IBorrowingMutex.sol";
  * onlyLiquidator modifier was removed from liquidate() to make testing easier
  * initializer is updated to match latest LTs signature
  */
-contract TestLegacyLoanToken2 is ILoanToken2, ERC20 {
+contract TestLegacyLoanToken2 is ITestLegacyLoanToken2, ERC20 {
     using SafeMath for uint256;
     using SafeERC20 for ERC20;
 

@@ -29,7 +29,7 @@ describe('DeficiencyToken', () => {
   })
 
   it('sets loan address', async () => {
-    expect(await deficiency.loan()).to.eq(loan.address)
+    expect(await deficiency.debt()).to.eq(loan.address)
   })
 
   it('mints tokens to the pool', async () => {

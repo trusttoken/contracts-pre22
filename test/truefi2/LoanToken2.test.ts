@@ -340,13 +340,6 @@ describe('LoanToken2', () => {
     })
   })
 
-  describe('liquidate', () => {
-    it('reverts because liquidation is not supported', async () => {
-      await expect(loanToken.liquidate())
-        .to.be.revertedWith('LoanToken2: Direct liquidation has been deprecated')
-    })
-  })
-
   describe('Repay', () => {
     it('reverts if called before withdraw', async () => {
       await expect(loanToken.repay(lender.address, 1)).to.be.revertedWith('LoanToken2: Only after loan has been withdrawn')

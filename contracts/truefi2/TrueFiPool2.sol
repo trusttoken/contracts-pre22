@@ -11,7 +11,8 @@ import {IFixedTermLoanAgency} from "./interface/IFixedTermLoanAgency.sol";
 import {ITrueStrategy} from "./interface/ITrueStrategy.sol";
 import {ITrueFiPool2, ITrueFiPoolOracle} from "./interface/ITrueFiPool2.sol";
 import {ITrueLender2} from "./interface/ITrueLender2.sol";
-import {IDebtToken, ILoanToken2} from "./interface/ILoanToken2.sol";
+import {ILoanToken2} from "./interface/ILoanToken2.sol";
+import {IDebtToken} from "./interface/IDebtToken.sol";
 import {IPauseableContract} from "../common/interface/IPauseableContract.sol";
 import {ISAFU} from "./interface/ISAFU.sol";
 import {IDeficiencyToken} from "./interface/IDeficiencyToken.sol";
@@ -241,10 +242,10 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
 
     /**
      * @dev Emitted when pool reclaims deficit from SAFU
-     * @param loan Loan for which the deficit was reclaimed
+     * @param debt Debt for which the deficit was reclaimed
      * @param deficit Amount reclaimed
      */
-    event DeficitReclaimed(ILoanToken2 loan, uint256 deficit);
+    event DeficitReclaimed(IDebtToken debt, uint256 deficit);
 
     /**
      * @dev Emitted when Credit Agency address is changed
@@ -649,16 +650,16 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     }
 
     /**
-     * @dev Function called when loan's debt is repaid to SAFU, pool has a deficit value towards that loan
+     * @dev Function called when debt is repaid to SAFU, pool has a deficit value towards that debt
      */
-    function reclaimDeficit(ILoanToken2 loan) external {
-        IDeficiencyToken dToken = safu.deficiencyToken(loan);
-        require(address(dToken) != address(0), "TrueFiPool2: No deficiency token found for loan");
+    function reclaimDeficit(IDebtToken debt) external {
+        IDeficiencyToken dToken = safu.deficiencyToken(debt);
+        require(address(dToken) != address(0), "TrueFiPool2: No deficiency token found for debt");
         uint256 deficit = dToken.balanceOf(address(this));
         dToken.safeApprove(address(safu), deficit);
-        safu.reclaim(loan, deficit);
+        safu.reclaim(debt, deficit);
 
-        emit DeficitReclaimed(loan, deficit);
+        emit DeficitReclaimed(debt, deficit);
     }
 
     /**

@@ -5,18 +5,17 @@ import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
-import {ILoanToken2} from "./interface/ILoanToken2.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {IStakingPool} from "../truefi/interface/IStakingPool.sol";
 import {ITrueFiPoolOracle} from "./interface/ITrueFiPoolOracle.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
-import {IDebtToken} from "../truefi2/interface/ILoanToken2.sol";
+import {IDebtToken} from "../truefi2/interface/IDebtToken.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 /**
  * @title Liquidator2
- * @notice Liquidate LoanTokens with this Contract
+ * @notice Liquidate DebtTokens with this Contract
  * @dev When a Loan becomes defaulted, Liquidator allows to
  * compensate pool participants, by transferring some of TRU to the pool
  */
@@ -59,12 +58,12 @@ contract Liquidator2 is UpgradeableClaimable {
     event FetchMaxShareChanged(uint256 newShare);
 
     /**
-     * @dev Emitted when loans are liquidated
-     * @param loans Loans that have been liquidated
+     * @dev Emitted when debts are liquidated
+     * @param debts Debts that have been liquidated
      * @param defaultedValue Remaining loans debt to repay
      * @param withdrawnTru Amount of TRU transferred to compensate defaulted loans
      */
-    event Liquidated(IDebtToken[] loans, uint256 defaultedValue, uint256 withdrawnTru);
+    event Liquidated(IDebtToken[] debts, uint256 defaultedValue, uint256 withdrawnTru);
 
     /**
      * @dev Emitted when SAFU is changed
@@ -139,34 +138,34 @@ contract Liquidator2 is UpgradeableClaimable {
     }
 
     /**
-     * @dev Liquidates a defaulted Loan, withdraws a portion of tru from staking pool
+     * @dev Liquidates a defaulted Debt, withdraws a portion of tru from staking pool
      * then transfers tru to TrueFiPool as compensation
-     * @param loans Loan to be liquidated
+     * @param debts Debts to be liquidated
      */
-    function liquidate(IDebtToken[] calldata loans) external {
-        require(msg.sender == SAFU, "Liquidator: Only SAFU contract can liquidate a loan");
+    function liquidate(IDebtToken[] calldata debts) external {
+        require(msg.sender == SAFU, "Liquidator: Only SAFU contract can liquidate a debt");
         require(
-            allLoansHaveSameBorrower(loans),
-            "Liquidator: Loans liquidated in a single transaction, have to have the same borrower"
+            allDebtsHaveSameBorrower(debts),
+            "Liquidator: Debts liquidated in a single transaction, have to have the same borrower"
         );
         uint256 totalDefaultedValue;
 
-        for (uint256 i = 0; i < loans.length; i++) {
-            IDebtToken loan = loans[i];
-            require(loanFactory.isCreatedByFactory(loan), "Liquidator: Unknown loan");
-            require(loan.status() == IDebtToken.Status.Defaulted, "Liquidator: Loan must be defaulted");
-            ITrueFiPool2 pool = ITrueFiPool2(loan.pool());
+        for (uint256 i = 0; i < debts.length; i++) {
+            IDebtToken debt = debts[i];
+            require(loanFactory.isCreatedByFactory(address(debt)), "Liquidator: Unknown debt");
+            require(debt.status() == IDebtToken.Status.Defaulted, "Liquidator: Debt must be defaulted");
+            ITrueFiPool2 pool = ITrueFiPool2(debt.pool());
             require(poolFactory.isSupportedPool(pool), "Liquidator: Pool not supported for default protection");
 
-            uint256 loanDefaultedValue = loan.debt().sub(loan.repaid());
-            totalDefaultedValue = totalDefaultedValue.add(getDefaultedValueInUsd(loanDefaultedValue, pool.oracle()));
-            loan.liquidate();
+            uint256 debtDefaultedValue = debt.debt().sub(debt.repaid());
+            totalDefaultedValue = totalDefaultedValue.add(getDefaultedValueInUsd(debtDefaultedValue, pool.oracle()));
+            debt.liquidate();
         }
 
         uint256 withdrawnTru = getAmountToWithdraw(totalDefaultedValue);
         stkTru.withdraw(withdrawnTru);
         tru.safeTransfer(SAFU, withdrawnTru);
-        emit Liquidated(loans, totalDefaultedValue, withdrawnTru);
+        emit Liquidated(debts, totalDefaultedValue, withdrawnTru);
     }
 
     /**
@@ -186,13 +185,13 @@ contract Liquidator2 is UpgradeableClaimable {
         return oracle.tokenToUsd(defaultedValue);
     }
 
-    function allLoansHaveSameBorrower(IDebtToken[] calldata loans) internal view returns (bool) {
-        if (loans.length <= 1) {
+    function allDebtsHaveSameBorrower(IDebtToken[] calldata debts) internal view returns (bool) {
+        if (debts.length <= 1) {
             return true;
         }
-        address borrower = loans[0].borrower();
-        for (uint256 i = 1; i < loans.length; i++) {
-            if (borrower != loans[i].borrower()) {
+        address borrower = debts[0].borrower();
+        for (uint256 i = 1; i < debts.length; i++) {
+            if (borrower != debts[i].borrower()) {
                 return false;
             }
         }
