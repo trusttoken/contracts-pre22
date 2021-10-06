@@ -48,6 +48,7 @@ contract CollateralVault is ICollateralVault, UpgradeableClaimable {
         //   poke LOCA for borrower to update limit + rate
         // safe transfer amount from borrower
         require(amount == 0); // silence lint
+        stakedToken = IERC20WithDecimals(address(0)); // silence build warning
         revert("Unimplemented!");
     }
 
@@ -57,6 +58,7 @@ contract CollateralVault is ICollateralVault, UpgradeableClaimable {
         //   poke LOCA for borrower to update limit + rate
         // safe transfer amount to borrower
         require(amount == 0); // silence lint
+        stakedToken = IERC20WithDecimals(address(0)); // silence build warning
         revert("Unimplemented!");
     }
 
@@ -64,7 +66,7 @@ contract CollateralVault is ICollateralVault, UpgradeableClaimable {
         // require(msg.sender == liquidator)
         // require(borrowingMutex.isBanned(borrower))
         // transfer stakedAmount() to liquidator
-        require(borrower == address(0)); // silence lint
+        require(borrower == address(stakedToken)); // silence lint and build warnings
         revert("Unimplemented!");
     }
 
@@ -75,7 +77,7 @@ contract CollateralVault is ICollateralVault, UpgradeableClaimable {
         //   return stakedAmount() - {TODO calculate minimum collateral from LOCA's borrow limit}
         // else:
         //   return 0
-        require(borrower == address(0)); // silence lint
+        require(borrower == address(stakedToken)); // silence lint and build warnings
         revert("Unimplemented!");
     }
 }
