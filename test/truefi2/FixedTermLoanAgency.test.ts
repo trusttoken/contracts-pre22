@@ -427,7 +427,6 @@ describe('FixedTermLoanAgency', () => {
 
       it('borrows receivedAmount from pool and transfers to the borrower', async () => {
         const tx = borrow(borrower, pool1, 100000, YEAR)
-        const newLoan = await extractLoanTokenAddress(tx)
         await expect(tx)
           .to.emit(token1, 'Transfer')
           .withArgs(pool1.address, ftlAgency.address, 100_000)

@@ -1,6 +1,6 @@
 import { expect, use } from 'chai'
 import { MockProvider, solidity } from 'ethereum-waffle'
-import { BigNumber, BigNumberish, ContractTransaction, Wallet } from 'ethers'
+import { BigNumber, BigNumberish, Wallet } from 'ethers'
 
 import { beforeEachWithFixture, expectScaledCloseTo, extractDebtTokens, parseEth, timeTravel } from 'utils'
 
