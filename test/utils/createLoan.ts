@@ -12,7 +12,7 @@ export const createLoan = async function (factory: LoanFactory2, creator: Wallet
   await factory.setFixedTermLoanAgency(fakeFTLA.address)
   const loanTx = await factory.connect(fakeFTLA).createFTLALoanToken(pool.address, creator.address, amount, duration, apy)
   await factory.setFixedTermLoanAgency(originalFTLA_address)
-  const loanAddress = (await loanTx.wait()).events[0].args.loanToken
+  const loanAddress = (await loanTx.wait()).events[1].args.loanToken
   return new LoanToken2__factory(creator).attach(loanAddress)
 }
 
