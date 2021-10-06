@@ -49,7 +49,7 @@ describe('LoanFactory2', () => {
   const createLoanToken = async (pool: TrueFiPool2, borrower: Wallet, amount: BigNumberish, term: BigNumberish, apy: BigNumberish) => {
     await loanFactory.setFixedTermLoanAgency(ftla.address)
     const tx = await loanFactory.connect(ftla).createLoanToken(pool.address, borrower.address, amount, term, apy)
-    const creationEvent = (await tx.wait()).events[0]
+    const creationEvent = (await tx.wait()).events[1]
     const { loanToken } = creationEvent.args
     return LoanToken2__factory.connect(loanToken, owner)
   }
@@ -149,7 +149,7 @@ describe('LoanFactory2', () => {
         expect(await loanToken.amount()).to.eq(parseEth(1))
         expect(await loanToken.term()).to.eq(15 * DAY)
         expect(await loanToken.apy()).to.eq(1000)
-        expect(await loanToken.status()).to.eq(Status.Awaiting)
+        expect(await loanToken.status()).to.eq(Status.Withdrawn)
       })
 
       it('marks deployed contract as loan token', async () => {
