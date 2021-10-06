@@ -93,7 +93,7 @@ describe('LoanToken2', () => {
     creationTimestamp = (await provider.getBlock(blockNumber)).timestamp
     await borrowingMutex.lock(borrower.address, loanToken.address)
     await loanFactory.setIsLoanToken(loanToken.address)
-    await token.approve(loanToken.address, parseEth(1000))
+    await token.transfer(borrower.address, parseEth(1000))
   })
 
   describe('Constructor', () => {
