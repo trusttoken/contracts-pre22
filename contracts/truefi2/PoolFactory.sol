@@ -14,6 +14,7 @@ import {ITrueLender2} from "./interface/ITrueLender2.sol";
 import {ImplementationReference} from "../proxy/ImplementationReference.sol";
 import {ISAFU} from "./interface/ISAFU.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
+import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
 
 /**
  * @title PoolFactory
@@ -59,6 +60,8 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
     uint256 public maxPools;
 
     ILoanFactory2 public loanFactory;
+
+    IBorrowingMutex public borrowingMutex;
 
     // ======= STORAGE DECLARATION END ===========
 
@@ -162,7 +165,8 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
         ITrueLender2 _trueLender2,
         IFixedTermLoanAgency _ftlAgency,
         ISAFU _safu,
-        ILoanFactory2 _loanFactory
+        ILoanFactory2 _loanFactory,
+        IBorrowingMutex _borrowingMutex
     ) external initializer {
         UpgradeableClaimable.initialize(msg.sender);
 
@@ -171,6 +175,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
         ftlAgency = _ftlAgency;
         safu = _safu;
         loanFactory = _loanFactory;
+        borrowingMutex = _borrowingMutex;
         maxPools = 10;
     }
 
@@ -213,7 +218,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
         pool[token] = address(proxy);
         isPool[address(proxy)] = true;
 
-        ITrueFiPool2(address(proxy)).initialize(ERC20(token), trueLender2, ftlAgency, safu, loanFactory, this.owner());
+        ITrueFiPool2(address(proxy)).initialize(ERC20(token), trueLender2, ftlAgency, safu, loanFactory, borrowingMutex, this.owner());
 
         emit PoolCreated(token, address(proxy));
     }

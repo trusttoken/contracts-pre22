@@ -19,6 +19,8 @@ import {
   TestTrueLender__factory,
   TrueFiPool2,
   TrueFiPool2__factory,
+  BorrowingMutex,
+  BorrowingMutex__factory,
 } from 'contracts'
 import { solidity } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
@@ -45,6 +47,7 @@ describe('PoolFactory', () => {
   let ftlAgencyInstance1: TestFixedTermLoanAgency
   let ftlAgencyInstance2: TestFixedTermLoanAgency
   let loanFactory: LoanFactory2
+  let borrowingMutex: BorrowingMutex
 
   beforeEachWithFixture(async (wallets) => {
     [owner, otherWallet, borrower] = wallets
@@ -61,6 +64,7 @@ describe('PoolFactory', () => {
     ftlAgencyInstance1 = await new TestFixedTermLoanAgency__factory(owner).deploy()
     ftlAgencyInstance2 = await new TestFixedTermLoanAgency__factory(owner).deploy()
     safu = await new Safu__factory(owner).deploy()
+    borrowingMutex = await new BorrowingMutex__factory(owner).deploy()
     loanFactory = await new LoanFactory2__factory(owner).deploy()
     await factory.initialize(
       implementationReference.address,
@@ -68,6 +72,7 @@ describe('PoolFactory', () => {
       ftlAgencyInstance1.address,
       safu.address,
       loanFactory.address,
+      borrowingMutex.address,
     )
   })
 
@@ -83,6 +88,10 @@ describe('PoolFactory', () => {
 
     it('sets loan factory', async () => {
       expect(await factory.loanFactory()).to.eq(loanFactory.address)
+    })
+
+    it('sets borrowing mutex', async () => {
+      expect(await factory.borrowingMutex()).to.eq(borrowingMutex.address)
     })
 
     it('sets allowAll to false', async () => {
