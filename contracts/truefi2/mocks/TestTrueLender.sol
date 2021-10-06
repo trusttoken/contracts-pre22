@@ -27,7 +27,6 @@ contract TestTrueLender is TrueLender2 {
         ITrueFiPool2 pool = loanToken.pool();
         uint256 amount = loanToken.amount();
         poolLoans[pool].push(loanToken);
-        pool.borrow(amount);
         pool.token().safeApprove(address(loanToken), amount);
         loanToken.fund();
     }

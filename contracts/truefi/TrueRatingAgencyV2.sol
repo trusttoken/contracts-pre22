@@ -12,7 +12,6 @@ import {Ownable} from "../common/UpgradeableOwnable.sol";
 import {IArbitraryDistributor} from "./interface/IArbitraryDistributor.sol";
 import {ILoanFactory} from "./interface/ILoanFactory.sol";
 import {ILoanToken2} from "../truefi2/interface/ILoanToken2.sol";
-import {ITrueFiPool} from "./interface/ITrueFiPool.sol";
 import {ITrueRatingAgencyV2} from "./interface/ITrueRatingAgencyV2.sol";
 
 /**
@@ -66,13 +65,13 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
     // REMOVAL OR REORDER OF VARIABLES WILL RESULT
     // ========= IN STORAGE CORRUPTION ===========
 
-    mapping(address => bool) public allowedSubmitters;
+    mapping(address => bool) private DEPRECATED__allowedSubmitters;
     mapping(address => Loan) public loans;
 
     IBurnableERC20 public TRU;
     IVoteTokenWithERC20 public stkTRU;
     IArbitraryDistributor public distributor;
-    ILoanFactory public factory;
+    address private DEPRECATED__factory;
 
     /**
      * @dev % multiplied by 100. e.g. 10.5% = 1050
@@ -83,55 +82,15 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
     uint256 public rewardMultiplier;
 
     // are submissions paused?
-    bool public submissionPauseStatus;
+    bool private DEPRECATED__submissionPauseStatus;
 
-    mapping(address => bool) public canChangeAllowance;
+    mapping(address => bool) private DEPRECATED__canChangeAllowance;
 
     // ======= STORAGE DECLARATION END ============
 
-    event CanChangeAllowanceChanged(address indexed who, bool status);
-    event Allowed(address indexed who, bool status);
     event RatersRewardFactorChanged(uint256 ratersRewardFactor);
-    event LoanSubmitted(address id);
-    event LoanRetracted(address id);
-    event Rated(address loanToken, address rater, bool choice, uint256 stake);
-    event Withdrawn(address loanToken, address rater, uint256 stake, uint256 received, uint256 burned);
     event RewardMultiplierChanged(uint256 newRewardMultiplier);
     event Claimed(address loanToken, address rater, uint256 claimedReward);
-    event SubmissionPauseStatusChanged(bool status);
-    event LoanFactoryChanged(address newLoanFactory);
-
-    /**
-     * @dev Only whitelisted borrowers can submit for credit ratings
-     */
-    modifier onlyAllowedSubmitters() {
-        require(allowedSubmitters[msg.sender], "TrueRatingAgencyV2: Sender is not allowed to submit");
-        _;
-    }
-
-    /**
-     * @dev Only loan submitter can perform certain actions
-     */
-    modifier onlyCreator(address id) {
-        require(loans[id].creator == msg.sender, "TrueRatingAgencyV2: Not sender's loan");
-        _;
-    }
-
-    /**
-     * @dev Cannot submit the same loan multiple times
-     */
-    modifier onlyNotExistingLoans(address id) {
-        require(status(id) == LoanStatus.Void, "TrueRatingAgencyV2: Loan was already created");
-        _;
-    }
-
-    /**
-     * @dev Only loans in Pending state
-     */
-    modifier onlyPendingLoans(address id) {
-        require(status(id) == LoanStatus.Pending, "TrueRatingAgencyV2: Loan is not currently pending");
-        _;
-    }
 
     /**
      * @dev Only loans that have been funded
@@ -146,13 +105,11 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
      * Distributor contract decides how much TRU is rewarded to stakers
      * @param _TRU TRU contract
      * @param _distributor Distributor contract
-     * @param _factory Factory contract for deploying tokens
      */
     function initialize(
         IBurnableERC20 _TRU,
         IVoteTokenWithERC20 _stkTRU,
-        IArbitraryDistributor _distributor,
-        ILoanFactory _factory
+        IArbitraryDistributor _distributor
     ) public initializer {
         require(address(this) == _distributor.beneficiary(), "TrueRatingAgencyV2: Invalid distributor beneficiary");
         Ownable.initialize();
@@ -160,18 +117,8 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
         TRU = _TRU;
         stkTRU = _stkTRU;
         distributor = _distributor;
-        factory = _factory;
 
         ratersRewardFactor = 10000;
-    }
-
-    /**
-     * @dev Set new loan factory.
-     * @param _factory New LoanFactory contract address
-     */
-    function setLoanFactory(ILoanFactory _factory) external onlyOwner {
-        factory = _factory;
-        emit LoanFactoryChanged(address(_factory));
     }
 
     /**
@@ -251,115 +198,6 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
         )
     {
         return (getVotingStart(id), getTotalNoRatings(id), getTotalYesRatings(id));
-    }
-
-    /**
-     * @dev Allows addresses to whitelist borrowers
-     */
-    function allowChangingAllowances(address who, bool status) external onlyOwner {
-        canChangeAllowance[who] = status;
-        emit CanChangeAllowanceChanged(who, status);
-    }
-
-    /**
-     * @dev Whitelist borrowers to submit loans for rating
-     * @param who Account to whitelist
-     * @param status Flag to whitelist accounts
-     */
-    function allow(address who, bool status) external {
-        require(canChangeAllowance[msg.sender], "TrueRatingAgencyV2: Cannot change allowances");
-        allowedSubmitters[who] = status;
-        emit Allowed(who, status);
-    }
-
-    /**
-     * @dev Pause submitting loans for rating
-     * @param status Flag of the status
-     */
-    function pauseSubmissions(bool status) public onlyOwner {
-        submissionPauseStatus = status;
-        emit SubmissionPauseStatusChanged(status);
-    }
-
-    /**
-     * @dev Submit a loan for rating
-     * Cannot submit the same loan twice
-     * @param id Loan ID
-     */
-    function submit(address id) external override onlyAllowedSubmitters onlyNotExistingLoans(id) {
-        require(!submissionPauseStatus, "TrueRatingAgencyV2: New submissions are paused");
-        require(ILoanToken2(id).borrower() == msg.sender, "TrueRatingAgencyV2: Sender is not borrower");
-        require(factory.isLoanToken(id), "TrueRatingAgencyV2: Only LoanTokens created via LoanFactory are supported");
-        loans[id] = Loan({creator: msg.sender, timestamp: block.timestamp, blockNumber: block.number, reward: 0});
-        emit LoanSubmitted(id);
-    }
-
-    /**
-     * @dev Remove Loan from rating agency
-     * Can only be retracted by loan creator
-     * @param id Loan ID
-     */
-    function retract(address id) external override onlyPendingLoans(id) onlyCreator(id) {
-        loans[id].creator = address(0);
-        loans[id].prediction[true] = 0;
-        loans[id].prediction[false] = 0;
-
-        emit LoanRetracted(id);
-    }
-
-    /**
-     * @dev Rate on a loan by staking TRU
-     * @param id Loan ID
-     * @param choice Rater choice. false = NO, true = YES
-     */
-    function rate(address id, bool choice) internal {
-        uint256 stake = stkTRU.getPriorVotes(msg.sender, loans[id].blockNumber);
-        require(stake > 0, "TrueRatingAgencyV2: Cannot rate with empty balance");
-
-        resetCastRatings(id);
-
-        loans[id].prediction[choice] = loans[id].prediction[choice].add(stake);
-        loans[id].ratings[msg.sender][choice] = loans[id].ratings[msg.sender][choice].add(stake);
-
-        emit Rated(id, msg.sender, choice, stake);
-    }
-
-    /**
-     * @dev Internal function to help reset ratings
-     * @param id Loan ID
-     * @param choice Boolean representing choice
-     */
-    function _resetCastRatings(address id, bool choice) internal {
-        loans[id].prediction[choice] = loans[id].prediction[choice].sub(loans[id].ratings[msg.sender][choice]);
-        loans[id].ratings[msg.sender][choice] = 0;
-    }
-
-    /**
-     * @dev Cancel ratings of msg.sender
-     * @param id ID to cancel ratings for
-     */
-    function resetCastRatings(address id) public override onlyPendingLoans(id) {
-        if (getYesRate(id, msg.sender) > 0) {
-            _resetCastRatings(id, true);
-        } else if (getNoRate(id, msg.sender) > 0) {
-            _resetCastRatings(id, false);
-        }
-    }
-
-    /**
-     * @dev Rate YES on a loan by staking TRU
-     * @param id Loan ID
-     */
-    function yes(address id) external override onlyPendingLoans(id) {
-        rate(id, true);
-    }
-
-    /**
-     * @dev Rate NO on a loan by staking TRU
-     * @param id Loan ID
-     */
-    function no(address id) external override onlyPendingLoans(id) {
-        rate(id, false);
     }
 
     /**

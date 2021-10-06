@@ -81,7 +81,7 @@ describe('LoanToken2', () => {
     borrowingMutex = await deployContract(lender, BorrowingMutex__factory)
     await borrowingMutex.initialize()
     await borrowingMutex.allowLocker(lender.address, true)
-    await loanFactory.initialize(poolFactory.address, lender.address, AddressZero, AddressZero, AddressZero, AddressZero, borrowingMutex.address, AddressZero)
+    await loanFactory.initialize(poolFactory.address, AddressZero, AddressZero, AddressZero, AddressZero, borrowingMutex.address, AddressZero)
     const debtToken = await deployContract(lender, DebtToken__factory)
     await loanFactory.setDebtTokenImplementation(debtToken.address)
     loanToken = await new LoanToken2__factory(lender).deploy()
@@ -90,7 +90,6 @@ describe('LoanToken2', () => {
       borrowingMutex.address,
       borrower.address,
       lender.address,
-      AddressZero,
       lender.address,
       loanFactory.address,
       creditOracle.address,
@@ -668,18 +667,18 @@ describe('LoanToken2', () => {
 
   describe('Whitelisting', () => {
     it('reverts when not whitelisted before funding', async () => {
-      await expect(loanToken.connect(other).allowTransfer(other.address, true)).to.be.revertedWith('LoanToken2: This can be performed only by lender')
+      await expect(loanToken.connect(other).allowTransfer(other.address, true)).to.be.revertedWith('LoanToken2: This can be performed only by ftlAgency')
     })
 
     it('reverts when not whitelisted not by a lender', async () => {
       await fund()
-      await expect(loanToken.connect(other).allowTransfer(other.address, true)).to.be.revertedWith('LoanToken2: This can be performed only by lender')
+      await expect(loanToken.connect(other).allowTransfer(other.address, true)).to.be.revertedWith('LoanToken2: This can be performed only by ftlAgency')
     })
 
     it('non-whitelisted address cannot transfer', async () => {
       await fund()
       await loanToken.transfer(other.address, 10)
-      await expect(loanToken.connect(other).transfer(lender.address, 2)).to.be.revertedWith('LoanToken2: This can be performed only by lender, ftlAgency, or accounts allowed to transfer')
+      await expect(loanToken.connect(other).transfer(lender.address, 2)).to.be.revertedWith('LoanToken2: This can be performed only by ftlAgency, or accounts allowed to transfer')
     })
 
     it('whitelisted address can transfer', async () => {
@@ -693,7 +692,7 @@ describe('LoanToken2', () => {
   describe('Debt calculation', () => {
     const getDebt = async (amount: number, termInMonths: number, apy: number) => {
       const contract = await new LoanToken2__factory(borrower).deploy()
-      await contract.initialize(poolAddress, borrowingMutex.address, borrower.address, lender.address, AddressZero, lender.address, lender.address, AddressZero, parseEth(amount.toString()), termInMonths * averageMonthInSeconds, apy)
+      await contract.initialize(poolAddress, borrowingMutex.address, borrower.address, AddressZero, lender.address, lender.address, AddressZero, parseEth(amount.toString()), termInMonths * averageMonthInSeconds, apy)
       return Number.parseInt(formatEther(await contract.debt()))
     }
 

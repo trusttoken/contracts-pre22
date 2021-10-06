@@ -97,21 +97,16 @@ describe('TrueFi', () => {
   })
 
   it('TrueRatingAgencyV2', async () => {
-    const allowedSubmitter = '0xd5dee8195ae62bc011a89f1959a7a375cc0daf38'
-
     // this needs to be updated once in a while, this loan will exist till 06/06/21
     const existingLoan = '0x583F674b8E2c36807E7371b2D27849F0E98549cc'
 
     await upgradeSuite(TEST_STATE_BLOCK_NUMBER, TrueRatingAgencyV2__factory, '0x05461334340568075bE35438b221A3a0D261Fb6b', [
-      (contract) => contract.allowedSubmitters(allowedSubmitter),
       (contract) => contract.loans(existingLoan),
       'TRU',
       'stkTRU',
       'distributor',
-      'factory',
       'ratersRewardFactor',
       'rewardMultiplier',
-      'submissionPauseStatus',
     ])
   })
 

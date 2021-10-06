@@ -6,8 +6,6 @@ import {
   BadStrategy,
   BadStrategy__factory,
   TrueFiPool2,
-  TestTrueLender,
-  TestTrueLender__factory,
   MockTrueCurrency,
   LoanFactory2,
   Safu,
@@ -18,7 +16,10 @@ import {
   CreditModel,
   MockTrueCurrency__factory,
   FixedTermLoanAgency,
-  LegacyLoanToken2__factory,
+  TestTrueLender,
+  TestTrueLender__factory,
+  BorrowingMutex,
+  TestLegacyLoanToken2__factory,
 } from 'contracts'
 import { MockProvider, solidity } from 'ethereum-waffle'
 import { BigNumber, Wallet } from 'ethers'
@@ -61,6 +62,7 @@ describe('TrueFiPool2', () => {
   let badPoolStrategy: BadStrategy
   let creditModel: CreditModel
   let ftlAgency: FixedTermLoanAgency
+  let borrowingMutex: BorrowingMutex
 
   let timeTravel: (time: number) => void
   let setUtilization: (utilization: number) => void
@@ -70,6 +72,7 @@ describe('TrueFiPool2', () => {
     deployContract = setupDeploy(owner)
     timeTravel = (time: number) => _timeTravel(_provider, time)
     provider = _provider
+
     lender = await deployContract(TestTrueLender__factory)
 
     ; ({
@@ -83,6 +86,7 @@ describe('TrueFiPool2', () => {
       creditOracle,
       creditModel,
       ftlAgency,
+      borrowingMutex,
     } = await setupTruefi2(owner, provider, { lender: lender }))
 
     poolStrategy1 = await deployContract(MockStrategy__factory, tusd.address, tusdPool.address)
@@ -114,6 +118,8 @@ describe('TrueFiPool2', () => {
         utilization,
       )
     )
+
+    await borrowingMutex.allowLocker(owner.address, true)
   })
 
   const currencyBalanceOf = async (pool: TrueFiPool2) => (
@@ -446,17 +452,21 @@ describe('TrueFiPool2', () => {
       })
 
       it('when there are ongoing loans in both trueLender and FTLA, pool value contains both', async () => {
-        loan = await createLoan(loanFactory, borrower, tusdPool, 500000, DAY, 1000)
-        await lender.connect(borrower).fund(loan.address)
+        const legacyLoanImpl = await new TestLegacyLoanToken2__factory(owner).deploy()
+        await loanFactory.setLoanTokenImplementation(legacyLoanImpl.address)
+        const legacyLoan = TestLegacyLoanToken2__factory.connect((await createLoan(loanFactory, borrower, tusdPool, 500000, DAY, 1000)).address, owner)
+        await legacyLoan.setLender(lender.address)
+        await tusd.mint(lender.address, 500000)
+        await lender.connect(borrower).fund(legacyLoan.address)
         await ftlAgency.allowBorrower(borrower2.address)
         await ftlAgency.connect(borrower2).borrow(tusdPool.address, 5000, YEAR, 10000)
-        expect(await tusdPool.liquidValue()).to.equal(joinAmount.sub(500000).sub(5000))
+        expect(await tusdPool.liquidValue()).to.equal(joinAmount.sub(5000))
         expect(await tusdPool.loansValue()).to.equal(500000 + 5000)
-        expect(await tusdPool.poolValue()).to.equal(joinAmount)
+        expect(await tusdPool.poolValue()).to.equal(joinAmount.add(500000))
 
         await timeTravel(DAY * 2)
         expect(await tusdPool.loansValue()).to.equal(505139)
-        expect(await tusdPool.poolValue()).to.equal(joinAmount.add(139))
+        expect(await tusdPool.poolValue()).to.equal(joinAmount.add(139).add((500000)))
       })
 
       it('when pool has some deficiency value', async () => {
@@ -755,12 +765,12 @@ describe('TrueFiPool2', () => {
       await tusdPool.join(parseEth(100))
     })
 
-    it('only lender and creditAgency can borrow from pool', async () => {
+    it('only ftlAgency and creditAgency can borrow from pool', async () => {
       await expect(tusdPool.connect(owner.address).borrow(0))
-        .to.be.revertedWith('TrueFiPool: Caller is not the lender, ftlAgency, or creditAgency')
+        .to.be.revertedWith('TrueFiPool: Caller is neither the ftlAgency nor creditAgency')
     })
 
-    it('lender can borrow funds', async () => {
+    it('ftlAgency can borrow funds', async () => {
       await ftlAgency.connect(borrower).borrow(tusdPool.address, 500000, DAY * 365, 2000)
       expect('borrow').to.be.calledOnContract(tusdPool)
     })
@@ -815,12 +825,28 @@ describe('TrueFiPool2', () => {
       await loan.settle()
     })
 
-    it('only lender and creditAgency can repay to pool', async () => {
+    it('only lender, ftlAgency and creditAgency can repay to pool', async () => {
       await expect(tusdPool.connect(owner.address).repay(0))
         .to.be.revertedWith('TrueFiPool: Caller is not the lender, ftlAgency, or creditAgency')
     })
 
-    it('lender can repay funds', async () => {
+    it('lender can repay', async () => {
+      const legacyLoanImpl = await new TestLegacyLoanToken2__factory(owner).deploy()
+      await loanFactory.setLoanTokenImplementation(legacyLoanImpl.address)
+      const legacyLoan = TestLegacyLoanToken2__factory.connect((await createLoan(loanFactory, borrower, tusdPool, 500000, DAY, 1000)).address, owner)
+      await legacyLoan.setLender(lender.address)
+      await borrowingMutex.lock(borrower.address, legacyLoan.address)
+      await tusd.mint(lender.address, 500000)
+      await lender.connect(borrower).fund(legacyLoan.address)
+      await timeTravel(DAY)
+      const debt = await legacyLoan.debt()
+      await tusd.mint(legacyLoan.address, debt)
+      await legacyLoan.settle()
+      await lender.reclaim(legacyLoan.address, '0x')
+      expect('repay').to.be.calledOnContract(tusdPool)
+    })
+
+    it('ftlAgency can repay funds', async () => {
       await ftlAgency.reclaim(loan.address, '0x')
       expect('repay').to.be.calledOnContract(tusdPool)
     })
@@ -934,7 +960,7 @@ describe('TrueFiPool2', () => {
     beforeEach(async () => {
       await tusd.approve(tusdPool.address, parseEth(100))
       await tusdPool.join(parseEth(100))
-      const legacyLoanImpl = await new LegacyLoanToken2__factory(owner).deploy()
+      const legacyLoanImpl = await new TestLegacyLoanToken2__factory(owner).deploy()
       await loanFactory.setLoanTokenImplementation(legacyLoanImpl.address)
       const tx = ftlAgency.connect(borrower).borrow(tusdPool.address, 100000, DAY, 1000)
       loan = await extractLoanTokenAddress(tx, owner, loanFactory)
