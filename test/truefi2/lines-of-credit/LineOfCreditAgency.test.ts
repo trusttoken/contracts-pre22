@@ -417,10 +417,10 @@ describe('LineOfCreditAgency', () => {
     it('fails if borrower mutex is already locked and borrower has some debt', async () => {
       const deployContract = setupDeploy(owner)
       const faultyCreditAgency = await deployContract(LineOfCreditAgency__factory)
+      await borrowingMutex.allowLocker(faultyCreditAgency.address, true)
       const faultyBorrowingMutex = await deployContract(MockBorrowingMutex__factory)
 
       await faultyCreditAgency.initialize(creditOracle.address, creditModel.address, faultyBorrowingMutex.address, poolFactory.address, loanFactory.address)
-      await tusdPool.setCreditAgency(faultyCreditAgency.address)
       await faultyCreditAgency.allowBorrower(borrower.address, true)
 
       await faultyCreditAgency.connect(borrower).borrow(tusdPool.address, 1000)
