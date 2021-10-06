@@ -176,7 +176,6 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         status = Status.Withdrawn;
         start = block.timestamp;
         _mint(address(ftlAgency), debt);
-        emit Withdrawn(borrower);
     }
 
     /**
