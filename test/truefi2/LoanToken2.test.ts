@@ -151,10 +151,6 @@ describe('LoanToken2', () => {
       expect(await loanToken.status()).to.equal(LoanTokenStatus.Settled)
     })
 
-    it('reverts when closing not funded loan', async () => {
-      await expect(loanToken.settle()).to.be.revertedWith('LoanToken2: Current status should be Funded or Withdrawn')
-    })
-
     it('unlocks the mutex', async () => {
       await token.mint(loanToken.address, parseEth(1100))
       expect(await borrowingMutex.isUnlocked(borrower.address)).to.be.false
@@ -234,11 +230,6 @@ describe('LoanToken2', () => {
   })
 
   describe('Repay', () => {
-    it('reverts if called before withdraw', async () => {
-      await expect(loanToken.repay(lender.address, 1)).to.be.revertedWith('LoanToken2: Only after loan has been withdrawn')
-      await expect(loanToken.repay(lender.address, 1)).to.be.revertedWith('LoanToken2: Only after loan has been withdrawn')
-    })
-
     it('transfers trueCurrencies to loanToken', async () => {
       await token.connect(borrower).approve(loanToken.address, parseEth(100))
       await loanToken.repay(borrower.address, parseEth(100))
@@ -269,11 +260,6 @@ describe('LoanToken2', () => {
   })
 
   describe('Repay in full', () => {
-    it('reverts if called before withdraw', async () => {
-      await expect(loanToken.repayInFull(lender.address)).to.be.revertedWith('LoanToken2: Only after loan has been withdrawn')
-      await expect(loanToken.repayInFull(lender.address)).to.be.revertedWith('LoanToken2: Only after loan has been withdrawn')
-    })
-
     it('transfers trueCurrencies to loanToken', async () => {
       const debt = await loanToken.debt()
       await token.connect(borrower).approve(loanToken.address, debt)
@@ -580,10 +566,6 @@ describe('LoanToken2', () => {
   })
 
   describe('Is repaid?', () => {
-    it('reverts if called before funding', async () => {
-      await expect(loanToken.isRepaid()).to.be.revertedWith('LoanToken2: Current status should be Funded or Withdrawn')
-    })
-
     it('reverts if called after settling', async () => {
       const debt = await loanToken.debt()
       await token.connect(borrower).approve(loanToken.address, debt)
