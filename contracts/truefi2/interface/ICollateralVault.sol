@@ -8,5 +8,5 @@ interface ICollateralVault {
 
     function stakedAmount(address borrower) external view returns (uint256);
 
-    function token() external view returns (IERC20WithDecimals);
+    function stakedToken() external view returns (IERC20WithDecimals);
 }

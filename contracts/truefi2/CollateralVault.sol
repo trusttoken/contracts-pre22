@@ -19,7 +19,7 @@ contract CollateralVault is ICollateralVault, UpgradeableClaimable {
 
     mapping(address => uint256) public override stakedAmount;
 
-    IERC20WithDecimals public override token;
+    IERC20WithDecimals public override stakedToken;
 
     IBorrowingMutex public borrowingMutex;
 
@@ -30,13 +30,13 @@ contract CollateralVault is ICollateralVault, UpgradeableClaimable {
     // ======= STORAGE DECLARATION END ===========
 
     function initialize(
-        IERC20WithDecimals _token,
+        IERC20WithDecimals _stakedToken,
         IBorrowingMutex _borrowingMutex,
         ILineOfCreditAgency _lineOfCreditAgency,
         ILiquidator2 _liquidator
     ) external initializer {
         UpgradeableClaimable.initialize(msg.sender);
-        token = _token;
+        stakedToken = _stakedToken;
         borrowingMutex = _borrowingMutex;
         lineOfCreditAgency = _lineOfCreditAgency;
         liquidator = _liquidator;

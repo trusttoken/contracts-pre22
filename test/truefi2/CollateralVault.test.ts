@@ -46,8 +46,8 @@ describe('CollateralVault', () => {
       expect(await collateralVault.owner()).to.eq(owner.address)
     })
 
-    it('sets token', async () => {
-      expect(await collateralVault.token()).to.eq(tru.address)
+    it('sets stakedToken', async () => {
+      expect(await collateralVault.stakedToken()).to.eq(tru.address)
     })
 
     it('sets borrowingMutex', async () => {
