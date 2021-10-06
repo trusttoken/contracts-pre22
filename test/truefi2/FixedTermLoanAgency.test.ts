@@ -6,7 +6,8 @@ import {
   parseUSDC,
   setupTruefi2,
   timeTravel as _timeTravel,
-  extractLoanTokenAddress as _extractLoanTokenAddress, parseTRU,
+  extractLoanTokenAddress as _extractLoanTokenAddress,
+  parseTRU,
 } from 'utils'
 import { deployContract } from 'scripts/utils/deployContract'
 import {
