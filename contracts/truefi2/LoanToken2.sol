@@ -173,6 +173,10 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         loanFactory = _loanFactory;
         creditOracle = _creditOracle;
         debt = interest(amount);
+        status = Status.Withdrawn;
+        start = block.timestamp;
+        _mint(address(ftlAgency), debt);
+        emit Withdrawn(borrower);
     }
 
     /**
