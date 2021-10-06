@@ -48,7 +48,7 @@ describe('LoanToken2', () => {
   let provider: MockProvider
   let borrowingMutex: BorrowingMutex
   let loanFactory: TestLoanFactory
-  let creationTimestamp: BigNumber
+  let creationTimestamp: BigNumberish
 
   beforeEachWithFixture(async (wallets, _provider) => {
     [lender, borrower, other] = wallets
