@@ -12,7 +12,6 @@ import {OneInchExchange} from "./libraries/OneInchExchange.sol";
 
 import {ILoanToken2} from "./interface/ILoanToken2.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
-import {IDebtToken} from "../truefi2/interface/ILoanToken2.sol";
 import {IStakingPool} from "../truefi/interface/IStakingPool.sol";
 import {IFixedTermLoanAgency} from "./interface/IFixedTermLoanAgency.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
@@ -346,7 +345,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
         uint256 apy = rate(pool, borrower, amount, term);
         require(apy <= _maxApy, "FixedTermLoanAgency: Calculated apy is higher than max apy");
 
-        ILoanToken2 loanToken = loanFactory.createFTLALoanToken(pool, borrower, amount, term, apy);
+        ILoanToken2 loanToken = loanFactory.createLoanToken(pool, borrower, amount, term, apy);
         borrowingMutex.lock(borrower, address(loanToken));
         poolLoans[pool].push(loanToken);
         pool.borrow(amount);
@@ -376,10 +375,10 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
      */
     function reclaim(ILoanToken2 loanToken, bytes calldata data) external {
         ITrueFiPool2 pool = loanToken.pool();
-        IDebtToken.Status status = loanToken.status();
-        require(status >= IDebtToken.Status.Settled, "FixedTermLoanAgency: LoanToken is not closed yet");
+        ILoanToken2.Status status = loanToken.status();
+        require(status >= ILoanToken2.Status.Settled, "FixedTermLoanAgency: LoanToken is not closed yet");
 
-        if (status != IDebtToken.Status.Settled) {
+        if (status != ILoanToken2.Status.Settled) {
             require(msg.sender == owner(), "FixedTermLoanAgency: Only owner can reclaim from defaulted loan");
         }
 

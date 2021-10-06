@@ -222,13 +222,6 @@ describe('LoanToken2', () => {
     })
   })
 
-  describe('liquidate', () => {
-    it('reverts because liquidation is not supported', async () => {
-      await expect(loanToken.liquidate())
-        .to.be.revertedWith('LoanToken2: Direct liquidation has been deprecated')
-    })
-  })
-
   describe('Repay', () => {
     it('transfers trueCurrencies to loanToken', async () => {
       await token.connect(borrower).approve(loanToken.address, parseEth(100))

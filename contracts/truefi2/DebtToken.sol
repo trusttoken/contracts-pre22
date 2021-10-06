@@ -2,7 +2,7 @@
 pragma solidity 0.6.10;
 
 import {ERC20} from "../common/UpgradeableERC20.sol";
-import {IDebtToken} from "./interface/ILoanToken2.sol";
+import {IDebtToken} from "./interface/IDebtToken.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
@@ -30,7 +30,7 @@ contract DebtToken is IDebtToken, ERC20 {
     event Redeemed(address receiver, uint256 burnedAmount, uint256 redeemedAmount);
 
     /**
-     * @dev Emitted when loan gets liquidated
+     * @dev Emitted when debt gets liquidated
      */
     event Liquidated();
 
@@ -53,7 +53,6 @@ contract DebtToken is IDebtToken, ERC20 {
 
     /**
      * @dev Redeem DebtToken balances for underlying token
-     * Can only call this function after the loan is Closed
      * @param _amount amount to redeem
      */
     function redeem(uint256 _amount) external override {
@@ -73,7 +72,7 @@ contract DebtToken is IDebtToken, ERC20 {
     }
 
     /**
-     * @dev Liquidate the loan if it has defaulted
+     * @dev Liquidate the debt if it has defaulted
      */
     function liquidate() external override {
         require(status == Status.Defaulted, "DebtToken: Current status should be Defaulted");

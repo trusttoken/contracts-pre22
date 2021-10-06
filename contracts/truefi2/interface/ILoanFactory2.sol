@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {ILoanToken2, IDebtToken} from "./ILoanToken2.sol";
+import {ILoanToken2} from "./ILoanToken2.sol";
+import {IDebtToken} from "./IDebtToken.sol";
 import {ITrueFiPool2} from "./ITrueFiPool2.sol";
 
 interface ILoanFactory2 {
-    function createFTLALoanToken(
+    function createLoanToken(
         ITrueFiPool2 _pool,
         address _borrower,
         uint256 _amount,
@@ -19,9 +20,9 @@ interface ILoanFactory2 {
         uint256 _debt
     ) external returns (IDebtToken);
 
-    function isCreatedByFactory(IDebtToken) external view returns (bool);
+    function isCreatedByFactory(address) external view returns (bool);
 
-    function isLoanToken(IDebtToken) external view returns (bool);
+    function isLoanToken(ILoanToken2) external view returns (bool);
 
     function isDebtToken(IDebtToken) external view returns (bool);
 }

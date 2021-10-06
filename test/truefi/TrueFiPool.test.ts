@@ -522,7 +522,7 @@ describe('TrueFiPool', () => {
   }
 
   async function fundLoan (loanFactory2: LoanFactory2, lender2: TrueLender2) {
-    const tx = await (await loanFactory2.createLoanToken(pool.address, 1000, DAY, MAX_APY)).wait()
+    const tx = await (await loanFactory2.createLoanToken_REMOVED(pool.address, 1000, DAY, MAX_APY)).wait()
     const newLoanAddress = tx.events[0].args.loanToken
     const loan = LoanToken2__factory.connect(newLoanAddress, owner)
     await mockRatingAgency.mock.getResults.returns(0, 0, parseEth(100))

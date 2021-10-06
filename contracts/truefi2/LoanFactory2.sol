@@ -7,7 +7,8 @@ import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {IFixedTermLoanAgency} from "./interface/IFixedTermLoanAgency.sol";
 import {Initializable} from "../common/Initializable.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
-import {ILoanToken2, IDebtToken} from "./interface/ILoanToken2.sol";
+import {ILoanToken2} from "./interface/ILoanToken2.sol";
+import {IDebtToken} from "./interface/IDebtToken.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {ICreditModel} from "./interface/ICreditModel.sol";
@@ -34,7 +35,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     // ========= IN STORAGE CORRUPTION ===========
 
     // @dev Track Valid LoanTokens
-    mapping(IDebtToken => bool) public override isLoanToken;
+    mapping(ILoanToken2 => bool) public override isLoanToken;
 
     IPoolFactory public poolFactory;
     address private DEPRECATED__lender;
@@ -144,7 +145,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         return creditModel.rate(pool, borrowerScore, amount).add(fixedTermLoanAdjustment);
     }
 
-    function createFTLALoanToken(
+    function createLoanToken(
         ITrueFiPool2 _pool,
         address _borrower,
         uint256 _amount,
@@ -178,8 +179,8 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         return newToken;
     }
 
-    function isCreatedByFactory(IDebtToken loan) external override view returns (bool) {
-        return isLoanToken[loan] || isDebtToken[loan];
+    function isCreatedByFactory(address loanOrDebt) external override view returns (bool) {
+        return isLoanToken[ILoanToken2(loanOrDebt)] || isDebtToken[IDebtToken(loanOrDebt)];
     }
 
     function setCreditOracle(ITrueFiCreditOracle _creditOracle) external onlyAdmin {

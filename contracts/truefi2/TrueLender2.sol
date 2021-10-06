@@ -11,7 +11,7 @@ import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {OneInchExchange} from "./libraries/OneInchExchange.sol";
 
 import {ILoanToken2} from "./interface/ILoanToken2.sol";
-import {IDebtToken} from "../truefi2/interface/ILoanToken2.sol";
+import {ILoanToken2} from "../truefi2/interface/ILoanToken2.sol";
 import {IStakingPool} from "../truefi/interface/IStakingPool.sol";
 import {ITrueLender2} from "./interface/ITrueLender2.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
@@ -170,10 +170,10 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
      */
     function reclaim(ILoanToken2 loanToken, bytes calldata data) external {
         ITrueFiPool2 pool = loanToken.pool();
-        IDebtToken.Status status = loanToken.status();
-        require(status >= IDebtToken.Status.Settled, "TrueLender: LoanToken is not closed yet");
+        ILoanToken2.Status status = loanToken.status();
+        require(status >= ILoanToken2.Status.Settled, "TrueLender: LoanToken is not closed yet");
 
-        if (status != IDebtToken.Status.Settled) {
+        if (status != ILoanToken2.Status.Settled) {
             require(msg.sender == owner(), "TrueLender: Only owner can reclaim from defaulted loan");
         }
 
