@@ -450,13 +450,15 @@ describe('TrueFiPool2', () => {
       })
 
       it('when there are ongoing loans in both trueLender and FTLA, pool value contains both', async () => {
+        await ftlAgency.allowBorrower(borrower2.address)
+        await ftlAgency.connect(borrower2).borrow(tusdPool.address, 5000, YEAR, 10000)
+
         const legacyLoanImpl = await new TestLegacyLoanToken2__factory(owner).deploy()
         await loanFactory.setLoanTokenImplementation(legacyLoanImpl.address)
         const legacyLoan = await createLegacyLoan(lender, loanFactory, borrower, tusdPool, 500000, DAY, 1000)
         await tusd.mint(lender.address, 500000)
         await lender.connect(borrower).fund(legacyLoan.address)
-        await ftlAgency.allowBorrower(borrower2.address)
-        await ftlAgency.connect(borrower2).borrow(tusdPool.address, 5000, YEAR, 10000)
+
         expect(await tusdPool.liquidValue()).to.equal(joinAmount.sub(5000))
         expect(await tusdPool.loansValue()).to.equal(500000 + 5000)
         expect(await tusdPool.poolValue()).to.equal(joinAmount.add(500000))
