@@ -308,6 +308,7 @@ describe('LoanToken2', () => {
 
     it('emits event', async () => {
       await timeTravel(provider, defaultedLoanCloseTime)
+      await payback(borrower, parseEth(1000))
       await loanToken.enterDefault()
       await expect(loanToken.redeem(parseEth(1100))).to.emit(loanToken, 'Redeemed').withArgs(lender.address, parseEth(1100), parseEth(1000))
     })
@@ -315,7 +316,7 @@ describe('LoanToken2', () => {
     describe('Simple case: loan settled, redeem all', () => {
       beforeEach(async () => {
         await timeTravel(provider, yearInSeconds)
-        await payback(borrower, await parseEth(100))
+        await payback(borrower, await parseEth(1100))
         await loanToken.settle()
         await expect(() => loanToken.redeem(parseEth(1100))).to.changeTokenBalance(token, lender, parseEth(1100))
       })
