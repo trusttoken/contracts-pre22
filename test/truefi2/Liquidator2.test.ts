@@ -26,7 +26,7 @@ import { setupDeploy } from 'scripts/utils'
 import { DAY, extractLoanTokenAddress } from 'utils'
 import {
   beforeEachWithFixture,
-  createLoan,
+  createLegacyLoan,
   parseEth,
   parseTRU,
   parseUSDC,
@@ -93,7 +93,7 @@ describe('Liquidator2', () => {
     } = await setupTruefi2(owner, _provider))
     const legacyLoanTokenImpl = await new TestLegacyLoanToken2__factory(owner).deploy()
     await loanFactory.setLoanTokenImplementation(legacyLoanTokenImpl.address)
-    loan = await createLoan(loanFactory, borrower, usdcPool, parseUSDC(1000), YEAR, 1000) as any
+    loan = await createLegacyLoan(ftlAgency, loanFactory, borrower, usdcPool, parseUSDC(1000), YEAR, 1000) as any
     debtToken1 = await createDebtToken(usdcPool, parseUSDC(1100))
     debtToken2 = await createDebtToken(tusdPool, parseEth(1100))
 
