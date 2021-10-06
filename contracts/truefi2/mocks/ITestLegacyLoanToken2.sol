@@ -6,7 +6,7 @@ import {ERC20} from "../../common/UpgradeableERC20.sol";
 import {ITrueFiPool2} from "../interface/ITrueFiPool2.sol";
 import {IDebtToken} from "../interface/IDebtToken.sol";
 
-interface ILegacyLoanToken2 is IDebtToken {
+interface ITestLegacyLoanToken2 is IDebtToken {
     function term() external view returns (uint256);
 
     function apy() external view returns (uint256);
