@@ -9,6 +9,7 @@ import {ITimeAveragedBaseRateOracle} from "./interface/ITimeAveragedBaseRateOrac
 import {ICreditModel} from "./interface/ICreditModel.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {TrueFiFixed64x64} from "./libraries/TrueFiFixed64x64.sol";
+import {ICollateralVault} from "./interface/ICollateralVault.sol";
 
 interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
     function decimals() external view returns (uint8);
@@ -61,6 +62,7 @@ contract CreditModel is ICreditModel, UpgradeableClaimable {
         uint16 tvlLimitCoefficient;
         // adjust for pool value (basis precision)
         uint16 poolValueLimitCoefficient;
+        uint16 ltvRatio;
     }
 
     // ================ WARNING ==================
@@ -112,7 +114,8 @@ contract CreditModel is ICreditModel, UpgradeableClaimable {
         uint8 scoreFloor,
         uint16 limitAdjustmentPower,
         uint16 tvlLimitCoefficient,
-        uint16 poolValueLimitCoefficient
+        uint16 poolValueLimitCoefficient,
+        uint16 ltvRatio
     );
 
     /// @dev initializer
@@ -122,7 +125,7 @@ contract CreditModel is ICreditModel, UpgradeableClaimable {
         utilizationRateConfig = UtilizationRateConfig(50, 2);
         creditScoreRateConfig = CreditScoreRateConfig(1000, 1);
         fixedTermLoanAdjustmentCoefficient = 25;
-        borrowLimitConfig = BorrowLimitConfig(40, 7500, 1500, 1500);
+        borrowLimitConfig = BorrowLimitConfig(40, 7500, 1500, 1500, 4000);
         poolFactory = _poolFactory;
     }
 
@@ -165,10 +168,17 @@ contract CreditModel is ICreditModel, UpgradeableClaimable {
         uint8 scoreFloor,
         uint16 limitAdjustmentPower,
         uint16 tvlLimitCoefficient,
-        uint16 poolValueLimitCoefficient
+        uint16 poolValueLimitCoefficient,
+        uint16 ltvRatio
     ) external onlyOwner {
-        borrowLimitConfig = BorrowLimitConfig(scoreFloor, limitAdjustmentPower, tvlLimitCoefficient, poolValueLimitCoefficient);
-        emit BorrowLimitConfigChanged(scoreFloor, limitAdjustmentPower, tvlLimitCoefficient, poolValueLimitCoefficient);
+        borrowLimitConfig = BorrowLimitConfig(
+            scoreFloor,
+            limitAdjustmentPower,
+            tvlLimitCoefficient,
+            poolValueLimitCoefficient,
+            ltvRatio
+        );
+        emit BorrowLimitConfigChanged(scoreFloor, limitAdjustmentPower, tvlLimitCoefficient, poolValueLimitCoefficient, ltvRatio);
     }
 
     /**
@@ -268,6 +278,13 @@ contract CreditModel is ICreditModel, UpgradeableClaimable {
         return ((f64x64Score / MAX_CREDIT_SCORE).fixed64x64Pow(f64x64LimitAdjustmentPower / BASIS_POINTS) * BASIS_POINTS).toUInt();
     }
 
+    function conservativeCollateralValue(ITrueFiPool2 pool, uint256 stakedAmount) public view returns (uint256) {
+        if (stakedAmount == 0) {
+            return 0;
+        }
+        return pool.oracle().truToToken(stakedAmount).mul(borrowLimitConfig.ltvRatio).div(BASIS_POINTS);
+    }
+
     /**
      * @dev Get borrow limit in USD with 18 decimal precision
      * @param pool Pool which is being borrowed from
@@ -280,31 +297,37 @@ contract CreditModel is ICreditModel, UpgradeableClaimable {
         ITrueFiPool2 pool,
         uint8 score,
         uint256 maxBorrowerLimit,
+        uint256 stakedCollateralInTru,
         uint256 totalBorrowedInUsd
     ) public override view returns (uint256) {
         if (score < borrowLimitConfig.scoreFloor) {
             return 0;
         }
-        return saturatingSub(poolBorrowMax(pool, score, maxBorrowerLimit), totalBorrowedInUsd);
+        return saturatingSub(poolBorrowMax(pool, score, maxBorrowerLimit, stakedCollateralInTru), totalBorrowedInUsd);
     }
 
     function isOverLimit(
         ITrueFiPool2 pool,
         uint8 score,
         uint256 maxBorrowerLimit,
+        uint256 stakedCollateralInTru,
         uint256 totalBorrowedInUsd
     ) public override view returns (bool) {
-        return poolBorrowMax(pool, score, maxBorrowerLimit) < totalBorrowedInUsd;
+        return poolBorrowMax(pool, score, maxBorrowerLimit, stakedCollateralInTru) < totalBorrowedInUsd;
     }
 
     function poolBorrowMax(
         ITrueFiPool2 pool,
         uint8 score,
-        uint256 maxBorrowerLimit
+        uint256 maxBorrowerLimit,
+        uint256 stakedCollateralInTru
     ) internal view returns (uint256) {
         uint256 maxTVLLimit = poolFactory.supportedPoolsTVL().mul(borrowLimitConfig.tvlLimitCoefficient).div(BASIS_POINTS);
         uint256 adjustment = borrowLimitAdjustment(score);
-        uint256 creditLimit = min(maxBorrowerLimit, maxTVLLimit).mul(adjustment).div(BASIS_POINTS);
+        uint256 collateralValue = conservativeCollateralValue(pool, stakedCollateralInTru);
+        uint256 adjustedBorrowerLimit = maxBorrowerLimit.mul(adjustment).div(BASIS_POINTS).add(collateralValue);
+        uint256 adjustedTVLLimit = maxTVLLimit.mul(adjustment).div(BASIS_POINTS);
+        uint256 creditLimit = min(adjustedBorrowerLimit, adjustedTVLLimit);
         uint256 poolValueInUsd = pool.oracle().tokenToUsd(pool.poolValue());
         return min(poolValueInUsd.mul(borrowLimitConfig.poolValueLimitCoefficient).div(BASIS_POINTS), creditLimit);
     }

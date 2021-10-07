@@ -28,6 +28,7 @@ interface ICreditModel {
         ITrueFiPool2 pool,
         uint8 score,
         uint256 maxBorrowerLimit,
+        uint256 stakedCollateralInTru,
         uint256 totalBorrowed
     ) external view returns (uint256);
 
@@ -35,6 +36,7 @@ interface ICreditModel {
         ITrueFiPool2 pool,
         uint8 score,
         uint256 maxBorrowerLimit,
+        uint256 stakedCollateralInTru,
         uint256 totalBorrowed
     ) external view returns (bool);
 }

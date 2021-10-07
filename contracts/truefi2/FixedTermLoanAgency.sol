@@ -432,6 +432,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
                 pool,
                 creditOracle.score(borrower),
                 creditOracle.maxBorrowerLimit(borrower),
+                0,
                 totalBorrowed(borrower, poolDecimals)
             );
     }
