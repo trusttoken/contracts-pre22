@@ -9,7 +9,6 @@ import {ITimeAveragedBaseRateOracle} from "./interface/ITimeAveragedBaseRateOrac
 import {ICreditModel} from "./interface/ICreditModel.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {TrueFiFixed64x64} from "./libraries/TrueFiFixed64x64.sol";
-import {ICollateralVault} from "./interface/ICollateralVault.sol";
 
 interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
     function decimals() external view returns (uint8);
