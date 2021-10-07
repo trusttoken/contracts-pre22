@@ -409,11 +409,11 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
      * @return Total amount borrowed for `borrower` in USD
      */
     function totalBorrowed(address borrower, uint8 decimals) public view returns (uint256) {
-        address locker = borrowingMutex.locker(borrower);
-        if (!loanFactory.isLoanToken(IDebtToken(locker))) {
+        ILoanToken2 locker = ILoanToken2(borrowingMutex.locker(borrower));
+        if (!loanFactory.isLoanToken(locker)) {
             return 0;
         }
-        uint256 borrowed = ILoanToken2(locker).debt();
+        uint256 borrowed = locker.debt();
         uint256 resultPrecision = uint256(10)**decimals;
 
         return ILoanToken2(locker).pool().oracle().tokenToUsd(borrowed).mul(resultPrecision).div(1 ether);
