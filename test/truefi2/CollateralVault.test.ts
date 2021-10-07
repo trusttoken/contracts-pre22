@@ -69,7 +69,7 @@ describe('CollateralVault', () => {
 
       await borrowingMutex.lock(borrower.address, owner.address)
       await expect(collateralVault.connect(borrower).stake(parseTRU(100)))
-        .to.be.revertedWith('CollateralVault: Borrower cannot stake when they have an ongoing fixed term loan')
+        .to.be.revertedWith('CollateralVault: Borrower can only stake when they\'re unlocked or have a line of credit')
 
       await borrowingMutex.unlock(borrower.address)
       await borrowingMutex.lock(borrower.address, creditAgency.address)
