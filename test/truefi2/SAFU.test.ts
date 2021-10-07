@@ -2,6 +2,7 @@ import { expect } from 'chai'
 import {
   beforeEachWithFixture,
   createLoan,
+  createLegacyLoan,
   DAY,
   parseTRU,
   parseUSDC,
@@ -92,8 +93,15 @@ describe('SAFU', () => {
       creditModel,
     } = await setupTruefi2(owner, _provider, { oneInch: oneInch }))
 
+    const loanTokenImplAddress = await loanFactory.loanTokenImplementation()
     const legacyLoanTokenImpl = await new TestLegacyLoanToken2__factory(owner).deploy()
     await loanFactory.setLoanTokenImplementation(legacyLoanTokenImpl.address)
+    loan = await createLegacyLoan(ftlAgency, loanFactory, borrower, pool, parseUSDC(1000), YEAR, 1000) as any
+    await loanFactory.setLoanTokenImplementation(loanTokenImplAddress)
+    await token.mint(borrower.address, parseUSDC(1e7))
+    await token.connect(borrower).approve(loan.address, parseUSDC(1000))
+    await loan.fund()
+    await loan.connect(borrower).withdraw(borrower.address)
 
     await token.mint(owner.address, parseUSDC(1e7))
     await token.approve(pool.address, parseUSDC(1e7))
@@ -102,10 +110,6 @@ describe('SAFU', () => {
     await creditOracle.setScore(borrower.address, 255)
     await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
     await creditModel.setRiskPremium(400)
-
-    await ftlAgency.allowBorrower(borrower.address)
-    const tx = ftlAgency.connect(borrower).borrow(pool.address, parseUSDC(1000), YEAR, 1000)
-    loan = await extractLoanTokenAddress(tx, owner, loanFactory) as any
 
     await tru.mint(owner.address, parseTRU(1e7))
     await tru.approve(stkTru.address, parseTRU(1e7))
