@@ -19,6 +19,7 @@ import {
   TestTrueLender,
   TestTrueLender__factory,
   BorrowingMutex,
+  TestLegacyLoanToken2,
   TestLegacyLoanToken2__factory,
 } from 'contracts'
 import { MockProvider, solidity } from 'ethereum-waffle'
