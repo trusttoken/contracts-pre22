@@ -91,9 +91,12 @@ describe('Liquidator2', () => {
       standardTokenOracle: tusdOracle,
       creditModel,
     } = await setupTruefi2(owner, _provider))
+
+    const loanTokenImplAddress = await loanFactory.loanTokenImplementation()
     const legacyLoanTokenImpl = await new TestLegacyLoanToken2__factory(owner).deploy()
     await loanFactory.setLoanTokenImplementation(legacyLoanTokenImpl.address)
     loan = await createLegacyLoan(ftlAgency, loanFactory, borrower, usdcPool, parseUSDC(1000), YEAR, 1000) as any
+    await loanFactory.setLoanTokenImplementation(loanTokenImplAddress)
     await usdc.mint(borrower.address, parseUSDC(1e7))
     await usdc.connect(borrower).approve(loan.address, parseUSDC(1000))
     await loan.fund()
