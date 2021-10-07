@@ -90,5 +90,11 @@ describe('CollateralVault', () => {
       await collateralVault.connect(borrower).stake(parseTRU(100))
       expect(await collateralVault.stakedAmount(borrower.address)).to.be.eq(parseTRU(100))
     })
+
+    it('emits event', async () => {
+      expect(collateralVault.connect(borrower).stake(parseTRU(100)))
+        .to.emit(collateralVault, 'Staked')
+        .withArgs(borrower.address, parseTRU(100))
+    })
   })
 })

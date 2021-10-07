@@ -35,6 +35,8 @@ contract CollateralVault is ICollateralVault, UpgradeableClaimable {
 
     // ======= STORAGE DECLARATION END ===========
 
+    event Staked(address borrower, uint256 amount);
+
     function initialize(
         IERC20WithDecimals _stakedToken,
         IBorrowingMutex _borrowingMutex,
@@ -55,6 +57,7 @@ contract CollateralVault is ICollateralVault, UpgradeableClaimable {
         );
         stakedToken.safeTransferFrom(msg.sender, address(this), amount);
         stakedAmount[msg.sender] = stakedAmount[msg.sender].add(amount);
+        emit Staked(msg.sender, amount);
     }
 
     function unstake(uint256 amount) external {
