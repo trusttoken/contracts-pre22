@@ -53,7 +53,7 @@ contract CollateralVault is ICollateralVault, UpgradeableClaimable {
     function stake(uint256 amount) external {
         require(
             borrowingMutex.isUnlocked(msg.sender) || borrowingMutex.locker(msg.sender) == address(lineOfCreditAgency),
-            "CollateralVault: Borrower cannot stake when they have an ongoing fixed term loan"
+            "CollateralVault: Borrower can only stake when they're unlocked or have a line of credit"
         );
         stakedToken.safeTransferFrom(msg.sender, address(this), amount);
         stakedAmount[msg.sender] = stakedAmount[msg.sender].add(amount);
