@@ -10,7 +10,6 @@ import {
   setupTruefi2,
   timeTravel as _timeTravel,
   createDebtToken as _createDebtToken,
-  extractLoanTokenAddress,
 } from 'utils'
 import { BigNumberish, utils, Wallet } from 'ethers'
 import { AddressZero } from '@ethersproject/constants'
