@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+
 import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
 import {ICreditModel} from "./interface/ICreditModel.sol";
 import {IERC20WithDecimals} from "./interface/IERC20WithDecimals.sol";
@@ -9,9 +12,6 @@ import {ILiquidator2} from "./interface/ILiquidator2.sol";
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 
 import {ICollateralVault} from "./interface/ICollateralVault.sol";
-
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 contract CollateralVault is ICollateralVault, UpgradeableClaimable {
     using SafeERC20 for IERC20WithDecimals;
