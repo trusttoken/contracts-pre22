@@ -952,15 +952,21 @@ describe('TrueFiPool2', () => {
   })
 
   describe('liquidateLoan', () => {
-    let loan: LoanToken2
+    let loan: TestLegacyLoanToken2
 
     beforeEach(async () => {
       await tusd.approve(tusdPool.address, parseEth(100))
       await tusdPool.join(parseEth(100))
-      const legacyLoanImpl = await new TestLegacyLoanToken2__factory(owner).deploy()
-      await loanFactory.setLoanTokenImplementation(legacyLoanImpl.address)
-      const tx = ftlAgency.connect(borrower).borrow(tusdPool.address, 100000, DAY, 1000)
-      loan = await extractLoanTokenAddress(tx, owner, loanFactory)
+
+      const loanTokenImplAddress = await loanFactory.loanTokenImplementation()
+      const legacyLoanTokenImpl = await new TestLegacyLoanToken2__factory(owner).deploy()
+      await loanFactory.setLoanTokenImplementation(legacyLoanTokenImpl.address)
+      loan = await createLegacyLoan(lender, loanFactory, borrower, tusdPool, 100000, DAY, 1000) as any
+      await loanFactory.setLoanTokenImplementation(loanTokenImplAddress)
+      await tusd.mint(borrower.address, 100000)
+      await tusd.connect(borrower).approve(loan.address, 100000)
+      await loan.fund()
+      await loan.connect(borrower).withdraw(borrower.address)
     })
 
     it('can only be performed by the SAFU', async () => {
