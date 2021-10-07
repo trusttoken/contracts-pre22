@@ -94,6 +94,11 @@ describe('Liquidator2', () => {
     const legacyLoanTokenImpl = await new TestLegacyLoanToken2__factory(owner).deploy()
     await loanFactory.setLoanTokenImplementation(legacyLoanTokenImpl.address)
     loan = await createLegacyLoan(ftlAgency, loanFactory, borrower, usdcPool, parseUSDC(1000), YEAR, 1000) as any
+    await usdc.mint(borrower.address, parseUSDC(1e7))
+    await usdc.connect(borrower).approve(loan.address, parseUSDC(1000))
+    await loan.fund()
+    await loan.connect(borrower).withdraw(borrower.address)
+
     debtToken1 = await createDebtToken(usdcPool, parseUSDC(1100))
     debtToken2 = await createDebtToken(tusdPool, parseEth(1100))
 
@@ -253,8 +258,6 @@ describe('Liquidator2', () => {
     beforeEach(async () => {
       await usdcPool.connect(owner).join(parseUSDC(1e7))
       await tusdPool.connect(owner).join(parseEth(1e7))
-      const tx = ftlAgency.connect(borrower).borrow(usdcPool.address, parseUSDC(1000), YEAR, 1000)
-      loan = await extractLoanTokenAddress(tx, owner, loanFactory) as any
     })
 
     describe('reverts if', () => {
