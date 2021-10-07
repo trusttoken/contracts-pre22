@@ -362,7 +362,7 @@ describe('CreditModel', () => {
         [1000, 20, 50],
         [1000, 40, 100],
       ].map(([collateral, ltvRatio, result]) =>
-        it(`when ${collateral} TRU is stacked with ltvRatio=${ltvRatio}%, borrow limit rises by up to $${result}`, async () => {
+        it(`when ${collateral} TRU is staked with ltvRatio=${ltvRatio}%, borrow limit rises by up to $${result}`, async () => {
           await creditModel.setBorrowLimitConfig(0, 0, 0, 0, ltvRatio * 100)
           expect(await creditModel.conservativeCollateralValue(mockPool.address, parseTRU(collateral))).to.equal(parseEth(result))
         }))
