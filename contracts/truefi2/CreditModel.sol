@@ -89,6 +89,8 @@ contract CreditModel is ICreditModel, UpgradeableClaimable {
     /// @dev used for TVL calculations
     IPoolFactory public poolFactory;
 
+    uint256 public effectiveScorePower;
+
     // ======= STORAGE DECLARATION END ============
 
     /// @dev Emit `newRate` when risk premium changed
@@ -126,6 +128,7 @@ contract CreditModel is ICreditModel, UpgradeableClaimable {
         fixedTermLoanAdjustmentCoefficient = 25;
         borrowLimitConfig = BorrowLimitConfig(40, 7500, 1500, 1500, 4000);
         poolFactory = _poolFactory;
+        effectiveScorePower = 1;
     }
 
     /// @dev Set risk premium to `newRate`
@@ -282,6 +285,30 @@ contract CreditModel is ICreditModel, UpgradeableClaimable {
             return 0;
         }
         return pool.oracle().truToToken(stakedAmount).mul(borrowLimitConfig.ltvRatio).div(BASIS_POINTS);
+    }
+
+    function conservativeCollateralRatio(
+        ITrueFiPool2 pool,
+        uint256 stakedAmount,
+        uint256 borrowedAmount
+    ) public view returns (uint256) {
+        return min(conservativeCollateralValue(pool, stakedAmount).mul(BASIS_POINTS).div(borrowedAmount), BASIS_POINTS);
+    }
+
+    function effectiveScore(
+        uint8 score,
+        ITrueFiPool2 pool,
+        uint256 stakedAmount,
+        uint256 borrowedAmount
+    ) public view returns (uint8) {
+        if (score == MAX_CREDIT_SCORE) {
+            return MAX_CREDIT_SCORE;
+        }
+        uint256 creditScoreAdjustment = uint256(MAX_CREDIT_SCORE - score).mul(
+            conservativeCollateralRatio(pool, stakedAmount, borrowedAmount)**effectiveScorePower
+        );
+        uint256 _effectiveScore = min(creditScoreAdjustment.add(score), MAX_CREDIT_SCORE);
+        return uint8(_effectiveScore);
     }
 
     /**
