@@ -7,7 +7,11 @@ import {
 import { BigNumberish, Contract, Wallet } from 'ethers'
 
 export const createLoan = async function (factory: LoanFactory2, creator: Wallet, pool: TrueFiPool2, amount: BigNumberish, duration: BigNumberish, apy: BigNumberish) {
-  const loanTx = await _createLoanTx(factory, creator, pool, amount, duration, apy)
+  const fakeFTLA = creator
+  const originalFTLA_address = await factory.ftlAgency()
+  await factory.setFixedTermLoanAgency(fakeFTLA.address)
+  const loanTx = await factory.connect(fakeFTLA).createLoanToken(pool.address, creator.address, amount, duration, apy)
+  await factory.setFixedTermLoanAgency(originalFTLA_address)
   const loanAddress = (await loanTx.wait()).events[1].args.loanToken
   return new LoanToken2__factory(creator).attach(loanAddress)
 }
@@ -19,19 +23,14 @@ export const createDebtToken = async (loanFactory: LoanFactory2, creditAgency: W
   return DebtToken__factory.connect(creationEvent.args.debtToken, owner)
 }
 
-export const createLegacyLoan = async (lender: Contract, ...args: Parameters<typeof createLoan>): Promise<TestLegacyLoanToken2> => {
-  const loanTx = await _createLoanTx(...args)
-  const loanAddress = (await loanTx.wait()).events[0].args.loanToken
-  const loan = new TestLegacyLoanToken2__factory(args[1]).attach(loanAddress)
-  await loan.setLender(lender.address)
-  return loan
-}
-
-const _createLoanTx = async function (factory: LoanFactory2, creator: Wallet, pool: TrueFiPool2, amount: BigNumberish, duration: BigNumberish, apy: BigNumberish) {
+export const createLegacyLoan = async (lender: Contract, factory: LoanFactory2, creator: Wallet, pool: TrueFiPool2, amount: BigNumberish, duration: BigNumberish, apy: BigNumberish): Promise<TestLegacyLoanToken2> => {
   const fakeFTLA = creator
   const originalFTLA_address = await factory.ftlAgency()
   await factory.setFixedTermLoanAgency(fakeFTLA.address)
   const loanTx = await factory.connect(fakeFTLA).createLoanToken(pool.address, creator.address, amount, duration, apy)
   await factory.setFixedTermLoanAgency(originalFTLA_address)
-  return loanTx
+  const loanAddress = (await loanTx.wait()).events[0].args.loanToken
+  const loan = new TestLegacyLoanToken2__factory(creator).attach(loanAddress)
+  await loan.setLender(lender.address)
+  return loan
 }
