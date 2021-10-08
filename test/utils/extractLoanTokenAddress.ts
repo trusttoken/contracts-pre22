@@ -1,4 +1,4 @@
-import { ContractTransaction, Signer, Wallet } from 'ethers'
+import { ContractTransaction, Signer } from 'ethers'
 import {
   DebtToken__factory,
   LoanFactory2,
