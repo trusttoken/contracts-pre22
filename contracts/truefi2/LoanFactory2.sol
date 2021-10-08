@@ -41,6 +41,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
 
     address public admin;
 
+    address private DEPRECATED__creditModel;
     ITrueFiCreditOracle public creditOracle;
     IBorrowingMutex public borrowingMutex;
     ILoanToken2 public loanTokenImplementation;
