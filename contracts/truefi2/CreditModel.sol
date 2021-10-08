@@ -300,6 +300,9 @@ contract CreditModel is ICreditModel, UpgradeableClaimable {
         uint256 stakedAmount,
         uint256 borrowedAmount
     ) public view returns (uint256) {
+        if (borrowedAmount == 0) {
+            return 0;
+        }
         return min(conservativeCollateralValue(pool, stakedAmount).mul(BASIS_POINTS).div(borrowedAmount), BASIS_POINTS);
     }
 
