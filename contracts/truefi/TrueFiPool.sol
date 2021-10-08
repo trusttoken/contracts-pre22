@@ -16,7 +16,7 @@ import {ABDKMath64x64} from "./Log.sol";
 import {ICrvPriceOracle} from "./interface/ICrvPriceOracle.sol";
 import {IPauseableContract} from "../common/interface/IPauseableContract.sol";
 import {ITrueFiPool2, ITrueFiPoolOracle, ITrueLender2, ISAFU} from "../truefi2/interface/ITrueFiPool2.sol";
-import {ILoanToken2} from "../truefi2/interface/ILoanToken2.sol";
+import {ILoanToken2Deprecated} from "../truefi2/deprecated/ILoanToken2Deprecated.sol";
 import {PoolExtensions} from "../truefi2/PoolExtensions.sol";
 
 /**
@@ -596,7 +596,7 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
     /**
      * @dev Function called by SAFU when liquidation happens. It will transfer all tokens of this loan the SAFU
      */
-    function liquidate(ILoanToken2 loan) external {
+    function liquidate(ILoanToken2Deprecated loan) external {
         PoolExtensions._liquidate(safu, loan, _lender2);
     }
 

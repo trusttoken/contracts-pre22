@@ -10,7 +10,7 @@ import {ERC20} from "../common/UpgradeableERC20.sol";
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {OneInchExchange} from "./libraries/OneInchExchange.sol";
 
-import {ILoanToken2} from "./interface/ILoanToken2.sol";
+import {ILoanToken2Deprecated} from "./deprecated/ILoanToken2Deprecated.sol";
 import {IStakingPool} from "../truefi/interface/IStakingPool.sol";
 import {ITrueLender2} from "./interface/ITrueLender2.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
@@ -29,7 +29,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     using SafeERC20 for ERC20;
     using SafeERC20 for IERC20WithDecimals;
     using SafeERC20 for ITrueFiPool2;
-    using SafeERC20 for ILoanToken2;
+    using SafeERC20 for ILoanToken2Deprecated;
     using OneInchExchange for I1Inch3;
 
     // basis point for ratio
@@ -43,7 +43,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     // REMOVAL OR REORDER OF VARIABLES WILL RESULT
     // ========= IN STORAGE CORRUPTION ===========
 
-    mapping(ITrueFiPool2 => ILoanToken2[]) public poolLoans;
+    mapping(ITrueFiPool2 => ILoanToken2Deprecated[]) public poolLoans;
 
     // maximum amount of loans lender can handle at once
     uint256 private DEPRECATED__maxLoans;
@@ -144,7 +144,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
      * @param pool pool address
      * @return result Array of loans currently funded
      */
-    function loans(ITrueFiPool2 pool) public view returns (ILoanToken2[] memory result) {
+    function loans(ITrueFiPool2 pool) public view returns (ILoanToken2Deprecated[] memory result) {
         result = poolLoans[pool];
     }
 
@@ -155,7 +155,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
      * @return Theoretical value of all the loans funded by this strategy
      */
     function value(ITrueFiPool2 pool) external override view returns (uint256) {
-        ILoanToken2[] storage _loans = poolLoans[pool];
+        ILoanToken2Deprecated[] storage _loans = poolLoans[pool];
         uint256 totalValue;
         for (uint256 index = 0; index < _loans.length; index++) {
             totalValue = totalValue.add(_loans[index].value(_loans[index].balanceOf(address(this))));
@@ -167,17 +167,17 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
      * @dev For settled loans, redeem LoanTokens for underlying funds
      * @param loanToken Loan to reclaim capital from (must be previously funded)
      */
-    function reclaim(ILoanToken2 loanToken, bytes calldata data) external {
+    function reclaim(ILoanToken2Deprecated loanToken, bytes calldata data) external {
         ITrueFiPool2 pool = loanToken.pool();
-        ILoanToken2.Status status = loanToken.status();
-        require(status >= ILoanToken2.Status.Settled, "TrueLender: LoanToken is not closed yet");
+        ILoanToken2Deprecated.Status status = loanToken.status();
+        require(status >= ILoanToken2Deprecated.Status.Settled, "TrueLender: LoanToken is not closed yet");
 
-        if (status != ILoanToken2.Status.Settled) {
+        if (status != ILoanToken2Deprecated.Status.Settled) {
             require(msg.sender == owner(), "TrueLender: Only owner can reclaim from defaulted loan");
         }
 
         // find the token, repay loan and remove loan from loan array
-        ILoanToken2[] storage _loans = poolLoans[pool];
+        ILoanToken2Deprecated[] storage _loans = poolLoans[pool];
         for (uint256 index = 0; index < _loans.length; index++) {
             if (_loans[index] == loanToken) {
                 _loans[index] = _loans[_loans.length - 1];
@@ -199,7 +199,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
      * @param pool Pool from which the loan was funded
      */
     function _redeemAndRepay(
-        ILoanToken2 loanToken,
+        ILoanToken2Deprecated loanToken,
         ITrueFiPool2 pool,
         bytes calldata data
     ) internal returns (uint256) {
@@ -230,7 +230,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
     /// @dev Swap `token` for `feeToken` on 1inch
     function _swapFee(
         ITrueFiPool2 pool,
-        ILoanToken2 loanToken,
+        ILoanToken2Deprecated loanToken,
         bytes calldata data
     ) internal returns (uint256) {
         uint256 feeAmount = loanToken.debt().sub(loanToken.amount()).mul(fee).div(BASIS_RATIO);
@@ -293,13 +293,13 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
      * @param loan LoanToken address
      * @param recipient expected to be SAFU address
      */
-    function transferAllLoanTokens(ILoanToken2 loan, address recipient) external override onlySupportedPool {
+    function transferAllLoanTokens(ILoanToken2Deprecated loan, address recipient) external override onlySupportedPool {
         _transferAllLoanTokens(loan, recipient);
     }
 
-    function _transferAllLoanTokens(ILoanToken2 loan, address recipient) internal {
+    function _transferAllLoanTokens(ILoanToken2Deprecated loan, address recipient) internal {
         // find the token, transfer to SAFU and remove loan from loans list
-        ILoanToken2[] storage _loans = poolLoans[loan.pool()];
+        ILoanToken2Deprecated[] storage _loans = poolLoans[loan.pool()];
         for (uint256 index = 0; index < _loans.length; index++) {
             if (_loans[index] == loan) {
                 _loans[index] = _loans[_loans.length - 1];
@@ -321,7 +321,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
         uint256 denominator,
         address pool
     ) internal {
-        ILoanToken2[] storage _loans = poolLoans[ITrueFiPool2(pool)];
+        ILoanToken2Deprecated[] storage _loans = poolLoans[ITrueFiPool2(pool)];
         for (uint256 index = 0; index < _loans.length; index++) {
             _transferLoan(_loans[index], recipient, numerator, denominator);
         }
@@ -329,7 +329,7 @@ contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
 
     // @dev Transfer (numerator/denominator)*balance of loan to the recipient
     function _transferLoan(
-        ILoanToken2 loan,
+        ILoanToken2Deprecated loan,
         address recipient,
         uint256 numerator,
         uint256 denominator
