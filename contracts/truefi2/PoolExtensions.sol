@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {ILoanToken2} from "./interface/ILoanToken2.sol";
+import {ILoanToken2Deprecated} from "./deprecated/ILoanToken2Deprecated.sol";
 import {ITrueLender2} from "./interface/ITrueLender2.sol";
 import {ISAFU} from "./interface/ISAFU.sol";
 
@@ -13,7 +13,7 @@ import {ISAFU} from "./interface/ISAFU.sol";
 library PoolExtensions {
     function _liquidate(
         ISAFU safu,
-        ILoanToken2 loan,
+        ILoanToken2Deprecated loan,
         ITrueLender2 lender
     ) internal {
         require(msg.sender == address(safu), "TrueFiPool: Should be called by SAFU");
