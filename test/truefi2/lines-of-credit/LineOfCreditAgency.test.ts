@@ -419,7 +419,7 @@ describe('LineOfCreditAgency', () => {
       const faultyCreditAgency = await deployContract(LineOfCreditAgency__factory)
       const faultyBorrowingMutex = await deployContract(MockBorrowingMutex__factory)
 
-      await faultyCreditAgency.initialize(creditOracle.address, creditModel.address, faultyBorrowingMutex.address, poolFactory.address, loanFactory.address)
+      await faultyCreditAgency.initialize(creditOracle.address, creditModel.address, faultyBorrowingMutex.address, poolFactory.address, loanFactory.address, AddressZero)
       await tusdPool.setCreditAgency(faultyCreditAgency.address)
       await faultyCreditAgency.allowBorrower(borrower.address, true)
 

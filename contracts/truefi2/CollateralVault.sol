@@ -33,6 +33,8 @@ contract CollateralVault is ICollateralVault, UpgradeableClaimable {
 
     ILiquidator2 public liquidator;
 
+    ICreditModel public creditModel;
+
     // ======= STORAGE DECLARATION END ===========
 
     event Staked(address borrower, uint256 amount);
@@ -63,7 +65,7 @@ contract CollateralVault is ICollateralVault, UpgradeableClaimable {
     }
 
     function unstake(uint256 amount) external {
-        require(amount <= unstakeableAmount(msg.sender), "CollateralVault: cannot unstake");
+        require(canUnstake(msg.sender, amount), "CollateralVault: cannot unstake");
 
         stakedAmount[msg.sender] = stakedAmount[msg.sender].sub(amount);
         stakedToken.safeTransfer(msg.sender, amount);
@@ -78,11 +80,16 @@ contract CollateralVault is ICollateralVault, UpgradeableClaimable {
         revert("Unimplemented!");
     }
 
-    function unstakeableAmount(address borrower) public view returns (uint256) {
-        if (borrowingMutex.isUnlocked(borrower)) {
-            return stakedAmount[msg.sender];
+    function canUnstake(address borrower, uint256 amount) public view returns (bool) {
+        if (amount > stakedAmount[borrower]) {
+            return false;
         }
-        // TODO calculate minimum collateral from LOCA's borrow limit
-        return 0;
+        if (borrowingMutex.isUnlocked(borrower)) {
+            return true;
+        }
+        if (borrowingMutex.locker(borrower) != address(lineOfCreditAgency)) {
+            return false;
+        }
+        return !lineOfCreditAgency.proFormaIsOverLimit(borrower, stakedAmount[borrower].sub(amount));
     }
 }
