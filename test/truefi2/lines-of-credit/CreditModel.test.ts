@@ -73,7 +73,7 @@ describe('CreditModel', () => {
     })
 
     it('sets borrow limit config', async () => {
-      expect(await creditModel.borrowLimitConfig()).to.deep.eq([40, 7500, 1500, 1500, 4000])
+      expect(await creditModel.borrowLimitConfig()).to.deep.eq([40, 7500, 1500, 1500, 4000, 1])
     })
   })
 
@@ -179,20 +179,19 @@ describe('CreditModel', () => {
 
   describe('setBorrowLimitConfig', () => {
     it('reverts if caller is not the owner', async () => {
-      await expect(creditModel.connect(borrower).setBorrowLimitConfig(0, 0, 0, 0, 0))
+      await expect(creditModel.connect(borrower).setBorrowLimitConfig(0, 0, 0, 0, 0, 0))
         .to.be.revertedWith('Ownable: caller is not the owner')
     })
 
     it('sets borrow limit config', async () => {
-      await creditModel.setBorrowLimitConfig(1, 2, 3, 4, 5)
-      const [scoreFloor, limitAdjustmentPower, tvlLimitCoefficient, poolValueLimitCoefficient, ltvRatio] = await creditModel.borrowLimitConfig()
-      expect([scoreFloor, limitAdjustmentPower, tvlLimitCoefficient, poolValueLimitCoefficient, ltvRatio]).to.deep.eq([1, 2, 3, 4, 5])
+      await creditModel.setBorrowLimitConfig(1, 2, 3, 4, 5, 6)
+      expect(await creditModel.borrowLimitConfig()).to.deep.eq([1, 2, 3, 4, 5, 6])
     })
 
     it('emits event', async () => {
-      await expect(creditModel.setBorrowLimitConfig(1, 2, 3, 4, 5))
+      await expect(creditModel.setBorrowLimitConfig(1, 2, 3, 4, 5, 6))
         .to.emit(creditModel, 'BorrowLimitConfigChanged')
-        .withArgs(1, 2, 3, 4, 5)
+        .withArgs(1, 2, 3, 4, 5, 6)
     })
   })
 
@@ -363,7 +362,7 @@ describe('CreditModel', () => {
         [1000, 40, 100],
       ].map(([collateral, ltvRatio, result]) =>
         it(`when ${collateral} TRU is staked with ltvRatio=${ltvRatio}%, borrow limit rises by up to $${result}`, async () => {
-          await creditModel.setBorrowLimitConfig(0, 0, 0, 0, ltvRatio * 100)
+          await creditModel.setBorrowLimitConfig(0, 0, 0, 0, ltvRatio * 100, 0)
           expect(await creditModel.conservativeCollateralValue(mockPool.address, parseTRU(collateral))).to.equal(parseEth(result))
         }))
     })
