@@ -55,8 +55,8 @@ contract CollateralVault is ICollateralVault, UpgradeableClaimable {
             borrowingMutex.isUnlocked(msg.sender) || borrowingMutex.locker(msg.sender) == address(lineOfCreditAgency),
             "CollateralVault: Borrower can only stake when they're unlocked or have a line of credit"
         );
-        stakedToken.safeTransferFrom(msg.sender, address(this), amount);
         stakedAmount[msg.sender] = stakedAmount[msg.sender].add(amount);
+        stakedToken.safeTransferFrom(msg.sender, address(this), amount);
         emit Staked(msg.sender, amount);
     }
 
