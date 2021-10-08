@@ -368,6 +368,32 @@ describe('CreditModel', () => {
     })
   })
 
+  describe('conservativeCollateralRatio', () => {
+    beforeEach(async () => {
+      const oracle = await new MockUsdStableCoinOracle__factory(owner).deploy()
+      await mockPool.mock.oracle.returns(oracle.address)
+    })
+
+    describe('with TRU price at $0.25, collateral of 1000 TRU and ltv at 40%', () => {
+      const collateral = 1000
+      const ltvRatio = 40
+
+      ;[
+        [1000, 10],
+        [500, 20],
+        [200, 50],
+        [100, 100],
+        [75, 100],
+        [0, 0],
+      ].map(([borrowed, result]) =>
+        it(`when borrowed amount is ${borrowed} collateral ratio is at ${result}%`, async () => {
+          await creditModel.setBorrowLimitConfig(0, 0, 0, 0, ltvRatio * 100, 0)
+          expect(await creditModel.conservativeCollateralRatio(mockPool.address, parseTRU(collateral), parseEth(borrowed)))
+            .to.equal(result * 100)
+        }))
+    })
+  })
+
   describe('Borrow limit', () => {
     let mockPool2: MockContract
 
