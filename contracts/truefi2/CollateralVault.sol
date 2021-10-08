@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+
 import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
 import {ICreditModel} from "./interface/ICreditModel.sol";
 import {IERC20WithDecimals} from "./interface/IERC20WithDecimals.sol";
@@ -11,6 +14,9 @@ import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {ICollateralVault} from "./interface/ICollateralVault.sol";
 
 contract CollateralVault is ICollateralVault, UpgradeableClaimable {
+    using SafeERC20 for IERC20WithDecimals;
+    using SafeMath for uint256;
+
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
     // === STORAGE VARIABLES ARE DECLARED BELOW ==
@@ -29,6 +35,8 @@ contract CollateralVault is ICollateralVault, UpgradeableClaimable {
 
     // ======= STORAGE DECLARATION END ===========
 
+    event Staked(address borrower, uint256 amount);
+
     function initialize(
         IERC20WithDecimals _stakedToken,
         IBorrowingMutex _borrowingMutex,
@@ -43,13 +51,13 @@ contract CollateralVault is ICollateralVault, UpgradeableClaimable {
     }
 
     function stake(uint256 amount) external {
-        // require(borrowingMutex.isUnlocked(borrower) || borrowingMutex.locker(borrower) == LOCA)
-        // if borrowingMutex.locker(borrower) == LOCA:
-        //   poke LOCA for borrower to update limit + rate
-        // safe transfer amount from borrower
-        require(amount == 0); // silence lint
-        stakedToken = IERC20WithDecimals(address(0)); // silence build warning
-        revert("Unimplemented!");
+        require(
+            borrowingMutex.isUnlocked(msg.sender) || borrowingMutex.locker(msg.sender) == address(lineOfCreditAgency),
+            "CollateralVault: Borrower can only stake when they're unlocked or have a line of credit"
+        );
+        stakedAmount[msg.sender] = stakedAmount[msg.sender].add(amount);
+        stakedToken.safeTransferFrom(msg.sender, address(this), amount);
+        emit Staked(msg.sender, amount);
     }
 
     function unstake(uint256 amount) external {

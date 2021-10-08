@@ -1,7 +1,7 @@
 import { expect, use } from 'chai'
 import { solidity } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
-import { beforeEachWithFixture, setupTruefi2 } from 'utils'
+import { beforeEachWithFixture, parseTRU, setupTruefi2 } from 'utils'
 import {
   BorrowingMutex,
   CollateralVault,
@@ -14,6 +14,7 @@ use(solidity)
 
 describe('CollateralVault', () => {
   let owner: Wallet
+  let borrower: Wallet
 
   let tru: MockTrueCurrency
   let borrowingMutex: BorrowingMutex
@@ -23,7 +24,7 @@ describe('CollateralVault', () => {
   let collateralVault: CollateralVault
 
   beforeEachWithFixture(async (wallets, _provider) => {
-    [owner] = wallets
+    [owner, borrower] = wallets
 
     ; ({
       tru,
@@ -32,6 +33,11 @@ describe('CollateralVault', () => {
       liquidator,
       collateralVault,
     } = await setupTruefi2(owner, _provider))
+
+    await borrowingMutex.allowLocker(owner.address, true)
+
+    await tru.mint(borrower.address, parseTRU(100))
+    await tru.connect(borrower).approve(collateralVault.address, parseTRU(100))
   })
 
   describe('initializer', () => {
@@ -53,6 +59,42 @@ describe('CollateralVault', () => {
 
     it('sets liquidator', async () => {
       expect(await collateralVault.liquidator()).to.eq(liquidator.address)
+    })
+  })
+
+  describe('stake', () => {
+    it('allows to stake only if mutex is unlocked or is locked by LOCAgency', async () => {
+      await expect(collateralVault.connect(borrower).stake(parseTRU(50)))
+        .not.to.be.reverted
+
+      await borrowingMutex.lock(borrower.address, owner.address)
+      await expect(collateralVault.connect(borrower).stake(parseTRU(100)))
+        .to.be.revertedWith('CollateralVault: Borrower can only stake when they\'re unlocked or have a line of credit')
+
+      await borrowingMutex.unlock(borrower.address)
+      await borrowingMutex.lock(borrower.address, creditAgency.address)
+      await expect(collateralVault.connect(borrower).stake(parseTRU(50)))
+        .not.to.be.reverted
+    })
+
+    it('transfers tru to the vault', async () => {
+      expect(await tru.balanceOf(collateralVault.address)).to.be.eq(0)
+      expect(await tru.balanceOf(borrower.address)).to.be.eq(parseTRU(100))
+      await collateralVault.connect(borrower).stake(parseTRU(100))
+      expect(await tru.balanceOf(collateralVault.address)).to.be.eq(parseTRU(100))
+      expect(await tru.balanceOf(borrower.address)).to.be.eq(0)
+    })
+
+    it('increases stakedAmount', async () => {
+      expect(await collateralVault.stakedAmount(borrower.address)).to.be.eq(0)
+      await collateralVault.connect(borrower).stake(parseTRU(100))
+      expect(await collateralVault.stakedAmount(borrower.address)).to.be.eq(parseTRU(100))
+    })
+
+    it('emits event', async () => {
+      expect(collateralVault.connect(borrower).stake(parseTRU(100)))
+        .to.emit(collateralVault, 'Staked')
+        .withArgs(borrower.address, parseTRU(100))
     })
   })
 })
