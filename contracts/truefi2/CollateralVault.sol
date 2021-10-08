@@ -37,6 +37,8 @@ contract CollateralVault is ICollateralVault, UpgradeableClaimable {
 
     event Staked(address borrower, uint256 amount);
 
+    event Unstaked(address borrower, uint256 amount);
+
     function initialize(
         IERC20WithDecimals _stakedToken,
         IBorrowingMutex _borrowingMutex,
@@ -61,13 +63,11 @@ contract CollateralVault is ICollateralVault, UpgradeableClaimable {
     }
 
     function unstake(uint256 amount) external {
-        // require(amount <= unstakeableAmount(borrower))
-        // if borrowingMutex.locker(borrower) == LOCA:
-        //   poke LOCA for borrower to update limit + rate
-        // safe transfer amount to borrower
-        require(amount == 0); // silence lint
-        stakedToken = IERC20WithDecimals(address(0)); // silence build warning
-        revert("Unimplemented!");
+        require(amount <= unstakeableAmount(msg.sender), "CollateralVault: cannot unstake");
+
+        stakedAmount[msg.sender] = stakedAmount[msg.sender].sub(amount);
+        stakedToken.safeTransfer(msg.sender, amount);
+        emit Unstaked(msg.sender, amount);
     }
 
     function slash(address borrower) external override {
@@ -78,14 +78,11 @@ contract CollateralVault is ICollateralVault, UpgradeableClaimable {
         revert("Unimplemented!");
     }
 
-    function unstakeableAmount(address borrower) external view returns (uint256) {
-        // if borrowingMutex.isUnlocked(borrower):
-        //   return stakedAmount()
-        // else if borrowingMutex.locker(borrower) == LOCA:
-        //   return stakedAmount() - {TODO calculate minimum collateral from LOCA's borrow limit}
-        // else:
-        //   return 0
-        require(borrower == address(stakedToken)); // silence lint and build warnings
-        revert("Unimplemented!");
+    function unstakeableAmount(address borrower) public view returns (uint256) {
+        if (borrowingMutex.isUnlocked(borrower)) {
+            return stakedAmount[msg.sender];
+        }
+        // TODO calculate minimum collateral from LOCA's borrow limit
+        return 0;
     }
 }

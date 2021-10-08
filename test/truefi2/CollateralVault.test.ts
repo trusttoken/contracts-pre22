@@ -92,8 +92,41 @@ describe('CollateralVault', () => {
     })
 
     it('emits event', async () => {
-      expect(collateralVault.connect(borrower).stake(parseTRU(100)))
+      await expect(collateralVault.connect(borrower).stake(parseTRU(100)))
         .to.emit(collateralVault, 'Staked')
+        .withArgs(borrower.address, parseTRU(100))
+    })
+  })
+
+  describe('unstake', () => {
+    beforeEach(async () => {
+      await collateralVault.connect(borrower).stake(parseTRU(100))
+    })
+
+    it('transfers tokens back to staker', async () => {
+      await expect(() => collateralVault.connect(borrower).unstake(parseTRU(100)))
+        .to.changeTokenBalances(tru, [collateralVault, borrower], [-parseTRU(100), parseTRU(100)])
+    })
+
+    it('decreases stakedAmount', async () => {
+      await collateralVault.connect(borrower).unstake(parseTRU(40))
+      expect(await collateralVault.stakedAmount(borrower.address)).to.equal(parseTRU(60))
+    })
+
+    it('cannot unstake more than staked', async () => {
+      await expect(collateralVault.connect(borrower).unstake(parseTRU(101)))
+        .to.be.revertedWith('CollateralVault: cannot unstake')
+    })
+
+    it('cannot unstake if mutex is locked', async () => {
+      await borrowingMutex.lock(borrower.address, owner.address)
+      await expect(collateralVault.connect(borrower).unstake(parseTRU(101)))
+        .to.be.revertedWith('CollateralVault: cannot unstake')
+    })
+
+    it('emits event', async () => {
+      expect(collateralVault.connect(borrower).unstake(parseTRU(100)))
+        .to.emit(collateralVault, 'Unstaked')
         .withArgs(borrower.address, parseTRU(100))
     })
   })
