@@ -6,7 +6,6 @@ import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 
 import {IFixedTermLoanAgency} from "./interface/IFixedTermLoanAgency.sol";
 import {Initializable} from "../common/Initializable.sol";
-import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {ILoanToken2} from "./interface/ILoanToken2.sol";
 import {IDebtToken} from "./interface/IDebtToken.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
@@ -20,7 +19,7 @@ import {DebtToken} from "./DebtToken.sol";
 
 /**
  * @title LoanFactory2
- * @notice Deploy LoanTokens for pools created by PoolFactory, with this Contract
+ * @notice Deploy LoanTokens with this Contract
  * @dev LoanTokens are deployed through a factory to ensure that all
  * LoanTokens adhere to the same contract code, rather than using an interface.
  */
@@ -36,7 +35,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     // @dev Track Valid LoanTokens
     mapping(ILoanToken2 => bool) public override isLoanToken;
 
-    IPoolFactory public poolFactory;
+    address private DEPRECATED__poolFactory;
     address private DEPRECATED__lender;
     address public liquidator;
 
@@ -81,19 +80,16 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
 
     /**
      * @dev Initialize this contract and set currency token
-     * @param _poolFactory PoolFactory address
      * @param _ftlAgency FixedTermLoanAgency address
      * @param _liquidator Liquidator address
      */
     function initialize(
-        IPoolFactory _poolFactory,
         IFixedTermLoanAgency _ftlAgency,
         address _liquidator,
         ITrueFiCreditOracle _creditOracle,
         IBorrowingMutex _borrowingMutex,
         ILineOfCreditAgency _creditAgency
     ) external initializer {
-        poolFactory = _poolFactory;
         ftlAgency = _ftlAgency;
         admin = msg.sender;
         liquidator = _liquidator;
