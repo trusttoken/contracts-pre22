@@ -24,13 +24,9 @@ import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
  * - loan term
  * - loan APY
  *
- * Loan progresses through the following states:
- * Awaiting:    Waiting for funding to meet capital requirements
- * Funded:      Capital requirements met, borrower can withdraw
- * Withdrawn:   Borrower withdraws money, loan waiting to be repaid
+ * Loans initialize to a Withdrawn state, which can only transition to terminal states:
  * Settled:     Loan has been paid back in full with interest
  * Defaulted:   Loan has not been paid back in full
- * Liquidated:  Loan has Defaulted and stakers have been Liquidated
  *
  * - LoanTokens are non-transferable except for whitelisted addresses
  * - This version of LoanToken only supports a single funder
@@ -77,23 +73,11 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     IDebtToken public debtToken;
 
     /**
-     * @dev Emitted when the loan is funded
-     * @param lender Address which funded the loan
-     */
-    event Funded(address lender);
-
-    /**
      * @dev Emitted when transfer whitelist is updated
      * @param account Account to whitelist for transfers
      * @param status New whitelist status
      */
     event TransferAllowanceChanged(address account, bool status);
-
-    /**
-     * @dev Emitted when borrower withdraws funds
-     * @param beneficiary Account which will receive funds
-     */
-    event Withdrawn(address beneficiary);
 
     /**
      * @dev Emitted when loan has been fully repaid
@@ -195,50 +179,18 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     }
 
     /**
-     * @dev Only after loan has been closed: Settled, Defaulted, or Liquidated
+     * @dev Only when loan is Settled or Defaulted
      */
-    modifier onlyAfterClose() {
-        require(status >= Status.Settled, "LoanToken2: Only after loan has been closed");
-        _;
-    }
-
-    /**
-     * @dev Only when loan is Funded
-     */
-    modifier onlyOngoing() {
-        require(status == Status.Funded || status == Status.Withdrawn, "LoanToken2: Current status should be Funded or Withdrawn");
-        _;
-    }
-
-    /**
-     * @dev Only when loan is Funded
-     */
-    modifier onlyFunded() {
-        require(status == Status.Funded, "LoanToken2: Current status should be Funded");
+    modifier onlySettledOrDefaulted() {
+        require(status == Status.Settled || status == Status.Defaulted, "LoanToken2: Only after loan has been closed");
         _;
     }
 
     /**
      * @dev Only when loan is Withdrawn
      */
-    modifier onlyAfterWithdraw() {
-        require(status >= Status.Withdrawn, "LoanToken2: Only after loan has been withdrawn");
-        _;
-    }
-
-    /**
-     * @dev Only when loan is Awaiting
-     */
-    modifier onlyAwaiting() {
-        require(status == Status.Awaiting, "LoanToken2: Current status should be Awaiting");
-        _;
-    }
-
-    /**
-     * @dev Only when loan is Defaulted
-     */
-    modifier onlyDefaulted() {
-        require(status == Status.Defaulted, "LoanToken2: Current status should be Defaulted");
+    modifier onlyWithdrawn() {
+        require(status == Status.Withdrawn, "LoanToken2: Current status should be Withdrawn");
         _;
     }
 
@@ -289,7 +241,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
             return 0;
         }
 
-        if (status == Status.Defaulted || status == Status.Liquidated) {
+        if (status == Status.Defaulted) {
             return _amount.mul(_balance()).div(totalSupply());
         }
 
@@ -326,7 +278,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     /**
      * @dev Settle the loan after checking it has been repaid
      */
-    function settle() public override onlyOngoing {
+    function settle() public override onlyWithdrawn {
         require(isRepaid(), "LoanToken2: loan must be repaid to settle");
         status = Status.Settled;
 
@@ -338,7 +290,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     /**
      * @dev Default the loan if it has not been repaid by the end of term
      */
-    function enterDefault() external override onlyOngoing {
+    function enterDefault() external override onlyWithdrawn {
         require(!isRepaid(), "LoanToken2: cannot default a repaid loan");
         require(start.add(term).add(creditOracle.gracePeriod()) <= block.timestamp, "LoanToken2: Loan cannot be defaulted yet");
         status = Status.Defaulted;
@@ -359,7 +311,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * Can only call this function after the loan is Closed
      * @param _amount amount to redeem
      */
-    function redeem(uint256 _amount) external override onlyAfterClose {
+    function redeem(uint256 _amount) external override onlySettledOrDefaulted {
         uint256 amountToReturn = _amount.mul(_balance()).div(totalSupply());
         redeemed = redeemed.add(amountToReturn);
         _burn(msg.sender, _amount);
@@ -393,7 +345,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @param _sender account sending token to repay
      * @param _amount amount of token to repay
      */
-    function _repay(address _sender, uint256 _amount) internal onlyAfterWithdraw {
+    function _repay(address _sender, uint256 _amount) internal {
         require(_amount <= debt.sub(_balance()), "LoanToken2: Cannot repay over the debt");
         emit Repaid(_sender, _amount);
 
@@ -408,7 +360,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * Can only call this function after the loan is Closed
      * and all of LoanToken holders have been burnt
      */
-    function reclaim() external override onlyAfterClose onlyBorrower {
+    function reclaim() external override onlySettledOrDefaulted onlyBorrower {
         require(totalSupply() == 0, "LoanToken2: Cannot reclaim when LoanTokens are in circulation");
         uint256 balanceRemaining = _balance();
         require(balanceRemaining > 0, "LoanToken2: Cannot reclaim when balance 0");
@@ -422,7 +374,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * Funds stored on the contract's address plus funds already redeemed by lenders
      * @return Uint256 representing what value was already repaid
      */
-    function repaid() public override view onlyAfterWithdraw returns (uint256) {
+    function repaid() public override view returns (uint256) {
         return _balance().add(redeemed);
     }
 
@@ -430,7 +382,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @dev Check whether an ongoing loan has been repaid in full
      * @return true if and only if this loan has been repaid
      */
-    function isRepaid() public override view onlyOngoing returns (bool) {
+    function isRepaid() public override view onlyWithdrawn returns (bool) {
         return _balance() >= debt;
     }
 

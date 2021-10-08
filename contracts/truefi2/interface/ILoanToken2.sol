@@ -6,7 +6,7 @@ import {ERC20} from "../../common/UpgradeableERC20.sol";
 import {ITrueFiPool2} from "./ITrueFiPool2.sol";
 
 interface ILoanToken2 is IERC20 {
-    enum Status {Awaiting, Funded, Withdrawn, Settled, Defaulted, Liquidated}
+    enum Status {Withdrawn, Settled, Defaulted}
 
     function term() external view returns (uint256);
 
