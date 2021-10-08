@@ -73,7 +73,7 @@ describe('LoanToken2', () => {
     borrowingMutex = await deployContract(lender, BorrowingMutex__factory)
     await borrowingMutex.initialize()
     await borrowingMutex.allowLocker(lender.address, true)
-    await loanFactory.initialize(poolFactory.address, AddressZero, AddressZero, AddressZero, AddressZero, borrowingMutex.address, AddressZero)
+    await loanFactory.initialize(AddressZero, AddressZero, AddressZero, borrowingMutex.address, AddressZero)
     const debtToken = await deployContract(lender, DebtToken__factory)
     await loanFactory.setDebtTokenImplementation(debtToken.address)
     loanToken = await new LoanToken2__factory(lender).deploy()

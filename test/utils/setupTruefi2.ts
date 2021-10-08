@@ -3,6 +3,7 @@ import { AddressZero } from '@ethersproject/constants'
 import {
   ArbitraryDistributor__factory,
   BorrowingMutex__factory,
+  CollateralVault__factory,
   FixedTermLoanAgency,
   FixedTermLoanAgency__factory,
   ImplementationReference__factory,
@@ -34,7 +35,7 @@ import {
 import { Wallet } from 'ethers'
 import { parseTRU, timeTravelTo, YEAR } from '.'
 import { deployMockContract, MockProvider } from 'ethereum-waffle'
-import { SpotBaseRateOracleJson, CreditModelJson } from 'build'
+import { SpotBaseRateOracleJson } from 'build'
 import { DAY } from './constants'
 
 const weeklyFillBaseRateOracles = async (tusdOracle: TimeAveragedBaseRateOracle, usdcOracle: TimeAveragedBaseRateOracle, provider: MockProvider) => {
@@ -58,9 +59,9 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
   const ftlAgency: FixedTermLoanAgency & TestFixedTermLoanAgency = customDeployed?.ftlAgency ? customDeployed.ftlAgency : await deployContract(FixedTermLoanAgency__factory)
   const safu = await deployContract(Safu__factory)
   const creditModel = await deployContract(CreditModel__factory)
-  const mockCreditModel = await deployMockContract(owner, CreditModelJson.abi)
   const creditAgency = await deployContract(LineOfCreditAgency__factory)
   const borrowingMutex = await deployContract(BorrowingMutex__factory)
+  const collateralVault = await deployContract(CollateralVault__factory)
 
   const poolFactory = await deployContract(PoolFactory__factory)
   const poolImplementation = await deployContract(TrueFiPool2__factory)
@@ -82,7 +83,7 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
 
   // ====== SETUP ======
   await liquidator.initialize(stkTru.address, tru.address, loanFactory.address, poolFactory.address, safu.address, standardTokenOracle.address)
-  await loanFactory.initialize(poolFactory.address, ftlAgency.address, liquidator.address, mockCreditModel.address, creditOracle.address, borrowingMutex.address, creditAgency.address)
+  await loanFactory.initialize(ftlAgency.address, liquidator.address, creditOracle.address, borrowingMutex.address, creditAgency.address)
   const loanTokenImplementation = await new LoanToken2__factory(owner).deploy()
   const debtTokenImplementation = await new DebtToken__factory(owner).deploy()
   await loanFactory.setLoanTokenImplementation(loanTokenImplementation.address)
@@ -90,6 +91,7 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
   await arbitraryDistributor.initialize(rater.address, tru.address, parseTRU(15e6))
   await rater.initialize(tru.address, stkTru.address, arbitraryDistributor.address)
   await borrowingMutex.initialize()
+  await collateralVault.initialize(tru.address, borrowingMutex.address, creditAgency.address, liquidator.address)
   await lender.initialize(stkTru.address, poolFactory.address, customDeployed?.oneInch ? customDeployed.oneInch.address : AddressZero)
   await ftlAgency.initialize(stkTru.address, poolFactory.address, customDeployed?.oneInch ? customDeployed.oneInch.address : AddressZero, creditOracle.address, creditModel.address, borrowingMutex.address, loanFactory.address)
   await safu.initialize(loanFactory.address, liquidator.address, customDeployed?.oneInch ? customDeployed.oneInch.address : AddressZero)
@@ -117,9 +119,6 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
   await borrowingMutex.allowLocker(lender.address, true)
   await borrowingMutex.allowLocker(ftlAgency.address, true)
   await borrowingMutex.allowLocker(creditAgency.address, true)
-
-  await mockCreditModel.mock.rate.returns(0)
-  await mockCreditModel.mock.fixedTermLoanAdjustment.returns(0)
 
   await mockSpotOracle.mock.getRate.withArgs(standardToken.address).returns(300)
   await mockSpotOracle.mock.getRate.withArgs(feeToken.address).returns(300)
@@ -162,7 +161,7 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
     standardBaseRateOracle,
     feeBaseRateOracle,
     creditModel,
-    mockCreditModel,
     borrowingMutex,
+    collateralVault,
   }
 }
