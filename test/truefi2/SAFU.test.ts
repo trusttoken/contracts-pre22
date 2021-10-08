@@ -92,11 +92,7 @@ describe('SAFU', () => {
       creditModel,
     } = await setupTruefi2(owner, _provider, { oneInch: oneInch }))
 
-    const loanTokenImplAddress = await loanFactory.loanTokenImplementation()
-    const legacyLoanTokenImpl = await new TestLegacyLoanToken2__factory(owner).deploy()
-    await loanFactory.setLoanTokenImplementation(legacyLoanTokenImpl.address)
     loan = await createLegacyLoan(ftlAgency, loanFactory, borrower, pool, parseUSDC(1000), YEAR, 1000) as any
-    await loanFactory.setLoanTokenImplementation(loanTokenImplAddress)
     await token.mint(borrower.address, parseUSDC(1e7))
     await token.connect(borrower).approve(loan.address, parseUSDC(1000))
     await loan.fund()

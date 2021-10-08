@@ -454,8 +454,6 @@ describe('TrueFiPool2', () => {
         await ftlAgency.allowBorrower(borrower2.address)
         await ftlAgency.connect(borrower2).borrow(tusdPool.address, 5000, YEAR, 10000)
 
-        const legacyLoanImpl = await new TestLegacyLoanToken2__factory(owner).deploy()
-        await loanFactory.setLoanTokenImplementation(legacyLoanImpl.address)
         const legacyLoan = await createLegacyLoan(lender, loanFactory, borrower, tusdPool, 500000, DAY, 1000)
         await tusd.mint(lender.address, 500000)
         await lender.connect(borrower).fund(legacyLoan.address)
@@ -830,8 +828,6 @@ describe('TrueFiPool2', () => {
     })
 
     it('lender can repay', async () => {
-      const legacyLoanImpl = await new TestLegacyLoanToken2__factory(owner).deploy()
-      await loanFactory.setLoanTokenImplementation(legacyLoanImpl.address)
       const legacyLoan = await createLegacyLoan(lender, loanFactory, borrower, tusdPool, 500000, DAY, 1000)
       await borrowingMutex.lock(borrower.address, legacyLoan.address)
       await tusd.mint(lender.address, 500000)
@@ -959,11 +955,7 @@ describe('TrueFiPool2', () => {
       await tusd.approve(tusdPool.address, parseEth(100))
       await tusdPool.join(parseEth(100))
 
-      const loanTokenImplAddress = await loanFactory.loanTokenImplementation()
-      const legacyLoanTokenImpl = await new TestLegacyLoanToken2__factory(owner).deploy()
-      await loanFactory.setLoanTokenImplementation(legacyLoanTokenImpl.address)
       loan = await createLegacyLoan(lender, loanFactory, borrower, tusdPool, 100000, DAY, 1000) as any
-      await loanFactory.setLoanTokenImplementation(loanTokenImplAddress)
       await tusd.mint(borrower.address, 100000)
       await tusd.connect(borrower).approve(loan.address, 100000)
       await loan.fund()
