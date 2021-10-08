@@ -21,7 +21,7 @@ import { DAY, MAX_APY, parseEth } from 'utils'
 import { expect, use } from 'chai'
 import { deployMockContract, solidity } from 'ethereum-waffle'
 import { utils, Wallet } from 'ethers'
-import { TrueFiCreditOracleJson, CreditModelJson } from 'build'
+import { TrueFiCreditOracleJson } from 'build'
 import { AddressZero } from '@ethersproject/constants'
 import { mock1Inch_TL2 } from './data'
 
@@ -59,9 +59,6 @@ xdescribe('TrueLender2', () => {
     const poolImplementation = await deployContract(TrueFiPool2__factory)
     const implementationReference = await deployContract(ImplementationReference__factory, poolImplementation.address)
 
-    const mockCreditModel = await deployMockContract(owner, CreditModelJson.abi)
-    await mockCreditModel.mock.rate.returns(0)
-    await mockCreditModel.mock.fixedTermLoanAdjustment.returns(1000)
     const mockCreditOracle = await deployMockContract(owner, TrueFiCreditOracleJson.abi)
     await mockCreditOracle.mock.score.returns(255)
     await mockCreditOracle.mock.maxBorrowerLimit.withArgs(OWNER).returns(parseEth(100_000_000))
@@ -93,12 +90,9 @@ xdescribe('TrueLender2', () => {
     usdtLoanPool = TrueFiPool2__factory.connect(await poolFactory.pool(usdt.address), owner)
     await poolFactory.supportPool(usdtLoanPool.address)
 
-    await mockCreditModel.mock.borrowLimit.withArgs(tusdLoanPool.address, 255, parseEth(100_000_000), 0).returns(parseEth(100_000_000))
-    await mockCreditModel.mock.borrowLimit.withArgs(usdtLoanPool.address, 255, parseEth(100_000_000), 0).returns(parseEth(100_000_000))
-
     const loanTokenImplementation = await new LoanToken2__factory(owner).deploy()
     loanFactory = await new LoanFactory2__factory(owner).deploy()
-    await loanFactory.initialize(poolFactory.address, AddressZero, AddressZero, mockCreditModel.address, mockCreditOracle.address, borrowingMutex.address, AddressZero)
+    await loanFactory.initialize(poolFactory.address, AddressZero, AddressZero, mockCreditOracle.address, borrowingMutex.address, AddressZero)
     await loanFactory.setLoanTokenImplementation(loanTokenImplementation.address)
     await borrowingMutex.allowLocker(lender.address, true)
   })

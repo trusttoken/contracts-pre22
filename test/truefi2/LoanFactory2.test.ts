@@ -15,8 +15,6 @@ import {
   LoanFactory2__factory,
   TrueFiCreditOracle,
   TrueFiCreditOracle__factory,
-  CreditModel,
-  CreditModel__factory,
   LoanToken2,
   LoanToken2__factory,
   MockTrueCurrency,
@@ -41,7 +39,6 @@ describe('LoanFactory2', () => {
   let poolFactory: PoolFactory
   let poolToken: MockTrueCurrency
   let loanFactory: LoanFactory2
-  let creditModel: CreditModel
   let creditOracle: TrueFiCreditOracle
   let borrowingMutex: BorrowingMutex
   let creditAgency: LineOfCreditAgency
@@ -67,12 +64,10 @@ describe('LoanFactory2', () => {
       loanFactory,
       liquidator,
       poolFactory,
-      creditModel,
       creditOracle,
       borrowingMutex,
       creditAgency,
     } = await setupTruefi2(owner, _provider))
-    await loanFactory.setCreditModel(creditModel.address)
     await creditOracle.setScore(borrower.address, 255)
 
     await poolToken.mint(depositor.address, parseEth(10_000))
@@ -87,10 +82,6 @@ describe('LoanFactory2', () => {
 
     it('sets liquidator', async () => {
       expect(await loanFactory.liquidator()).to.eq(liquidator.address)
-    })
-
-    it('sets creditModel', async () => {
-      expect(await loanFactory.creditModel()).to.eq(creditModel.address)
     })
 
     it('sets creditOracle', async () => {
@@ -122,7 +113,7 @@ describe('LoanFactory2', () => {
       it('there is no token implementation', async () => {
         const factory = await new LoanFactory2__factory(owner).deploy()
         await factory.initialize(
-          AddressZero, ftla.address, AddressZero, AddressZero, AddressZero, AddressZero, AddressZero,
+          AddressZero, ftla.address, AddressZero, AddressZero, AddressZero, AddressZero,
         )
         await expect(factory.connect(ftla).createLoanToken(pool.address, borrower.address, parseEth(1), 15 * DAY, 1000))
           .to.be.revertedWith('LoanFactory: Loan token implementation should be set')
@@ -174,7 +165,7 @@ describe('LoanFactory2', () => {
       it('there is no token implementation', async () => {
         const factory = await new LoanFactory2__factory(owner).deploy()
         await factory.initialize(
-          AddressZero, AddressZero, AddressZero, AddressZero, AddressZero, AddressZero, fakeCreditAgency.address,
+          AddressZero, AddressZero, AddressZero, AddressZero, AddressZero, fakeCreditAgency.address,
         )
         await expect(factory.connect(fakeCreditAgency).createDebtToken(pool.address, borrower.address, parseEth(1)))
           .to.be.revertedWith('LoanFactory: Debt token implementation should be set')
@@ -263,37 +254,6 @@ describe('LoanFactory2', () => {
       await expect(loanFactory.setCreditOracle(fakeCreditOracle.address))
         .to.emit(loanFactory, 'CreditOracleChanged')
         .withArgs(fakeCreditOracle.address)
-    })
-  })
-
-  describe('setCreditModel', () => {
-    let fakeCreditModel: CreditModel
-    beforeEach(async () => {
-      fakeCreditModel = await new CreditModel__factory(owner).deploy()
-      await fakeCreditModel.initialize(AddressZero)
-    })
-
-    it('only admin can call', async () => {
-      await expect(loanFactory.connect(owner).setCreditModel(fakeCreditModel.address))
-        .not.to.be.reverted
-      await expect(loanFactory.connect(borrower).setCreditModel(fakeCreditModel.address))
-        .to.be.revertedWith('LoanFactory: Caller is not the admin')
-    })
-
-    it('cannot be set to zero address', async () => {
-      await expect(loanFactory.setCreditModel(AddressZero))
-        .to.be.revertedWith('LoanFactory: Cannot set credit model to zero address')
-    })
-
-    it('changes creditModel', async () => {
-      await loanFactory.setCreditModel(fakeCreditModel.address)
-      expect(await loanFactory.creditModel()).to.eq(fakeCreditModel.address)
-    })
-
-    it('emits event', async () => {
-      await expect(loanFactory.setCreditModel(fakeCreditModel.address))
-        .to.emit(loanFactory, 'CreditModelChanged')
-        .withArgs(fakeCreditModel.address)
     })
   })
 
