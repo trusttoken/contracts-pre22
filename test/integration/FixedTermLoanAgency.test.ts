@@ -94,8 +94,8 @@ describe('FixedTermLoanAgency', () => {
     usdtLoanPool = TrueFiPool2__factory.connect(await poolFactory.pool(usdt.address), owner)
     await poolFactory.supportPool(usdtLoanPool.address)
 
-    await mockCreditModel.mock.borrowLimit.withArgs(tusdLoanPool.address, 255, parseEth(100_000_000), 0).returns(parseEth(100_000_000))
-    await mockCreditModel.mock.borrowLimit.withArgs(usdtLoanPool.address, 255, parseEth(100_000_000), 0).returns(parseEth(100_000_000))
+    await mockCreditModel.mock.borrowLimit.withArgs(tusdLoanPool.address, 255, parseEth(100_000_000), 0, 0).returns(parseEth(100_000_000))
+    await mockCreditModel.mock.borrowLimit.withArgs(usdtLoanPool.address, 255, parseEth(100_000_000), 0, 0).returns(parseEth(100_000_000))
 
     const loanTokenImplementation = await new LoanToken2__factory(owner).deploy()
     await loanFactory.initialize(poolFactory.address, ftlAgency.address, AddressZero, mockCreditModel.address, mockCreditOracle.address, borrowingMutex.address, AddressZero)
