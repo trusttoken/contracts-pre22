@@ -46,6 +46,8 @@ if [[ "${dry_run}" == 'false' ]]; then
         echo "Error: Build canary does not match current commit hash. Please run yarn build."
         exit 1
     fi
+else
+    args="${args} --log deploy.log"
 fi
 # Skip PRIVATE_KEY prompt if --yes flag passed
 if [[ "${yes}" == 'false' ]]; then
