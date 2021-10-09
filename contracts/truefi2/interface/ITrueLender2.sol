@@ -2,7 +2,7 @@
 pragma solidity 0.6.10;
 
 import {ITrueFiPool2} from "./ITrueFiPool2.sol";
-import {ILoanToken2} from "./ILoanToken2.sol";
+import {ILoanToken2Deprecated} from "../deprecated/ILoanToken2Deprecated.sol";
 
 interface ITrueLender2 {
     // @dev calculate overall value of the pools
@@ -15,5 +15,5 @@ interface ITrueLender2 {
         uint256 denominator
     ) external;
 
-    function transferAllLoanTokens(ILoanToken2 loan, address recipient) external;
+    function transferAllLoanTokens(ILoanToken2Deprecated loan, address recipient) external;
 }

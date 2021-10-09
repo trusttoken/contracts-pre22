@@ -6,12 +6,10 @@ import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 
 import {IFixedTermLoanAgency} from "./interface/IFixedTermLoanAgency.sol";
 import {Initializable} from "../common/Initializable.sol";
-import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {ILoanToken2} from "./interface/ILoanToken2.sol";
 import {IDebtToken} from "./interface/IDebtToken.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
-import {ICreditModel} from "./interface/ICreditModel.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
 import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
 import {ILineOfCreditAgency} from "./interface/ILineOfCreditAgency.sol";
@@ -21,7 +19,7 @@ import {DebtToken} from "./DebtToken.sol";
 
 /**
  * @title LoanFactory2
- * @notice Deploy LoanTokens for pools created by PoolFactory, with this Contract
+ * @notice Deploy LoanTokens with this Contract
  * @dev LoanTokens are deployed through a factory to ensure that all
  * LoanTokens adhere to the same contract code, rather than using an interface.
  */
@@ -37,13 +35,13 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     // @dev Track Valid LoanTokens
     mapping(ILoanToken2 => bool) public override isLoanToken;
 
-    IPoolFactory public poolFactory;
+    address private DEPRECATED__poolFactory;
     address private DEPRECATED__lender;
     address public liquidator;
 
     address public admin;
 
-    ICreditModel public creditModel;
+    address private DEPRECATED__creditModel;
     ITrueFiCreditOracle public creditOracle;
     IBorrowingMutex public borrowingMutex;
     ILoanToken2 public loanTokenImplementation;
@@ -71,8 +69,6 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
 
     event CreditOracleChanged(ITrueFiCreditOracle creditOracle);
 
-    event CreditModelChanged(ICreditModel creditModel);
-
     event BorrowingMutexChanged(IBorrowingMutex borrowingMutex);
 
     event LoanTokenImplementationChanged(ILoanToken2 loanTokenImplementation);
@@ -85,24 +81,19 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
 
     /**
      * @dev Initialize this contract and set currency token
-     * @param _poolFactory PoolFactory address
      * @param _ftlAgency FixedTermLoanAgency address
      * @param _liquidator Liquidator address
      */
     function initialize(
-        IPoolFactory _poolFactory,
         IFixedTermLoanAgency _ftlAgency,
         address _liquidator,
-        ICreditModel _creditModel,
         ITrueFiCreditOracle _creditOracle,
         IBorrowingMutex _borrowingMutex,
         ILineOfCreditAgency _creditAgency
     ) external initializer {
-        poolFactory = _poolFactory;
         ftlAgency = _ftlAgency;
         admin = msg.sender;
         liquidator = _liquidator;
-        creditModel = _creditModel;
         creditOracle = _creditOracle;
         borrowingMutex = _borrowingMutex;
         creditAgency = _creditAgency;
@@ -132,17 +123,6 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
      */
     function setAdmin() external {
         admin = 0x16cEa306506c387713C70b9C1205fd5aC997E78E;
-    }
-
-    function rate(
-        ITrueFiPool2 pool,
-        address borrower,
-        uint256 amount,
-        uint256 _term
-    ) internal view returns (uint256) {
-        uint8 borrowerScore = creditOracle.score(borrower);
-        uint256 fixedTermLoanAdjustment = creditModel.fixedTermLoanAdjustment(_term);
-        return creditModel.rate(pool, borrowerScore, amount).add(fixedTermLoanAdjustment);
     }
 
     function createLoanToken(
@@ -187,12 +167,6 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         require(address(_creditOracle) != address(0), "LoanFactory: Cannot set credit oracle to zero address");
         creditOracle = _creditOracle;
         emit CreditOracleChanged(_creditOracle);
-    }
-
-    function setCreditModel(ICreditModel _creditModel) external onlyAdmin {
-        require(address(_creditModel) != address(0), "LoanFactory: Cannot set credit model to zero address");
-        creditModel = _creditModel;
-        emit CreditModelChanged(_creditModel);
     }
 
     function setBorrowingMutex(IBorrowingMutex _mutex) external onlyAdmin {
