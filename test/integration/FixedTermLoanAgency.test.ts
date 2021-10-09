@@ -125,15 +125,10 @@ describe('FixedTermLoanAgency', () => {
     expect(reclaimedFee.mul(utils.parseUnits('1', 12))).to.lt(fee.mul(102).div(100))
   })
 
-  xit('funds tether loan tokens', async () => {
-    const tx = await loanFactory.createLoanToken_REMOVED(usdtLoanPool.address, 10_000_000, DAY * 50, MAX_APY)
-    const creationEvent = (await tx.wait()).events[0]
-    const { loanToken } = creationEvent.args
-
-    loan = LoanToken2__factory.connect(loanToken, owner)
-
+  it('funds tether loan tokens', async () => {
     await usdt.connect(usdtHolder).approve(usdtLoanPool.address, 10_000_000)
     await usdtLoanPool.connect(usdtHolder).join(10_000_000)
-    await expect(lender.fund(loan.address)).not.to.be.reverted
+
+    await expect(ftlAgency.borrow(usdtLoanPool.address, 10_000_000, DAY * 50, MAX_APY)).not.to.be.reverted
   })
 })
