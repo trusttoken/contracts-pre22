@@ -29,22 +29,27 @@ use(solidity)
 
 describe('FixedTermLoanAgency', () => {
   const USDC_ADDRESS = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
+  const USDT_ADDRESS = '0xdAC17F958D2ee523a2206206994597C13D831ec7'
   const TUSD_ADDRESS = '0x0000000000085d4780B73119b644AE5ecd22b376'
   const INCH_ADDRESS = '0x11111112542D85B3EF69AE05771c2dCCff4fAa26'
   const TUSD_HOLDER = '0xf977814e90da44bfa03b6295a0616a897441acec'
+  const USDT_HOLDER = '0x2faf487a4414fe77e2327f0bf4ae2a264a776ad2'
   const OWNER = '0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5'
-  const provider = forkChain('https://eth-mainnet.alchemyapi.io/v2/Vc3xNXIWdxEbDOToa69DhWeyhgFVBDWl', [OWNER, TUSD_HOLDER], 13289115)
+  const provider = forkChain('https://eth-mainnet.alchemyapi.io/v2/Vc3xNXIWdxEbDOToa69DhWeyhgFVBDWl', [OWNER, TUSD_HOLDER, USDT_HOLDER], 13289115)
   const owner = provider.getSigner(OWNER)
   const tusdHolder = provider.getSigner(TUSD_HOLDER)
+  const usdtHolder = provider.getSigner(USDT_HOLDER)
   const deployContract = setupDeploy(owner)
 
   let usdcFeePool: TrueFiPool2
+  let usdtLoanPool: TrueFiPool2
   let tusdLoanPool: TrueFiPool2
   let ftlAgency: FixedTermLoanAgency
   let loanFactory: LoanFactory2
   let stkTru: Wallet
   let tusd: Erc20Mock
   let usdc: Erc20Mock
+  let usdt: Erc20Mock
   let loan: LoanToken2
   let borrowingMutex: BorrowingMutex
 
@@ -84,7 +89,14 @@ describe('FixedTermLoanAgency', () => {
     tusdLoanPool = TrueFiPool2__factory.connect(await poolFactory.pool(tusd.address), owner)
     await poolFactory.supportPool(tusdLoanPool.address)
 
+    await poolFactory.allowToken(USDT_ADDRESS, true)
+    usdt = Erc20Mock__factory.connect(USDT_ADDRESS, owner)
+    await poolFactory.createPool(usdt.address)
+    usdtLoanPool = TrueFiPool2__factory.connect(await poolFactory.pool(usdt.address), owner)
+    await poolFactory.supportPool(usdtLoanPool.address)
+
     await mockCreditModel.mock.borrowLimit.withArgs(tusdLoanPool.address, 255, parseEth(100_000_000), 0, 0).returns(parseEth(100_000_000))
+    await mockCreditModel.mock.borrowLimit.withArgs(usdtLoanPool.address, 255, parseEth(100_000_000), 0, 0).returns(parseEth(100_000_000))
 
     const loanTokenImplementation = await new LoanToken2__factory(owner).deploy()
     await loanFactory.initialize(poolFactory.address, ftlAgency.address, AddressZero, mockCreditModel.address, mockCreditOracle.address, borrowingMutex.address, AddressZero)
@@ -111,5 +123,17 @@ describe('FixedTermLoanAgency', () => {
     const reclaimedFee = await usdcFeePool.balanceOf(stkTru.address)
     expect(reclaimedFee.mul(utils.parseUnits('1', 12))).to.gt(fee.mul(98).div(100))
     expect(reclaimedFee.mul(utils.parseUnits('1', 12))).to.lt(fee.mul(102).div(100))
+  })
+
+  xit('funds tether loan tokens', async () => {
+    const tx = await loanFactory.createLoanToken_REMOVED(usdtLoanPool.address, 10_000_000, DAY * 50, MAX_APY)
+    const creationEvent = (await tx.wait()).events[0]
+    const { loanToken } = creationEvent.args
+
+    loan = LoanToken2__factory.connect(loanToken, owner)
+
+    await usdt.connect(usdtHolder).approve(usdtLoanPool.address, 10_000_000)
+    await usdtLoanPool.connect(usdtHolder).join(10_000_000)
+    await expect(lender.fund(loan.address)).not.to.be.reverted
   })
 })
