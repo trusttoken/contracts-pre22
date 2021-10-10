@@ -11,6 +11,7 @@ import {IFixedTermLoanAgency} from "./interface/IFixedTermLoanAgency.sol";
 import {ITrueStrategy} from "./interface/ITrueStrategy.sol";
 import {ITrueFiPool2, ITrueFiPoolOracle} from "./interface/ITrueFiPool2.sol";
 import {ITrueLender2} from "./interface/ITrueLender2.sol";
+import {ILoanToken2Deprecated} from "./deprecated/ILoanToken2Deprecated.sol";
 import {ILoanToken2} from "./interface/ILoanToken2.sol";
 import {IDebtToken} from "./interface/IDebtToken.sol";
 import {IPauseableContract} from "../common/interface/IPauseableContract.sol";
@@ -627,6 +628,14 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
         }
 
         emit StrategySwitched(newStrategy);
+    }
+
+    /**
+     * @dev Function called by SAFU when liquidation happens. It will transfer all tokens of this loan the SAFU
+     */
+    function liquidateLegacyLoan(ILoanToken2Deprecated loan) external override {
+        require(msg.sender == address(safu), "TrueFiPool: Should be called by SAFU");
+        lender.transferAllLoanTokens(loan, address(safu));
     }
 
     /**
