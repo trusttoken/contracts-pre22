@@ -313,9 +313,9 @@ contract CreditModel is ICreditModel, UpgradeableClaimable {
         uint256 borrowedAmount
     ) public view returns (uint8) {
         uint16 effectiveScorePower = borrowLimitConfig.effectiveScorePower;
-        uint256 creditScoreAdjustment = uint256(MAX_CREDIT_SCORE - score).mul(
-            conservativeCollateralRatio(pool, stakedAmount, borrowedAmount)**effectiveScorePower
-        ).div(uint256(BASIS_POINTS)**effectiveScorePower);
+        uint256 creditScoreAdjustment = uint256(MAX_CREDIT_SCORE - score)
+            .mul(conservativeCollateralRatio(pool, stakedAmount, borrowedAmount)**effectiveScorePower)
+            .div(uint256(BASIS_POINTS)**effectiveScorePower);
         uint256 _effectiveScore = min(creditScoreAdjustment.add(score), MAX_CREDIT_SCORE);
         return uint8(_effectiveScore);
     }
