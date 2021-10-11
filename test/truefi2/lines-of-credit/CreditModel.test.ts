@@ -345,13 +345,13 @@ describe('CreditModel', () => {
     )
   })
 
-  describe('conservativeCollateralValue', () => {
+  describe('borrower TRU staking with TRU price at $0.25', () => {
     beforeEach(async () => {
       const oracle = await new MockUsdStableCoinOracle__factory(owner).deploy()
       await mockPool.mock.oracle.returns(oracle.address)
     })
 
-    describe('with TRU price at $0.25', () => {
+    describe('conservativeCollateralValue', () => {
       [
         [0, 0, 0],
         [0, 100, 0],
@@ -366,17 +366,14 @@ describe('CreditModel', () => {
           expect(await creditModel.conservativeCollateralValue(mockPool.address, parseTRU(collateral))).to.equal(parseEth(result))
         }))
     })
-  })
 
-  describe('conservativeCollateralRatio', () => {
-    beforeEach(async () => {
-      const oracle = await new MockUsdStableCoinOracle__factory(owner).deploy()
-      await mockPool.mock.oracle.returns(oracle.address)
-    })
-
-    describe('with TRU price at $0.25, collateral of 1000 TRU and ltv at 40%', () => {
+    describe('conservativeCollateralRatio', () => {
       const collateral = 1000
-      const ltvRatio = 40
+
+      beforeEach(async () => {
+        const ltvRatio = 40
+        await creditModel.setBorrowLimitConfig(0, 0, 0, 0, ltvRatio * 100, 0)
+      })
 
       ;[
         [1000, 10],
@@ -388,20 +385,12 @@ describe('CreditModel', () => {
         [0, 0],
       ].map(([borrowed, result]) =>
         it(`when borrowed amount is ${borrowed} collateral ratio is at ${result}%`, async () => {
-          await creditModel.setBorrowLimitConfig(0, 0, 0, 0, ltvRatio * 100, 0)
           expect(await creditModel.conservativeCollateralRatio(mockPool.address, parseTRU(collateral), parseEth(borrowed)))
             .to.equal(result * 100)
         }))
     })
-  })
 
-  describe('effectiveScore', () => {
-    beforeEach(async () => {
-      const oracle = await new MockUsdStableCoinOracle__factory(owner).deploy()
-      await mockPool.mock.oracle.returns(oracle.address)
-    })
-
-    describe('with TRU price at $0.25, collateral of 1000 TRU and ltv at 40%', () => {
+    describe('effectiveScore', () => {
       const collateral = 1000
       const borrowedAmount = 250
 
@@ -420,7 +409,7 @@ describe('CreditModel', () => {
         [95, 120],
         [63, 93],
         [31, 66],
-      ].map(([score, effectiveScore]) => 
+      ].map(([score, effectiveScore]) =>
         it(`staking ${collateral} TRU increases
         score ${score} to ${effectiveScore}`, async () => {
           expect(await creditModel.effectiveScore(score, mockPool.address, parseTRU(collateral), parseEth(borrowedAmount))).to.eq(effectiveScore)
