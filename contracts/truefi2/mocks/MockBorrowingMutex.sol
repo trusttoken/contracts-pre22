@@ -6,6 +6,8 @@ import {UpgradeableClaimable} from "../../common/UpgradeableClaimable.sol";
 import {IBorrowingMutex} from "../interface/IBorrowingMutex.sol";
 
 contract MockBorrowingMutex is IBorrowingMutex, UpgradeableClaimable {
+    address public constant BANNED = address(1);
+
     mapping(address => address) public override locker;
 
     function initialize() external initializer {
@@ -25,6 +27,10 @@ contract MockBorrowingMutex is IBorrowingMutex, UpgradeableClaimable {
     }
 
     function isUnlocked(address borrower) public override view returns (bool) {
+        return locker[borrower] == address(0);
+    }
+
+    function isBanned(address borrower) public override view returns (bool) {
         return locker[borrower] == address(0);
     }
 }

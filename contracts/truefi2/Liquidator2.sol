@@ -10,7 +10,8 @@ import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {IStakingPool} from "../truefi/interface/IStakingPool.sol";
 import {ITrueFiPoolOracle} from "./interface/ITrueFiPoolOracle.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
-import {IDebtToken} from "../truefi2/interface/IDebtToken.sol";
+import {IDebtToken} from "./interface/IDebtToken.sol";
+import {ICollateralVault} from "./interface/ICollateralVault.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 /**
@@ -48,6 +49,8 @@ contract Liquidator2 is UpgradeableClaimable {
     IPoolFactory public poolFactory;
 
     ITrueFiPoolOracle public tusdPoolOracle;
+
+    ICollateralVault public collateralVault;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -88,7 +91,8 @@ contract Liquidator2 is UpgradeableClaimable {
         ILoanFactory2 _loanFactory,
         IPoolFactory _poolFactory,
         address _SAFU,
-        ITrueFiPoolOracle _tusdPoolOracle
+        ITrueFiPoolOracle _tusdPoolOracle,
+        ICollateralVault _collateralVault
     ) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
 
@@ -98,6 +102,7 @@ contract Liquidator2 is UpgradeableClaimable {
         poolFactory = _poolFactory;
         SAFU = _SAFU;
         tusdPoolOracle = _tusdPoolOracle;
+        collateralVault = _collateralVault;
         fetchMaxShare = 1000;
     }
 
@@ -144,6 +149,7 @@ contract Liquidator2 is UpgradeableClaimable {
      */
     function liquidate(IDebtToken[] calldata debts) external {
         require(msg.sender == SAFU, "Liquidator: Only SAFU contract can liquidate a debt");
+        require(debts.length > 0, "Liquidator: List of provided debts is empty");
         require(
             allDebtsHaveSameBorrower(debts),
             "Liquidator: Debts liquidated in a single transaction, have to have the same borrower"
@@ -164,6 +170,11 @@ contract Liquidator2 is UpgradeableClaimable {
 
         uint256 withdrawnTru = getAmountToWithdraw(totalDefaultedValue);
         stkTru.withdraw(withdrawnTru);
+
+        address borrower = debts[0].borrower();
+        withdrawnTru = withdrawnTru.add(collateralVault.stakedAmount(borrower));
+        collateralVault.slash(borrower);
+
         tru.safeTransfer(SAFU, withdrawnTru);
         emit Liquidated(debts, totalDefaultedValue, withdrawnTru);
     }

@@ -18,6 +18,7 @@ import {
   MockTrueFiPoolOracle__factory,
   TrueFiCreditOracle__factory,
   CreditModel,
+  CollateralVault,
 } from 'contracts'
 
 import { solidity } from 'ethereum-waffle'
@@ -62,6 +63,7 @@ describe('Liquidator2', () => {
   let creditOracle: TrueFiCreditOracle
   let tusdOracle: MockTrueFiPoolOracle
   let creditModel: CreditModel
+  let collateralVault: CollateralVault
 
   let timeTravel: (time: number) => void
 
@@ -93,7 +95,9 @@ describe('Liquidator2', () => {
       creditOracle,
       standardTokenOracle: tusdOracle,
       creditModel,
+      collateralVault,
     } = await setupTruefi2(owner, _provider))
+
     const legacyLoanTokenImpl = await new TestLegacyLoanToken2__factory(owner).deploy()
     await loanFactory.setLoanTokenImplementation(legacyLoanTokenImpl.address)
     loan = await createLoan(loanFactory, borrower, usdcPool, parseUSDC(1000), YEAR, 1000) as any
@@ -147,6 +151,10 @@ describe('Liquidator2', () => {
 
     it('sets tusd oracle correctly', async () => {
       expect(await liquidator.tusdPoolOracle()).to.equal(tusdOracle.address)
+    })
+
+    it('sets collateral vault correctly', async () => {
+      expect(await liquidator.collateralVault()).to.equal(collateralVault.address)
     })
   })
 
@@ -331,6 +339,11 @@ describe('Liquidator2', () => {
         await expect(liquidator.connect(assurance).liquidate([loan.address, loan.address]))
           .to.be.revertedWith('Liquidator: Debt must be defaulted')
       })
+
+      it('providing empty list of debts', async () => {
+        await expect(liquidator.connect(assurance).liquidate([]))
+          .to.be.revertedWith('Liquidator: List of provided debts is empty')
+      })
     })
 
     describe('Works with loan token', () => {
@@ -492,12 +505,6 @@ describe('Liquidator2', () => {
           .to.emit(liquidator, 'Liquidated')
           .withArgs([debtToken1.address], parseEth(1100), parseTRU(100))
       })
-    })
-
-    it('providing empty list of debts does not slash tru', async () => {
-      const balanceBefore = await tru.balanceOf(stkTru.address)
-      await liquidator.connect(assurance).liquidate([])
-      expect(await tru.balanceOf(stkTru.address)).to.eq(balanceBefore)
     })
   })
 })
