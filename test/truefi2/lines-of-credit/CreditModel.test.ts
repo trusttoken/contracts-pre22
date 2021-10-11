@@ -394,6 +394,39 @@ describe('CreditModel', () => {
     })
   })
 
+  describe('effectiveScore', () => {
+    beforeEach(async () => {
+      const oracle = await new MockUsdStableCoinOracle__factory(owner).deploy()
+      await mockPool.mock.oracle.returns(oracle.address)
+    })
+
+    describe('with TRU price at $0.25, collateral of 1000 TRU and ltv at 40%', () => {
+      const collateral = 1000
+      const borrowedAmount = 250
+
+      beforeEach(async () => {
+        const ltvRatio = 40
+        const effectiveScorePower = 2
+        await creditModel.setBorrowLimitConfig(0, 0, 0, 0, ltvRatio * 100, effectiveScorePower)
+      })
+
+      ;[
+        [255, 255],
+        [223, 228],
+        [191, 201],
+        [159, 174],
+        [127, 147],
+        [95, 120],
+        [63, 93],
+        [31, 66],
+      ].map(([score, effectiveScore]) => 
+        it(`staking ${collateral} TRU increases
+        score ${score} to ${effectiveScore}`, async () => {
+          expect(await creditModel.effectiveScore(score, mockPool.address, parseTRU(collateral), parseEth(borrowedAmount))).to.eq(effectiveScore)
+        }))
+    })
+  })
+
   describe('Borrow limit', () => {
     let mockPool2: MockContract
 
