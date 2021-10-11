@@ -4777,10 +4777,10 @@ ethereum-ens@^0.8.0:
     underscore "^1.8.3"
     web3 "^1.0.0-beta.34"
 
-ethereum-mars@^0.1.5:
-  version "0.1.5"
-  resolved "https://registry.yarnpkg.com/ethereum-mars/-/ethereum-mars-0.1.5.tgz#e10013bf0527bbd242bde11aecfc9edb2efe1223"
-  integrity sha512-O7gvbAzSFossUinwfB8C+zmeX7fl0+KA2k3Sx1mJAc9AiQGwAivUoTmNLr5cqT6Fe0NT1GVtcAo9NPUbFSSE+g==
+ethereum-mars@^0.1.6:
+  version "0.1.6"
+  resolved "https://registry.yarnpkg.com/ethereum-mars/-/ethereum-mars-0.1.6.tgz#dd0c6230bbd211b94c3baa948c7011b56fb3c235"
+  integrity sha512-DmAzdDnRdf26ztRmZEp1P4bcgZFdGSw1drrlTFL1tXaBpjEGCBi3cEjap4C1Y7VMGOhbJPsFcV4Qr2nWgxAJLw==
   dependencies:
     "@resolver-engine/imports" "^0.3.3"
     "@resolver-engine/imports-fs" "^0.3.3"
