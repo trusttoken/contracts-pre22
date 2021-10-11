@@ -5,6 +5,8 @@ import {
   BorrowingMutex__factory,
   Erc20Mock,
   Erc20Mock__factory,
+  FixedTermLoanAgency,
+  FixedTermLoanAgency__factory,
   ImplementationReference__factory,
   LoanFactory2,
   LoanFactory2__factory,
@@ -14,20 +16,18 @@ import {
   PoolFactory__factory,
   TrueFiPool2,
   TrueFiPool2__factory,
-  TrueLender2,
-  TrueLender2__factory,
 } from 'contracts'
-import { DAY, MAX_APY, parseEth } from 'utils'
+import { DAY, extractLoanTokenAddress, MAX_APY, parseEth } from 'utils'
 import { expect, use } from 'chai'
 import { deployMockContract, solidity } from 'ethereum-waffle'
 import { utils, Wallet } from 'ethers'
-import { TrueFiCreditOracleJson } from 'build'
+import { TrueFiCreditOracleJson, CreditModelJson } from 'build'
 import { AddressZero } from '@ethersproject/constants'
 import { mock1Inch_TL2 } from './data'
 
 use(solidity)
 
-xdescribe('TrueLender2', () => {
+describe('FixedTermLoanAgency', () => {
   const USDC_ADDRESS = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
   const USDT_ADDRESS = '0xdAC17F958D2ee523a2206206994597C13D831ec7'
   const TUSD_ADDRESS = '0x0000000000085d4780B73119b644AE5ecd22b376'
@@ -44,7 +44,7 @@ xdescribe('TrueLender2', () => {
   let usdcFeePool: TrueFiPool2
   let usdtLoanPool: TrueFiPool2
   let tusdLoanPool: TrueFiPool2
-  let lender: TrueLender2
+  let ftlAgency: FixedTermLoanAgency
   let loanFactory: LoanFactory2
   let stkTru: Wallet
   let tusd: Erc20Mock
@@ -58,7 +58,11 @@ xdescribe('TrueLender2', () => {
     const poolFactory = await deployContract(PoolFactory__factory)
     const poolImplementation = await deployContract(TrueFiPool2__factory)
     const implementationReference = await deployContract(ImplementationReference__factory, poolImplementation.address)
+    loanFactory = await new LoanFactory2__factory(owner).deploy()
 
+    const mockCreditModel = await deployMockContract(owner, CreditModelJson.abi)
+    await mockCreditModel.mock.rate.returns(0)
+    await mockCreditModel.mock.fixedTermLoanAdjustment.returns(1000)
     const mockCreditOracle = await deployMockContract(owner, TrueFiCreditOracleJson.abi)
     await mockCreditOracle.mock.score.returns(255)
     await mockCreditOracle.mock.maxBorrowerLimit.withArgs(OWNER).returns(parseEth(100_000_000))
@@ -67,16 +71,17 @@ xdescribe('TrueLender2', () => {
     borrowingMutex = await deployContract(BorrowingMutex__factory)
     await borrowingMutex.initialize()
 
-    lender = await deployContract(TrueLender2__factory)
-    await lender.initialize(stkTru.address, poolFactory.address, INCH_ADDRESS)
+    ftlAgency = await deployContract(FixedTermLoanAgency__factory)
+    await ftlAgency.initialize(stkTru.address, poolFactory.address, INCH_ADDRESS, mockCreditOracle.address, mockCreditModel.address, borrowingMutex.address, loanFactory.address)
+    await ftlAgency.allowBorrower(await owner.getAddress())
 
-    await poolFactory.initialize(implementationReference.address, lender.address, AddressZero, AddressZero, AddressZero)
+    await poolFactory.initialize(implementationReference.address, AddressZero, ftlAgency.address, AddressZero, AddressZero)
 
     await poolFactory.allowToken(USDC_ADDRESS, true)
     usdc = Erc20Mock__factory.connect(USDC_ADDRESS, owner)
     await poolFactory.createPool(usdc.address)
     usdcFeePool = TrueFiPool2__factory.connect(await poolFactory.pool(usdc.address), owner)
-    await lender.setFeePool(usdcFeePool.address)
+    await ftlAgency.setFeePool(usdcFeePool.address)
 
     await poolFactory.allowToken(TUSD_ADDRESS, true)
     tusd = Erc20Mock__factory.connect(TUSD_ADDRESS, owner)
@@ -90,26 +95,22 @@ xdescribe('TrueLender2', () => {
     usdtLoanPool = TrueFiPool2__factory.connect(await poolFactory.pool(usdt.address), owner)
     await poolFactory.supportPool(usdtLoanPool.address)
 
+    await mockCreditModel.mock.borrowLimit.withArgs(tusdLoanPool.address, 255, parseEth(100_000_000), 0, 0).returns(parseEth(100_000_000))
+    await mockCreditModel.mock.borrowLimit.withArgs(usdtLoanPool.address, 255, parseEth(100_000_000), 0, 0).returns(parseEth(100_000_000))
+
     const loanTokenImplementation = await new LoanToken2__factory(owner).deploy()
-    loanFactory = await new LoanFactory2__factory(owner).deploy()
-    await loanFactory.initialize(AddressZero, AddressZero, mockCreditOracle.address, borrowingMutex.address, AddressZero)
+    await loanFactory.initialize(ftlAgency.address, AddressZero, mockCreditOracle.address, borrowingMutex.address, AddressZero)
     await loanFactory.setLoanTokenImplementation(loanTokenImplementation.address)
-    await borrowingMutex.allowLocker(lender.address, true)
+    await borrowingMutex.allowLocker(ftlAgency.address, true)
   })
 
   it('ensure max 1% swap fee slippage', async () => {
-    const tx = await loanFactory.createLoanToken_REMOVED(tusdLoanPool.address, parseEth(1_000_000), DAY * 90, MAX_APY)
-    const creationEvent = (await tx.wait()).events[0]
-    const { loanToken } = creationEvent.args
-
-    loan = LoanToken2__factory.connect(loanToken, owner)
-
     const oracle = await deployContract(MockUsdStableCoinOracle__factory)
     await tusdLoanPool.setOracle(oracle.address)
 
     await tusd.connect(tusdHolder).approve(tusdLoanPool.address, parseEth(1_000_000))
     await tusdLoanPool.connect(tusdHolder).join(parseEth(1_000_000))
-    await lender.fund(loan.address)
+    loan = await extractLoanTokenAddress(ftlAgency.borrow(tusdLoanPool.address, parseEth(1_000_000), DAY * 90, MAX_APY), owner, loanFactory)
     const debt = await loan.debt()
     await tusd.connect(tusdHolder).transfer(loan.address, debt)
     await loan.settle()
@@ -117,7 +118,7 @@ xdescribe('TrueLender2', () => {
 
     const data = mock1Inch_TL2()
 
-    await lender.reclaim(loan.address, data)
+    await ftlAgency.reclaim(loan.address, data)
 
     const reclaimedFee = await usdcFeePool.balanceOf(stkTru.address)
     expect(reclaimedFee.mul(utils.parseUnits('1', 12))).to.gt(fee.mul(98).div(100))
@@ -125,14 +126,9 @@ xdescribe('TrueLender2', () => {
   })
 
   it('funds tether loan tokens', async () => {
-    const tx = await loanFactory.createLoanToken_REMOVED(usdtLoanPool.address, 10_000_000, DAY * 50, MAX_APY)
-    const creationEvent = (await tx.wait()).events[0]
-    const { loanToken } = creationEvent.args
-
-    loan = LoanToken2__factory.connect(loanToken, owner)
-
     await usdt.connect(usdtHolder).approve(usdtLoanPool.address, 10_000_000)
     await usdtLoanPool.connect(usdtHolder).join(10_000_000)
-    await expect(lender.fund(loan.address)).not.to.be.reverted
+
+    await expect(ftlAgency.borrow(usdtLoanPool.address, 10_000_000, DAY * 50, MAX_APY)).not.to.be.reverted
   })
 })
