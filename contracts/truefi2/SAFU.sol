@@ -11,6 +11,7 @@ import {DeficiencyToken} from "./DeficiencyToken.sol";
 import {IDeficiencyToken} from "./interface/IDeficiencyToken.sol";
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {IDebtToken} from "../truefi2/interface/IDebtToken.sol";
+import {ILoanToken2Deprecated} from "./deprecated/ILoanToken2Deprecated.sol";
 import {ILoanToken2} from "../truefi2/interface/ILoanToken2.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
@@ -36,8 +37,9 @@ contract SAFU is ISAFU, UpgradeableClaimable {
     ILiquidator2 public liquidator;
     I1Inch3 public _1Inch;
 
-    mapping(IDebtToken => IDeficiencyToken) public override deficiencyToken;
+    mapping(ILoanToken2Deprecated => IDeficiencyToken) public override legacyDeficiencyToken;
     mapping(address => uint256) public override poolDeficit;
+    mapping(IDebtToken => IDeficiencyToken) public override deficiencyToken;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -79,6 +81,30 @@ contract SAFU is ISAFU, UpgradeableClaimable {
         loanFactory = _loanFactory;
         liquidator = _liquidator;
         _1Inch = __1Inch;
+    }
+
+    function legacyLiquidate(ILoanToken2Deprecated loan) external {
+        require(loanFactory.isLegacyLoanToken(loan), "SAFU: Unknown loan");
+        require(loan.status() == ILoanToken2Deprecated.Status.Defaulted, "SAFU: Loan is not defaulted");
+
+        ITrueFiPool2 pool = loan.pool();
+        IERC20 token = pool.token();
+
+        liquidator.legacyLiquidate(loan);
+        pool.liquidateLegacyLoan(loan);
+        uint256 owedToPool = loan.debt().mul(tokenBalance(loan)).div(loan.totalSupply());
+        uint256 safuTokenBalance = tokenBalance(token);
+
+        uint256 deficit = 0;
+        uint256 toTransfer = owedToPool;
+        if (owedToPool > safuTokenBalance) {
+            deficit = owedToPool.sub(safuTokenBalance);
+            toTransfer = safuTokenBalance;
+            legacyDeficiencyToken[loan] = new DeficiencyToken(IDebtToken(address(loan)), deficit);
+            poolDeficit[address(loan.pool())] = poolDeficit[address(loan.pool())].add(deficit);
+        }
+        token.safeTransfer(address(pool), toTransfer);
+        emit Liquidated(IDebtToken(address(loan)), toTransfer, legacyDeficiencyToken[loan], deficit);
     }
 
     /**
@@ -124,6 +150,15 @@ contract SAFU is ISAFU, UpgradeableClaimable {
         return token.balanceOf(address(this));
     }
 
+    function legacyRedeem(ILoanToken2Deprecated loan) public onlyOwner {
+        require(loanFactory.isLegacyLoanToken(loan), "SAFU: Unknown loan");
+        uint256 amountToBurn = tokenBalance(loan);
+        uint256 balanceBeforeRedeem = tokenBalance(loan.token());
+        loan.redeem(amountToBurn);
+        uint256 redeemedAmount = tokenBalance(loan.token()).sub(balanceBeforeRedeem);
+        emit Redeemed(IDebtToken(address(loan)), amountToBurn, redeemedAmount);
+    }
+
     /**
      * @dev Redeems a repaid debt
      * @param debt Debt token to be redeemed
@@ -135,6 +170,23 @@ contract SAFU is ISAFU, UpgradeableClaimable {
         debt.redeem(amountToBurn);
         uint256 redeemedAmount = tokenBalance(debt.token()).sub(balanceBeforeRedeem);
         emit Redeemed(debt, amountToBurn, redeemedAmount);
+    }
+
+    function legacyReclaim(ILoanToken2Deprecated loan, uint256 amount) external override {
+        require(loanFactory.isLegacyLoanToken(loan), "SAFU: Unknown loan");
+
+        address poolAddress = address(loan.pool());
+        require(msg.sender == poolAddress, "SAFU: caller is not the debt's pool");
+        require(tokenBalance(loan) == 0, "SAFU: Debt has to be fully redeemed by SAFU");
+        IDeficiencyToken dToken = legacyDeficiencyToken[loan];
+        require(address(dToken) != address(0), "SAFU: No deficiency token found for debt");
+        require(dToken.balanceOf(poolAddress) > 0, "SAFU: Pool does not have deficiency tokens to be reclaimed");
+
+        poolDeficit[poolAddress] = poolDeficit[poolAddress].sub(amount);
+        dToken.burnFrom(msg.sender, amount);
+        loan.token().safeTransfer(poolAddress, amount);
+
+        emit Reclaimed(IDebtToken(address(loan)), amount);
     }
 
     /**
