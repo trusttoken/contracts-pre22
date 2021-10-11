@@ -6,7 +6,6 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 import {ERC20} from "../../common/UpgradeableERC20.sol";
-import {IERC20WithDecimals} from "../interface/IERC20WithDecimals.sol";
 import {IFixedTermLoanAgency} from "../interface/IFixedTermLoanAgency.sol";
 import {ILoanToken2Deprecated} from "../deprecated/ILoanToken2Deprecated.sol";
 import {ITrueFiPool2} from "../interface/ITrueFiPool2.sol";
@@ -496,6 +495,6 @@ contract TestLegacyLoanToken2 is ILoanToken2Deprecated, ERC20 {
     }
 
     function decimals() public override view returns (uint8) {
-        return uint8(IERC20WithDecimals(address(token)).decimals());
+        return ERC20(address(token)).decimals();
     }
 }
