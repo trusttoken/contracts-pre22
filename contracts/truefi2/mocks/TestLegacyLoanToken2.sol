@@ -7,7 +7,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 import {ERC20} from "../../common/UpgradeableERC20.sol";
 import {IFixedTermLoanAgency} from "../interface/IFixedTermLoanAgency.sol";
-import {ITestLegacyLoanToken2} from "./ITestLegacyLoanToken2.sol";
+import {ILoanToken2Deprecated} from "../deprecated/ILoanToken2Deprecated.sol";
 import {ITrueFiPool2} from "../interface/ITrueFiPool2.sol";
 import {IBorrowingMutex} from "../interface/IBorrowingMutex.sol";
 
@@ -18,9 +18,9 @@ import {IBorrowingMutex} from "../interface/IBorrowingMutex.sol";
  * onlyLiquidator modifier was removed from liquidate() to make testing easier
  * initializer is updated to match latest LTs signature
  */
-contract TestLegacyLoanToken2 is ITestLegacyLoanToken2, ERC20 {
+contract TestLegacyLoanToken2 is ILoanToken2Deprecated, ERC20 {
     using SafeMath for uint256;
-    using SafeERC20 for ERC20;
+    using SafeERC20 for IERC20;
 
     uint128 public constant LAST_MINUTE_PAYBACK_DURATION = 3 days;
     uint256 private constant APY_PRECISION = 10000;
@@ -47,7 +47,7 @@ contract TestLegacyLoanToken2 is ITestLegacyLoanToken2, ERC20 {
 
     Status public override status;
 
-    ERC20 public override token;
+    IERC20 public override token;
 
     ITrueFiPool2 public override pool;
 
@@ -495,6 +495,6 @@ contract TestLegacyLoanToken2 is ITestLegacyLoanToken2, ERC20 {
     }
 
     function decimals() public override view returns (uint8) {
-        return token.decimals();
+        return ERC20(address(token)).decimals();
     }
 }
