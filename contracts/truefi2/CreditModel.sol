@@ -281,7 +281,7 @@ contract CreditModel is ICreditModel, UpgradeableClaimable {
         if (stakedAmount == 0) {
             return 0;
         }
-        return pool.oracle().truToToken(stakedAmount).mul(borrowLimitConfig.ltvRatio).div(BASIS_POINTS);
+        return pool.oracle().truToUsd(stakedAmount).mul(borrowLimitConfig.ltvRatio).div(BASIS_POINTS);
     }
 
     /**

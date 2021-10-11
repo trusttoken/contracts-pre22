@@ -1,6 +1,7 @@
 import { BigNumber, BigNumberish, Wallet } from 'ethers'
 import {
   BorrowingMutex,
+  CollateralVault,
   CreditModel,
   FixedTermLoanAgency,
   LineOfCreditAgency,
@@ -19,7 +20,7 @@ import {
   DAY,
   expectScaledCloseTo,
   extractDebtTokens,
-  parseEth,
+  parseEth, parseTRU,
   parseUSDC,
   setupTruefi2,
   timeTravel as _timeTravel,
@@ -31,6 +32,7 @@ import { expect, use } from 'chai'
 import { AddressZero } from '@ethersproject/constants'
 import { MockContract, MockProvider, solidity } from 'ethereum-waffle'
 import { setupDeploy } from 'scripts/utils'
+import { formatEther } from 'ethers/lib/utils'
 
 use(solidity)
 
@@ -52,6 +54,8 @@ describe('LineOfCreditAgency', () => {
   let mockSpotOracle: MockContract
   let borrowingMutex: BorrowingMutex
   let poolFactory: PoolFactory
+  let collateralVault: CollateralVault
+  let tru: MockTrueCurrency
   let timeTravel: (time: number) => void
 
   const MONTH = DAY * 31
@@ -84,6 +88,8 @@ describe('LineOfCreditAgency', () => {
       creditModel,
       borrowingMutex,
       poolFactory,
+      collateralVault,
+      tru,
     } = await setupTruefi2(owner, provider))
 
     await tusdPool.setCreditAgency(creditAgency.address)
@@ -419,7 +425,7 @@ describe('LineOfCreditAgency', () => {
       const faultyCreditAgency = await deployContract(LineOfCreditAgency__factory)
       const faultyBorrowingMutex = await deployContract(MockBorrowingMutex__factory)
 
-      await faultyCreditAgency.initialize(creditOracle.address, creditModel.address, faultyBorrowingMutex.address, poolFactory.address, loanFactory.address, AddressZero)
+      await faultyCreditAgency.initialize(creditOracle.address, creditModel.address, faultyBorrowingMutex.address, poolFactory.address, loanFactory.address, collateralVault.address)
       await tusdPool.setCreditAgency(faultyCreditAgency.address)
       await faultyCreditAgency.allowBorrower(borrower.address, true)
 
@@ -505,6 +511,24 @@ describe('LineOfCreditAgency', () => {
       await creditAgency.connect(borrower).repayInFull(tusdPool.address)
       await timeTravel(DAY * 60)
       await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000)).to.be.not.reverted
+    })
+  })
+
+  describe('isOverProFormaLimit', () => {
+    beforeEach(async () => {
+      await creditOracle.setScore(borrower.address, 191)
+      await creditAgency.allowBorrower(borrower.address, true)
+      await tru.mint(borrower.address, parseTRU(100_000))
+      await tru.connect(borrower).approve(collateralVault.address, parseTRU(100_000))
+      await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100))
+      await collateralVault.connect(borrower).stake(parseTRU(100_000))
+    })
+
+    it('returns true if borrower will be beyond limit with this staked amount', async () => {
+      const borrowLimit = await creditAgency.borrowLimit(usdcPool.address, borrower.address)
+      await creditAgency.connect(borrower).borrow(usdcPool.address, parseUSDC(formatEther(borrowLimit)))
+      expect(await creditAgency.isOverProFormaLimit(borrower.address, parseTRU(100_000))).to.be.false
+      expect(await creditAgency.isOverProFormaLimit(borrower.address, parseTRU(50_000))).to.be.true
     })
   })
 

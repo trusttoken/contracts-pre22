@@ -25,10 +25,19 @@ describe('Oracles', () => {
     expect(await oracle.usdToCrv(parseEth(1))).to.equal(utils.parseEther('0.445238940683238032'))
   })
 
-  it('USDC-TRU oracle', async () => {
+  it('USDC-TRU price', async () => {
     const oracle = await deployContract(ChainlinkTruUsdcOracle__factory)
     expect(await oracle.truToToken(parseTRU(1))).to.equal(utils.parseUnits('0.32334', 6))
+    expect(await oracle.truToUsd(parseTRU(1))).to.equal(utils.parseEther('0.32334'))
     expect(await oracle.tokenToTru(utils.parseUnits('1', 6))).to.equal(parseTRU(3.0927197377))
     expect(await oracle.tokenToUsd(utils.parseUnits('1', 6))).to.equal(parseEth(1))
+  })
+
+  it('USDC-TRU conversion', async () => {
+    const oracle = await deployContract(ChainlinkTruUsdcOracle__factory)
+    expect(await oracle.truToToken(parseTRU(5))).to.equal(utils.parseUnits('0.32334', 6).mul(5))
+    expect(await oracle.truToUsd(parseTRU(5))).to.equal(utils.parseEther('0.32334').mul(5))
+    expect(await oracle.tokenToTru(utils.parseUnits('5', 6))).to.equal(utils.parseUnits('3.0927197377', 10).mul(5).div(100))
+    expect(await oracle.tokenToUsd(utils.parseUnits('5', 6))).to.equal(parseEth(5))
   })
 })

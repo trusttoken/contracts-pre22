@@ -14,7 +14,7 @@ import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
 import {ITimeAveragedBaseRateOracle} from "./interface/ITimeAveragedBaseRateOracle.sol";
 import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
 import {IDebtToken} from "./interface/IDebtToken.sol";
-import "./interface/ICollateralVault.sol";
+import {ICollateralVault} from "./interface/ICollateralVault.sol";
 
 interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
     function decimals() external view returns (uint8);
@@ -326,7 +326,7 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
     /**
      * @dev Returns false iff borrower will stay over borrow limit in all pools when `stakeAmount` is staked
      */
-    function proFormaIsOverLimit(address borrower, uint256 stakedAmount) external override view returns (bool) {
+    function isOverProFormaLimit(address borrower, uint256 stakedAmount) external override view returns (bool) {
         ITrueFiPool2[] memory pools = poolFactory.getSupportedPools();
         uint256 _totalBorrowed = totalBorrowed(borrower);
         uint8 _score = creditOracle.score(borrower);

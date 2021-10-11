@@ -436,6 +436,63 @@ describe('CreditModel', () => {
       expect(await creditModel.borrowLimit(mockPool.address, 191, parseEth(100), 0, parseEth(100))).to.equal(0)
     })
 
+    describe('returns same results for pool with different decimal places', () => {
+      beforeEach(async () => {
+        const oracle = await new MockUsdStableCoinOracle__factory(owner).deploy()
+        await oracle.setDecimalAdjustment(12)
+        await mockPool.mock.decimals.returns(6)
+        await mockPool.mock.poolValue.returns(parseUSDC(1e7))
+        await mockPool.mock.oracle.returns(oracle.address)
+      })
+
+      it('borrow amount is limited by borrower limit', async () => {
+        expect(await creditModel.borrowLimit(mockPool.address, 191, parseEth(100), 0, 0)).to.equal(parseEth(80.51)) // borrowLimitAdjustment(191)
+      })
+
+      it('borrow limit depends on decimal count of the pool', async () => {
+        expect(await creditModel.borrowLimit(mockPool2.address, 191, parseEth(100), 0, 0)).to.equal(parseEth(80.51))
+      })
+
+      it('borrow amount is limited by total TVL', async () => {
+        const maxTVLLimit = parseEth(20)
+        await mockPool.mock.poolValue.returns(maxTVLLimit.div(1e6).div(1e6).sub(parseUSDC(1)))
+        await mockPool2.mock.poolValue.returns(parseUSDC(1))
+        expect(await creditModel.borrowLimit(mockPool.address, 191, parseEth(100), 0, 0)).to.equal(maxTVLLimit.mul(15).div(100).mul(8051).div(10000))
+      })
+
+      it('borrow amount is limited by a single pool value', async () => {
+        await mockPool.mock.poolValue.returns(100)
+        expect(await creditModel.borrowLimit(mockPool.address, 191, parseEth(100), 0, 0)).to.equal(parseEth(15).div(1e6))
+      })
+
+      it('borrow limit can be increased by staking TRU', async () => {
+        expect(await creditModel.borrowLimit(mockPool.address, 191, parseEth(100), parseTRU(100), 0)).to.equal(parseEth(80.51).add(parseEth(10)))
+        expect(await creditModel.borrowLimit(mockPool.address, 191, parseEth(100), parseTRU(1000), 0)).to.equal(parseEth(80.51).add(parseEth(100)))
+      })
+
+      it('collateral TRU cannot increase limit over TVL limit', async () => {
+        const maxTVLLimit = parseEth(20)
+        await mockPool.mock.poolValue.returns(maxTVLLimit.div(1e6).div(1e6).sub(parseUSDC(1)))
+        await mockPool2.mock.poolValue.returns(parseUSDC(1))
+        expect(await creditModel.borrowLimit(mockPool.address, 191, parseEth(1), 0, 0)).to.equal(parseEth(0.8051))
+        expect(await creditModel.borrowLimit(mockPool.address, 191, parseEth(1), parseTRU(1000), 0)).to.equal(maxTVLLimit.mul(15).div(100).mul(8051).div(10000))
+      })
+
+      it('collateral TRU cannot increase limit over pool limit', async () => {
+        await mockPool.mock.poolValue.returns(parseUSDC(20))
+        expect(await creditModel.borrowLimit(mockPool.address, 191, parseEth(1), 0, 0)).to.equal(parseEth(0.8051))
+        expect(await creditModel.borrowLimit(mockPool.address, 191, parseEth(1), parseTRU(1000), 0)).to.equal(parseEth(20).mul(15).div(100))
+      })
+
+      it('subtracts borrowed amount from credit limit', async () => {
+        expect(await creditModel.borrowLimit(mockPool.address, 191, parseEth(100), 0, 100)).to.equal(parseEth(80.51).sub(100))
+      })
+
+      it('borrow limit is 0 if credit limit is below the borrowed amount', async () => {
+        expect(await creditModel.borrowLimit(mockPool.address, 191, parseEth(100), 0, parseEth(100))).to.equal(0)
+      })
+    })
+
     describe('isOverLimit', () => {
       it('returns true when over limit', async () => {
         expect(await creditModel.isOverLimit(mockPool.address, 191, parseEth(100), 0, parseEth(80.51).add(1))).to.equal(true)

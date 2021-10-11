@@ -5,7 +5,6 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
-import {ICreditModel} from "./interface/ICreditModel.sol";
 import {IERC20WithDecimals} from "./interface/IERC20WithDecimals.sol";
 import {ILineOfCreditAgency} from "./interface/ILineOfCreditAgency.sol";
 import {ILiquidator2} from "./interface/ILiquidator2.sol";
@@ -32,8 +31,6 @@ contract CollateralVault is ICollateralVault, UpgradeableClaimable {
     ILineOfCreditAgency public lineOfCreditAgency;
 
     ILiquidator2 public liquidator;
-
-    ICreditModel public creditModel;
 
     // ======= STORAGE DECLARATION END ===========
 
@@ -90,6 +87,6 @@ contract CollateralVault is ICollateralVault, UpgradeableClaimable {
         if (borrowingMutex.locker(borrower) != address(lineOfCreditAgency)) {
             return false;
         }
-        return !lineOfCreditAgency.proFormaIsOverLimit(borrower, stakedAmount[borrower].sub(amount));
+        return !lineOfCreditAgency.isOverProFormaLimit(borrower, stakedAmount[borrower].sub(amount));
     }
 }

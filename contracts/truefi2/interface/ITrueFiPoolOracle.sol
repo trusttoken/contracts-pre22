@@ -14,6 +14,9 @@ interface ITrueFiPoolOracle {
     // amount of tokens 1 TRU is worth
     function truToToken(uint256 truAmount) external view returns (uint256);
 
+    // convert 1 TRU to USD with 18 decimal precision
+    function truToUsd(uint256 truAmount) external view returns (uint256);
+
     // amount of TRU 1 token is worth
     function tokenToTru(uint256 tokenAmount) external view returns (uint256);
 
