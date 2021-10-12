@@ -61,6 +61,9 @@ contract CreditModel is ICreditModel, UpgradeableClaimable {
         uint16 tvlLimitCoefficient;
         // adjust for pool value (basis precision)
         uint16 poolValueLimitCoefficient;
+    }
+
+    struct StakingConfig {
         uint16 ltvRatio;
         uint16 effectiveScorePower;
     }
@@ -90,6 +93,8 @@ contract CreditModel is ICreditModel, UpgradeableClaimable {
     /// @dev used for TVL calculations
     IPoolFactory public poolFactory;
 
+    StakingConfig public stakingConfig;
+
     // ======= STORAGE DECLARATION END ============
 
     /// @dev Emit `newRate` when risk premium changed
@@ -114,10 +119,10 @@ contract CreditModel is ICreditModel, UpgradeableClaimable {
         uint8 scoreFloor,
         uint16 limitAdjustmentPower,
         uint16 tvlLimitCoefficient,
-        uint16 poolValueLimitCoefficient,
-        uint16 ltvRatio,
-        uint16 effectiveScorePower
+        uint16 poolValueLimitCoefficient
     );
+
+    event StakingConfigChanged(uint16 ltvRatio, uint16 effectiveScorePower);
 
     /// @dev initializer
     function initialize(IPoolFactory _poolFactory) public initializer {
@@ -126,7 +131,8 @@ contract CreditModel is ICreditModel, UpgradeableClaimable {
         utilizationRateConfig = UtilizationRateConfig(50, 2);
         creditScoreRateConfig = CreditScoreRateConfig(1000, 1);
         fixedTermLoanAdjustmentCoefficient = 25;
-        borrowLimitConfig = BorrowLimitConfig(40, 7500, 1500, 1500, 4000, 1);
+        borrowLimitConfig = BorrowLimitConfig(40, 7500, 1500, 1500);
+        stakingConfig = StakingConfig(4000, 1);
         poolFactory = _poolFactory;
     }
 
@@ -169,26 +175,15 @@ contract CreditModel is ICreditModel, UpgradeableClaimable {
         uint8 scoreFloor,
         uint16 limitAdjustmentPower,
         uint16 tvlLimitCoefficient,
-        uint16 poolValueLimitCoefficient,
-        uint16 ltvRatio,
-        uint16 effectiveScorePower
+        uint16 poolValueLimitCoefficient
     ) external onlyOwner {
-        borrowLimitConfig = BorrowLimitConfig(
-            scoreFloor,
-            limitAdjustmentPower,
-            tvlLimitCoefficient,
-            poolValueLimitCoefficient,
-            ltvRatio,
-            effectiveScorePower
-        );
-        emit BorrowLimitConfigChanged(
-            scoreFloor,
-            limitAdjustmentPower,
-            tvlLimitCoefficient,
-            poolValueLimitCoefficient,
-            ltvRatio,
-            effectiveScorePower
-        );
+        borrowLimitConfig = BorrowLimitConfig(scoreFloor, limitAdjustmentPower, tvlLimitCoefficient, poolValueLimitCoefficient);
+        emit BorrowLimitConfigChanged(scoreFloor, limitAdjustmentPower, tvlLimitCoefficient, poolValueLimitCoefficient);
+    }
+
+    function setStakingConfig(uint16 ltvRatio, uint16 effectiveScorePower) external onlyOwner {
+        stakingConfig = StakingConfig(ltvRatio, effectiveScorePower);
+        emit StakingConfigChanged(ltvRatio, effectiveScorePower);
     }
 
     /**
@@ -292,7 +287,7 @@ contract CreditModel is ICreditModel, UpgradeableClaimable {
         if (stakedAmount == 0) {
             return 0;
         }
-        return pool.oracle().truToToken(stakedAmount).mul(borrowLimitConfig.ltvRatio).div(BASIS_POINTS);
+        return pool.oracle().truToToken(stakedAmount).mul(stakingConfig.ltvRatio).div(BASIS_POINTS);
     }
 
     function conservativeCollateralRatio(
@@ -312,7 +307,7 @@ contract CreditModel is ICreditModel, UpgradeableClaimable {
         uint256 stakedAmount,
         uint256 borrowedAmount
     ) public view returns (uint8) {
-        uint16 effectiveScorePower = borrowLimitConfig.effectiveScorePower;
+        uint16 effectiveScorePower = stakingConfig.effectiveScorePower;
         uint256 creditScoreAdjustment = uint256(MAX_CREDIT_SCORE - score)
             .mul(conservativeCollateralRatio(pool, stakedAmount, borrowedAmount)**effectiveScorePower)
             .div(uint256(BASIS_POINTS)**effectiveScorePower);
