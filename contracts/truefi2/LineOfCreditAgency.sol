@@ -486,7 +486,6 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
             pool.addDebt(newToken, debt);
         }
 
-        borrowingMutex.unlock(borrower);
         borrowingMutex.ban(borrower);
 
         emit EnteredDefault(borrower, reason);

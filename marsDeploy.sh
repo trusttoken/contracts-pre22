@@ -63,8 +63,19 @@ fi
 export INFURA_KEY="ec659e9f6af4425c8a13aeb0af9f2809"
 export ETHERSCAN_KEY="XQPPJGFR4J3I6PEISYEG4JPETFZ2EF56EX"
 
+# Log file name
+network_log="-${network}"
+target_file_name="$(basename -- ${DEPLOY_SCRIPT})"
+target_log="-${target_file_name%.*}"
+dry_run_log=''
+if [[ "${dry_run}" == 'true' ]]; then
+  dry_run_log='-dry-run'
+fi
+timestamp_log="-$(date +%s)"
+
 yarn mars
 yarn ts-node ${DEPLOY_SCRIPT} \
   --waffle-config ./.waffle.json \
   ${args} \
-  --out-file "deployments-${network}.json"
+  --out-file "deployments-${network}.json" \
+  --log "./cache/deploy${network_log}${target_log}${dry_run_log}${timestamp_log}.log"

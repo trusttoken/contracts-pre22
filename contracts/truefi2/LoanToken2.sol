@@ -357,6 +357,8 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         debtToken.approve(address(pool), unpaidDebt);
         pool.addDebt(debtToken, unpaidDebt);
 
+        borrowingMutex.ban(borrower);
+
         emit Defaulted(debtToken, unpaidDebt);
     }
 

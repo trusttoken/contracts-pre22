@@ -27,8 +27,15 @@ contract BorrowingMutex is IBorrowingMutex, UpgradeableClaimable {
 
     event BorrowerUnlocked(address borrower, address locker);
 
+    event BorrowerBanned(address borrower);
+
     modifier onlyAllowedToLock() {
         require(isAllowedToLock[msg.sender], "BorrowingMutex: Sender is not allowed to lock borrowers");
+        _;
+    }
+
+    modifier onlyLocker(address borrower) {
+        require(locker[borrower] == msg.sender, "BorrowingMutex: Only locker is allowed");
         _;
     }
 
@@ -41,23 +48,19 @@ contract BorrowingMutex is IBorrowingMutex, UpgradeableClaimable {
         emit LockerAllowed(_locker, isAllowed);
     }
 
-    function ban(address borrower) external override onlyAllowedToLock {
-        _lock(borrower, BANNED);
+    function ban(address borrower) external override onlyLocker(borrower) {
+        locker[borrower] = BANNED;
+        emit BorrowerBanned(borrower);
     }
 
     function lock(address borrower, address _locker) external override onlyAllowedToLock {
-        _lock(borrower, _locker);
-    }
-
-    function _lock(address borrower, address _locker) private {
         require(isUnlocked(borrower), "BorrowingMutex: Borrower is already locked");
         locker[borrower] = _locker;
         emit BorrowerLocked(borrower, _locker);
     }
 
-    function unlock(address borrower) external override {
+    function unlock(address borrower) external override onlyLocker(borrower) {
         address _locker = locker[borrower];
-        require(_locker == msg.sender, "BorrowingMutex: Only locker can unlock");
         locker[borrower] = UNLOCKED;
         emit BorrowerUnlocked(borrower, _locker);
     }

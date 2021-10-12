@@ -7,7 +7,9 @@ import {
   BadStrategy__factory,
   TrueFiPool2,
   MockTrueCurrency,
-  LoanFactory2,
+  TestLegacyLoanToken2,
+  TestLoanFactory,
+  TestLoanFactory__factory,
   Safu,
   DeficiencyToken__factory,
   DeficiencyToken,
@@ -19,7 +21,7 @@ import {
   TestTrueLender,
   TestTrueLender__factory,
   BorrowingMutex,
-  TestLegacyLoanToken2,
+  TestLegacyLoanToken2__factory,
 } from 'contracts'
 import { MockProvider, solidity } from 'ethereum-waffle'
 import { BigNumber, Wallet } from 'ethers'
@@ -28,8 +30,9 @@ import {
   beforeEachWithFixture,
   parseEth,
   setUtilization as _setUtilization,
+  extractLegacyLoanToken,
   extractLoanTokenAddress,
-  createLegacyLoan,
+  createLoan,
   DAY,
   expectScaledCloseTo,
   setupTruefi2,
@@ -52,7 +55,7 @@ describe('TrueFiPool2', () => {
   let tusd: MockTrueCurrency
   let tusdPool: TrueFiPool2
   let usdcPool: TrueFiPool2
-  let loanFactory: LoanFactory2
+  let loanFactory: TestLoanFactory
   let lender: TestTrueLender
   let loan: LoanToken2
   let safu: Safu
@@ -74,9 +77,11 @@ describe('TrueFiPool2', () => {
     provider = _provider
 
     lender = await deployContract(TestTrueLender__factory)
+    loanFactory = await deployContract(TestLoanFactory__factory)
 
     ; ({
       standardToken: tusd,
+      lender,
       standardPool: tusdPool,
       feePool: usdcPool,
       loanFactory,
@@ -86,7 +91,7 @@ describe('TrueFiPool2', () => {
       creditModel,
       ftlAgency,
       borrowingMutex,
-    } = await setupTruefi2(owner, provider, { lender: lender }))
+    } = await setupTruefi2(owner, provider, { lender: lender, loanFactory: loanFactory }))
 
     poolStrategy1 = await deployContract(MockStrategy__factory, tusd.address, tusdPool.address)
     poolStrategy2 = await deployContract(MockStrategy__factory, tusd.address, tusdPool.address)
@@ -368,6 +373,7 @@ describe('TrueFiPool2', () => {
       await tusdPool.join(parseEth(1e7))
       const tx = ftlAgency.connect(borrower).borrow(tusdPool.address, 500000, DAY, 1000)
       loan = await extractLoanTokenAddress(tx, owner, loanFactory)
+      await loan.connect(borrower).withdraw(borrower.address)
       await timeTravel(DAY * 4)
       await loan.enterDefault()
       debt = await loan.debtToken()
@@ -450,13 +456,14 @@ describe('TrueFiPool2', () => {
       })
 
       it('when there are ongoing loans in both trueLender and FTLA, pool value contains both', async () => {
-        await ftlAgency.allowBorrower(borrower2.address)
-        await ftlAgency.connect(borrower2).borrow(tusdPool.address, 5000, YEAR, 10000)
-
-        const legacyLoan = await createLegacyLoan(lender, loanFactory, borrower, tusdPool, 500000, DAY, 1000)
+        const legacyLoanImpl = await new TestLegacyLoanToken2__factory(owner).deploy()
+        await loanFactory.setLoanTokenImplementation(legacyLoanImpl.address)
+        const legacyLoan = TestLegacyLoanToken2__factory.connect((await createLoan(loanFactory, borrower, tusdPool, 500000, DAY, 1000)).address, owner)
+        await legacyLoan.setLender(lender.address)
         await tusd.mint(lender.address, 500000)
         await lender.connect(borrower).fund(legacyLoan.address)
-
+        await ftlAgency.allowBorrower(borrower2.address)
+        await ftlAgency.connect(borrower2).borrow(tusdPool.address, 5000, YEAR, 10000)
         expect(await tusdPool.liquidValue()).to.equal(joinAmount.sub(5000))
         expect(await tusdPool.loansValue()).to.equal(500000 + 5000)
         expect(await tusdPool.poolValue()).to.equal(joinAmount.add(500000))
@@ -469,6 +476,7 @@ describe('TrueFiPool2', () => {
       it('when pool has some deficiency value', async () => {
         const tx = ftlAgency.connect(borrower).borrow(tusdPool.address, 500000, DAY, 1000)
         loan = await extractLoanTokenAddress(tx, owner, loanFactory)
+        await loan.connect(borrower).withdraw(borrower.address)
         await timeTravel(DAY * 4)
         await loan.enterDefault()
         expect(await tusdPool.poolValue()).to.equal(joinAmount.add(136))
@@ -827,7 +835,10 @@ describe('TrueFiPool2', () => {
     })
 
     it('lender can repay', async () => {
-      const legacyLoan = await createLegacyLoan(lender, loanFactory, borrower, tusdPool, 500000, DAY, 1000)
+      const legacyLoanImpl = await new TestLegacyLoanToken2__factory(owner).deploy()
+      await loanFactory.setLoanTokenImplementation(legacyLoanImpl.address)
+      const legacyLoan = TestLegacyLoanToken2__factory.connect((await createLoan(loanFactory, borrower, tusdPool, 500000, DAY, 1000)).address, owner)
+      await legacyLoan.setLender(lender.address)
       await borrowingMutex.lock(borrower.address, legacyLoan.address)
       await tusd.mint(lender.address, 500000)
       await lender.connect(borrower).fund(legacyLoan.address)
@@ -947,37 +958,37 @@ describe('TrueFiPool2', () => {
     })
   })
 
-  describe('liquidateLoan', () => {
+  describe('liquidateLegacyLoan', () => {
     let loan: TestLegacyLoanToken2
 
     beforeEach(async () => {
       await tusd.approve(tusdPool.address, parseEth(100))
       await tusdPool.join(parseEth(100))
-
-      loan = await createLegacyLoan(lender, loanFactory, borrower, tusdPool, 100000, DAY, 1000) as any
-      await tusd.mint(borrower.address, 100000)
-      await tusd.connect(borrower).approve(loan.address, 100000)
-      await loan.fund()
+      const tx = await loanFactory.createLegacyLoanToken(tusdPool.address, borrower.address, 100000, DAY, 1000)
+      loan = await extractLegacyLoanToken(tx, owner)
+      await loan.setLender(lender.address)
+      await tusd.mint(lender.address, 100000)
+      await lender.fund(loan.address)
       await loan.connect(borrower).withdraw(borrower.address)
     })
 
     it('can only be performed by the SAFU', async () => {
-      await expect(tusdPool.liquidateLoan(loan.address)).to.be.revertedWith('TrueFiPool: Should be called by SAFU')
+      await expect(tusdPool.liquidateLegacyLoan(loan.address)).to.be.revertedWith('TrueFiPool: Should be called by SAFU')
     })
 
-    async function liquidateLoan () {
+    async function liquidateLegacyLoan () {
       await timeTravel(DAY * 4)
       await loan.enterDefault()
-      await safu.liquidate([loan.address])
+      await safu.legacyLiquidate(loan.address)
     }
 
     it('transfers all LTs to the safu', async () => {
-      await liquidateLoan()
+      await liquidateLegacyLoan()
       expect(await loan.balanceOf(safu.address)).to.equal(await loan.totalSupply())
     })
 
     it('liquid exit after liquidation returns correct amount of tokens', async () => {
-      await liquidateLoan()
+      await liquidateLegacyLoan()
       const totalValue = await tusdPool.poolValue()
       const totalSupply = await tusdPool.totalSupply()
       const penalty = await tusdPool.liquidExitPenalty(totalSupply.div(2))
