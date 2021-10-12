@@ -11,6 +11,7 @@ import {IFixedTermLoanAgency} from "./interface/IFixedTermLoanAgency.sol";
 import {ITrueStrategy} from "./interface/ITrueStrategy.sol";
 import {ITrueFiPool2, ITrueFiPoolOracle} from "./interface/ITrueFiPool2.sol";
 import {ITrueLender2} from "./interface/ITrueLender2.sol";
+import {ILoanToken2Deprecated} from "./deprecated/ILoanToken2Deprecated.sol";
 import {ILoanToken2} from "./interface/ILoanToken2.sol";
 import {IDebtToken} from "./interface/IDebtToken.sol";
 import {IPauseableContract} from "../common/interface/IPauseableContract.sol";
@@ -632,6 +633,14 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     /**
      * @dev Function called by SAFU when liquidation happens. It will transfer all tokens of this loan the SAFU
      */
+    function liquidateLegacyLoan(ILoanToken2Deprecated loan) external override {
+        require(msg.sender == address(safu), "TrueFiPool: Should be called by SAFU");
+        lender.transferAllLoanTokens(loan, address(safu));
+    }
+
+    /**
+     * @dev Function called by SAFU when liquidation happens. It will transfer all tokens of this loan the SAFU
+     */
     function liquidateLoan(IDebtToken loan) external override {
         require(msg.sender == address(safu), "TrueFiPool: Should be called by SAFU");
         ftlAgency.transferAllLoanTokens(ILoanToken2(address(loan)), address(safu));
@@ -647,6 +656,16 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
 
         debtValue = debtValue.sub(balance);
         debtToken.safeTransfer(msg.sender, balance);
+    }
+
+    function reclaimLegacyDeficit(ILoanToken2Deprecated loan) external {
+        IDeficiencyToken dToken = safu.legacyDeficiencyToken(loan);
+        require(address(dToken) != address(0), "TrueFiPool2: No deficiency token found for debt");
+        uint256 deficit = dToken.balanceOf(address(this));
+        dToken.safeApprove(address(safu), deficit);
+        safu.legacyReclaim(loan, deficit);
+
+        emit DeficitReclaimed(IDebtToken(address(loan)), deficit);
     }
 
     /**
