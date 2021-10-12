@@ -199,6 +199,24 @@ describe('CreditModel', () => {
     })
   })
 
+  describe('setStakingConfig', () => {
+    it('reverts if caller is not the owner', async () => {
+      await expect(creditModel.connect(borrower).setStakingConfig(0, 0))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('sets staking config', async () => {
+      await creditModel.setStakingConfig(1, 2)
+      expect(await creditModel.stakingConfig()).to.deep.eq([1, 2])
+    })
+
+    it('emits event', async () => {
+      await expect(creditModel.setStakingConfig(1, 2))
+        .to.emit(creditModel, 'StakingConfigChanged')
+        .withArgs(1, 2)
+    })
+  })
+
   describe('rate', () => {
     let mockOracle: MockContract
 
