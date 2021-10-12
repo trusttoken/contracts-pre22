@@ -1,41 +1,41 @@
 import { expect, use } from 'chai'
 import {
   BorrowingMutex__factory,
+  CreditModel,
+  DebtToken,
+  FixedTermLoanAgency,
   Liquidator2,
+  MockTrueCurrency,
+  MockTrueFiPoolOracle,
+  MockTrueFiPoolOracle__factory,
+  MockUsdc,
+  PoolFactory,
+  PoolFactory__factory,
+  StkTruToken,
   TestLegacyLoanToken2,
   TestLegacyLoanToken2__factory,
   TestLoanFactory,
   TestLoanFactory__factory,
   TestTrueLender,
   TestTrueLender__factory,
-  MockTrueCurrency,
-  MockUsdc,
-  PoolFactory,
-  StkTruToken,
-  TrueFiPool2,
-  FixedTermLoanAgency,
   TrueFiCreditOracle,
-  PoolFactory__factory,
-  DebtToken,
-  MockTrueFiPoolOracle,
-  MockTrueFiPoolOracle__factory,
   TrueFiCreditOracle__factory,
-  CreditModel,
+  TrueFiPool2,
 } from 'contracts'
 
 import { solidity } from 'ethereum-waffle'
 import { BigNumberish, Wallet } from 'ethers'
 import { setupDeploy } from 'scripts/utils'
-import { DAY } from 'utils'
 import {
   beforeEachWithFixture,
+  createDebtToken as _createDebtToken,
+  DAY,
   extractLegacyLoanToken,
   parseEth,
   parseTRU,
   parseUSDC,
   setupTruefi2,
   timeTravel as _timeTravel,
-  createDebtToken as _createDebtToken,
 } from 'utils'
 import { AddressZero } from '@ethersproject/constants'
 
@@ -411,6 +411,25 @@ describe('Liquidator2', () => {
         await liquidator.connect(assurance).liquidate([debtToken1.address, debtToken2.address])
         expect(await debtToken1.status()).to.equal(LoanTokenStatus.Liquidated)
         expect(await debtToken2.status()).to.equal(LoanTokenStatus.Liquidated)
+      })
+
+      describe('reverts if', () => {
+        it('debts are not of a single borrower', async () => {
+          const otherDebtToken = await _createDebtToken(loanFactory, owner, owner, usdcPool, owner, 100)
+          await expect(liquidator.connect(assurance).liquidate([debtToken1.address, otherDebtToken.address]))
+            .to.be.revertedWith('Liquidator: Debts liquidated in a single transaction, have to have the same borrower')
+        })
+
+        it('attempting to default the same debt twice', async () => {
+          await expect(liquidator.connect(assurance).liquidate([debtToken1.address, debtToken1.address]))
+            .to.be.revertedWith('Liquidator: Debt must be defaulted')
+        })
+      })
+
+      it('all pools have to be supported', async () => {
+        await poolFactory.unsupportPool(usdcPool.address)
+        await expect(liquidator.connect(assurance).liquidate([debtToken1.address, debtToken2.address]))
+          .to.be.revertedWith('Liquidator: Pool not supported for default protection')
       })
 
       describe('transfers correct amount of tru to assurance contract', () => {
