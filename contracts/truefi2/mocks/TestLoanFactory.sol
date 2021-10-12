@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {LoanFactory2, ITrueFiPool2} from "../LoanFactory2.sol";
+import "../LoanFactory2.sol";
 import {TestLegacyLoanToken2} from "./TestLegacyLoanToken2.sol";
 
 contract TestLoanFactory is LoanFactory2 {
