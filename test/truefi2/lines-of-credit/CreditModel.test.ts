@@ -73,7 +73,11 @@ describe('CreditModel', () => {
     })
 
     it('sets borrow limit config', async () => {
-      expect(await creditModel.borrowLimitConfig()).to.deep.eq([40, 7500, 1500, 1500, 4000, 1])
+      expect(await creditModel.borrowLimitConfig()).to.deep.eq([40, 7500, 1500, 1500])
+    })
+
+    it('sets staking config', async () => {
+      expect(await creditModel.stakingConfig()).to.deep.eq([4000, 1])
     })
   })
 
@@ -179,19 +183,19 @@ describe('CreditModel', () => {
 
   describe('setBorrowLimitConfig', () => {
     it('reverts if caller is not the owner', async () => {
-      await expect(creditModel.connect(borrower).setBorrowLimitConfig(0, 0, 0, 0, 0, 0))
+      await expect(creditModel.connect(borrower).setBorrowLimitConfig(0, 0, 0, 0))
         .to.be.revertedWith('Ownable: caller is not the owner')
     })
 
     it('sets borrow limit config', async () => {
-      await creditModel.setBorrowLimitConfig(1, 2, 3, 4, 5, 6)
-      expect(await creditModel.borrowLimitConfig()).to.deep.eq([1, 2, 3, 4, 5, 6])
+      await creditModel.setBorrowLimitConfig(1, 2, 3, 4)
+      expect(await creditModel.borrowLimitConfig()).to.deep.eq([1, 2, 3, 4])
     })
 
     it('emits event', async () => {
-      await expect(creditModel.setBorrowLimitConfig(1, 2, 3, 4, 5, 6))
+      await expect(creditModel.setBorrowLimitConfig(1, 2, 3, 4))
         .to.emit(creditModel, 'BorrowLimitConfigChanged')
-        .withArgs(1, 2, 3, 4, 5, 6)
+        .withArgs(1, 2, 3, 4)
     })
   })
 
@@ -362,7 +366,7 @@ describe('CreditModel', () => {
         [1000, 40, 100],
       ].map(([collateral, ltvRatio, result]) =>
         it(`when ${collateral} TRU is staked with ltvRatio=${ltvRatio}%, borrow limit rises by up to $${result}`, async () => {
-          await creditModel.setBorrowLimitConfig(0, 0, 0, 0, ltvRatio * 100, 0)
+          await creditModel.setStakingConfig(ltvRatio * 100, 0)
           expect(await creditModel.conservativeCollateralValue(mockPool.address, parseTRU(collateral))).to.equal(parseEth(result))
         }))
     })
@@ -372,7 +376,7 @@ describe('CreditModel', () => {
 
       beforeEach(async () => {
         const ltvRatio = 40
-        await creditModel.setBorrowLimitConfig(0, 0, 0, 0, ltvRatio * 100, 0)
+        await creditModel.setStakingConfig(ltvRatio * 100, 0)
       })
 
       ;[
@@ -397,7 +401,7 @@ describe('CreditModel', () => {
       beforeEach(async () => {
         const ltvRatio = 40
         const effectiveScorePower = 2
-        await creditModel.setBorrowLimitConfig(0, 0, 0, 0, ltvRatio * 100, effectiveScorePower)
+        await creditModel.setStakingConfig(ltvRatio * 100, effectiveScorePower)
       })
 
       ;[
