@@ -21,7 +21,8 @@ import {
   TrueFiCreditOracle,
   TrueFiCreditOracle__factory,
   CollateralVault,
-  TrueFiPool2, BorrowingMutex,
+  TrueFiPool2,
+  BorrowingMutex,
 } from 'contracts'
 
 import { solidity } from 'ethereum-waffle'
@@ -101,7 +102,7 @@ describe('Liquidator2', () => {
       standardTokenOracle: tusdOracle,
       creditModel,
       collateralVault,
-      borrowingMutex
+      borrowingMutex,
     } = await setupTruefi2(owner, _provider, { lender, loanFactory }))
 
     const tx = await loanFactory.createLegacyLoanToken(usdcPool.address, borrower.address, parseUSDC(1000), YEAR, 1000)
