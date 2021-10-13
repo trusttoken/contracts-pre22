@@ -432,8 +432,7 @@ describe('CreditModel', () => {
         [63, 93],
         [31, 66],
       ].map(([score, effectiveScore]) =>
-        it(`staking ${collateral} TRU increases
-        score ${score} to ${effectiveScore}`, async () => {
+        it(`staking ${collateral} TRU increases score from ${score} to ${effectiveScore}`, async () => {
           expect(await creditModel.effectiveScore(score, mockPool.address, parseTRU(collateral), parseEth(borrowedAmount))).to.eq(effectiveScore)
         }))
     })
