@@ -22,6 +22,7 @@ import {
   TrueFiCreditOracle__factory,
   CollateralVault,
   TrueFiPool2,
+  BorrowingMutex,
 } from 'contracts'
 
 import { solidity } from 'ethereum-waffle'
@@ -68,6 +69,7 @@ describe('Liquidator2', () => {
   let tusdOracle: MockTrueFiPoolOracle
   let creditModel: CreditModel
   let collateralVault: CollateralVault
+  let borrowingMutex: BorrowingMutex
 
   let timeTravel: (time: number) => void
 
@@ -100,6 +102,7 @@ describe('Liquidator2', () => {
       standardTokenOracle: tusdOracle,
       creditModel,
       collateralVault,
+      borrowingMutex,
     } = await setupTruefi2(owner, _provider, { lender, loanFactory }))
 
     const tx = await loanFactory.createLegacyLoanToken(usdcPool.address, borrower.address, parseUSDC(1000), YEAR, 1000)
@@ -442,6 +445,17 @@ describe('Liquidator2', () => {
         await poolFactory.unsupportPool(usdcPool.address)
         await expect(liquidator.connect(assurance).liquidate([debtToken1.address, debtToken2.address]))
           .to.be.revertedWith('Liquidator: Pool not supported for default protection')
+      })
+
+      it('slashes whole collateral vault stake if anything was staked', async () => {
+        await tru.mint(borrower.address, parseTRU(100))
+        await tru.connect(borrower).approve(collateralVault.address, parseTRU(100))
+        await collateralVault.connect(borrower).stake(parseTRU(100))
+        await borrowingMutex.allowLocker(owner.address, true)
+        await borrowingMutex.lock(borrower.address, owner.address)
+        await borrowingMutex.ban(borrower.address)
+        await liquidator.connect(assurance).liquidate([debtToken1.address])
+        expect(await tru.balanceOf(assurance.address)).to.equal(parseTRU(100))
       })
 
       describe('transfers correct amount of tru to assurance contract', () => {
