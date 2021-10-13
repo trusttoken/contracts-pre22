@@ -410,6 +410,10 @@ describe('CreditModel', () => {
           expect(await creditModel.conservativeCollateralRatio(mockPool.address, parseTRU(collateral), parseEth(borrowed)))
             .to.equal(result * 100)
         }))
+
+      it('returns 0 if there is no collateral', async () => {
+        expect(await creditModel.conservativeCollateralRatio(mockPool.address, 0, 100)).to.equal(0)
+      })
     })
 
     describe('effectiveScore', () => {
@@ -435,6 +439,10 @@ describe('CreditModel', () => {
         it(`staking ${collateral} TRU increases score from ${score} to ${effectiveScore}`, async () => {
           expect(await creditModel.effectiveScore(score, mockPool.address, parseTRU(collateral), parseEth(borrowedAmount))).to.eq(effectiveScore)
         }))
+
+      it('returns unchanged score if there is no collateral', async () => {
+          expect(await creditModel.effectiveScore(191, mockPool.address, 0, 100)).to.eq(191)
+      })
     })
   })
 
