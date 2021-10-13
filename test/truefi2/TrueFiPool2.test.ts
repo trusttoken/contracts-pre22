@@ -21,7 +21,6 @@ import {
   TestTrueLender,
   TestTrueLender__factory,
   BorrowingMutex,
-  TestLegacyLoanToken2__factory,
 } from 'contracts'
 import { MockProvider, solidity } from 'ethereum-waffle'
 import { BigNumber, Wallet } from 'ethers'
@@ -32,7 +31,6 @@ import {
   setUtilization as _setUtilization,
   extractLegacyLoanToken,
   extractLoanTokenAddress,
-  createLoan,
   DAY,
   expectScaledCloseTo,
   setupTruefi2,
@@ -373,7 +371,6 @@ describe('TrueFiPool2', () => {
       await tusdPool.join(parseEth(1e7))
       const tx = ftlAgency.connect(borrower).borrow(tusdPool.address, 500000, DAY, 1000)
       loan = await extractLoanTokenAddress(tx, owner, loanFactory)
-      await loan.connect(borrower).withdraw(borrower.address)
       await timeTravel(DAY * 4)
       await loan.enterDefault()
       debt = await loan.debtToken()
@@ -456,9 +453,8 @@ describe('TrueFiPool2', () => {
       })
 
       it('when there are ongoing loans in both trueLender and FTLA, pool value contains both', async () => {
-        const legacyLoanImpl = await new TestLegacyLoanToken2__factory(owner).deploy()
-        await loanFactory.setLoanTokenImplementation(legacyLoanImpl.address)
-        const legacyLoan = TestLegacyLoanToken2__factory.connect((await createLoan(loanFactory, borrower, tusdPool, 500000, DAY, 1000)).address, owner)
+        const tx = await loanFactory.createLegacyLoanToken(tusdPool.address, borrower.address, 500000, DAY, 1000)
+        const legacyLoan = await extractLegacyLoanToken(tx, owner)
         await legacyLoan.setLender(lender.address)
         await tusd.mint(lender.address, 500000)
         await lender.connect(borrower).fund(legacyLoan.address)
@@ -476,7 +472,6 @@ describe('TrueFiPool2', () => {
       it('when pool has some deficiency value', async () => {
         const tx = ftlAgency.connect(borrower).borrow(tusdPool.address, 500000, DAY, 1000)
         loan = await extractLoanTokenAddress(tx, owner, loanFactory)
-        await loan.connect(borrower).withdraw(borrower.address)
         await timeTravel(DAY * 4)
         await loan.enterDefault()
         expect(await tusdPool.poolValue()).to.equal(joinAmount.add(136))
@@ -835,9 +830,8 @@ describe('TrueFiPool2', () => {
     })
 
     it('lender can repay', async () => {
-      const legacyLoanImpl = await new TestLegacyLoanToken2__factory(owner).deploy()
-      await loanFactory.setLoanTokenImplementation(legacyLoanImpl.address)
-      const legacyLoan = TestLegacyLoanToken2__factory.connect((await createLoan(loanFactory, borrower, tusdPool, 500000, DAY, 1000)).address, owner)
+      const tx = await loanFactory.createLegacyLoanToken(tusdPool.address, borrower.address, 500000, DAY, 1000)
+      const legacyLoan = await extractLegacyLoanToken(tx, owner)
       await legacyLoan.setLender(lender.address)
       await borrowingMutex.lock(borrower.address, legacyLoan.address)
       await tusd.mint(lender.address, 500000)
