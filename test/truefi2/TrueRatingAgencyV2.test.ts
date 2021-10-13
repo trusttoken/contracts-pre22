@@ -4,11 +4,11 @@ import { deployMockContract, solidity } from 'ethereum-waffle'
 
 import {
   beforeEachWithFixture,
+  createLegacyLoan,
   parseTRU,
   timeTravel as _timeTravel,
   expectScaledCloseTo,
   expectBalanceChangeCloseTo,
-  extractLegacyLoanToken,
   parseEth,
   parseUSDC,
   DAY,
@@ -98,9 +98,7 @@ describe('TrueRatingAgencyV2', () => {
 
     await rater.setRatersRewardFactor(10000)
 
-    const tx = await loanFactory.createLegacyLoanToken(tusdPool.address, owner.address, 5_000_000, yearInSeconds * 2, 1000)
-    loanToken = await extractLegacyLoanToken(tx, owner)
-    await loanToken.setLender(lender.address)
+    loanToken = await createLegacyLoan(loanFactory, tusdPool, lender, owner, owner, 5_000_000, yearInSeconds * 2, 1000)
 
     await tusd.approve(loanToken.address, 5_000_000)
 
@@ -183,9 +181,7 @@ describe('TrueRatingAgencyV2', () => {
   describe('Claim', () => {
     const rewardMultiplier = 1
     beforeEach(async () => {
-      const tx = await loanFactory.createLegacyLoanToken(tusdPool.address, owner.address, parseEth(5e6), yearInSeconds * 2, 100)
-      loanToken = await extractLegacyLoanToken(tx, owner)
-      await loanToken.setLender(lender.address)
+      loanToken = await createLegacyLoan(loanFactory, tusdPool, lender, owner, owner, parseEth(5e6), yearInSeconds * 2, 100)
 
       await trustToken.mint(otherWallet.address, parseTRU(15e7))
       await trustToken.connect(otherWallet).approve(stakedTrustToken.address, parseTRU(15e7))
