@@ -5,6 +5,8 @@ import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
+import {ILiquidator2} from "./interface/ILiquidator2.sol";
+import {ILoanToken2Deprecated} from "./deprecated/ILoanToken2Deprecated.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {IStakingPool} from "../truefi/interface/IStakingPool.sol";
@@ -20,7 +22,7 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
  * @dev When a Loan becomes defaulted, Liquidator allows to
  * compensate pool participants, by transferring some of TRU to the pool
  */
-contract Liquidator2 is UpgradeableClaimable {
+contract Liquidator2 is ILiquidator2, UpgradeableClaimable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -59,6 +61,8 @@ contract Liquidator2 is UpgradeableClaimable {
      * @param newShare New share set
      */
     event FetchMaxShareChanged(uint256 newShare);
+
+    event LegacyLiquidated(ILoanToken2Deprecated legacyLoan, uint256 defaultedValue, uint256 withdrawnTru);
 
     /**
      * @dev Emitted when debts are liquidated
@@ -142,12 +146,24 @@ contract Liquidator2 is UpgradeableClaimable {
         emit FetchMaxShareChanged(newShare);
     }
 
+    function legacyLiquidate(ILoanToken2Deprecated loan) external override {
+        require(msg.sender == SAFU, "Liquidator: Only SAFU contract can liquidate a loan");
+        require(loanFactory.isLegacyLoanToken(loan), "Liquidator: Unknown loan");
+        require(loan.status() == ILoanToken2Deprecated.Status.Defaulted, "Liquidator: Loan must be defaulted");
+        uint256 defaultedValue = loan.debt().sub(loan.repaid());
+        uint256 withdrawnTru = getLegacyAmountToWithdraw(defaultedValue, loan.pool().oracle());
+        stkTru.withdraw(withdrawnTru);
+        loan.liquidate();
+        tru.safeTransfer(SAFU, withdrawnTru);
+        emit LegacyLiquidated(loan, defaultedValue, withdrawnTru);
+    }
+
     /**
      * @dev Liquidates a defaulted Debt, withdraws a portion of tru from staking pool
      * then transfers tru to TrueFiPool as compensation
      * @param debts Debts to be liquidated
      */
-    function liquidate(IDebtToken[] calldata debts) external {
+    function liquidate(IDebtToken[] calldata debts) external override {
         require(msg.sender == SAFU, "Liquidator: Only SAFU contract can liquidate a debt");
         require(debts.length > 0, "Liquidator: List of provided debts is empty");
         require(
@@ -177,6 +193,13 @@ contract Liquidator2 is UpgradeableClaimable {
 
         tru.safeTransfer(SAFU, withdrawnTru);
         emit Liquidated(debts, totalDefaultedValue, withdrawnTru);
+    }
+
+    function getLegacyAmountToWithdraw(uint256 deficit, ITrueFiPoolOracle oracle) internal view returns (uint256) {
+        uint256 stakingPoolSupply = stkTru.stakeSupply();
+        uint256 maxWithdrawValue = stakingPoolSupply.mul(fetchMaxShare).div(BASIS_RATIO);
+        uint256 deficitInTru = oracle.tokenToTru(deficit);
+        return maxWithdrawValue > deficitInTru ? deficitInTru : maxWithdrawValue;
     }
 
     /**

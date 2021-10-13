@@ -1,11 +1,17 @@
-import { ContractTransaction, Wallet } from 'ethers'
+import { ContractTransaction, Signer } from 'ethers'
 import {
   DebtToken__factory,
   LoanFactory2,
   LoanToken2__factory,
+  TestLegacyLoanToken2__factory,
 } from 'contracts'
 
-export async function extractLoanTokenAddress (pendingTx: Promise<ContractTransaction>, owner: Wallet, loanFactory: LoanFactory2) {
+export async function extractLegacyLoanToken (tx: ContractTransaction, owner: Signer) {
+  const receipt = await tx.wait()
+  return TestLegacyLoanToken2__factory.connect(receipt.events[0].args[0], owner)
+}
+
+export async function extractLoanTokenAddress (pendingTx: Promise<ContractTransaction>, owner: Signer, loanFactory: LoanFactory2) {
   const tx = await pendingTx
   const receipt = await tx.wait()
   const iface = loanFactory.interface
@@ -16,7 +22,7 @@ export async function extractLoanTokenAddress (pendingTx: Promise<ContractTransa
     .args.loanToken, owner)
 }
 
-export async function extractDebtTokens (loanFactory: LoanFactory2, owner: Wallet, pendingTx: Promise<ContractTransaction>) {
+export async function extractDebtTokens (loanFactory: LoanFactory2, owner: Signer, pendingTx: Promise<ContractTransaction>) {
   const tx = await pendingTx
   const receipt = await tx.wait()
   const iface = loanFactory.interface

@@ -53,7 +53,7 @@ describe('CollateralVault', () => {
     await tru.mint(borrower.address, parseTRU(100))
     await tru.connect(borrower).approve(collateralVault.address, parseTRU(100))
 
-    await liquidator.setsafu(safu.address)
+    await liquidator.setAssurance(safu.address)
   })
 
   describe('initializer', () => {
@@ -153,6 +153,7 @@ describe('CollateralVault', () => {
     beforeEach(async () => {
       await collateralVault.connect(borrower).stake(parseTRU(100))
       debtToken = await createDebtToken(loanFactory, owner, owner, pool, borrower, parseUSDC(1000))
+      await borrowingMutex.lock(borrower.address, owner.address)
     })
 
     describe('reverts if', () => {

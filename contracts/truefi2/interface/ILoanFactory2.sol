@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
+import {ILoanToken2Deprecated} from "../deprecated/ILoanToken2Deprecated.sol";
 import {ILoanToken2} from "./ILoanToken2.sol";
 import {IDebtToken} from "./IDebtToken.sol";
 import {ITrueFiPool2} from "./ITrueFiPool2.sol";
@@ -21,6 +22,8 @@ interface ILoanFactory2 {
     ) external returns (IDebtToken);
 
     function isCreatedByFactory(address) external view returns (bool);
+
+    function isLegacyLoanToken(ILoanToken2Deprecated) external view returns (bool);
 
     function isLoanToken(ILoanToken2) external view returns (bool);
 
