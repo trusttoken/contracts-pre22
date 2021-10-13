@@ -286,7 +286,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * Funds stored on the contract's address plus funds already redeemed by lenders
      * @return Uint256 representing what value was already repaid
      */
-    function repaid() public override view returns (uint256) {
+    function repaid() public view returns (uint256) {
         return balance().add(redeemed);
     }
 

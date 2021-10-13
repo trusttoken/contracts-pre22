@@ -10,9 +10,6 @@ interface ILoanToken2 is IERC20 {
 
     function profit() external view returns (uint256);
 
-    // TODO unpaidDebt = debt - repaid
-    function repaid() external view returns (uint256);
-
     // TODO redeem() all of token balance
     function redeem(uint256 _amount) external;
 
