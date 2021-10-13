@@ -24,7 +24,7 @@ use(solidity)
 describe('CollateralVault', () => {
   let owner: Wallet
   let borrower: Wallet
-  let assurance: Wallet
+  let safu: Wallet
 
   let tru: MockTrueCurrency
   let borrowingMutex: BorrowingMutex
@@ -36,7 +36,7 @@ describe('CollateralVault', () => {
   let collateralVault: CollateralVault
 
   beforeEachWithFixture(async (wallets, _provider) => {
-    [owner, borrower, assurance] = wallets
+    [owner, borrower, safu] = wallets
 
     ; ({
       tru,
@@ -53,7 +53,7 @@ describe('CollateralVault', () => {
     await tru.mint(borrower.address, parseTRU(100))
     await tru.connect(borrower).approve(collateralVault.address, parseTRU(100))
 
-    await liquidator.setAssurance(assurance.address)
+    await liquidator.setsafu(safu.address)
   })
 
   describe('initializer', () => {
@@ -162,26 +162,26 @@ describe('CollateralVault', () => {
       })
 
       it('borrower is not banned', async () => {
-        await expect(liquidator.connect(assurance).liquidate([debtToken.address]))
+        await expect(liquidator.connect(safu).liquidate([debtToken.address]))
           .to.be.revertedWith('CollateralVault: Borrower has to be banned')
       })
     })
 
     it('reduces staked amount to 0', async () => {
       await borrowingMutex.ban(borrower.address)
-      await liquidator.connect(assurance).liquidate([debtToken.address])
+      await liquidator.connect(safu).liquidate([debtToken.address])
       await expect(await collateralVault.stakedAmount(borrower.address)).to.eq(0)
     })
 
-    it('transfers staked tru to assurance', async () => {
+    it('transfers staked tru to safu', async () => {
       await borrowingMutex.ban(borrower.address)
-      await expect(() => liquidator.connect(assurance).liquidate([debtToken.address]))
-        .to.changeTokenBalance(tru, assurance, parseTRU(100))
+      await expect(() => liquidator.connect(safu).liquidate([debtToken.address]))
+        .to.changeTokenBalance(tru, safu, parseTRU(100))
     })
 
     it('emits event', async () => {
       await borrowingMutex.ban(borrower.address)
-      await expect(liquidator.connect(assurance).liquidate([debtToken.address]))
+      await expect(liquidator.connect(safu).liquidate([debtToken.address]))
         .to.emit(collateralVault, 'Slashed')
         .withArgs(borrower.address, parseTRU(100))
     })
