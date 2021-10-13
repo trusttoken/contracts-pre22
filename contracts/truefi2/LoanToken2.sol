@@ -235,15 +235,16 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     /**
      * @dev Redeem LoanToken balances for underlying token
      * Can only call this function after the loan is Closed
-     * @param _amount amount to redeem
      */
-    function redeem(uint256 _amount) external override onlySettledOrDefaulted {
-        uint256 amountToReturn = _amount.mul(balance()).div(totalSupply());
-        redeemed = redeemed.add(amountToReturn);
-        _burn(msg.sender, _amount);
-        token.safeTransfer(msg.sender, amountToReturn);
+    function redeem() external override onlySettledOrDefaulted {
+        uint256 loanRedeemAmount = balanceOf(msg.sender);
+        uint256 tokenRedeemAmount = loanRedeemAmount.mul(balance()).div(totalSupply());
+        redeemed = redeemed.add(tokenRedeemAmount);
 
-        emit Redeemed(msg.sender, _amount, amountToReturn);
+        _burn(msg.sender, loanRedeemAmount);
+        token.safeTransfer(msg.sender, tokenRedeemAmount);
+
+        emit Redeemed(msg.sender, loanRedeemAmount, tokenRedeemAmount);
     }
 
     /**

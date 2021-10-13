@@ -447,7 +447,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
     ) internal returns (uint256) {
         // call redeem function on LoanToken
         uint256 balanceBefore = pool.token().balanceOf(address(this));
-        loanToken.redeem(loanToken.balanceOf(address(this)));
+        loanToken.redeem();
         uint256 balanceAfter = pool.token().balanceOf(address(this));
 
         // gets reclaimed amount and pays back to pool
