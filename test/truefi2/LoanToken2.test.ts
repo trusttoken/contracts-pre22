@@ -173,12 +173,11 @@ describe('LoanToken2', () => {
       expect(await loanToken.status()).to.equal(LoanTokenStatus.Defaulted)
     })
 
-    it('reverts when closing right after funding', async () => {
+    it('reverts when closing right after creation', async () => {
       await expect(loanToken.enterDefault()).to.be.revertedWith('LoanToken2: Loan cannot be defaulted yet')
     })
 
     it('reverts when closing ongoing loan', async () => {
-      await expect(loanToken.enterDefault()).to.be.revertedWith('LoanToken2: Loan cannot be defaulted yet')
       await timeTravel(provider, yearInSeconds - 10)
       await expect(loanToken.enterDefault()).to.be.revertedWith('LoanToken2: Loan cannot be defaulted yet')
     })
