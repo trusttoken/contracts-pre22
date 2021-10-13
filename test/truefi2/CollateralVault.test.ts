@@ -160,7 +160,7 @@ describe('CollateralVault', () => {
       it('cannot unstake if as a result borrowed amount exceeds borrow limit', async () => {
         expect(await collateralVault.canUnstake(borrower.address, parseTRU(60))).to.be.false
         await expect(collateralVault.connect(borrower).unstake(parseTRU(60)))
-          .to.be.revertedWith('CollateralVault: cannot unstake')
+          .to.be.revertedWith('CollateralVault: Cannot unstake')
       })
     })
   })
