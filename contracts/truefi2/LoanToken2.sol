@@ -38,21 +38,22 @@ contract LoanToken2 is ILoanToken2, ERC20 {
 
     uint256 private constant APY_PRECISION = 10000;
 
-    address public override borrower;
-    uint256 public override amount;
-    uint256 public override term;
+    address public borrower;
+    uint256 public overrride amount;
+    uint256 public term;
 
     // apy precision: 10000 = 100%
-    uint256 public override apy;
+    uint256 public apy;
 
-    uint256 public override start;
+    uint256 public start;
     uint256 public override debt;
 
     uint256 public redeemed;
 
     Status public override status;
 
-    ERC20 public override token;
+    // TODO IERC20WithDecimals
+    ERC20 public token;
 
     ITrueFiPool2 public override pool;
 
@@ -164,7 +165,6 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      */
     function getParameters()
         external
-        override
         view
         returns (
             uint256,
@@ -204,7 +204,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     /**
      * @dev Settle the loan after checking it has been repaid
      */
-    function settle() public override onlyWithdrawn {
+    function settle() public onlyWithdrawn {
         require(isRepaid(), "LoanToken2: loan must be repaid to settle");
         status = Status.Settled;
 
@@ -216,7 +216,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     /**
      * @dev Default the loan if it has not been repaid by the end of term
      */
-    function enterDefault() external override onlyWithdrawn {
+    function enterDefault() external onlyWithdrawn {
         require(!isRepaid(), "LoanToken2: cannot default a repaid loan");
         require(start.add(term).add(creditOracle.gracePeriod()) <= block.timestamp, "LoanToken2: Loan cannot be defaulted yet");
         status = Status.Defaulted;
@@ -252,7 +252,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @param _sender account sending token to repay
      * @param _amount amount of token to repay
      */
-    function repay(address _sender, uint256 _amount) external override {
+    function repay(address _sender, uint256 _amount) external {
         _repay(_sender, _amount);
     }
 
@@ -261,7 +261,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * Borrower should use this to ensure full repayment
      * @param _sender account sending token to repay
      */
-    function repayInFull(address _sender) external override {
+    function repayInFull(address _sender) external {
         _repay(_sender, debt.sub(balance()));
     }
 
@@ -294,7 +294,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @dev Check whether an ongoing loan has been repaid in full
      * @return true if and only if this loan has been repaid
      */
-    function isRepaid() public override view onlyWithdrawn returns (bool) {
+    function isRepaid() public view onlyWithdrawn returns (bool) {
         return balance() >= debt;
     }
 
@@ -302,7 +302,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @dev Public currency token balance function
      * @return token balance of this contract
      */
-    function balance() public override view returns (uint256) {
+    function balance() public view returns (uint256) {
         return token.balanceOf(address(this));
     }
 
@@ -338,15 +338,11 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         return super._transfer(sender, recipient, _amount);
     }
 
-    function version() external override pure returns (uint8) {
+    function version() external pure returns (uint8) {
         return 7;
     }
 
     function decimals() public override view returns (uint8) {
         return token.decimals();
-    }
-
-    function lender() external override view returns (address) {
-        return address(ftlAgency);
     }
 }
