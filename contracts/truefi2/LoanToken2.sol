@@ -39,7 +39,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     uint256 private constant APY_PRECISION = 10000;
 
     address public borrower;
-    uint256 public overrride amount;
+    uint256 public amount;
     uint256 public term;
 
     // apy precision: 10000 = 100%

@@ -8,9 +8,6 @@ import {ITrueFiPool2} from "./ITrueFiPool2.sol";
 interface ILoanToken2 is IERC20 {
     enum Status {Withdrawn, Settled, Defaulted}
 
-    // TODO refactor FTLA _swapFee() to profit() and then remove this
-    function amount() external view returns (uint256);
-
     function profit() external view returns (uint256);
 
     // TODO unpaidDebt = debt - repaid
