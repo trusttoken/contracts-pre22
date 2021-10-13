@@ -1,9 +1,8 @@
 import { expect, use } from 'chai'
 import {
   beforeEachWithFixture,
-  createLegacyLoan as _createLegacyLoan,
-  createLoan,
   DAY,
+  extractLegacyLoanToken,
   parseEth,
   parseTRU,
   parseUSDC,
@@ -13,7 +12,6 @@ import {
 import { deployContract } from 'scripts/utils/deployContract'
 import {
   BorrowingMutex,
-  LoanFactory2,
   TestLegacyLoanToken2,
   Mock1InchV3,
   Mock1InchV3__factory,
@@ -24,6 +22,8 @@ import {
   MockUsdc,
   PoolFactory,
   StkTruToken,
+  TestLoanFactory,
+  TestLoanFactory__factory,
   TestTrueLender,
   TestTrueLender__factory,
   TrueFiCreditOracle,
@@ -44,7 +44,7 @@ describe('TrueLender2', () => {
   let owner: Wallet
   let borrower: Wallet
 
-  let loanFactory: LoanFactory2
+  let loanFactory: TestLoanFactory
   let loan1: TestLegacyLoanToken2
   let loan2: TestLegacyLoanToken2
   let pool1: TrueFiPool2
@@ -71,13 +71,12 @@ describe('TrueLender2', () => {
 
   let timeTravel: (time: number) => void
 
-  const createLegacyLoan = (...args: Parameters<typeof createLoan>) => _createLegacyLoan(lender, ...args)
-
   beforeEachWithFixture(async (wallets, _provider) => {
     ([owner, borrower] = wallets)
     timeTravel = (time: number) => _timeTravel(_provider, time)
 
     lender = await deployContract(owner, TestTrueLender__factory)
+    loanFactory = await deployContract(owner, TestLoanFactory__factory)
     oneInch = await new Mock1InchV3__factory(owner).deploy()
 
     ; ({
@@ -91,7 +90,7 @@ describe('TrueLender2', () => {
       lender,
       creditOracle,
       borrowingMutex,
-    } = await setupTruefi2(owner, _provider, { lender: lender, oneInch: oneInch }))
+    } = await setupTruefi2(owner, _provider, { lender: lender, loanFactory: loanFactory, oneInch: oneInch }))
 
     const legacyLtImpl = await deployContract(owner, TestLegacyLoanToken2__factory)
     await loanFactory.setLoanTokenImplementation(legacyLtImpl.address)
@@ -131,9 +130,14 @@ describe('TrueLender2', () => {
     await tru.approve(stkTru.address, parseTRU(15e6))
     await stkTru.stake(parseTRU(15e6))
     await timeTravel(1)
-    loan1 = await createLegacyLoan(loanFactory, borrower, pool1, 100000, YEAR, 100)
 
-    loan2 = await createLegacyLoan(loanFactory, borrower, pool2, 500000, YEAR, 1000)
+    const tx1 = await loanFactory.createLegacyLoanToken(pool1.address, borrower.address, 100000, YEAR, 100)
+    loan1 = await extractLegacyLoanToken(tx1, owner)
+    await loan1.setLender(lender.address)
+
+    const tx2 = await loanFactory.createLegacyLoanToken(pool2.address, borrower.address, 500000, YEAR, 1000)
+    loan2 = await extractLegacyLoanToken(tx2, owner)
+    await loan2.setLender(lender.address)
 
     await creditOracle.setCreditUpdatePeriod(YEAR)
     await creditOracle.setScore(borrower.address, 255)
@@ -201,7 +205,9 @@ describe('TrueLender2', () => {
 
   describe('value', () => {
     beforeEach(async () => {
-      const newLoan1 = await createLegacyLoan(loanFactory, borrower, pool1, 100000, DAY, 100)
+      const tx = await loanFactory.createLegacyLoanToken(pool1.address, borrower.address, 100000, DAY, 100)
+      const newLoan1 = await extractLegacyLoanToken(tx, owner)
+      await newLoan1.setLender(lender.address)
 
       await lender.connect(borrower).fund(loan1.address)
       await lender.connect(borrower).fund(newLoan1.address)
@@ -299,7 +305,9 @@ describe('TrueLender2', () => {
         await payBack(token1, loan1)
         await loan1.settle()
 
-        newLoan1 = await createLegacyLoan(loanFactory, borrower, pool1, 100000, DAY, 100)
+        const tx = await loanFactory.createLegacyLoanToken(pool1.address, borrower.address, 100000, DAY, 100)
+        newLoan1 = await extractLegacyLoanToken(tx, owner)
+        await newLoan1.setLender(lender.address)
 
         await lender.connect(borrower).fund(newLoan1.address)
         await lender.connect(borrower).fund(loan2.address)
@@ -336,7 +344,9 @@ describe('TrueLender2', () => {
         await mockMutex.mock.lock.returns()
         await mockMutex.mock.unlock.returns()
 
-        newLoan1 = await createLegacyLoan(loanFactory, borrower, pool1, parseEth(100000), YEAR, 100)
+        const tx = await loanFactory.createLegacyLoanToken(pool1.address, borrower.address, parseEth(100000), YEAR, 100)
+        newLoan1 = await extractLegacyLoanToken(tx, owner)
+        await newLoan1.setLender(lender.address)
         await lender.connect(borrower).fund(newLoan1.address)
 
         await lender.setFee(1000)
@@ -421,7 +431,9 @@ describe('TrueLender2', () => {
       await mockMutex.mock.unlock.returns()
 
       for (let i = 0; i < 5; i++) {
-        const newLoan1 = await createLegacyLoan(loanFactory, borrower, pool1, 100000, DAY, 100)
+        const tx = await loanFactory.createLegacyLoanToken(pool1.address, borrower.address, 100000, DAY, 100)
+        const newLoan1 = await extractLegacyLoanToken(tx, owner)
+        await newLoan1.setLender(lender.address)
 
         loanTokens.push(newLoan1)
         await lender.connect(borrower).fund(newLoan1.address)

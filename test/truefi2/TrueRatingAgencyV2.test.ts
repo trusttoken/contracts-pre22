@@ -8,11 +8,11 @@ import {
   timeTravel as _timeTravel,
   expectScaledCloseTo,
   expectBalanceChangeCloseTo,
+  extractLegacyLoanToken,
   parseEth,
   parseUSDC,
   DAY,
   setupTruefi2,
-  createLegacyLoan,
 } from 'utils'
 
 import {
@@ -22,8 +22,9 @@ import {
   StkTruToken,
   ArbitraryDistributor,
   MockUsdc,
-  LoanFactory2,
   TrueFiPool2,
+  TestLoanFactory,
+  TestLoanFactory__factory,
   TestTrueLender,
   TestTrueLender__factory,
   TrueFiCreditOracle,
@@ -54,7 +55,7 @@ describe('TrueRatingAgencyV2', () => {
 
   let lender: TestTrueLender
   let loanToken: TestLegacyLoanToken2
-  let loanFactory: LoanFactory2
+  let loanFactory: TestLoanFactory
   let tusdPool: TrueFiPool2
   let usdcPool: TrueFiPool2
 
@@ -77,6 +78,7 @@ describe('TrueRatingAgencyV2', () => {
     rater = await deployContract(TestTrueRatingAgencyV2__factory)
 
     lender = await new TestTrueLender__factory(owner).deploy()
+    loanFactory = await new TestLoanFactory__factory(owner).deploy()
 
     ; ({
       tru: trustToken,
@@ -89,14 +91,16 @@ describe('TrueRatingAgencyV2', () => {
       feePool: usdcPool,
       standardPool: tusdPool,
       creditOracle,
-    } = await setupTruefi2(owner, _provider, { lender: lender, rater: rater }))
+    } = await setupTruefi2(owner, _provider, { lender: lender, loanFactory: loanFactory, rater: rater }))
 
     const legacyLtImpl = await deployContract(TestLegacyLoanToken2__factory)
     await loanFactory.setLoanTokenImplementation(legacyLtImpl.address)
 
     await rater.setRatersRewardFactor(10000)
 
-    loanToken = await createLegacyLoan(lender, loanFactory, owner, tusdPool, 5_000_000, yearInSeconds * 2, 1000)
+    const tx = await loanFactory.createLegacyLoanToken(tusdPool.address, owner.address, 5_000_000, yearInSeconds * 2, 1000)
+    loanToken = await extractLegacyLoanToken(tx, owner)
+    await loanToken.setLender(lender.address)
 
     await tusd.approve(loanToken.address, 5_000_000)
 
@@ -179,7 +183,9 @@ describe('TrueRatingAgencyV2', () => {
   describe('Claim', () => {
     const rewardMultiplier = 1
     beforeEach(async () => {
-      loanToken = await createLegacyLoan(lender, loanFactory, owner, tusdPool, parseEth(5e6), yearInSeconds * 2, 100)
+      const tx = await loanFactory.createLegacyLoanToken(tusdPool.address, owner.address, parseEth(5e6), yearInSeconds * 2, 100)
+      loanToken = await extractLegacyLoanToken(tx, owner)
+      await loanToken.setLender(lender.address)
 
       await trustToken.mint(otherWallet.address, parseTRU(15e7))
       await trustToken.connect(otherWallet).approve(stakedTrustToken.address, parseTRU(15e7))
