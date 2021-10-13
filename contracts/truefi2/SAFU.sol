@@ -176,10 +176,10 @@ contract SAFU is ISAFU, UpgradeableClaimable {
         require(loanFactory.isLegacyLoanToken(loan), "SAFU: Unknown loan");
 
         address poolAddress = address(loan.pool());
-        require(msg.sender == poolAddress, "SAFU: caller is not the debt's pool");
-        require(tokenBalance(loan) == 0, "SAFU: Debt has to be fully redeemed by SAFU");
+        require(msg.sender == poolAddress, "SAFU: caller is not the loan's pool");
+        require(tokenBalance(loan) == 0, "SAFU: Loan has to be fully redeemed by SAFU");
         IDeficiencyToken dToken = legacyDeficiencyToken[loan];
-        require(address(dToken) != address(0), "SAFU: No deficiency token found for debt");
+        require(address(dToken) != address(0), "SAFU: No deficiency token found for loan");
         require(dToken.balanceOf(poolAddress) > 0, "SAFU: Pool does not have deficiency tokens to be reclaimed");
 
         poolDeficit[poolAddress] = poolDeficit[poolAddress].sub(amount);
@@ -223,10 +223,6 @@ contract SAFU is ISAFU, UpgradeableClaimable {
     }
 
     function _poolLiquidate(ITrueFiPool2 pool, IDebtToken debt) internal {
-        // For legacy LoanTokens:
-        if (loanFactory.isLoanToken(ILoanToken2(address(debt)))) {
-            pool.liquidateLoan(debt);
-        }
         if (loanFactory.isDebtToken(debt)) {
             pool.liquidateDebt(debt);
         }

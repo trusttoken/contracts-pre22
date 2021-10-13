@@ -660,7 +660,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
 
     function reclaimLegacyDeficit(ILoanToken2Deprecated loan) external {
         IDeficiencyToken dToken = safu.legacyDeficiencyToken(loan);
-        require(address(dToken) != address(0), "TrueFiPool2: No deficiency token found for debt");
+        require(address(dToken) != address(0), "TrueFiPool2: No deficiency token found for loan");
         uint256 deficit = dToken.balanceOf(address(this));
         dToken.safeApprove(address(safu), deficit);
         safu.legacyReclaim(loan, deficit);

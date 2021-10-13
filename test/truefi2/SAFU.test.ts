@@ -394,18 +394,18 @@ describe('SAFU', () => {
 
       it('caller is not loan pool', async () => {
         await expect(safu.connect(voter).legacyReclaim(loan.address, 100))
-          .to.be.revertedWith('SAFU: caller is not the debt\'s pool')
+          .to.be.revertedWith('SAFU: caller is not the loan\'s pool')
       })
 
       it('loan was not fully redeemed by safu', async () => {
         await expect(pool.reclaimLegacyDeficit(loan.address))
-          .to.be.revertedWith('SAFU: Debt has to be fully redeemed by SAFU')
+          .to.be.revertedWith('SAFU: Loan has to be fully redeemed by SAFU')
       })
 
       it('loan does not have an associated deficiency token', async () => {
         const noSAFULoan = await createLoan(loanFactory, borrower, pool, parseUSDC(1000), YEAR, 1000)
         await expect(pool.reclaimLegacyDeficit(noSAFULoan.address))
-          .to.be.revertedWith('TrueFiPool2: No deficiency token found for debt')
+          .to.be.revertedWith('TrueFiPool2: No deficiency token found for loan')
       })
 
       it('caller does not have deficit tokens', async () => {
