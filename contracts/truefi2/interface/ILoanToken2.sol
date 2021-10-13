@@ -15,7 +15,6 @@ interface ILoanToken2 is IERC20 {
 
     function debt() external view returns (uint256);
 
-    // TODO refactor uses
     function status() external view returns (Status);
 
     function pool() external view returns (ITrueFiPool2);

@@ -374,15 +374,14 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
      * @param loanToken Loan to reclaim capital from (must be previously funded)
      */
     function reclaim(ILoanToken2 loanToken, bytes calldata data) external {
-        ITrueFiPool2 pool = loanToken.pool();
         ILoanToken2.Status status = loanToken.status();
-        require(status >= ILoanToken2.Status.Settled, "FixedTermLoanAgency: LoanToken is not closed yet");
-
-        if (status != ILoanToken2.Status.Settled) {
+        require(status == ILoanToken2.Status.Settled || status == ILoanToken2.Status.Defaulted, "FixedTermLoanAgency: LoanToken is not closed yet");
+        if (status == ILoanToken2.Status.Defaulted) {
             require(msg.sender == owner(), "FixedTermLoanAgency: Only owner can reclaim from defaulted loan");
         }
 
         // find the token, repay loan and remove loan from loan array
+        ITrueFiPool2 pool = loanToken.pool();
         ILoanToken2[] storage _loans = poolLoans[pool];
         for (uint256 index = 0; index < _loans.length; index++) {
             if (_loans[index] == loanToken) {
