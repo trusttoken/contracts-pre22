@@ -38,6 +38,8 @@ contract CollateralVault is ICollateralVault, UpgradeableClaimable {
 
     event Unstaked(address borrower, uint256 amount);
 
+    event Slashed(address borrower, uint256 amount);
+
     function initialize(
         IERC20WithDecimals _stakedToken,
         IBorrowingMutex _borrowingMutex,
@@ -62,7 +64,7 @@ contract CollateralVault is ICollateralVault, UpgradeableClaimable {
     }
 
     function unstake(uint256 amount) external {
-        require(canUnstake(msg.sender, amount), "CollateralVault: cannot unstake");
+        require(canUnstake(msg.sender, amount), "CollateralVault: Cannot unstake");
 
         stakedAmount[msg.sender] = stakedAmount[msg.sender].sub(amount);
         stakedToken.safeTransfer(msg.sender, amount);
@@ -70,11 +72,16 @@ contract CollateralVault is ICollateralVault, UpgradeableClaimable {
     }
 
     function slash(address borrower) external override {
-        // require(msg.sender == liquidator)
-        // require(borrowingMutex.isBanned(borrower))
-        // transfer stakedAmount() to liquidator
-        require(borrower == address(stakedToken)); // silence lint and build warnings
-        revert("Unimplemented!");
+        require(msg.sender == address(liquidator), "CollateralVault: Caller is not the liquidator");
+        uint256 slashedAmount = stakedAmount[borrower];
+        if (slashedAmount == 0) {
+            return;
+        }
+        require(borrowingMutex.isBanned(borrower), "CollateralVault: Borrower has to be banned");
+
+        stakedAmount[borrower] = 0;
+        stakedToken.safeTransfer(msg.sender, slashedAmount);
+        emit Slashed(borrower, slashedAmount);
     }
 
     function canUnstake(address borrower, uint256 amount) public view returns (bool) {

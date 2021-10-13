@@ -33,6 +33,7 @@ import {
   Safu,
   Safu__factory,
   BorrowingMutex__factory,
+  CollateralVault__factory,
 } from 'contracts'
 import { ICurveGaugeJson, ICurveMinterJson, TrueRatingAgencyV2Json } from 'build'
 import { AddressZero } from '@ethersproject/constants'
@@ -516,7 +517,9 @@ describe('TrueFiPool', () => {
     const loanFactory2 = await new LoanFactory2__factory(owner).deploy()
     const liquidator2 = await new Liquidator2__factory(owner).deploy()
     await loanFactory2.initialize(AddressZero, liquidator2.address, AddressZero, borrowingMutex.address, AddressZero)
-    await liquidator2.initialize(mockStakingPool.address, trustToken.address, loanFactory2.address, AddressZero, owner.address, AddressZero)
+    const collateralVault = await new CollateralVault__factory(owner).deploy()
+    collateralVault.initialize(AddressZero, borrowingMutex.address, AddressZero, liquidator2.address)
+    await liquidator2.initialize(mockStakingPool.address, trustToken.address, loanFactory2.address, AddressZero, owner.address, AddressZero, collateralVault.address)
 
     return { lender2, loanFactory2, liquidator2 }
   }

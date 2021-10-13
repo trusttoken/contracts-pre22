@@ -6,6 +6,7 @@ import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 
 import {IFixedTermLoanAgency} from "./interface/IFixedTermLoanAgency.sol";
 import {Initializable} from "../common/Initializable.sol";
+import {ILoanToken2Deprecated} from "./deprecated/ILoanToken2Deprecated.sol";
 import {ILoanToken2} from "./interface/ILoanToken2.sol";
 import {IDebtToken} from "./interface/IDebtToken.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
@@ -32,8 +33,8 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     // REMOVAL OR REORDER OF VARIABLES WILL RESULT
     // ========= IN STORAGE CORRUPTION ===========
 
-    // @dev Track Valid LoanTokens
-    mapping(ILoanToken2 => bool) public override isLoanToken;
+    // @dev Track legacy LoanTokens
+    mapping(ILoanToken2Deprecated => bool) public override isLegacyLoanToken;
 
     address private DEPRECATED__poolFactory;
     address private DEPRECATED__lender;
@@ -52,6 +53,8 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     mapping(IDebtToken => bool) public override isDebtToken;
 
     IFixedTermLoanAgency public ftlAgency;
+
+    mapping(ILoanToken2 => bool) public override isLoanToken;
 
     // ======= STORAGE DECLARATION END ============
 

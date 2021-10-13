@@ -10,6 +10,7 @@ import {
   LinearTrueDistributor__factory,
   Liquidator2__factory,
   LoanToken2__factory,
+  LoanFactory2,
   LoanFactory2__factory,
   MockTrueCurrency__factory,
   MockTrueFiPoolOracle__factory,
@@ -18,6 +19,7 @@ import {
   Safu__factory,
   StkTruToken__factory,
   TestFixedTermLoanAgency,
+  TestLoanFactory,
   TestTrueLender,
   TimeAveragedBaseRateOracle,
   TimeAveragedBaseRateOracle__factory,
@@ -53,7 +55,7 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
 
   // ====== DEPLOY ======
   const liquidator = await deployContract(Liquidator2__factory)
-  const loanFactory = await deployContract(LoanFactory2__factory)
+  const loanFactory: LoanFactory2 & TestLoanFactory = customDeployed?.loanFactory ? customDeployed.loanFactory : await deployContract(LoanFactory2__factory)
   const rater: TrueRatingAgencyV2 & TestTrueRatingAgencyV2 = customDeployed?.rater ? customDeployed.rater : await deployContract(TrueRatingAgencyV2__factory)
   const lender: TrueLender2 & TestTrueLender = customDeployed?.lender ? customDeployed.lender : await deployContract(TrueLender2__factory)
   const ftlAgency: FixedTermLoanAgency & TestFixedTermLoanAgency = customDeployed?.ftlAgency ? customDeployed.ftlAgency : await deployContract(FixedTermLoanAgency__factory)
@@ -82,7 +84,7 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
   const arbitraryDistributor = await deployContract(ArbitraryDistributor__factory)
 
   // ====== SETUP ======
-  await liquidator.initialize(stkTru.address, tru.address, loanFactory.address, poolFactory.address, safu.address, standardTokenOracle.address)
+  await liquidator.initialize(stkTru.address, tru.address, loanFactory.address, poolFactory.address, safu.address, standardTokenOracle.address, collateralVault.address)
   await loanFactory.initialize(ftlAgency.address, liquidator.address, creditOracle.address, borrowingMutex.address, creditAgency.address)
   const loanTokenImplementation = await new LoanToken2__factory(owner).deploy()
   const debtTokenImplementation = await new DebtToken__factory(owner).deploy()

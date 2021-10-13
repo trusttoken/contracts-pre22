@@ -11,4 +11,6 @@ interface IBorrowingMutex {
     function isUnlocked(address borrower) external view returns (bool);
 
     function locker(address borrower) external view returns (address);
+
+    function isBanned(address borrower) external view returns (bool);
 }
