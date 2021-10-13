@@ -187,7 +187,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         }
 
         if (status == Status.Defaulted) {
-            return _amount.mul(_balance()).div(totalSupply());
+            return _amount.mul(balance()).div(totalSupply());
         }
 
         uint256 passed = block.timestamp.sub(start);
@@ -210,7 +210,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
 
         borrowingMutex.unlock(borrower);
 
-        emit Settled(_balance());
+        emit Settled(balance());
     }
 
     /**
@@ -238,7 +238,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @param _amount amount to redeem
      */
     function redeem(uint256 _amount) external override onlySettledOrDefaulted {
-        uint256 amountToReturn = _amount.mul(_balance()).div(totalSupply());
+        uint256 amountToReturn = _amount.mul(balance()).div(totalSupply());
         redeemed = redeemed.add(amountToReturn);
         _burn(msg.sender, _amount);
         token.safeTransfer(msg.sender, amountToReturn);
@@ -262,7 +262,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @param _sender account sending token to repay
      */
     function repayInFull(address _sender) external override {
-        _repay(_sender, debt.sub(_balance()));
+        _repay(_sender, debt.sub(balance()));
     }
 
     /**
@@ -272,7 +272,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @param _amount amount of token to repay
      */
     function _repay(address _sender, uint256 _amount) internal {
-        require(_amount <= debt.sub(_balance()), "LoanToken2: Cannot repay over the debt");
+        require(_amount <= debt.sub(balance()), "LoanToken2: Cannot repay over the debt");
         emit Repaid(_sender, _amount);
 
         token.safeTransferFrom(_sender, address(this), _amount);
@@ -287,7 +287,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @return Uint256 representing what value was already repaid
      */
     function repaid() public override view returns (uint256) {
-        return _balance().add(redeemed);
+        return balance().add(redeemed);
     }
 
     /**
@@ -295,22 +295,14 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @return true if and only if this loan has been repaid
      */
     function isRepaid() public override view onlyWithdrawn returns (bool) {
-        return _balance() >= debt;
+        return balance() >= debt;
     }
 
     /**
      * @dev Public currency token balance function
      * @return token balance of this contract
      */
-    function balance() external override view returns (uint256) {
-        return _balance();
-    }
-
-    /**
-     * @dev Get currency token balance for this contract
-     * @return token balance of this contract
-     */
-    function _balance() internal view returns (uint256) {
+    function balance() public override view returns (uint256) {
         return token.balanceOf(address(this));
     }
 
