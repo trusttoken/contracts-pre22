@@ -11,7 +11,6 @@ import {ICreditModel} from "./interface/ICreditModel.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {ILineOfCreditAgency} from "./interface/ILineOfCreditAgency.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
-import {ITimeAveragedBaseRateOracle} from "./interface/ITimeAveragedBaseRateOracle.sol";
 import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
 import {IDebtToken} from "./interface/IDebtToken.sol";
 
@@ -133,9 +132,6 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
     mapping(ITrueFiPool2 => mapping(address => uint256)) public overBorrowLimitTime;
 
     // ======= STORAGE DECLARATION END ============
-
-    /// @dev emit `pool` and `oracle` when base rate oracle changed
-    event BaseRateOracleChanged(ITrueFiPool2 pool, ITimeAveragedBaseRateOracle oracle);
 
     /// @dev emit `newCreditModel` when credit model changed
     event CreditModelChanged(ICreditModel newCreditModel);
