@@ -6,8 +6,6 @@ import {UpgradeableClaimable} from "../../common/UpgradeableClaimable.sol";
 import {IBorrowingMutex} from "../interface/IBorrowingMutex.sol";
 
 contract MockBorrowingMutex is IBorrowingMutex, UpgradeableClaimable {
-    address public constant BANNED = address(1);
-
     mapping(address => address) public override locker;
 
     function initialize() external initializer {
