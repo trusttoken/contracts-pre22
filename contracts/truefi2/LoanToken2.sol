@@ -95,13 +95,6 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     event Repaid(address repayer, uint256 repaidAmount);
 
     /**
-     * @dev Emitted when borrower reclaims remaining tokens
-     * @param borrower Receiver of remaining tokens
-     * @param reclaimedAmount Amount of tokens repaid
-     */
-    event Reclaimed(address borrower, uint256 reclaimedAmount);
-
-    /**
      * @dev Create a Loan
      * @param _pool Pool to lend from
      * @param _borrower Borrower address
@@ -139,14 +132,6 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         status = Status.Withdrawn;
         start = block.timestamp;
         _mint(address(ftlAgency), debt);
-    }
-
-    /**
-     * @dev Only borrower can withdraw & repay loan
-     */
-    modifier onlyBorrower() {
-        require(msg.sender == borrower, "LoanToken2: Caller is not the borrower");
-        _;
     }
 
     /**
@@ -294,20 +279,6 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         if (isRepaid()) {
             settle();
         }
-    }
-
-    /**
-     * @dev Function for borrower to reclaim stuck token
-     * Can only call this function after the loan is Closed
-     * and all of LoanToken holders have been burnt
-     */
-    function reclaim() external override onlySettledOrDefaulted onlyBorrower {
-        require(totalSupply() == 0, "LoanToken2: Cannot reclaim when LoanTokens are in circulation");
-        uint256 balanceRemaining = _balance();
-        require(balanceRemaining > 0, "LoanToken2: Cannot reclaim when balance 0");
-
-        token.safeTransfer(borrower, balanceRemaining);
-        emit Reclaimed(borrower, balanceRemaining);
     }
 
     /**

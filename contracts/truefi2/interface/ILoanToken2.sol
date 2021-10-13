@@ -57,7 +57,5 @@ interface ILoanToken2 is IERC20 {
 
     function enterDefault() external;
 
-    function reclaim() external;
-
     function isRepaid() external view returns (bool);
 }
