@@ -28,7 +28,7 @@ import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
  * Settled:     Loan has been paid back in full with interest
  * Defaulted:   Loan has not been paid back in full
  *
- * - LoanTokens are non-transferable except for whitelisted addresses
+ * - LoanTokens are only transferable by ftlAgency
  * - This version of LoanToken only supports a single funder
  */
 contract LoanToken2 is ILoanToken2, ERC20 {
@@ -38,7 +38,6 @@ contract LoanToken2 is ILoanToken2, ERC20 {
 
     uint256 private constant APY_PRECISION = 10000;
 
-    address public admin;
     address public override borrower;
     uint256 public override amount;
     uint256 public override term;
@@ -50,11 +49,6 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     uint256 public override debt;
 
     uint256 public redeemed;
-
-    // whitelist for transfers
-    mapping(address => bool) public canTransfer;
-
-    bool public transferable;
 
     Status public override status;
 
@@ -71,13 +65,6 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     ILoanFactory2 public loanFactory;
 
     IDebtToken public debtToken;
-
-    /**
-     * @dev Emitted when transfer whitelist is updated
-     * @param account Account to whitelist for transfers
-     * @param status New whitelist status
-     */
-    event TransferAllowanceChanged(address account, bool status);
 
     /**
      * @dev Emitted when loan has been fully repaid
@@ -115,17 +102,10 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     event Reclaimed(address borrower, uint256 reclaimedAmount);
 
     /**
-     * @dev Emitted when all transfers are allowed
-     * @param status Transferability status
-     */
-    event TransferabilityChanged(bool status);
-
-    /**
      * @dev Create a Loan
      * @param _pool Pool to lend from
      * @param _borrower Borrower address
      * @param _ftlAgency FixedTermLoanAgency address
-     * @param _admin Admin account for loan. Admin can enable transfers on the token which are blocked by default.
      * @param _loanFactory LoanFactory to create DebtTokens in case of default
      * @param _amount Borrow amount of loaned tokens
      * @param _term Loan length
@@ -136,7 +116,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         IBorrowingMutex _mutex,
         address _borrower,
         IFixedTermLoanAgency _ftlAgency,
-        address _admin,
+        address,
         ILoanFactory2 _loanFactory,
         ITrueFiCreditOracle _creditOracle,
         uint256 _amount,
@@ -149,7 +129,6 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         token = _pool.token();
         borrowingMutex = _mutex;
         borrower = _borrower;
-        admin = _admin;
         amount = _amount;
         term = _term;
         apy = _apy;
@@ -160,14 +139,6 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         status = Status.Withdrawn;
         start = block.timestamp;
         _mint(address(ftlAgency), debt);
-    }
-
-    /**
-     * @dev Only admin can withdraw & repay loan
-     */
-    modifier onlyAdmin() {
-        require(msg.sender == admin, "LoanToken2: Caller is not the admin");
-        _;
     }
 
     /**
@@ -191,17 +162,6 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      */
     modifier onlyWithdrawn() {
         require(status == Status.Withdrawn, "LoanToken2: Current status should be Withdrawn");
-        _;
-    }
-
-    /**
-     * @dev Only whitelisted accounts or ftlAgency
-     */
-    modifier onlyWhoCanTransfer(address sender) {
-        require(
-            transferable || sender == address(ftlAgency) || canTransfer[sender],
-            "LoanToken2: This can be performed only by ftlAgency, or accounts allowed to transfer"
-        );
         _;
     }
 
@@ -254,25 +214,6 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         uint256 interest = amount.mul(apy).mul(passed).div(365 days).div(APY_PRECISION);
 
         return amount.add(interest).mul(_amount).div(debt);
-    }
-
-    /**
-     * @dev Whitelist accounts to transfer
-     * @param account address to allow transfers for
-     * @param _status true allows transfers, false disables transfers
-     */
-    function allowTransfer(address account, bool _status) external override onlyFTLAgency {
-        canTransfer[account] = _status;
-        emit TransferAllowanceChanged(account, _status);
-    }
-
-    /**
-     * @dev Make token transferable
-     * @param _status true allows transfers, false disables transfers
-     */
-    function allowAllTransfers(bool _status) external onlyAdmin {
-        transferable = _status;
-        emit TransferabilityChanged(_status);
     }
 
     /**
@@ -430,7 +371,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         address sender,
         address recipient,
         uint256 _amount
-    ) internal override onlyWhoCanTransfer(sender) {
+    ) internal override onlyFTLAgency {
         return super._transfer(sender, recipient, _amount);
     }
 

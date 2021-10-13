@@ -60,6 +60,4 @@ interface ILoanToken2 is IERC20 {
     function reclaim() external;
 
     function isRepaid() external view returns (bool);
-
-    function allowTransfer(address account, bool _status) external;
 }
