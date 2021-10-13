@@ -18,10 +18,6 @@ contract MockUsdStableCoinOracle {
         return (truAmount * 1e10) / 4 / 10**decimalAdjustment;
     }
 
-    function truToUsd(uint256 truAmount) external pure returns (uint256) {
-        return (truAmount * 1e10) / 4;
-    }
-
     function setDecimalAdjustment(uint256 adjustment) external {
         decimalAdjustment = adjustment;
     }

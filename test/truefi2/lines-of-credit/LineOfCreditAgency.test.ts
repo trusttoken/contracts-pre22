@@ -524,7 +524,7 @@ describe('LineOfCreditAgency', () => {
       await collateralVault.connect(borrower).stake(parseTRU(100_000))
     })
 
-    it('returns true if borrower will be beyond limit with this staked amount', async () => {
+    it('returns true if borrower will be beyond limit with this staked amount and false otherwise', async () => {
       const borrowLimit = await creditAgency.borrowLimit(usdcPool.address, borrower.address)
       await creditAgency.connect(borrower).borrow(usdcPool.address, parseUSDC(formatEther(borrowLimit)))
       expect(await creditAgency.isOverProFormaLimit(borrower.address, parseTRU(100_000))).to.be.false

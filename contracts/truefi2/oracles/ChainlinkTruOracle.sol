@@ -31,10 +31,6 @@ abstract contract ChainlinkTruOracle is ITrueFiPoolOracle {
         return safeUint(price);
     }
 
-    function truToUsd(uint256 truAmount) external override view returns (uint256) {
-        return truAmount.mul(getLatestTruPrice()).mul(100);
-    }
-
     /**
      * @dev converts from USD with 6 decimals to TRU with 8 decimals
      * Divide by 100 since tokenToUsd returns 18 decimals, getLatestTruPrice returns 8 and TRU is 8 decimals

@@ -324,7 +324,7 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
     }
 
     /**
-     * @dev Returns false iff borrower will stay over borrow limit in all pools when `stakeAmount` is staked
+     * @dev Returns false iff borrower will stay over borrow limit in all pools when `stakedAmount` is staked
      */
     function isOverProFormaLimit(address borrower, uint256 stakedAmount) external override view returns (bool) {
         ITrueFiPool2[] memory pools = poolFactory.getSupportedPools();
