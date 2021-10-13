@@ -125,7 +125,7 @@ contract SAFU is ISAFU, UpgradeableClaimable {
             ITrueFiPool2 pool = ITrueFiPool2(debts[i].pool());
             IERC20 token = IERC20(pool.token());
 
-            _poolLiquidate(pool, debts[i]);
+            pool.liquidateDebt(debts[i]);
             uint256 owedToPool = debts[i].debt().mul(tokenBalance(debts[i])).div(debts[i].totalSupply());
             uint256 safuTokenBalance = tokenBalance(token);
             uint256 deficit;
@@ -220,11 +220,5 @@ contract SAFU is ISAFU, UpgradeableClaimable {
         require(returnAmount >= minReturnAmount, "SAFU: Not enough tokens returned from swap");
 
         emit Swapped(swapResult.amount, swapResult.srcToken, returnAmount, swapResult.dstToken);
-    }
-
-    function _poolLiquidate(ITrueFiPool2 pool, IDebtToken debt) internal {
-        if (loanFactory.isDebtToken(debt)) {
-            pool.liquidateDebt(debt);
-        }
     }
 }
