@@ -20,6 +20,7 @@ import {
   TestTrueLender__factory,
   TrueFiCreditOracle,
   TrueFiCreditOracle__factory,
+  CollateralVault,
   TrueFiPool2,
 } from 'contracts'
 
@@ -66,6 +67,7 @@ describe('Liquidator2', () => {
   let creditOracle: TrueFiCreditOracle
   let tusdOracle: MockTrueFiPoolOracle
   let creditModel: CreditModel
+  let collateralVault: CollateralVault
 
   let timeTravel: (time: number) => void
 
@@ -97,6 +99,7 @@ describe('Liquidator2', () => {
       creditOracle,
       standardTokenOracle: tusdOracle,
       creditModel,
+      collateralVault,
     } = await setupTruefi2(owner, _provider, { lender, loanFactory }))
 
     const tx = await loanFactory.createLegacyLoanToken(usdcPool.address, borrower.address, parseUSDC(1000), YEAR, 1000)
@@ -156,6 +159,10 @@ describe('Liquidator2', () => {
 
     it('sets tusd oracle correctly', async () => {
       expect(await liquidator.tusdPoolOracle()).to.equal(tusdOracle.address)
+    })
+
+    it('sets collateral vault correctly', async () => {
+      expect(await liquidator.collateralVault()).to.equal(collateralVault.address)
     })
   })
 
@@ -306,6 +313,11 @@ describe('Liquidator2', () => {
 
         await expect(liquidator.connect(assurance).legacyLiquidate(fakeLoan.address))
           .to.be.revertedWith('Liquidator: Unknown loan')
+      })
+
+      it('providing empty list of debts', async () => {
+        await expect(liquidator.connect(assurance).liquidate([]))
+          .to.be.revertedWith('Liquidator: List of provided debts is empty')
       })
     })
 
@@ -487,12 +499,6 @@ describe('Liquidator2', () => {
           .to.emit(liquidator, 'Liquidated')
           .withArgs([debtToken1.address], parseEth(1100), parseTRU(100))
       })
-    })
-
-    it('providing empty list of debts does not slash tru', async () => {
-      const balanceBefore = await tru.balanceOf(stkTru.address)
-      await liquidator.connect(assurance).liquidate([])
-      expect(await tru.balanceOf(stkTru.address)).to.eq(balanceBefore)
     })
   })
 })

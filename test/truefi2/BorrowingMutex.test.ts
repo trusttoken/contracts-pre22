@@ -65,10 +65,13 @@ describe('BorrowingMutex', () => {
     })
 
     it('changes locker', async () => {
+      expect(await mutex.isUnlocked(borrower.address)).to.be.true
+      expect(await mutex.isBanned(borrower.address)).to.be.false
       await mutex.connect(locker).lock(borrower.address, locker.address)
       await mutex.connect(locker).ban(borrower.address)
       expect(await mutex.locker(borrower.address)).to.eq('0x0000000000000000000000000000000000000001')
       expect(await mutex.isUnlocked(borrower.address)).to.be.false
+      expect(await mutex.isBanned(borrower.address)).to.be.true
     })
 
     it('emits event', async () => {

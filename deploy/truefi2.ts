@@ -89,7 +89,7 @@ deploy({}, (_, config) => {
     ftlAgency.initialize(stkTruToken, poolFactory, oneInch, trueFiCreditOracle, AddressZero, borrowingMutex, loanFactory2)
   })
   runIf(liquidator2.isInitialized().not(), () => {
-    liquidator2.initialize(stkTruToken, trustToken, loanFactory2, poolFactory, AddressZero, AddressZero)
+    liquidator2.initialize(stkTruToken, trustToken, loanFactory2, poolFactory, AddressZero, AddressZero, AddressZero)
   })
   runIf(loanFactory2.isInitialized().not(), () => {
     loanFactory2.initialize(ftlAgency, liquidator2, trueFiCreditOracle, borrowingMutex, AddressZero)
