@@ -53,10 +53,6 @@ interface ILoanToken2 is IERC20 {
             uint256
         );
 
-    function fund() external;
-
-    function withdraw(address _beneficiary) external;
-
     function settle() external;
 
     function enterDefault() external;

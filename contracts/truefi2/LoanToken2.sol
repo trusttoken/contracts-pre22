@@ -304,10 +304,6 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         return amount.add(interest).mul(_amount).div(debt);
     }
 
-    function fund() external override {
-        revert("LoanToken2: Direct funding has been deprecated");
-    }
-
     /**
      * @dev Whitelist accounts to transfer
      * @param account address to allow transfers for
@@ -325,10 +321,6 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     function allowAllTransfers(bool _status) external onlyAdmin {
         transferable = _status;
         emit TransferabilityChanged(_status);
-    }
-
-    function withdraw(address) external override {
-        revert("LoanToken2: Direct withdrawal has been deprecated");
     }
 
     /**
