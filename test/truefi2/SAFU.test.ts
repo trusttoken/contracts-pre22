@@ -105,7 +105,7 @@ describe('SAFU', () => {
     await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
     await creditModel.setRiskPremium(400)
 
-    const loan = await createLegacyLoan(loanFactory, pool, lender, owner, borrower, parseUSDC(1000), YEAR, 1000)
+    loan = await createLegacyLoan(loanFactory, pool, lender, owner, borrower, parseUSDC(1000), YEAR, 1000)
     await token.mint(lender.address, parseUSDC(1000))
     await lender.fund(loan.address)
     await loan.connect(borrower).withdraw(borrower.address)

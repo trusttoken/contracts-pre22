@@ -99,7 +99,7 @@ describe('Liquidator2', () => {
       creditModel,
     } = await setupTruefi2(owner, _provider, { lender, loanFactory }))
 
-    const loan = await createLegacyLoan(loanFactory, usdcPool, lender, owner, borrower, parseUSDC(1000), YEAR, 1000)
+    loan = await createLegacyLoan(loanFactory, usdcPool, lender, owner, borrower, parseUSDC(1000), YEAR, 1000)
     await usdc.mint(lender.address, parseUSDC(1000))
     await lender.fund(loan.address)
     await loan.connect(borrower).withdraw(borrower.address)

@@ -954,7 +954,7 @@ describe('TrueFiPool2', () => {
     beforeEach(async () => {
       await tusd.approve(tusdPool.address, parseEth(100))
       await tusdPool.join(parseEth(100))
-      const loan = await createLegacyLoan(loanFactory, tusdPool, lender, owner, borrower, 100000, DAY, 1000)
+      loan = await createLegacyLoan(loanFactory, tusdPool, lender, owner, borrower, 100000, DAY, 1000)
       await tusd.mint(lender.address, 100000)
       await lender.fund(loan.address)
       await loan.connect(borrower).withdraw(borrower.address)
