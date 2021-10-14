@@ -21,6 +21,7 @@ import {
   TrueFiCreditOracle,
   TrueFiCreditOracle__factory,
   CollateralVault,
+  CollateralVault__factory,
   TrueFiPool2,
   BorrowingMutex,
 } from 'contracts'
@@ -220,6 +221,35 @@ describe('Liquidator2', () => {
       await expect(liquidator.setTusdPoolOracle(fakePoolOracle.address))
         .to.emit(liquidator, 'TusdPoolOracleChanged')
         .withArgs(fakePoolOracle.address)
+    })
+  })
+
+  describe('setCollateralVault', () => {
+    let fakeCollateralVault: CollateralVault
+
+    beforeEach(async () => {
+      fakeCollateralVault = await new CollateralVault__factory(owner).deploy()
+    })
+
+    it('only owner', async () => {
+      await expect(liquidator.connect(otherWallet).setCollateralVault(fakeCollateralVault.address))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('cannot be set to 0 address', async () => {
+      await expect(liquidator.setCollateralVault(AddressZero))
+        .to.be.revertedWith('Liquidator: Collateral vault cannot be set to 0')
+    })
+
+    it('sets new collateral vault address', async () => {
+      await liquidator.setCollateralVault(fakeCollateralVault.address)
+      expect(await liquidator.collateralVault()).to.eq(fakeCollateralVault.address)
+    })
+
+    it('emits event', async () => {
+      await expect(liquidator.setCollateralVault(fakeCollateralVault.address))
+        .to.emit(liquidator, 'CollateralVaultChanged')
+        .withArgs(fakeCollateralVault.address)
     })
   })
 
