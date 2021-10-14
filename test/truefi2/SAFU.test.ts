@@ -40,6 +40,7 @@ import {
   MockTrueFiPoolOracle__factory,
   MockErc20Token,
   CreditModel,
+  CollateralVault,
 } from 'contracts'
 
 import {
@@ -63,6 +64,7 @@ describe('SAFU', () => {
   let creditOracle: TrueFiCreditOracle
   let borrowingMutex: BorrowingMutex
   let creditModel: CreditModel
+  let collateralVault: CollateralVault
 
   let timeTravel: (time: number) => void
 
@@ -95,6 +97,7 @@ describe('SAFU', () => {
       creditOracle,
       borrowingMutex,
       creditModel,
+      collateralVault,
     } = await setupTruefi2(owner, _provider, { lender: lender, loanFactory: loanFactory, oneInch: oneInch }))
 
     await token.mint(owner.address, parseUSDC(1e7))
@@ -184,6 +187,26 @@ describe('SAFU', () => {
       it('transfers DebtTokens to the SAFU', async () => {
         await safu.liquidate([debtToken.address])
         await expect(await debtToken.balanceOf(safu.address)).to.equal(defaultAmount)
+      })
+
+      describe('Slashes staked tru from CollateralVault', () => {
+        it('works with no tru staked', async() => {
+          await safu.liquidate([debtToken.address])
+          expect(await tru.balanceOf(safu.address)).to.equal(0)
+        })
+
+        it('works with tru staked', async() => {
+          await tru.mint(borrower.address, parseTRU(100))
+          await tru.connect(borrower).approve(collateralVault.address, parseTRU(100))
+          await collateralVault.connect(borrower).stake(parseTRU(100))
+
+          await borrowingMutex.allowLocker(owner.address, true)
+          await borrowingMutex.lock(borrower.address, owner.address)
+          await borrowingMutex.ban(borrower.address)
+
+          await safu.liquidate([debtToken.address])
+          expect(await tru.balanceOf(safu.address)).to.eq(parseTRU(100))
+        })
       })
     })
 
