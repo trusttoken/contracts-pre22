@@ -13,8 +13,8 @@ import {
   PoolFactory__factory,
   Safu,
   Safu__factory,
-  TestFixedTermLoanAgency,
-  TestFixedTermLoanAgency__factory,
+  FixedTermLoanAgency,
+  FixedTermLoanAgency__factory,
   TestTrueLender,
   TestTrueLender__factory,
   TrueFiPool2,
@@ -42,8 +42,8 @@ describe('PoolFactory', () => {
   let token4: MockErc20Token
   let trueLenderInstance1: TestTrueLender
   let trueLenderInstance2: TestTrueLender
-  let ftlAgencyInstance1: TestFixedTermLoanAgency
-  let ftlAgencyInstance2: TestFixedTermLoanAgency
+  let ftlAgencyInstance1: FixedTermLoanAgency
+  let ftlAgencyInstance2: FixedTermLoanAgency
   let loanFactory: LoanFactory2
 
   beforeEachWithFixture(async (wallets) => {
@@ -58,8 +58,8 @@ describe('PoolFactory', () => {
     token4 = await new MockErc20Token__factory(owner).deploy()
     trueLenderInstance1 = await new TestTrueLender__factory(owner).deploy()
     trueLenderInstance2 = await new TestTrueLender__factory(owner).deploy()
-    ftlAgencyInstance1 = await new TestFixedTermLoanAgency__factory(owner).deploy()
-    ftlAgencyInstance2 = await new TestFixedTermLoanAgency__factory(owner).deploy()
+    ftlAgencyInstance1 = await new FixedTermLoanAgency__factory(owner).deploy()
+    ftlAgencyInstance2 = await new FixedTermLoanAgency__factory(owner).deploy()
     safu = await new Safu__factory(owner).deploy()
     loanFactory = await new LoanFactory2__factory(owner).deploy()
     await factory.initialize(
