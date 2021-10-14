@@ -37,23 +37,22 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     using SafeERC20 for IERC20WithDecimals;
     using SafeERC20 for IDebtToken;
 
-    uint256 private constant APY_PRECISION = 10000;
-
-    address public borrower;
-    uint256 public principal;
-    uint256 public term;
-
-    // apy precision: 10000 = 100%
-    uint256 public apy;
-
-    uint256 public start;
-    uint256 public override debt;
-
-    uint256 public tokenRedeemed;
+    uint256 public constant BASIS_POINTS = 10000;
 
     Status public override status;
 
+    address public borrower;
+
+    uint256 public principal;
+    uint256 public override interest;
+    uint256 public tokenRedeemed;
+
+    uint256 public start;
+    uint256 public term;
+
     IERC20WithDecimals public token;
+
+    IDebtToken public debtToken;
 
     ITrueFiPool2 public override pool;
 
@@ -65,7 +64,12 @@ contract LoanToken2 is ILoanToken2, ERC20 {
 
     ILoanFactory2 public loanFactory;
 
-    IDebtToken public debtToken;
+    /**
+     * @dev Emitted when a LoanToken is repaid by the borrower in underlying tokens
+     * @param repayer Sender of tokens
+     * @param repaidAmount Amount of token repaid
+     */
+    event Repaid(address repayer, uint256 repaidAmount);
 
     /**
      * @dev Emitted when loan has been fully repaid
@@ -87,13 +91,6 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @param tokenRedeemedAmount Amount of token received
      */
     event Redeemed(address receiver, uint256 loanBurnedAmount, uint256 tokenRedeemedAmount);
-
-    /**
-     * @dev Emitted when a LoanToken is repaid by the borrower in underlying tokens
-     * @param repayer Sender of tokens
-     * @param repaidAmount Amount of token repaid
-     */
-    event Repaid(address repayer, uint256 repaidAmount);
 
     /**
      * @dev Create a Loan
@@ -119,28 +116,22 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     ) external initializer {
         ERC20.__ERC20_initialize("TrueFi Loan Token", "LOAN");
 
-        pool = _pool;
-        token = IERC20WithDecimals(address(_pool.token()));
-        borrowingMutex = _mutex;
+        status = Status.Withdrawn;
         borrower = _borrower;
         principal = _principal;
-        term = _term;
-        apy = _apy;
-        ftlAgency = _ftlAgency;
-        loanFactory = _loanFactory;
-        creditOracle = _creditOracle;
-        debt = principal.add(interest(term));
-        status = Status.Withdrawn;
+        interest = principal.mul(_apy).mul(_term).div(365 days).div(BASIS_POINTS);
+        tokenRedeemed;
         start = block.timestamp;
-        _mint(address(ftlAgency), debt);
-    }
+        term = _term;
+        token = IERC20WithDecimals(address(_pool.token()));
+        debtToken;
+        pool = _pool;
+        borrowingMutex = _mutex;
+        ftlAgency = _ftlAgency;
+        creditOracle = _creditOracle;
+        loanFactory = _loanFactory;
 
-    /**
-     * @dev Only when loan is Settled or Defaulted
-     */
-    modifier onlySettledOrDefaulted() {
-        require(status == Status.Settled || status == Status.Defaulted, "LoanToken2: Only after loan has been closed");
-        _;
+        _mint(address(ftlAgency), debt());
     }
 
     /**
@@ -152,80 +143,19 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     }
 
     /**
+     * @dev Only when loan is Settled or Defaulted
+     */
+    modifier onlySettledOrDefaulted() {
+        require(status == Status.Settled || status == Status.Defaulted, "LoanToken2: Only after loan has been closed");
+        _;
+    }
+
+    /**
      * @dev Only ftlAgency can perform certain actions
      */
     modifier onlyFTLAgency() {
         require(msg.sender == address(ftlAgency), "LoanToken2: This can be performed only by ftlAgency");
         _;
-    }
-
-    /**
-     * @dev Get coupon value of this loan token in token
-     * This assumes the loan will be paid back on time, with interest
-     * @return coupon value of holder's LoanTokens in tokens
-     */
-    function tokenValue(address holder) external override view returns (uint256) {
-        uint256 holderLoanBalance = balanceOf(holder);
-        if (holderLoanBalance == 0) {
-            return 0;
-        }
-
-        if (status == Status.Defaulted) {
-            return tokenBalance().mul(holderLoanBalance).div(totalSupply());
-        }
-
-        uint256 duration = block.timestamp.sub(start);
-        if (duration > term || status == Status.Settled) {
-            return holderLoanBalance;
-        }
-
-        return principal.add(interest(duration)).mul(holderLoanBalance).div(debt);
-    }
-
-    /**
-     * @dev Settle the loan after checking it has been repaid
-     */
-    function settle() public onlyWithdrawn {
-        require(isRepaid(), "LoanToken2: loan must be repaid to settle");
-        status = Status.Settled;
-
-        borrowingMutex.unlock(borrower);
-
-        emit Settled(tokenBalance());
-    }
-
-    /**
-     * @dev Default the loan if it has not been repaid by the end of term
-     */
-    function enterDefault() external onlyWithdrawn {
-        require(!isRepaid(), "LoanToken2: cannot default a repaid loan");
-        require(start.add(term).add(creditOracle.gracePeriod()) <= block.timestamp, "LoanToken2: Loan cannot be defaulted yet");
-        status = Status.Defaulted;
-
-        uint256 unpaidDebt = debt.sub(tokenRepaid());
-        debtToken = loanFactory.createDebtToken(pool, borrower, unpaidDebt);
-
-        debtToken.approve(address(pool), unpaidDebt);
-        pool.addDebt(debtToken, unpaidDebt);
-
-        borrowingMutex.ban(borrower);
-
-        emit Defaulted(debtToken, unpaidDebt);
-    }
-
-    /**
-     * @dev Redeem LoanToken balances for underlying token
-     * Can only call this function after the loan is Closed
-     */
-    function redeem() external override onlySettledOrDefaulted {
-        uint256 loanRedeemAmount = balanceOf(msg.sender);
-        uint256 tokenRedeemAmount = loanRedeemAmount.mul(tokenBalance()).div(totalSupply());
-        tokenRedeemed = tokenRedeemed.add(tokenRedeemAmount);
-
-        _burn(msg.sender, loanRedeemAmount);
-        token.safeTransfer(msg.sender, tokenRedeemAmount);
-
-        emit Redeemed(msg.sender, loanRedeemAmount, tokenRedeemAmount);
     }
 
     /**
@@ -244,7 +174,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @param _sender account sending token to repay
      */
     function repayInFull(address _sender) external {
-        _repay(_sender, debt.sub(tokenRepaid()));
+        _repay(_sender, debt().sub(tokenRepaid()));
     }
 
     /**
@@ -253,8 +183,8 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @param _sender account sending token to repay
      * @param _amount amount of token to repay
      */
-    function _repay(address _sender, uint256 _amount) internal {
-        require(_amount.add(tokenRepaid()) <= debt, "LoanToken2: Cannot repay over the debt");
+    function _repay(address _sender, uint256 _amount) private {
+        require(_amount.add(tokenRepaid()) <= debt(), "LoanToken2: Cannot repay over the debt");
         emit Repaid(_sender, _amount);
 
         token.safeTransferFrom(_sender, address(this), _amount);
@@ -264,12 +194,70 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     }
 
     /**
+     * @dev Settle the loan after checking it has been repaid
+     */
+    function settle() public onlyWithdrawn {
+        require(isRepaid(), "LoanToken2: loan must be repaid to settle");
+        status = Status.Settled;
+
+        borrowingMutex.unlock(borrower);
+
+        emit Settled(tokenRepaid());
+    }
+
+    /**
+     * @dev Default the loan if it has not been repaid by the end of term
+     */
+    function enterDefault() external onlyWithdrawn {
+        require(!isRepaid(), "LoanToken2: cannot default a repaid loan");
+        require(start.add(term).add(creditOracle.gracePeriod()) <= block.timestamp, "LoanToken2: Loan cannot be defaulted yet");
+        status = Status.Defaulted;
+
+        uint256 unpaidDebt = debt().sub(tokenRepaid());
+
+        debtToken = loanFactory.createDebtToken(pool, borrower, unpaidDebt);
+        debtToken.approve(address(pool), unpaidDebt);
+        pool.addDebt(debtToken, unpaidDebt);
+
+        borrowingMutex.ban(borrower);
+
+        emit Defaulted(debtToken, unpaidDebt);
+    }
+
+    /**
+     * @dev Redeem LoanToken balances for underlying token
+     * Can only call this function after the loan is Closed
+     */
+    function redeem() external override onlySettledOrDefaulted {
+        uint256 loanRedeemAmount = balanceOf(msg.sender);
+        uint256 tokenRedeemAmount = loanRedeemAmount.mul(_tokenBalance()).div(totalSupply());
+        tokenRedeemed = tokenRedeemed.add(tokenRedeemAmount);
+
+        _burn(msg.sender, loanRedeemAmount);
+        token.safeTransfer(msg.sender, tokenRedeemAmount);
+
+        emit Redeemed(msg.sender, loanRedeemAmount, tokenRedeemAmount);
+    }
+
+    function debt() public override view returns (uint256) {
+        return principal.add(interest);
+    }
+
+    /**
      * @dev Check how much was already repaid
      * Funds stored on the contract's address plus funds already redeemed by lenders
      * @return Uint256 representing what value was already repaid
      */
     function tokenRepaid() public view returns (uint256) {
-        return tokenBalance().add(tokenRedeemed);
+        return _tokenBalance().add(tokenRedeemed);
+    }
+
+    /**
+     * @dev Public currency token balance function
+     * @return token balance of this contract
+     */
+    function _tokenBalance() private view returns (uint256) {
+        return token.balanceOf(address(this));
     }
 
     /**
@@ -277,32 +265,25 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @return true if and only if this loan has been repaid
      */
     function isRepaid() public view returns (bool) {
-        return tokenRepaid() >= debt;
+        return tokenRepaid() >= debt();
     }
 
     /**
-     * @dev Public currency token balance function
-     * @return token balance of this contract
+     * @dev Get coupon value of this loan token in token
+     * This assumes the loan will be paid back on time, with interest
+     * @return coupon value of holder's LoanTokens in tokens
      */
-    function tokenBalance() public view returns (uint256) {
-        return token.balanceOf(address(this));
-    }
-
-    /**
-     * @dev Calculate interest that will be paid by this loan
-     * principal * apy * duration / 365 days / precision
-     * @return uint256 Amount of interest for duration
-     */
-    function interest(uint256 duration) internal view returns (uint256) {
-        return principal.mul(apy).mul(duration).div(365 days).div(APY_PRECISION);
-    }
-
-    /**
-     * @dev get profit for this loan
-     * @return profit for this loan
-     */
-    function profit() external override view returns (uint256) {
-        return debt.sub(principal);
+    function tokenValue(address holder) external override view returns (uint256) {
+        uint256 holderLoanBalance = balanceOf(holder);
+        uint256 duration = block.timestamp.sub(start);
+        if (status == Status.Withdrawn && duration < term) {
+            uint256 partialInterest = interest.mul(duration).div(term);
+            return holderLoanBalance.mul(principal.add(partialInterest)).div(debt());
+        }
+        if (status == Status.Defaulted) {
+            return holderLoanBalance.mul(_tokenBalance()).div(totalSupply());
+        }
+        return holderLoanBalance;
     }
 
     /**

@@ -475,7 +475,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
         ILoanToken2 loanToken,
         bytes calldata data
     ) internal returns (uint256) {
-        uint256 feeAmount = loanToken.profit().mul(fee).div(BASIS_RATIO);
+        uint256 feeAmount = loanToken.interest().mul(fee).div(BASIS_RATIO);
         IERC20WithDecimals token = IERC20WithDecimals(address(pool.token()));
         if (token == feeToken) {
             return feeAmount;
