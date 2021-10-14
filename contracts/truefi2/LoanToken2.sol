@@ -204,7 +204,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         uint256 unpaidDebt = debt().sub(tokenRepaid());
 
         debtToken = loanFactory.createDebtToken(pool, borrower, unpaidDebt);
-        debtToken.approve(address(pool), unpaidDebt);
+        debtToken.safeApprove(address(pool), unpaidDebt);
         pool.addDebt(debtToken, unpaidDebt);
 
         borrowingMutex.ban(borrower);
