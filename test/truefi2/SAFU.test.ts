@@ -375,6 +375,21 @@ describe('SAFU', () => {
           await safu.liquidate([debtToken.address])
           expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(4400))
         })
+
+        it('also slashes collateral vault tru', async () => {
+          await stkTru.stake(parseTRU(1e3))
+
+          await tru.mint(borrower.address, parseTRU(100))
+          await tru.connect(borrower).approve(collateralVault.address, parseTRU(100))
+          await collateralVault.connect(borrower).stake(parseTRU(100))
+
+          await borrowingMutex.allowLocker(owner.address, true)
+          await borrowingMutex.lock(borrower.address, owner.address)
+          await borrowingMutex.ban(borrower.address)
+
+          await safu.liquidate([debtToken.address])
+          expect(await tru.balanceOf(safu.address)).to.eq(parseTRU(2e2))
+        })
       })
 
       describe('Half of debt repaid', () => {
