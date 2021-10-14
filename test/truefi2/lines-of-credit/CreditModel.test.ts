@@ -441,7 +441,7 @@ describe('CreditModel', () => {
         }))
 
       it('returns unchanged score if there is no collateral', async () => {
-          expect(await creditModel.effectiveScore(191, mockPool.address, 0, 100)).to.eq(191)
+        expect(await creditModel.effectiveScore(191, mockPool.address, 0, 100)).to.eq(191)
       })
     })
   })
