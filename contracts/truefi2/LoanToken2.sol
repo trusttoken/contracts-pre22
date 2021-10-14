@@ -49,7 +49,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     uint256 public start;
     uint256 public override debt;
 
-    uint256 public redeemed;
+    uint256 public tokenRedeemed;
 
     Status public override status;
 
@@ -83,10 +83,10 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     /**
      * @dev Emitted when a LoanToken is redeemed for underlying tokens
      * @param receiver Receiver of tokens
-     * @param burnedAmount Amount of LoanTokens burned
-     * @param redeemedAmount Amount of token received
+     * @param loanBurnedAmount Amount of LoanTokens burned
+     * @param tokenRedeemedAmount Amount of token received
      */
-    event Redeemed(address receiver, uint256 burnedAmount, uint256 redeemedAmount);
+    event Redeemed(address receiver, uint256 loanBurnedAmount, uint256 tokenRedeemedAmount);
 
     /**
      * @dev Emitted when a LoanToken is repaid by the borrower in underlying tokens
@@ -171,7 +171,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         }
 
         if (status == Status.Defaulted) {
-            return balance().mul(holderLoanBalance).div(totalSupply());
+            return tokenBalance().mul(holderLoanBalance).div(totalSupply());
         }
 
         uint256 duration = block.timestamp.sub(start);
@@ -191,7 +191,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
 
         borrowingMutex.unlock(borrower);
 
-        emit Settled(balance());
+        emit Settled(tokenBalance());
     }
 
     /**
@@ -202,7 +202,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         require(start.add(term).add(creditOracle.gracePeriod()) <= block.timestamp, "LoanToken2: Loan cannot be defaulted yet");
         status = Status.Defaulted;
 
-        uint256 unpaidDebt = debt.sub(repaid());
+        uint256 unpaidDebt = debt.sub(tokenRepaid());
         debtToken = loanFactory.createDebtToken(pool, borrower, unpaidDebt);
 
         debtToken.approve(address(pool), unpaidDebt);
@@ -219,8 +219,8 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      */
     function redeem() external override onlySettledOrDefaulted {
         uint256 loanRedeemAmount = balanceOf(msg.sender);
-        uint256 tokenRedeemAmount = loanRedeemAmount.mul(balance()).div(totalSupply());
-        redeemed = redeemed.add(tokenRedeemAmount);
+        uint256 tokenRedeemAmount = loanRedeemAmount.mul(tokenBalance()).div(totalSupply());
+        tokenRedeemed = tokenRedeemed.add(tokenRedeemAmount);
 
         _burn(msg.sender, loanRedeemAmount);
         token.safeTransfer(msg.sender, tokenRedeemAmount);
@@ -244,7 +244,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @param _sender account sending token to repay
      */
     function repayInFull(address _sender) external {
-        _repay(_sender, debt.sub(repaid()));
+        _repay(_sender, debt.sub(tokenRepaid()));
     }
 
     /**
@@ -254,7 +254,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @param _amount amount of token to repay
      */
     function _repay(address _sender, uint256 _amount) internal {
-        require(_amount.add(repaid()) <= debt, "LoanToken2: Cannot repay over the debt");
+        require(_amount.add(tokenRepaid()) <= debt, "LoanToken2: Cannot repay over the debt");
         emit Repaid(_sender, _amount);
 
         token.safeTransferFrom(_sender, address(this), _amount);
@@ -268,8 +268,8 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * Funds stored on the contract's address plus funds already redeemed by lenders
      * @return Uint256 representing what value was already repaid
      */
-    function repaid() public view returns (uint256) {
-        return balance().add(redeemed);
+    function tokenRepaid() public view returns (uint256) {
+        return tokenBalance().add(tokenRedeemed);
     }
 
     /**
@@ -277,14 +277,14 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @return true if and only if this loan has been repaid
      */
     function isRepaid() public view returns (bool) {
-        return repaid() >= debt;
+        return tokenRepaid() >= debt;
     }
 
     /**
      * @dev Public currency token balance function
      * @return token balance of this contract
      */
-    function balance() public view returns (uint256) {
+    function tokenBalance() public view returns (uint256) {
         return token.balanceOf(address(this));
     }
 
