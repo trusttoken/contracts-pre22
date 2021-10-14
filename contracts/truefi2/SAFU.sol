@@ -12,7 +12,6 @@ import {IDeficiencyToken} from "./interface/IDeficiencyToken.sol";
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {IDebtToken} from "../truefi2/interface/IDebtToken.sol";
 import {ILoanToken2Deprecated} from "./deprecated/ILoanToken2Deprecated.sol";
-import {ILoanToken2} from "../truefi2/interface/ILoanToken2.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
 import {ILiquidator2} from "./interface/ILiquidator2.sol";
