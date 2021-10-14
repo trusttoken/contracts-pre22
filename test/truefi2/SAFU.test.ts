@@ -40,6 +40,7 @@ import {
   MockTrueFiPoolOracle__factory,
   MockErc20Token,
   CreditModel,
+  CollateralVault,
 } from 'contracts'
 
 import {
@@ -63,6 +64,7 @@ describe('SAFU', () => {
   let creditOracle: TrueFiCreditOracle
   let borrowingMutex: BorrowingMutex
   let creditModel: CreditModel
+  let collateralVault: CollateralVault
 
   let timeTravel: (time: number) => void
 
@@ -95,6 +97,7 @@ describe('SAFU', () => {
       creditOracle,
       borrowingMutex,
       creditModel,
+      collateralVault,
     } = await setupTruefi2(owner, _provider, { lender: lender, loanFactory: loanFactory, oneInch: oneInch }))
 
     await token.mint(owner.address, parseUSDC(1e7))
@@ -182,6 +185,26 @@ describe('SAFU', () => {
       it('transfers DebtTokens to the SAFU', async () => {
         await safu.liquidate([debtToken.address])
         await expect(await debtToken.balanceOf(safu.address)).to.equal(defaultAmount)
+      })
+
+      describe('Slashes staked tru from CollateralVault', () => {
+        it('works with no tru staked', async () => {
+          await safu.liquidate([debtToken.address])
+          expect(await tru.balanceOf(safu.address)).to.equal(0)
+        })
+
+        it('works with tru staked', async () => {
+          await tru.mint(borrower.address, parseTRU(100))
+          await tru.connect(borrower).approve(collateralVault.address, parseTRU(100))
+          await collateralVault.connect(borrower).stake(parseTRU(100))
+
+          await borrowingMutex.allowLocker(owner.address, true)
+          await borrowingMutex.lock(borrower.address, owner.address)
+          await borrowingMutex.ban(borrower.address)
+
+          await safu.liquidate([debtToken.address])
+          expect(await tru.balanceOf(safu.address)).to.eq(parseTRU(100))
+        })
       })
     })
 
@@ -320,6 +343,105 @@ describe('SAFU', () => {
     })
 
     describe('Slashes tru', () => {
+      let debtToken: DebtToken
+
+      beforeEach(async () => {
+        await token.mint(safu.address, defaultAmount)
+        await loanFactory.setCreditAgency(owner.address)
+        await pool.setCreditAgency(owner.address)
+        debtToken = await createDebtToken(pool, defaultAmount)
+        await debtToken.approve(pool.address, defaultAmount)
+        await pool.addDebt(debtToken.address, defaultAmount)
+      })
+
+      describe('Debt not repaid at all', () => {
+        it('0 tru in staking pool balance', async () => {
+          await safu.liquidate([debtToken.address])
+          expect(await tru.balanceOf(safu.address)).to.eq(0)
+        })
+
+        it('returns max fetch share to assurance', async () => {
+          await stkTru.stake(parseTRU(1e3))
+
+          await safu.liquidate([debtToken.address])
+          expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(1e2))
+        })
+
+        it('returns defaulted value', async () => {
+          await stkTru.stake(parseTRU(1e7))
+
+          await safu.liquidate([debtToken.address])
+          expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(4400))
+        })
+
+        it('also slashes collateral vault tru', async () => {
+          await stkTru.stake(parseTRU(1e3))
+
+          await tru.mint(borrower.address, parseTRU(100))
+          await tru.connect(borrower).approve(collateralVault.address, parseTRU(100))
+          await collateralVault.connect(borrower).stake(parseTRU(100))
+
+          await borrowingMutex.allowLocker(owner.address, true)
+          await borrowingMutex.lock(borrower.address, owner.address)
+          await borrowingMutex.ban(borrower.address)
+
+          await safu.liquidate([debtToken.address])
+          expect(await tru.balanceOf(safu.address)).to.eq(parseTRU(2e2))
+        })
+      })
+
+      describe('Half of debt repaid', () => {
+        beforeEach(async () => {
+          await token.mint(debtToken.address, parseUSDC(550))
+        })
+
+        it('0 tru in staking pool balance', async () => {
+          await safu.liquidate([debtToken.address])
+          expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(0))
+        })
+
+        it('returns max fetch share to assurance', async () => {
+          await stkTru.stake(parseTRU(1e3))
+
+          await safu.liquidate([debtToken.address])
+          expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(100))
+        })
+
+        it('returns defaulted value', async () => {
+          await stkTru.stake(parseTRU(1e7))
+
+          await safu.liquidate([debtToken.address])
+          expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(22e2))
+        })
+      })
+
+      describe('Multiple debt tokens', async () => {
+        let debtToken2: DebtToken
+
+        beforeEach(async () => {
+          await token.mint(safu.address, defaultAmount)
+          debtToken2 = await createDebtToken(pool, defaultAmount)
+          await debtToken2.approve(pool.address, defaultAmount)
+          await pool.addDebt(debtToken2.address, defaultAmount)
+        })
+
+        it('returns max fetch share to assurance', async () => {
+          await stkTru.stake(parseTRU(4400 * 15))
+
+          await safu.liquidate([debtToken.address, debtToken2.address])
+          expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(4400 * 15 / 10))
+        })
+
+        it('returns defaulted value', async () => {
+          await stkTru.stake(parseTRU(1e7))
+
+          await safu.liquidate([debtToken.address, debtToken2.address])
+          expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(4400 * 2))
+        })
+      })
+    })
+
+    describe('Slashes tru (legacy)', () => {
       beforeEach(async () => {
         await token.mint(safu.address, defaultAmount)
         await timeTravel(defaultedLoanCloseTime)
