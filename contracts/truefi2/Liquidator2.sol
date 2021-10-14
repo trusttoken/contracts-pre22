@@ -86,6 +86,8 @@ contract Liquidator2 is ILiquidator2, UpgradeableClaimable {
 
     event TusdPoolOracleChanged(ITrueFiPoolOracle poolOracle);
 
+    event CollateralVaultChanged(ICollateralVault collateralVault);
+
     /**
      * @dev Initialize this contract
      */
@@ -133,6 +135,12 @@ contract Liquidator2 is ILiquidator2, UpgradeableClaimable {
         require(address(_tusdPoolOracle) != address(0), "Liquidator: Pool oracle cannot be set to 0");
         tusdPoolOracle = _tusdPoolOracle;
         emit TusdPoolOracleChanged(_tusdPoolOracle);
+    }
+
+    function setCollateralVault(ICollateralVault _collateralVault) external onlyOwner {
+        require(address(_collateralVault) != address(0), "Liquidator: Collateral vault cannot be set to 0");
+        collateralVault = _collateralVault;
+        emit CollateralVaultChanged(_collateralVault);
     }
 
     /**
