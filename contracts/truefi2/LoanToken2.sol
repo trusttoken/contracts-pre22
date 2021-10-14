@@ -6,6 +6,7 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 import {ERC20} from "../common/UpgradeableERC20.sol";
+import {IERC20WithDecimals} from "./interface/IERC20WithDecimals.sol";
 import {IFixedTermLoanAgency} from "./interface/IFixedTermLoanAgency.sol";
 import {ILoanToken2} from "./interface/ILoanToken2.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
@@ -33,7 +34,7 @@ import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
  */
 contract LoanToken2 is ILoanToken2, ERC20 {
     using SafeMath for uint256;
-    using SafeERC20 for ERC20;
+    using SafeERC20 for IERC20WithDecimals;
     using SafeERC20 for IDebtToken;
 
     uint256 private constant APY_PRECISION = 10000;
@@ -52,8 +53,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
 
     Status public override status;
 
-    // TODO IERC20WithDecimals
-    ERC20 public token;
+    IERC20WithDecimals public token;
 
     ITrueFiPool2 public override pool;
 
@@ -120,7 +120,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         ERC20.__ERC20_initialize("TrueFi Loan Token", "LOAN");
 
         pool = _pool;
-        token = _pool.token();
+        token = IERC20WithDecimals(address(_pool.token()));
         borrowingMutex = _mutex;
         borrower = _borrower;
         principal = _principal;
@@ -340,6 +340,6 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     }
 
     function decimals() public override view returns (uint8) {
-        return token.decimals();
+        return uint8(token.decimals());
     }
 }
