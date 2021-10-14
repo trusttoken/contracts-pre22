@@ -129,7 +129,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         ftlAgency = _ftlAgency;
         loanFactory = _loanFactory;
         creditOracle = _creditOracle;
-        debt = interest(term);
+        debt = amount.add(interest(term));
         status = Status.Withdrawn;
         start = block.timestamp;
         _mint(address(ftlAgency), debt);
@@ -195,7 +195,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
             return holderLoanBalance;
         }
 
-        return interest(duration).mul(holderLoanBalance).div(debt);
+        return amount.add(interest(duration)).mul(holderLoanBalance).div(debt);
     }
 
     /**
@@ -305,12 +305,12 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     }
 
     /**
-     * @dev Calculate interest that will be paid by this loan for an amount (returned funds included)
-     * amount + ((amount * apy * duration) / 365 days / precision)
+     * @dev Calculate interest that will be paid by this loan for an amount
+     * amount * apy * duration / 365 days / precision
      * @return uint256 Amount of interest paid for _amount
      */
     function interest(uint256 duration) internal view returns (uint256) {
-        return amount.add(amount.mul(apy).mul(duration).div(365 days).div(APY_PRECISION));
+        return amount.mul(apy).mul(duration).div(365 days).div(APY_PRECISION);
     }
 
     /**
