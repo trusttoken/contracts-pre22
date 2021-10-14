@@ -419,26 +419,49 @@ describe('CreditModel', () => {
     describe('effectiveScore', () => {
       const collateral = 1000
       const borrowedAmount = 250
+      const ltvRatio = 40
 
-      beforeEach(async () => {
-        const ltvRatio = 40
-        const effectiveScorePower = 2
-        await creditModel.setStakingConfig(ltvRatio * 100, effectiveScorePower)
+      describe('with effectiveScorePower = 1', () => {
+        beforeEach(async () => {
+          const effectiveScorePower = 1
+          await creditModel.setStakingConfig(ltvRatio * 100, effectiveScorePower)
+        })
+
+        ;[
+          [255, 255],
+          [223, 235],
+          [191, 216],
+          [159, 197],
+          [127, 178],
+          [95, 159],
+          [63, 139],
+          [31, 120],
+        ].map(([score, effectiveScore]) =>
+          it(`staking ${collateral} TRU increases score from ${score} to ${effectiveScore}`, async () => {
+            expect(await creditModel.effectiveScore(score, mockPool.address, parseTRU(collateral), parseEth(borrowedAmount))).to.eq(effectiveScore)
+          }))
       })
+      
+      describe('with effectiveScorePower = 2', () => {
+        beforeEach(async () => {
+          const effectiveScorePower = 2
+          await creditModel.setStakingConfig(ltvRatio * 100, effectiveScorePower)
+        })
 
-      ;[
-        [255, 255],
-        [223, 228],
-        [191, 201],
-        [159, 174],
-        [127, 147],
-        [95, 120],
-        [63, 93],
-        [31, 66],
-      ].map(([score, effectiveScore]) =>
-        it(`staking ${collateral} TRU increases score from ${score} to ${effectiveScore}`, async () => {
-          expect(await creditModel.effectiveScore(score, mockPool.address, parseTRU(collateral), parseEth(borrowedAmount))).to.eq(effectiveScore)
-        }))
+        ;[
+          [255, 255],
+          [223, 228],
+          [191, 201],
+          [159, 174],
+          [127, 147],
+          [95, 120],
+          [63, 93],
+          [31, 66],
+        ].map(([score, effectiveScore]) =>
+          it(`staking ${collateral} TRU increases score from ${score} to ${effectiveScore}`, async () => {
+            expect(await creditModel.effectiveScore(score, mockPool.address, parseTRU(collateral), parseEth(borrowedAmount))).to.eq(effectiveScore)
+          }))
+      })
 
       it('returns unchanged score if there is no collateral', async () => {
         expect(await creditModel.effectiveScore(191, mockPool.address, 0, 100)).to.eq(191)
