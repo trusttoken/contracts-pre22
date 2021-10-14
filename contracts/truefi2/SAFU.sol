@@ -115,7 +115,7 @@ contract SAFU is ISAFU, UpgradeableClaimable {
      */
     function liquidate(IDebtToken[] calldata debts) external onlyOwner {
         for (uint256 i = 0; i < debts.length; i++) {
-            require(loanFactory.isCreatedByFactory(address(debts[i])), "SAFU: Unknown debt");
+            require(loanFactory.isDebtToken(debts[i]), "SAFU: Unknown debt");
             require(debts[i].status() == IDebtToken.Status.Defaulted, "SAFU: Debt is not defaulted");
         }
 
