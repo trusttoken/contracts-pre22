@@ -463,8 +463,28 @@ describe('CreditModel', () => {
           }))
       })
 
-      it('returns unchanged score if there is no collateral', async () => {
-        expect(await creditModel.effectiveScore(191, mockPool.address, 0, 100)).to.eq(191)
+      describe('amount of collateral affects score', async () => {
+        const borrowed = 250
+
+        beforeEach(async () => {
+          await creditModel.setStakingConfig(ltvRatio * 100, 1)
+        })
+
+        ;[
+          [0, 0],
+          [10, 0],
+          [50, 1],
+          [250, 6],
+          [1000, 25],
+          [2500, 64],
+          [10**10, 64],
+          ].map(([collateral, expectedScoreChange]) => 
+          it(`when borrowed $${borrowed} staking ${collateral} TRU increases score by ${expectedScoreChange}`, async () => {
+            const effectiveScore = await creditModel.effectiveScore(191, mockPool.address, parseTRU(collateral), parseEth(borrowed))
+            const scoreChange = effectiveScore - 191
+            expect(scoreChange).to.eq(expectedScoreChange)
+          })
+        )
       })
     })
   })
