@@ -345,6 +345,90 @@ describe('SAFU', () => {
     })
 
     describe('Slashes tru', () => {
+      let debtToken: DebtToken
+
+      beforeEach(async () => {
+        await token.mint(safu.address, defaultAmount)
+        await loanFactory.setCreditAgency(owner.address)
+        await pool.setCreditAgency(owner.address)
+        debtToken = await createDebtToken(pool, defaultAmount)
+        await debtToken.approve(pool.address, defaultAmount)
+        await pool.addDebt(debtToken.address, defaultAmount)
+      })
+
+      describe('Debt not repaid at all', () => {
+        it('0 tru in staking pool balance', async () => {
+          await safu.liquidate([debtToken.address])
+          expect(await tru.balanceOf(safu.address)).to.eq(0)
+        })
+
+        it('returns max fetch share to assurance', async () => {
+          await stkTru.stake(parseTRU(1e3))
+
+          await safu.liquidate([debtToken.address])
+          expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(1e2))
+        })
+
+        it('returns defaulted value', async () => {
+          await stkTru.stake(parseTRU(1e7))
+
+          await safu.liquidate([debtToken.address])
+          expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(4400))
+        })
+      })
+
+      describe('Half of debt repaid', () => {
+        beforeEach(async () => {
+          await token.mint(debtToken.address, parseUSDC(550))
+        })
+
+        it('0 tru in staking pool balance', async () => {
+          await safu.liquidate([debtToken.address])
+          expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(0))
+        })
+
+        it('returns max fetch share to assurance', async () => {
+          await stkTru.stake(parseTRU(1e3))
+
+          await safu.liquidate([debtToken.address])
+          expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(100))
+        })
+
+        it('returns defaulted value', async () => {
+          await stkTru.stake(parseTRU(1e7))
+
+          await safu.liquidate([debtToken.address])
+          expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(22e2))
+        })
+      })
+
+      describe('Multiple debt tokens', async () => {
+        let debtToken2: DebtToken
+
+        beforeEach(async () => {
+          await token.mint(safu.address, defaultAmount)
+          debtToken2 = await createDebtToken(pool, defaultAmount)
+          await debtToken2.approve(pool.address, defaultAmount)
+          await pool.addDebt(debtToken2.address, defaultAmount)
+        })
+
+        it('returns max fetch share to assurance', async () => {
+          await stkTru.stake(parseTRU(4400 * 15))
+
+          await safu.liquidate([debtToken.address, debtToken2.address])
+          expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(4400 * 15 / 10))
+        })
+
+        it('returns defaulted value', async () => {
+          await stkTru.stake(parseTRU(1e7))
+
+          await safu.liquidate([debtToken.address, debtToken2.address])
+          expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(4400 * 2))
+        })
+      })
+    })
+
+    describe('Slashes tru (legacy)', () => {
       beforeEach(async () => {
         await token.mint(safu.address, defaultAmount)
         await timeTravel(defaultedLoanCloseTime)
