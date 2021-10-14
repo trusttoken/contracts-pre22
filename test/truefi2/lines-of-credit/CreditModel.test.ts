@@ -463,6 +463,14 @@ describe('CreditModel', () => {
           }))
       })
 
+      it('doesn\'t depend on pool decimal count', async () => {
+        await creditModel.setStakingConfig(ltvRatio * 100, 1)
+        await mockPool.mock.decimals.returns(6)
+        expect(await creditModel.effectiveScore(191, mockPool.address, parseTRU(collateral), parseEth(250))).to.eq(216)
+        await mockPool.mock.decimals.returns(18)
+        expect(await creditModel.effectiveScore(191, mockPool.address, parseTRU(collateral), parseEth(250))).to.eq(216)
+      })
+
       describe('amount of collateral affects score', async () => {
         const borrowed = 250
 
