@@ -190,12 +190,12 @@ describe('SAFU', () => {
       })
 
       describe('Slashes staked tru from CollateralVault', () => {
-        it('works with no tru staked', async() => {
+        it('works with no tru staked', async () => {
           await safu.liquidate([debtToken.address])
           expect(await tru.balanceOf(safu.address)).to.equal(0)
         })
 
-        it('works with tru staked', async() => {
+        it('works with tru staked', async () => {
           await tru.mint(borrower.address, parseTRU(100))
           await tru.connect(borrower).approve(collateralVault.address, parseTRU(100))
           await collateralVault.connect(borrower).stake(parseTRU(100))
