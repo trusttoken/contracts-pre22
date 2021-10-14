@@ -160,22 +160,6 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     }
 
     /**
-     * @dev Get loan parameters
-     * @return principal, term, apy
-     */
-    function getParameters()
-        external
-        view
-        returns (
-            uint256,
-            uint256,
-            uint256
-        )
-    {
-        return (principal, apy, term);
-    }
-
-    /**
      * @dev Get coupon value of this loan token in token
      * This assumes the loan will be paid back on time, with interest
      * @return coupon value of holder's LoanTokens in tokens
@@ -333,10 +317,6 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         uint256 _amount
     ) internal override onlyFTLAgency {
         return super._transfer(sender, recipient, _amount);
-    }
-
-    function version() external pure returns (uint8) {
-        return 7;
     }
 
     function decimals() public override view returns (uint8) {
