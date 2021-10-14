@@ -166,4 +166,18 @@ describe('TimeAverageTruPriceOracle', () => {
 
     expect(await oracle.truToUsd(parseTRU(1))).to.equal(parseEth(3))
   })
+
+  it('spamming updates very often should not impact price significantly', async () => {
+    await setTruPrice(0.5)
+    await oracle.poke()
+    await setTruPrice(10)
+    await oracle.poke()
+    await oracle.poke()
+    await oracle.poke()
+    await oracle.poke()
+    await setTruPrice(0.5)
+    await timeTravel(provider, DAY)
+
+    expect(await oracle.truToUsd(parseTRU(1))).to.be.closeTo(parseEth(0.5), parseEth(0.001).toNumber())
+  })
 })
