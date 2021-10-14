@@ -12,6 +12,7 @@ import {
 import { deployContract } from 'scripts/utils/deployContract'
 import {
   BorrowingMutex,
+  FixedTermLoanAgency,
   LoanFactory2,
   LoanToken2,
   Mock1InchV3,
@@ -22,8 +23,6 @@ import {
   MockUsdc,
   PoolFactory,
   StkTruToken,
-  TestFixedTermLoanAgency,
-  TestFixedTermLoanAgency__factory,
   TimeAveragedBaseRateOracle,
   TrueFiCreditOracle,
   TrueFiCreditOracle__factory,
@@ -51,7 +50,7 @@ describe('FixedTermLoanAgency', () => {
   let feePool: TrueFiPool2
   let poolOracle: MockTrueFiPoolOracle
 
-  let ftlAgency: TestFixedTermLoanAgency
+  let ftlAgency: FixedTermLoanAgency
   let creditOracle: TrueFiCreditOracle
 
   let counterfeitPool: TrueFiPool2
@@ -78,7 +77,6 @@ describe('FixedTermLoanAgency', () => {
     extractLoanTokenAddress = (pendingTx: Promise<ContractTransaction>) =>
       _extractLoanTokenAddress(pendingTx, owner, loanFactory)
 
-    ftlAgency = await deployContract(owner, TestFixedTermLoanAgency__factory)
     oneInch = await new Mock1InchV3__factory(owner).deploy()
 
     ; ({
@@ -93,7 +91,7 @@ describe('FixedTermLoanAgency', () => {
       borrowingMutex,
       creditModel,
       standardBaseRateOracle: baseRateOracle,
-    } = await setupTruefi2(owner, _provider, { ftlAgency: ftlAgency, oneInch: oneInch }))
+    } = await setupTruefi2(owner, _provider, { oneInch: oneInch }))
 
     token1 = await deployContract(owner, MockErc20Token__factory)
     token2 = await deployContract(owner, MockErc20Token__factory)
@@ -696,31 +694,6 @@ describe('FixedTermLoanAgency', () => {
           .and.to.emit(feePool, 'Transfer')
           .withArgs(ftlAgency.address, stkTru.address, parseEth(25))
       })
-    })
-  })
-
-  describe('transferAllLoanTokens', () => {
-    let newLoan1: LoanToken2
-
-    beforeEach(async () => {
-      newLoan1 = await extractLoanTokenAddress(ftlAgency.connect(borrower).borrow(pool1.address, 100000, YEAR, 1000))
-      await ftlAgency.setFee(0)
-    })
-
-    it('can only be called by the pool', async () => {
-      await expect(ftlAgency.transferAllLoanTokens(newLoan1.address, owner.address)).to.be.revertedWith('FixedTermLoanAgency: Pool not supported by the factory')
-    })
-
-    it('transfers whole LT balance to the recipient', async () => {
-      const balance = await newLoan1.balanceOf(ftlAgency.address)
-      await expect(ftlAgency.testTransferAllLoanTokens(newLoan1.address, owner.address))
-        .to.emit(newLoan1, 'Transfer').withArgs(ftlAgency.address, owner.address, balance)
-    })
-
-    it('removes LT from the list', async () => {
-      expect(await ftlAgency.loans(pool1.address)).to.deep.equal([newLoan1.address])
-      await ftlAgency.testTransferAllLoanTokens(newLoan1.address, owner.address)
-      expect(await ftlAgency.loans(pool1.address)).to.deep.equal([])
     })
   })
 })
