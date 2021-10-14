@@ -18,6 +18,5 @@ interface ILoanToken2 is IERC20 {
 
     function pool() external view returns (ITrueFiPool2);
 
-    // TODO return value() == value(msg.sender)
-    function value(uint256 _balance) external view returns (uint256);
+    function tokenValue(address holder) external view returns (uint256);
 }
