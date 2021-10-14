@@ -182,7 +182,7 @@ contract Liquidator2 is ILiquidator2, UpgradeableClaimable {
 
         for (uint256 i = 0; i < debts.length; i++) {
             IDebtToken debt = debts[i];
-            require(loanFactory.isCreatedByFactory(address(debt)), "Liquidator: Unknown debt");
+            require(loanFactory.isDebtToken(debt), "Liquidator: Unknown debt");
             require(debt.status() == IDebtToken.Status.Defaulted, "Liquidator: Debt must be defaulted");
             ITrueFiPool2 pool = ITrueFiPool2(debt.pool());
             require(poolFactory.isSupportedPool(pool), "Liquidator: Pool not supported for default protection");
