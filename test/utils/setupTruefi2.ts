@@ -4,7 +4,6 @@ import {
   ArbitraryDistributor__factory,
   BorrowingMutex__factory,
   CollateralVault__factory,
-  FixedTermLoanAgency,
   FixedTermLoanAgency__factory,
   ImplementationReference__factory,
   LinearTrueDistributor__factory,
