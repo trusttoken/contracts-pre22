@@ -375,7 +375,10 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
      */
     function reclaim(ILoanToken2 loanToken, bytes calldata data) external {
         ILoanToken2.Status status = loanToken.status();
-        require(status == ILoanToken2.Status.Settled || status == ILoanToken2.Status.Defaulted, "FixedTermLoanAgency: LoanToken is not closed yet");
+        require(
+            status == ILoanToken2.Status.Settled || status == ILoanToken2.Status.Defaulted,
+            "FixedTermLoanAgency: LoanToken is not closed yet"
+        );
         if (status == ILoanToken2.Status.Defaulted) {
             require(msg.sender == owner(), "FixedTermLoanAgency: Only owner can reclaim from defaulted loan");
         }
