@@ -29,7 +29,6 @@ import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
  * Settled:     Loan has been paid back in full with interest
  * Defaulted:   Loan has not been paid back in full
  *
- * - LoanTokens are only transferable by ftlAgency
  * - This version of LoanToken only supports a single funder
  */
 contract LoanToken2 is ILoanToken2, ERC20 {
@@ -57,8 +56,6 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     ITrueFiPool2 public override pool;
 
     IBorrowingMutex public borrowingMutex;
-
-    IFixedTermLoanAgency public ftlAgency;
 
     ITrueFiCreditOracle public creditOracle;
 
@@ -127,11 +124,10 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         debtToken;
         pool = _pool;
         borrowingMutex = _mutex;
-        ftlAgency = _ftlAgency;
         creditOracle = _creditOracle;
         loanFactory = _loanFactory;
 
-        _mint(address(ftlAgency), debt());
+        _mint(address(_ftlAgency), debt());
     }
 
     /**
@@ -147,14 +143,6 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      */
     modifier onlySettledOrDefaulted() {
         require(status == Status.Settled || status == Status.Defaulted, "LoanToken2: Only after loan has been closed");
-        _;
-    }
-
-    /**
-     * @dev Only ftlAgency can perform certain actions
-     */
-    modifier onlyFTLAgency() {
-        require(msg.sender == address(ftlAgency), "LoanToken2: This can be performed only by ftlAgency");
         _;
     }
 
@@ -284,20 +272,6 @@ contract LoanToken2 is ILoanToken2, ERC20 {
             return holderLoanBalance.mul(_tokenBalance()).div(totalSupply());
         }
         return holderLoanBalance;
-    }
-
-    /**
-     * @dev Override ERC20 _transfer so only whitelisted addresses can transfer
-     * @param sender sender of the transaction
-     * @param recipient recipient of the transaction
-     * @param _amount amount to send
-     */
-    function _transfer(
-        address sender,
-        address recipient,
-        uint256 _amount
-    ) internal override onlyFTLAgency {
-        return super._transfer(sender, recipient, _amount);
     }
 
     function decimals() public override view returns (uint8) {
