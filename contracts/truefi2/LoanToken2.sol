@@ -134,7 +134,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @dev Only when loan is Withdrawn
      */
     modifier onlyWithdrawn() {
-        require(status == Status.Withdrawn, "LoanToken2: Current status should be Withdrawn");
+        require(status == Status.Withdrawn, "LoanToken2: Status is not Withdrawn");
         _;
     }
 
@@ -142,7 +142,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @dev Only when loan is Settled or Defaulted
      */
     modifier onlySettledOrDefaulted() {
-        require(status == Status.Settled || status == Status.Defaulted, "LoanToken2: Only after loan has been closed");
+        require(status == Status.Settled || status == Status.Defaulted, "LoanToken2: Status is not Settled or Defaulted");
         _;
     }
 
@@ -172,7 +172,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @param _amount amount of token to repay
      */
     function _repay(address _sender, uint256 _amount) private {
-        require(_amount.add(tokenRepaid()) <= debt(), "LoanToken2: Cannot repay over the debt");
+        require(_amount.add(tokenRepaid()) <= debt(), "LoanToken2: Repay amount more than unpaid debt");
         emit Repaid(_sender, _amount);
 
         token.safeTransferFrom(_sender, address(this), _amount);
@@ -185,7 +185,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @dev Settle the loan after checking it has been repaid
      */
     function settle() public onlyWithdrawn {
-        require(isRepaid(), "LoanToken2: loan must be repaid to settle");
+        require(isRepaid(), "LoanToken2: Loan must be fully repaid");
         status = Status.Settled;
 
         borrowingMutex.unlock(borrower);
@@ -197,8 +197,8 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @dev Default the loan if it has not been repaid by the end of term
      */
     function enterDefault() external onlyWithdrawn {
-        require(!isRepaid(), "LoanToken2: cannot default a repaid loan");
-        require(start.add(term).add(creditOracle.gracePeriod()) <= block.timestamp, "LoanToken2: Loan cannot be defaulted yet");
+        require(!isRepaid(), "LoanToken2: Loan is fully repaid");
+        require(start.add(term).add(creditOracle.gracePeriod()) <= block.timestamp, "LoanToken2: Loan has not reached end of term");
         status = Status.Defaulted;
 
         uint256 unpaidDebt = debt().sub(tokenRepaid());
