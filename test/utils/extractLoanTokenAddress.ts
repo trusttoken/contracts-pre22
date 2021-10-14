@@ -3,13 +3,7 @@ import {
   DebtToken__factory,
   LoanFactory2,
   LoanToken2__factory,
-  TestLegacyLoanToken2__factory,
 } from 'contracts'
-
-export async function extractLegacyLoanToken (tx: ContractTransaction, owner: Signer) {
-  const receipt = await tx.wait()
-  return TestLegacyLoanToken2__factory.connect(receipt.events[0].args[0], owner)
-}
 
 export async function extractLoanTokenAddress (pendingTx: Promise<ContractTransaction>, owner: Signer, loanFactory: LoanFactory2) {
   const tx = await pendingTx

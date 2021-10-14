@@ -1,10 +1,13 @@
 import {
-  DebtToken__factory, TestLegacyLoanToken2, TestLegacyLoanToken2__factory,
+  DebtToken__factory,
   LoanFactory2,
   LoanToken2__factory,
+  TestLegacyLoanToken2__factory,
+  TestLoanFactory,
+  TestTrueLender,
   TrueFiPool2,
 } from 'contracts'
-import { BigNumberish, Contract, Wallet } from 'ethers'
+import { BigNumberish, Wallet } from 'ethers'
 
 export const createLoan = async function (factory: LoanFactory2, creator: Wallet, pool: TrueFiPool2, amount: BigNumberish, duration: BigNumberish, apy: BigNumberish) {
   const fakeFTLA = creator
@@ -12,7 +15,7 @@ export const createLoan = async function (factory: LoanFactory2, creator: Wallet
   await factory.setFixedTermLoanAgency(fakeFTLA.address)
   const loanTx = await factory.connect(fakeFTLA).createLoanToken(pool.address, creator.address, amount, duration, apy)
   await factory.setFixedTermLoanAgency(originalFTLA_address)
-  const loanAddress = (await loanTx.wait()).events[0].args.loanToken
+  const loanAddress = (await loanTx.wait()).events[1].args.loanToken
   return new LoanToken2__factory(creator).attach(loanAddress)
 }
 
@@ -23,8 +26,10 @@ export const createDebtToken = async (loanFactory: LoanFactory2, creditAgency: W
   return DebtToken__factory.connect(creationEvent.args.debtToken, owner)
 }
 
-export const createLegacyLoan = async (lender: Contract, ...args: Parameters<typeof createLoan>): Promise<TestLegacyLoanToken2> => {
-  const loan = TestLegacyLoanToken2__factory.connect((await createLoan(...args)).address, args[1])
+export const createLegacyLoan = async (loanFactory: TestLoanFactory, pool: TrueFiPool2, lender: TestTrueLender, owner: Wallet, borrower: Wallet, amount: BigNumberish, term: BigNumberish, apy: BigNumberish) => {
+  const tx = await loanFactory.createLegacyLoanToken(pool.address, borrower.address, amount, term, apy)
+  const receipt = await tx.wait()
+  const loan = TestLegacyLoanToken2__factory.connect(receipt.events[0].args[0], owner)
   await loan.setLender(lender.address)
   return loan
 }

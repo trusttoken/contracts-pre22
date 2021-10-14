@@ -426,15 +426,14 @@ describe('FixedTermLoanAgency', () => {
         expect(poolValueBefore.sub(await pool1.liquidValue())).to.eq(borrowedAmount)
       })
 
-      it('borrows receivedAmount from pool and transfers to the loan', async () => {
+      it('borrows receivedAmount from pool and transfers to the borrower', async () => {
         const tx = borrow(borrower, pool1, 100000, YEAR)
-        const newLoan = await extractLoanTokenAddress(tx)
         await expect(tx)
           .to.emit(token1, 'Transfer')
           .withArgs(pool1.address, ftlAgency.address, 100_000)
           .and.to.emit(token1, 'Transfer')
-          .withArgs(ftlAgency.address, newLoan.address, 100_000)
-        expect(await newLoan.balance()).to.equal(100_000)
+          .withArgs(ftlAgency.address, borrower.address, 100_000)
+        expect(await token1.balanceOf(borrower.address)).to.equal(100_000)
       })
 
       it('locks borrowing mutex', async () => {

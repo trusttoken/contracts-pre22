@@ -31,8 +31,8 @@ import { setupDeploy } from 'scripts/utils'
 import {
   beforeEachWithFixture,
   createDebtToken as _createDebtToken,
+  createLegacyLoan,
   DAY,
-  extractLegacyLoanToken,
   parseEth,
   parseTRU,
   parseUSDC,
@@ -105,9 +105,7 @@ describe('Liquidator2', () => {
       borrowingMutex,
     } = await setupTruefi2(owner, _provider, { lender, loanFactory }))
 
-    const tx = await loanFactory.createLegacyLoanToken(usdcPool.address, borrower.address, parseUSDC(1000), YEAR, 1000)
-    loan = await extractLegacyLoanToken(tx, owner)
-    await loan.setLender(lender.address)
+    loan = await createLegacyLoan(loanFactory, usdcPool, lender, owner, borrower, parseUSDC(1000), YEAR, 1000)
     await usdc.mint(lender.address, parseUSDC(1000))
     await lender.fund(loan.address)
     await loan.connect(borrower).withdraw(borrower.address)

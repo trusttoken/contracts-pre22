@@ -173,6 +173,9 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         loanFactory = _loanFactory;
         creditOracle = _creditOracle;
         debt = interest(amount);
+        status = Status.Withdrawn;
+        start = block.timestamp;
+        _mint(address(ftlAgency), debt);
     }
 
     /**
@@ -302,19 +305,6 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     }
 
     /**
-     * @dev Fund a loan
-     * Set status, start time, mint tokens
-     */
-    function fund() external override onlyAwaiting onlyFTLAgency {
-        status = Status.Funded;
-        start = block.timestamp;
-        _mint(msg.sender, debt);
-        token.safeTransferFrom(msg.sender, address(this), amount);
-
-        emit Funded(msg.sender);
-    }
-
-    /**
      * @dev Whitelist accounts to transfer
      * @param account address to allow transfers for
      * @param _status true allows transfers, false disables transfers
@@ -331,18 +321,6 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     function allowAllTransfers(bool _status) external onlyAdmin {
         transferable = _status;
         emit TransferabilityChanged(_status);
-    }
-
-    /**
-     * @dev Borrower calls this function to withdraw funds
-     * Sets the status of the loan to Withdrawn
-     * @param _beneficiary address to send funds to
-     */
-    function withdraw(address _beneficiary) external override onlyBorrower onlyFunded {
-        status = Status.Withdrawn;
-        token.safeTransfer(_beneficiary, amount);
-
-        emit Withdrawn(_beneficiary);
     }
 
     /**

@@ -349,8 +349,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
         borrowingMutex.lock(borrower, address(loanToken));
         poolLoans[pool].push(loanToken);
         pool.borrow(amount);
-        pool.token().safeApprove(address(loanToken), amount);
-        loanToken.fund();
+        pool.token().safeTransfer(borrower, amount);
 
         emit Funded(address(pool), address(loanToken), amount);
     }
