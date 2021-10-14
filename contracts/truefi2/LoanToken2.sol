@@ -162,7 +162,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @param _sender account sending token to repay
      */
     function repayInFull(address _sender) external {
-        _repay(_sender, debt().sub(tokenRepaid()));
+        _repay(_sender, unpaidDebt());
     }
 
     /**
@@ -172,11 +172,11 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @param _amount amount of token to repay
      */
     function _repay(address _sender, uint256 _amount) private {
-        require(_amount.add(tokenRepaid()) <= debt(), "LoanToken2: Repay amount more than unpaid debt");
+        require(_amount <= unpaidDebt(), "LoanToken2: Repay amount more than unpaid debt");
         emit Repaid(_sender, _amount);
 
         token.safeTransferFrom(_sender, address(this), _amount);
-        if (isRepaid()) {
+        if (unpaidDebt() == 0) {
             settle();
         }
     }
@@ -185,31 +185,30 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @dev Settle the loan after checking it has been repaid
      */
     function settle() public onlyWithdrawn {
-        require(isRepaid(), "LoanToken2: Loan must be fully repaid");
+        require(unpaidDebt() == 0, "LoanToken2: Loan must be fully repaid");
         status = Status.Settled;
 
         borrowingMutex.unlock(borrower);
 
-        emit Settled(tokenRepaid());
+        emit Settled(_tokenBalance());
     }
 
     /**
      * @dev Default the loan if it has not been repaid by the end of term
      */
     function enterDefault() external onlyWithdrawn {
-        require(!isRepaid(), "LoanToken2: Loan is fully repaid");
+        uint256 _unpaidDebt = unpaidDebt();
+        require(_unpaidDebt > 0, "LoanToken2: Loan must not be fully repaid");
         require(start.add(term).add(creditOracle.gracePeriod()) <= block.timestamp, "LoanToken2: Loan has not reached end of term");
         status = Status.Defaulted;
 
-        uint256 unpaidDebt = debt().sub(tokenRepaid());
-
-        debtToken = loanFactory.createDebtToken(pool, borrower, unpaidDebt);
-        debtToken.safeApprove(address(pool), unpaidDebt);
-        pool.addDebt(debtToken, unpaidDebt);
+        debtToken = loanFactory.createDebtToken(pool, borrower, _unpaidDebt);
+        debtToken.safeApprove(address(pool), _unpaidDebt);
+        pool.addDebt(debtToken, _unpaidDebt);
 
         borrowingMutex.ban(borrower);
 
-        emit Defaulted(debtToken, unpaidDebt);
+        emit Defaulted(debtToken, _unpaidDebt);
     }
 
     /**
@@ -231,13 +230,10 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         return principal.add(interest);
     }
 
-    /**
-     * @dev Check how much was already repaid
-     * Funds stored on the contract's address plus funds already redeemed by lenders
-     * @return Uint256 representing what value was already repaid
-     */
-    function tokenRepaid() public view returns (uint256) {
-        return _tokenBalance().add(tokenRedeemed);
+    function unpaidDebt() public view returns (uint256) {
+        uint256 tokenRepaid = _tokenBalance().add(tokenRedeemed);
+        uint256 _debt = debt();
+        return tokenRepaid <= _debt ? _debt.sub(tokenRepaid) : 0;
     }
 
     /**
@@ -246,14 +242,6 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      */
     function _tokenBalance() private view returns (uint256) {
         return token.balanceOf(address(this));
-    }
-
-    /**
-     * @dev Check whether an ongoing loan has been repaid in full
-     * @return true if and only if this loan has been repaid
-     */
-    function isRepaid() public view returns (bool) {
-        return tokenRepaid() >= debt();
     }
 
     /**
