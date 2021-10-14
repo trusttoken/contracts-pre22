@@ -39,7 +39,6 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
     using SafeERC20 for ERC20;
     using SafeERC20 for IERC20WithDecimals;
     using SafeERC20 for ITrueFiPool2;
-    using SafeERC20 for ILoanToken2;
     using OneInchExchange for I1Inch3;
 
     // basis point for ratio
