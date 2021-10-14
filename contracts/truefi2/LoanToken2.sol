@@ -20,7 +20,7 @@ import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
  *
  * Each LoanToken has:
  * - borrower address
- * - borrow amount
+ * - borrow principal
  * - loan term
  * - loan APY
  *
@@ -39,7 +39,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     uint256 private constant APY_PRECISION = 10000;
 
     address public borrower;
-    uint256 public amount;
+    uint256 public principal;
     uint256 public term;
 
     // apy precision: 10000 = 100%
@@ -101,7 +101,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @param _borrower Borrower address
      * @param _ftlAgency FixedTermLoanAgency address
      * @param _loanFactory LoanFactory to create DebtTokens in case of default
-     * @param _amount Borrow amount of loaned tokens
+     * @param _principal Borrow amount of underlying tokens
      * @param _term Loan length
      * @param _apy Loan APY
      */
@@ -113,7 +113,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         address,
         ILoanFactory2 _loanFactory,
         ITrueFiCreditOracle _creditOracle,
-        uint256 _amount,
+        uint256 _principal,
         uint256 _term,
         uint256 _apy
     ) external initializer {
@@ -123,13 +123,13 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         token = _pool.token();
         borrowingMutex = _mutex;
         borrower = _borrower;
-        amount = _amount;
+        principal = _principal;
         term = _term;
         apy = _apy;
         ftlAgency = _ftlAgency;
         loanFactory = _loanFactory;
         creditOracle = _creditOracle;
-        debt = amount.add(interest(term));
+        debt = principal.add(interest(term));
         status = Status.Withdrawn;
         start = block.timestamp;
         _mint(address(ftlAgency), debt);
@@ -161,7 +161,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
 
     /**
      * @dev Get loan parameters
-     * @return amount, term, apy
+     * @return principal, term, apy
      */
     function getParameters()
         external
@@ -172,7 +172,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
             uint256
         )
     {
-        return (amount, apy, term);
+        return (principal, apy, term);
     }
 
     /**
@@ -195,7 +195,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
             return holderLoanBalance;
         }
 
-        return amount.add(interest(duration)).mul(holderLoanBalance).div(debt);
+        return principal.add(interest(duration)).mul(holderLoanBalance).div(debt);
     }
 
     /**
@@ -305,12 +305,12 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     }
 
     /**
-     * @dev Calculate interest that will be paid by this loan for an amount
-     * amount * apy * duration / 365 days / precision
-     * @return uint256 Amount of interest paid for _amount
+     * @dev Calculate interest that will be paid by this loan
+     * principal * apy * duration / 365 days / precision
+     * @return uint256 Amount of interest for duration
      */
     function interest(uint256 duration) internal view returns (uint256) {
-        return amount.mul(apy).mul(duration).div(365 days).div(APY_PRECISION);
+        return principal.mul(apy).mul(duration).div(365 days).div(APY_PRECISION);
     }
 
     /**
@@ -318,7 +318,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @return profit for this loan
      */
     function profit() external override view returns (uint256) {
-        return debt.sub(amount);
+        return debt.sub(principal);
     }
 
     /**
