@@ -162,10 +162,6 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         return newToken;
     }
 
-    function isCreatedByFactory(address loanOrDebt) external override view returns (bool) {
-        return isLoanToken[ILoanToken2(loanOrDebt)] || isDebtToken[IDebtToken(loanOrDebt)];
-    }
-
     function setCreditOracle(ITrueFiCreditOracle _creditOracle) external onlyAdmin {
         require(address(_creditOracle) != address(0), "LoanFactory: Cannot set credit oracle to zero address");
         creditOracle = _creditOracle;

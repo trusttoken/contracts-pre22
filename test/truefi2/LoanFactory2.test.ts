@@ -190,36 +190,6 @@ describe('LoanFactory2', () => {
     })
   })
 
-  describe('isCreatedByFactory', () => {
-    describe('returns true for', () => {
-      it('loan token created by factory', async () => {
-        const loanToken = await createLoanToken(pool, borrower, parseEth(1), DAY, 1000)
-        expect(await loanFactory.isCreatedByFactory(loanToken.address)).to.eq(true)
-      })
-
-      it('debt token created by factory', async () => {
-        const debtToken = await createDebtToken(pool, borrower, parseEth(1))
-        expect(await loanFactory.isCreatedByFactory(debtToken.address)).to.eq(true)
-      })
-    })
-
-    describe('returns false for', () => {
-      it('loan token not created by factory', async () => {
-        const loanToken = await new LoanToken2__factory(owner).deploy()
-        expect(await loanFactory.isCreatedByFactory(loanToken.address)).to.eq(false)
-      })
-
-      it('debt token not created by factory', async () => {
-        const debtToken = await new DebtToken__factory(owner).deploy()
-        expect(await loanFactory.isCreatedByFactory(debtToken.address)).to.eq(false)
-      })
-
-      it('non-loan address', async () => {
-        expect(await loanFactory.isCreatedByFactory(owner.address)).to.eq(false)
-      })
-    })
-  })
-
   describe('setCreditOracle', () => {
     let fakeCreditOracle: TrueFiCreditOracle
     beforeEach(async () => {
