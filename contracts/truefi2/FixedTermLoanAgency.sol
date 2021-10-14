@@ -364,7 +364,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
         ILoanToken2[] storage _loans = poolLoans[pool];
         uint256 totalValue;
         for (uint256 index = 0; index < _loans.length; index++) {
-            totalValue = totalValue.add(_loans[index].tokenValue(address(this)));
+            totalValue = totalValue.add(_loans[index].currentValue(address(this)));
         }
         return totalValue;
     }

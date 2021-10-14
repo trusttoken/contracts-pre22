@@ -245,11 +245,13 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     }
 
     /**
-     * @dev Get coupon value of this loan token in token
-     * This assumes the loan will be paid back on time, with interest
-     * @return coupon value of holder's LoanTokens in tokens
+     * @dev Get current value of this loan for holder, denominated in underlying tokens
+     * This assumes:
+     * - the loan increases linearly in value from creation to maturity
+     * - the loan will be paid back on time, with interest
+     * @return current value of holder's loan in tokens
      */
-    function tokenValue(address holder) external override view returns (uint256) {
+    function currentValue(address holder) external override view returns (uint256) {
         uint256 holderLoanBalance = balanceOf(holder);
         uint256 duration = block.timestamp.sub(start);
         if (status == Status.Withdrawn && duration < term) {

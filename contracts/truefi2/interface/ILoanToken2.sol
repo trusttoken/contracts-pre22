@@ -16,7 +16,7 @@ interface ILoanToken2 is IERC20 {
 
     function debt() external view returns (uint256);
 
-    function tokenValue(address holder) external view returns (uint256);
+    function currentValue(address holder) external view returns (uint256);
 
     function pool() external view returns (ITrueFiPool2);
 }
