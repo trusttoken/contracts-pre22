@@ -164,7 +164,7 @@ contract SAFU is ISAFU, UpgradeableClaimable {
      * @param debt Debt token to be redeemed
      */
     function redeem(IDebtToken debt) public onlyOwner {
-        require(loanFactory.isCreatedByFactory(address(debt)), "SAFU: Unknown debt");
+        require(loanFactory.isDebtToken(debt), "SAFU: Unknown debt");
         uint256 amountToBurn = tokenBalance(debt);
         uint256 balanceBeforeRedeem = tokenBalance(debt.token());
         debt.redeem(amountToBurn);
@@ -195,7 +195,7 @@ contract SAFU is ISAFU, UpgradeableClaimable {
      * @param amount Amount of deficiency tokens to be reclaimed
      */
     function reclaim(IDebtToken debt, uint256 amount) external override {
-        require(loanFactory.isCreatedByFactory(address(debt)), "SAFU: Unknown debt");
+        require(loanFactory.isDebtToken(debt), "SAFU: Unknown debt");
 
         address poolAddress = address(debt.pool());
         require(msg.sender == poolAddress, "SAFU: caller is not the debt's pool");
