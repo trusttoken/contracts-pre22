@@ -260,7 +260,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @param _sender account sending token to repay
      */
     function repayInFull(address _sender) external {
-        _repay(_sender, debt.sub(balance()));
+        _repay(_sender, debt.sub(repaid()));
     }
 
     /**
@@ -270,7 +270,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @param _amount amount of token to repay
      */
     function _repay(address _sender, uint256 _amount) internal {
-        require(_amount <= debt.sub(balance()), "LoanToken2: Cannot repay over the debt");
+        require(_amount.add(repaid()) <= debt, "LoanToken2: Cannot repay over the debt");
         emit Repaid(_sender, _amount);
 
         token.safeTransferFrom(_sender, address(this), _amount);
@@ -292,8 +292,8 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @dev Check whether an ongoing loan has been repaid in full
      * @return true if and only if this loan has been repaid
      */
-    function isRepaid() public view onlyWithdrawn returns (bool) {
-        return balance() >= debt;
+    function isRepaid() public view returns (bool) {
+        return repaid() >= debt;
     }
 
     /**
