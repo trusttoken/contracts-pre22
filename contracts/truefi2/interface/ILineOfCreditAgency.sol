@@ -5,4 +5,6 @@ import {ITrueFiPool2} from "./ITrueFiPool2.sol";
 
 interface ILineOfCreditAgency {
     function poolCreditValue(ITrueFiPool2 pool) external view returns (uint256);
+
+    function isOverProFormaLimit(address borrower, uint256 stakedAmount) external view returns (bool);
 }

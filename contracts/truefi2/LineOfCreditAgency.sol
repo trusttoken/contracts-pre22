@@ -13,6 +13,7 @@ import {ILineOfCreditAgency} from "./interface/ILineOfCreditAgency.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
 import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
 import {IDebtToken} from "./interface/IDebtToken.sol";
+import {ICollateralVault} from "./interface/ICollateralVault.sol";
 
 interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
     function decimals() external view returns (uint8);
@@ -131,6 +132,8 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
 
     mapping(ITrueFiPool2 => mapping(address => uint256)) public overBorrowLimitTime;
 
+    ICollateralVault public collateralVault;
+
     // ======= STORAGE DECLARATION END ============
 
     /// @dev emit `newCreditModel` when credit model changed
@@ -168,7 +171,8 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
         ICreditModel _creditModel,
         IBorrowingMutex _borrowingMutex,
         IPoolFactory _poolFactory,
-        ILoanFactory2 _loanFactory
+        ILoanFactory2 _loanFactory,
+        ICollateralVault _collateralVault
     ) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
         creditOracle = _creditOracle;
@@ -176,6 +180,7 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
         borrowingMutex = _borrowingMutex;
         poolFactory = _poolFactory;
         loanFactory = _loanFactory;
+        collateralVault = _collateralVault;
         minCreditScore = 191;
         interestRepaymentPeriod = 31 days;
     }
@@ -298,7 +303,7 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
                 pool,
                 creditOracle.score(borrower),
                 creditOracle.maxBorrowerLimit(borrower),
-                0,
+                collateralVault.stakedAmount(borrower),
                 totalBorrowed(borrower)
             );
     }
@@ -309,9 +314,29 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
                 pool,
                 creditOracle.score(borrower),
                 creditOracle.maxBorrowerLimit(borrower),
-                0,
+                collateralVault.stakedAmount(borrower),
                 totalBorrowed(borrower)
             );
+    }
+
+    /**
+     * @dev Returns false iff borrower will stay over borrow limit in all pools when `stakedAmount` is staked
+     */
+    function isOverProFormaLimit(address borrower, uint256 stakedAmount) external override view returns (bool) {
+        ITrueFiPool2[] memory pools = poolFactory.getSupportedPools();
+        uint256 _totalBorrowed = totalBorrowed(borrower);
+        uint8 _score = creditOracle.score(borrower);
+        uint256 _maxBorrowerLimit = creditOracle.maxBorrowerLimit(borrower);
+        for (uint256 i = 0; i < pools.length; i++) {
+            if (
+                borrowed[pools[i]][borrower] > 0 &&
+                creditModel.isOverLimit(pools[i], _score, _maxBorrowerLimit, stakedAmount, _totalBorrowed)
+            ) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

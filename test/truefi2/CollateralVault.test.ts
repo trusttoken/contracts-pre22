@@ -3,6 +3,7 @@ import { solidity } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
 import {
   beforeEachWithFixture,
+  parseEth,
   parseTRU,
   setupTruefi2,
   createDebtToken,
@@ -11,11 +12,13 @@ import {
 import {
   BorrowingMutex,
   CollateralVault,
+  Ierc20,
   DebtToken,
   LineOfCreditAgency,
   Liquidator2,
   LoanFactory2,
   MockTrueCurrency,
+  TrueFiCreditOracle,
   TrueFiPool2,
 } from 'contracts'
 
@@ -30,8 +33,10 @@ describe('CollateralVault', () => {
   let borrowingMutex: BorrowingMutex
   let creditAgency: LineOfCreditAgency
   let liquidator: Liquidator2
-  let loanFactory: LoanFactory2
+  let creditOracle: TrueFiCreditOracle
   let pool: TrueFiPool2
+  let poolToken: Ierc20
+  let loanFactory: LoanFactory2
 
   let collateralVault: CollateralVault
 
@@ -44,10 +49,12 @@ describe('CollateralVault', () => {
       creditAgency,
       liquidator,
       collateralVault,
+      creditOracle,
+      standardPool: pool,
+      standardToken: poolToken,
       loanFactory,
-      feePool: pool,
     } = await setupTruefi2(owner, _provider))
-
+    await pool.setCreditAgency(creditAgency.address)
     await borrowingMutex.allowLocker(owner.address, true)
 
     await tru.mint(borrower.address, parseTRU(100))
@@ -111,6 +118,50 @@ describe('CollateralVault', () => {
       await expect(collateralVault.connect(borrower).stake(parseTRU(100)))
         .to.emit(collateralVault, 'Staked')
         .withArgs(borrower.address, parseTRU(100))
+    })
+  })
+
+  describe('canUnstake', () => {
+    beforeEach(async () => {
+      await collateralVault.connect(borrower).stake(parseTRU(100))
+    })
+
+    it('is true when amount is below staked', async () => {
+      expect(await collateralVault.canUnstake(borrower.address, parseTRU(100))).to.be.true
+    })
+
+    it('is false when amount exceeds staked', async () => {
+      expect(await collateralVault.canUnstake(borrower.address, parseTRU(100).add(1))).to.be.false
+    })
+
+    it('is false when locked but not by credit agency', async () => {
+      await borrowingMutex.lock(borrower.address, owner.address)
+      expect(await collateralVault.canUnstake(borrower.address, parseTRU(100))).to.be.false
+    })
+
+    describe('When borrower has open credit line', () => {
+      beforeEach(async () => {
+        await creditOracle.setScore(borrower.address, 200)
+        await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100))
+        await poolToken.mint(owner.address, parseEth(1e7))
+        await poolToken.approve(pool.address, parseEth(1e7))
+        await pool.join(parseEth(1e7))
+        await creditAgency.allowBorrower(borrower.address, true)
+        const borrowLimit = await creditAgency.borrowLimit(pool.address, borrower.address)
+        await creditAgency.connect(borrower).borrow(pool.address, borrowLimit.sub(parseEth(5)))
+      })
+
+      it('can unstake if as a result borrowed amount does not exceed borrow limit', async () => {
+        expect(await collateralVault.canUnstake(borrower.address, parseTRU(30))).to.be.true
+        await expect(collateralVault.connect(borrower).unstake(parseTRU(30)))
+          .to.not.be.reverted
+      })
+
+      it('cannot unstake if as a result borrowed amount exceeds borrow limit', async () => {
+        expect(await collateralVault.canUnstake(borrower.address, parseTRU(60))).to.be.false
+        await expect(collateralVault.connect(borrower).unstake(parseTRU(60)))
+          .to.be.revertedWith('CollateralVault: Cannot unstake')
+      })
     })
   })
 
