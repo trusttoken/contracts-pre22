@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 
 import {ILiquidator2} from "./interface/ILiquidator2.sol";
 import {ILoanToken2Deprecated} from "./deprecated/ILoanToken2Deprecated.sol";
@@ -12,8 +13,8 @@ import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {IStakingPool} from "../truefi/interface/IStakingPool.sol";
 import {ITrueFiPoolOracle} from "./interface/ITrueFiPoolOracle.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
-import {IDebtToken} from "../truefi2/interface/IDebtToken.sol";
-import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+import {IDebtToken} from "./interface/IDebtToken.sol";
+import {ICollateralVault} from "./interface/ICollateralVault.sol";
 
 /**
  * @title Liquidator2
@@ -51,6 +52,8 @@ contract Liquidator2 is ILiquidator2, UpgradeableClaimable {
 
     ITrueFiPoolOracle public tusdPoolOracle;
 
+    ICollateralVault public collateralVault;
+
     // ======= STORAGE DECLARATION END ============
 
     /**
@@ -83,6 +86,8 @@ contract Liquidator2 is ILiquidator2, UpgradeableClaimable {
 
     event TusdPoolOracleChanged(ITrueFiPoolOracle poolOracle);
 
+    event CollateralVaultChanged(ICollateralVault collateralVault);
+
     /**
      * @dev Initialize this contract
      */
@@ -92,7 +97,8 @@ contract Liquidator2 is ILiquidator2, UpgradeableClaimable {
         ILoanFactory2 _loanFactory,
         IPoolFactory _poolFactory,
         address _SAFU,
-        ITrueFiPoolOracle _tusdPoolOracle
+        ITrueFiPoolOracle _tusdPoolOracle,
+        ICollateralVault _collateralVault
     ) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
 
@@ -102,6 +108,7 @@ contract Liquidator2 is ILiquidator2, UpgradeableClaimable {
         poolFactory = _poolFactory;
         SAFU = _SAFU;
         tusdPoolOracle = _tusdPoolOracle;
+        collateralVault = _collateralVault;
         fetchMaxShare = 1000;
     }
 
@@ -128,6 +135,12 @@ contract Liquidator2 is ILiquidator2, UpgradeableClaimable {
         require(address(_tusdPoolOracle) != address(0), "Liquidator: Pool oracle cannot be set to 0");
         tusdPoolOracle = _tusdPoolOracle;
         emit TusdPoolOracleChanged(_tusdPoolOracle);
+    }
+
+    function setCollateralVault(ICollateralVault _collateralVault) external onlyOwner {
+        require(address(_collateralVault) != address(0), "Liquidator: Collateral vault cannot be set to 0");
+        collateralVault = _collateralVault;
+        emit CollateralVaultChanged(_collateralVault);
     }
 
     /**
@@ -160,6 +173,7 @@ contract Liquidator2 is ILiquidator2, UpgradeableClaimable {
      */
     function liquidate(IDebtToken[] calldata debts) external override {
         require(msg.sender == SAFU, "Liquidator: Only SAFU contract can liquidate a debt");
+        require(debts.length > 0, "Liquidator: List of provided debts is empty");
         require(
             allDebtsHaveSameBorrower(debts),
             "Liquidator: Debts liquidated in a single transaction, have to have the same borrower"
@@ -180,6 +194,11 @@ contract Liquidator2 is ILiquidator2, UpgradeableClaimable {
 
         uint256 withdrawnTru = getAmountToWithdraw(totalDefaultedValue);
         stkTru.withdraw(withdrawnTru);
+
+        address borrower = debts[0].borrower();
+        withdrawnTru = withdrawnTru.add(collateralVault.stakedAmount(borrower));
+        collateralVault.slash(borrower);
+
         tru.safeTransfer(SAFU, withdrawnTru);
         emit Liquidated(debts, totalDefaultedValue, withdrawnTru);
     }

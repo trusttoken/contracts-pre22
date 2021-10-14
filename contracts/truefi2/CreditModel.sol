@@ -323,8 +323,8 @@ contract CreditModel is ICreditModel, UpgradeableClaimable {
     ) internal view returns (uint256) {
         uint256 maxTVLLimit = poolFactory.supportedPoolsTVL().mul(borrowLimitConfig.tvlLimitCoefficient).div(BASIS_POINTS);
         uint256 adjustment = borrowLimitAdjustment(score);
-        uint256 collateralValue = conservativeCollateralValue(pool, stakedCollateralInTru);
-        uint256 adjustedBorrowerLimit = maxBorrowerLimit.mul(adjustment).div(BASIS_POINTS).add(collateralValue);
+        uint256 collateralValueInUsd = pool.oracle().tokenToUsd(conservativeCollateralValue(pool, stakedCollateralInTru));
+        uint256 adjustedBorrowerLimit = maxBorrowerLimit.mul(adjustment).div(BASIS_POINTS).add(collateralValueInUsd);
         uint256 adjustedTVLLimit = maxTVLLimit.mul(adjustment).div(BASIS_POINTS);
         uint256 creditLimit = min(adjustedBorrowerLimit, adjustedTVLLimit);
         uint256 poolValueInUsd = pool.oracle().tokenToUsd(pool.poolValue());

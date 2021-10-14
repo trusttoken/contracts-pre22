@@ -5,7 +5,6 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
-import {ICreditModel} from "./interface/ICreditModel.sol";
 import {IERC20WithDecimals} from "./interface/IERC20WithDecimals.sol";
 import {ILineOfCreditAgency} from "./interface/ILineOfCreditAgency.sol";
 import {ILiquidator2} from "./interface/ILiquidator2.sol";
@@ -39,6 +38,8 @@ contract CollateralVault is ICollateralVault, UpgradeableClaimable {
 
     event Unstaked(address borrower, uint256 amount);
 
+    event Slashed(address borrower, uint256 amount);
+
     function initialize(
         IERC20WithDecimals _stakedToken,
         IBorrowingMutex _borrowingMutex,
@@ -63,7 +64,7 @@ contract CollateralVault is ICollateralVault, UpgradeableClaimable {
     }
 
     function unstake(uint256 amount) external {
-        require(amount <= unstakeableAmount(msg.sender), "CollateralVault: cannot unstake");
+        require(canUnstake(msg.sender, amount), "CollateralVault: Cannot unstake");
 
         stakedAmount[msg.sender] = stakedAmount[msg.sender].sub(amount);
         stakedToken.safeTransfer(msg.sender, amount);
@@ -71,18 +72,28 @@ contract CollateralVault is ICollateralVault, UpgradeableClaimable {
     }
 
     function slash(address borrower) external override {
-        // require(msg.sender == liquidator)
-        // require(borrowingMutex.isBanned(borrower))
-        // transfer stakedAmount() to liquidator
-        require(borrower == address(stakedToken)); // silence lint and build warnings
-        revert("Unimplemented!");
+        require(msg.sender == address(liquidator), "CollateralVault: Caller is not the liquidator");
+        uint256 slashedAmount = stakedAmount[borrower];
+        if (slashedAmount == 0) {
+            return;
+        }
+        require(borrowingMutex.isBanned(borrower), "CollateralVault: Borrower has to be banned");
+
+        stakedAmount[borrower] = 0;
+        stakedToken.safeTransfer(msg.sender, slashedAmount);
+        emit Slashed(borrower, slashedAmount);
     }
 
-    function unstakeableAmount(address borrower) public view returns (uint256) {
-        if (borrowingMutex.isUnlocked(borrower)) {
-            return stakedAmount[msg.sender];
+    function canUnstake(address borrower, uint256 amount) public view returns (bool) {
+        if (amount > stakedAmount[borrower]) {
+            return false;
         }
-        // TODO calculate minimum collateral from LOCA's borrow limit
-        return 0;
+        if (borrowingMutex.isUnlocked(borrower)) {
+            return true;
+        }
+        if (borrowingMutex.locker(borrower) != address(lineOfCreditAgency)) {
+            return false;
+        }
+        return !lineOfCreditAgency.isOverProFormaLimit(borrower, stakedAmount[borrower].sub(amount));
     }
 }

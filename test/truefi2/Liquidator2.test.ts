@@ -20,7 +20,10 @@ import {
   TestTrueLender__factory,
   TrueFiCreditOracle,
   TrueFiCreditOracle__factory,
+  CollateralVault,
+  CollateralVault__factory,
   TrueFiPool2,
+  BorrowingMutex,
 } from 'contracts'
 
 import { solidity } from 'ethereum-waffle'
@@ -66,6 +69,8 @@ describe('Liquidator2', () => {
   let creditOracle: TrueFiCreditOracle
   let tusdOracle: MockTrueFiPoolOracle
   let creditModel: CreditModel
+  let collateralVault: CollateralVault
+  let borrowingMutex: BorrowingMutex
 
   let timeTravel: (time: number) => void
 
@@ -97,6 +102,8 @@ describe('Liquidator2', () => {
       creditOracle,
       standardTokenOracle: tusdOracle,
       creditModel,
+      collateralVault,
+      borrowingMutex,
     } = await setupTruefi2(owner, _provider, { lender, loanFactory }))
 
     loan = await createLegacyLoan(loanFactory, usdcPool, lender, owner, borrower, parseUSDC(1000), YEAR, 1000)
@@ -155,6 +162,10 @@ describe('Liquidator2', () => {
     it('sets tusd oracle correctly', async () => {
       expect(await liquidator.tusdPoolOracle()).to.equal(tusdOracle.address)
     })
+
+    it('sets collateral vault correctly', async () => {
+      expect(await liquidator.collateralVault()).to.equal(collateralVault.address)
+    })
   })
 
   describe('setPoolFactory', () => {
@@ -210,6 +221,35 @@ describe('Liquidator2', () => {
       await expect(liquidator.setTusdPoolOracle(fakePoolOracle.address))
         .to.emit(liquidator, 'TusdPoolOracleChanged')
         .withArgs(fakePoolOracle.address)
+    })
+  })
+
+  describe('setCollateralVault', () => {
+    let fakeCollateralVault: CollateralVault
+
+    beforeEach(async () => {
+      fakeCollateralVault = await new CollateralVault__factory(owner).deploy()
+    })
+
+    it('only owner', async () => {
+      await expect(liquidator.connect(otherWallet).setCollateralVault(fakeCollateralVault.address))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('cannot be set to 0 address', async () => {
+      await expect(liquidator.setCollateralVault(AddressZero))
+        .to.be.revertedWith('Liquidator: Collateral vault cannot be set to 0')
+    })
+
+    it('sets new collateral vault address', async () => {
+      await liquidator.setCollateralVault(fakeCollateralVault.address)
+      expect(await liquidator.collateralVault()).to.eq(fakeCollateralVault.address)
+    })
+
+    it('emits event', async () => {
+      await expect(liquidator.setCollateralVault(fakeCollateralVault.address))
+        .to.emit(liquidator, 'CollateralVaultChanged')
+        .withArgs(fakeCollateralVault.address)
     })
   })
 
@@ -304,6 +344,11 @@ describe('Liquidator2', () => {
 
         await expect(liquidator.connect(assurance).legacyLiquidate(fakeLoan.address))
           .to.be.revertedWith('Liquidator: Unknown loan')
+      })
+
+      it('providing empty list of debts', async () => {
+        await expect(liquidator.connect(assurance).liquidate([]))
+          .to.be.revertedWith('Liquidator: List of provided debts is empty')
       })
     })
 
@@ -430,6 +475,17 @@ describe('Liquidator2', () => {
           .to.be.revertedWith('Liquidator: Pool not supported for default protection')
       })
 
+      it('slashes whole collateral vault stake if anything was staked', async () => {
+        await tru.mint(borrower.address, parseTRU(100))
+        await tru.connect(borrower).approve(collateralVault.address, parseTRU(100))
+        await collateralVault.connect(borrower).stake(parseTRU(100))
+        await borrowingMutex.allowLocker(owner.address, true)
+        await borrowingMutex.lock(borrower.address, owner.address)
+        await borrowingMutex.ban(borrower.address)
+        await liquidator.connect(assurance).liquidate([debtToken1.address])
+        expect(await tru.balanceOf(assurance.address)).to.equal(parseTRU(100))
+      })
+
       describe('transfers correct amount of tru to assurance contract', () => {
         describe('whole debt has defaulted', () => {
           it('0 tru in staking pool balance', async () => {
@@ -485,12 +541,6 @@ describe('Liquidator2', () => {
           .to.emit(liquidator, 'Liquidated')
           .withArgs([debtToken1.address], parseEth(1100), parseTRU(100))
       })
-    })
-
-    it('providing empty list of debts does not slash tru', async () => {
-      const balanceBefore = await tru.balanceOf(stkTru.address)
-      await liquidator.connect(assurance).liquidate([])
-      expect(await tru.balanceOf(stkTru.address)).to.eq(balanceBefore)
     })
   })
 })
