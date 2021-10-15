@@ -488,6 +488,46 @@ describe('SAFU', () => {
     })
   })
 
+  describe('redeem', () => {
+    describe('reverts if', () => {
+      it('caller is not manager', async () => {
+        await safu.liquidate([debt.address])
+        await expect(safu.connect(borrower).redeem(debt.address))
+          .to.be.revertedWith('Ownable: caller is not the owner')
+      })
+  
+      it('debt is not created by factory', async () => {
+        const strangerDebt = await new DebtToken__factory(owner).deploy()
+        await strangerDebt.initialize(pool.address, owner.address, owner.address, owner.address, defaultAmount)
+        await expect(safu.redeem(strangerDebt.address))
+          .to.be.revertedWith('SAFU: Unknown debt')
+      })
+    })
+
+    it('burns debt tokens', async () => {
+      await safu.legacyLiquidate(debt.address)
+      await expect(() => safu.redeem(debt.address)).changeTokenBalance(debt, safu, parseUSDC(1100).mul(-1))
+    })
+
+    it('redeems available tokens', async () => {
+      await safu.liquidate([debt.address])
+      await token.mint(debt.address, parseUSDC(25))
+      await expect(() => safu.redeem(debt.address)).changeTokenBalance(token, safu, parseUSDC(25))
+    })
+
+    it('emits a proper event', async () => {
+      await safu.liquidate([debt.address])
+      await token.mint(debt.address, parseUSDC(25))
+
+      const debtTokensToBurn = await debt.balanceOf(safu.address)
+      const currencyTokensToRedeem = await token.balanceOf(debt.address)
+
+      await expect(safu.redeem(debt.address))
+        .to.emit(safu, 'Redeemed')
+        .withArgs(debt.address, debtTokensToBurn, currencyTokensToRedeem)
+    })
+  })
+
   describe('swap', () => {
     const encodeData = (fromToken: string, toToken: string, sender: string, receiver: string, amount: BigNumberish, flags = 0) => {
       const iface = new utils.Interface(Mock1InchV3Json.abi)
