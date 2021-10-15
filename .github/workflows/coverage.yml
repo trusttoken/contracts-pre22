@@ -19,6 +19,6 @@ jobs:
       - name: coverage
         run: yarn coverage
       - name: Coveralls
-        uses: coverallsapp/github-action@master
+        uses: coverallsapp/github-action@main
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
