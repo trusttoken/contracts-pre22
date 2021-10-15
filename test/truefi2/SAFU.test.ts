@@ -109,7 +109,10 @@ describe('SAFU', () => {
     await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
     await creditModel.setRiskPremium(400)
 
+    await pool.setCreditAgency(owner.address)
     debt = await createDebtToken(pool, defaultAmount)
+    await debt.approve(pool.address, defaultAmount)
+    await pool.addDebt(debt.address, defaultAmount)
 
     await tru.mint(owner.address, parseTRU(1e7))
     await tru.approve(stkTru.address, parseTRU(1e7))
@@ -147,25 +150,14 @@ describe('SAFU', () => {
     })
 
     describe('Handles debt tokens', () => {
-      let debtToken: DebtToken
-
-      beforeEach(async () => {
-        await token.mint(safu.address, defaultAmount)
-        await loanFactory.setCreditAgency(owner.address)
-        await pool.setCreditAgency(owner.address)
-        debtToken = await createDebtToken(pool, defaultAmount)
-        await debtToken.approve(pool.address, defaultAmount)
-        await pool.addDebt(debtToken.address, defaultAmount)
-      })
-
       it('transfers DebtTokens to the SAFU', async () => {
-        await safu.liquidate([debtToken.address])
-        await expect(await debtToken.balanceOf(safu.address)).to.equal(defaultAmount)
+        await safu.liquidate([debt.address])
+        await expect(await debt.balanceOf(safu.address)).to.equal(defaultAmount)
       })
 
       describe('Slashes staked tru from CollateralVault', () => {
         it('works with no tru staked', async () => {
-          await safu.liquidate([debtToken.address])
+          await safu.liquidate([debt.address])
           expect(await tru.balanceOf(safu.address)).to.equal(0)
         })
 
@@ -178,7 +170,7 @@ describe('SAFU', () => {
           await borrowingMutex.lock(borrower.address, owner.address)
           await borrowingMutex.ban(borrower.address)
 
-          await safu.liquidate([debtToken.address])
+          await safu.liquidate([debt.address])
           expect(await tru.balanceOf(safu.address)).to.eq(parseTRU(100))
         })
       })
@@ -200,7 +192,6 @@ describe('SAFU', () => {
     }
 
     describe('Handles debt repay', () => {
-
       describe('Safu has funds to cover, all debt tokens are in pool', () => {
         beforeEach(async () => {
           await token.mint(safu.address, defaultAmount)
@@ -495,7 +486,7 @@ describe('SAFU', () => {
         await expect(safu.connect(borrower).redeem(debt.address))
           .to.be.revertedWith('Ownable: caller is not the owner')
       })
-  
+
       it('debt is not created by factory', async () => {
         const strangerDebt = await new DebtToken__factory(owner).deploy()
         await strangerDebt.initialize(pool.address, owner.address, owner.address, owner.address, defaultAmount)
@@ -505,26 +496,30 @@ describe('SAFU', () => {
     })
 
     it('burns debt tokens', async () => {
-      await safu.legacyLiquidate(debt.address)
-      await expect(() => safu.redeem(debt.address)).changeTokenBalance(debt, safu, parseUSDC(1100).mul(-1))
+      await safu.liquidate([debt.address])
+      await token.mint(debt.address, defaultAmount)
+      await expect(() => safu.redeem(debt.address)).changeTokenBalance(debt, safu, defaultAmount.mul(-1))
     })
 
-    it('redeems available tokens', async () => {
+    it('redeems default value', async () => {
       await safu.liquidate([debt.address])
-      await token.mint(debt.address, parseUSDC(25))
-      await expect(() => safu.redeem(debt.address)).changeTokenBalance(token, safu, parseUSDC(25))
+      await token.mint(debt.address, defaultAmount)
+      await expect(() => safu.redeem(debt.address)).changeTokenBalance(token, safu, defaultAmount)
+    })
+
+    it('redeems all available tokens', async () => {
+      await safu.liquidate([debt.address])
+      await token.mint(debt.address, defaultAmount.mul(2))
+      await expect(() => safu.redeem(debt.address)).changeTokenBalance(token, safu, defaultAmount.mul(2))
     })
 
     it('emits a proper event', async () => {
       await safu.liquidate([debt.address])
-      await token.mint(debt.address, parseUSDC(25))
-
-      const debtTokensToBurn = await debt.balanceOf(safu.address)
-      const currencyTokensToRedeem = await token.balanceOf(debt.address)
+      await token.mint(debt.address, defaultAmount.mul(2))
 
       await expect(safu.redeem(debt.address))
         .to.emit(safu, 'Redeemed')
-        .withArgs(debt.address, debtTokensToBurn, currencyTokensToRedeem)
+        .withArgs(debt.address, defaultAmount, defaultAmount.mul(2))
     })
   })
 
