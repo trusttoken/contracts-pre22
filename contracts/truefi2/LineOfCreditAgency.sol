@@ -236,7 +236,7 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
      * @param pool Pool to update credit score for
      * @param borrower Borrower to update credit score for
      */
-    function updateCreditScore(ITrueFiPool2 pool, address borrower) external override {
+    function updateCreditScore(ITrueFiPool2 pool, address borrower) public {
         (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, borrower, borrowed[pool][borrower]);
         if (oldScore == newScore) {
             return;
@@ -558,6 +558,16 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
         ITrueFiPool2[] memory pools = poolFactory.getSupportedPools();
         for (uint256 i = 0; i < pools.length; i++) {
             poke(pools[i]);
+        }
+    }
+
+    /**
+     * @dev Update credit scores for all pools
+     */
+    function updateAllCreditScores(address borrower) external override {
+        ITrueFiPool2[] memory pools = poolFactory.getSupportedPools();
+        for (uint256 i = 0; i < pools.length; i++) {
+            updateCreditScore(pools[i], borrower);
         }
     }
 

@@ -1295,4 +1295,20 @@ describe('LineOfCreditAgency', () => {
       expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(235)
     })
   })
+
+  describe('updateAllCreditScores', () => {
+    beforeEach(async () => {
+      await creditOracle.setScore(borrower.address, 0)
+      await creditAgency.updateAllCreditScores(borrower.address)
+      await creditOracle.setScore(borrower.address, 223)
+    })
+
+    it('updates credit scores for 2 pools', async () => {
+      expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(0)
+      expect(await creditAgency.creditScore(usdcPool.address, borrower.address)).to.eq(0)
+      await creditAgency.updateAllCreditScores(borrower.address)
+      expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(223)
+      expect(await creditAgency.creditScore(usdcPool.address, borrower.address)).to.eq(223)
+    })
+  })
 })

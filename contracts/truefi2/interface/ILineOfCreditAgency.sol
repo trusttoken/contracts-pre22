@@ -8,5 +8,5 @@ interface ILineOfCreditAgency {
 
     function isOverProFormaLimit(address borrower, uint256 stakedAmount) external view returns (bool);
 
-    function updateCreditScore(ITrueFiPool2 pool, address borrower) external;
+    function updateAllCreditScores(address borrower) external;
 }
