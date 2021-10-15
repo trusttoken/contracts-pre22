@@ -236,7 +236,7 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
      * @param pool Pool to update credit score for
      * @param borrower Borrower to update credit score for
      */
-    function updateCreditScore(ITrueFiPool2 pool, address borrower) external {
+    function updateCreditScore(ITrueFiPool2 pool, address borrower) external override {
         (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, borrower, borrowed[pool][borrower]);
         if (oldScore == newScore) {
             return;
