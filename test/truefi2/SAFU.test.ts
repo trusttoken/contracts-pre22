@@ -409,6 +409,85 @@ describe('SAFU', () => {
     })
   })
 
+  describe('reclaim', () => {
+    beforeEach(async () => {
+      await token.mint(safu.address, defaultAmount.div(2))
+      await safu.liquidate([debt.address])
+    })
+
+    describe('reverts if', () => {
+      it('debt is not created by factory', async () => {
+        const strangerDebt = await new DebtToken__factory(owner).deploy()
+        await strangerDebt.initialize(pool.address, owner.address, owner.address, owner.address, defaultAmount)
+        await expect(safu.reclaim(strangerDebt.address, 0))
+          .to.be.revertedWith('SAFU: Unknown debt')
+      })
+
+      it('caller is not loan pool', async () => {
+        await expect(safu.connect(voter).reclaim(debt.address, 100))
+          .to.be.revertedWith('SAFU: caller is not the debt\'s pool')
+      })
+
+      it('debt was not fully redeemed by safu', async () => {
+        await expect(pool.reclaimDeficit(debt.address))
+          .to.be.revertedWith('SAFU: Debt has to be fully redeemed by SAFU')
+      })
+
+      it('debt does not have an associated deficiency token', async () => {
+        const debt2 = await createDebtToken(pool, defaultAmount)
+        await expect(pool.reclaimDeficit(debt2.address))
+          .to.be.revertedWith('TrueFiPool2: No deficiency token found for debt')
+      })
+
+      it('caller does not have deficit tokens', async () => {
+        await token.mint(debt.address, defaultAmount)
+        await safu.redeem(debt.address)
+        // Reclaim twice. The second time should fail because the pool has no deficiency tokens.
+        await pool.reclaimDeficit(debt.address)
+        await expect(pool.reclaimDeficit(debt.address))
+          .to.be.revertedWith('SAFU: Pool does not have deficiency tokens to be reclaimed')
+      })
+    })
+
+    describe('Handles debt repay', () => {
+      beforeEach(async () => {
+        await token.mint(debt.address, defaultAmount)
+        await safu.redeem(debt.address)
+      })
+
+      it('burns deficiency tokens', async () => {
+        const dToken = new DeficiencyToken__factory(owner).attach(await safu.deficiencyToken(debt.address))
+        expect(await dToken.totalSupply()).to.eq(defaultAmount.div(2))
+        await pool.reclaimDeficit(debt.address)
+        expect(await dToken.totalSupply()).to.eq(0)
+      })
+
+      it('decreases pool deficit', async () => {
+        await pool.reclaimDeficit(debt.address)
+        expect(await safu.poolDeficit(pool.address)).to.eq(0)
+      })
+
+      it('transfers deficit to the pool', async () => {
+        await expect(() => pool.reclaimDeficit(debt.address)).changeTokenBalance(token, pool, defaultAmount.div(2))
+      })
+
+      it('transfers deficit from the safu', async () => {
+        await expect(() => pool.reclaimDeficit(debt.address)).changeTokenBalance(token, safu, defaultAmount.div(2).mul(-1))
+      })
+
+      it('safu keeps excessive funds', async () => {
+        await pool.reclaimDeficit(debt.address)
+        expect(await token.balanceOf(safu.address)).to.eq(defaultAmount.div(2))
+      })
+
+      it('emits event', async () => {
+        await expect(pool.reclaimDeficit(debt.address))
+          .to.emit(safu, 'Reclaimed')
+          .withArgs(debt.address, defaultAmount.div(2))
+      })
+    })
+  })
+
   describe('swap', () => {
     const encodeData = (fromToken: string, toToken: string, sender: string, receiver: string, amount: BigNumberish, flags = 0) => {
       const iface = new utils.Interface(Mock1InchV3Json.abi)
