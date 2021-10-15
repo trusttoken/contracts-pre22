@@ -3,7 +3,6 @@ pragma solidity 0.6.10;
 
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.6/interfaces/AggregatorV3Interface.sol";
-import "hardhat/console.sol";
 
 contract TimeAverageTruPriceOracle {
     using SafeMath for uint256;
