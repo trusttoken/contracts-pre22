@@ -237,7 +237,7 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
      * @param borrower Borrower to update credit score for
      */
     function updateCreditScore(ITrueFiPool2 pool, address borrower) external {
-        (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, borrower);
+        (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, borrower, borrowed[pool][borrower]);
         if (oldScore == newScore) {
             return;
         }
@@ -249,9 +249,15 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
      * @dev Internal function to update `borrower` credit score for `pool` using credit oracle
      * @return Tuple containing (oldScore, newScore)
      */
-    function _updateCreditScore(ITrueFiPool2 pool, address borrower) internal returns (uint8, uint8) {
+    function _updateCreditScore(
+        ITrueFiPool2 pool,
+        address borrower,
+        uint256 borrowedAmount
+    ) internal returns (uint8, uint8) {
         uint8 oldScore = creditScore[pool][borrower];
         uint8 newScore = creditOracle.score(borrower);
+        uint256 stakedAmount = collateralVault.stakedAmount(borrower);
+        newScore = creditModel.effectiveScore(newScore, pool, stakedAmount, borrowedAmount);
         creditScore[pool][borrower] = newScore;
         return (oldScore, newScore);
     }
@@ -369,7 +375,9 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
             "LineOfCreditAgency: Sender not eligible to borrow"
         );
         require(!_hasOverdueInterest(pool, msg.sender), "LineOfCreditAgency: Sender has overdue interest in this pool");
-        (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, msg.sender);
+        uint256 currentDebt = borrowed[pool][msg.sender];
+        uint256 newDebt = currentDebt.add(amount);
+        (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, msg.sender, newDebt);
         require(newScore >= minCreditScore, "LineOfCreditAgency: Borrower has credit score below minimum");
         require(
             pool.oracle().tokenToUsd(amount) <= borrowLimit(pool, msg.sender),
@@ -383,12 +391,11 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
             "LineOfCreditAgency: Borrower cannot open two simultaneous debt positions"
         );
 
-        uint256 currentDebt = borrowed[pool][msg.sender];
         if (currentDebt == 0) {
             nextInterestRepayTime[pool][msg.sender] = block.timestamp.add(interestRepaymentPeriod);
         }
         overBorrowLimitTime[pool][msg.sender] = 0;
-        _rebucket(pool, msg.sender, oldScore, newScore, currentDebt.add(amount));
+        _rebucket(pool, msg.sender, oldScore, newScore, newDebt);
 
         pool.borrow(amount);
         pool.token().safeTransfer(msg.sender, amount);
@@ -496,7 +503,7 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
                 continue;
             }
 
-            (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, borrower);
+            (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, borrower, principal);
             _rebucket(pool, borrower, oldScore, newScore, 0);
 
             borrowerTotalPaidInterest[pool][borrower] = borrowerTotalPaidInterest[pool][borrower].add(_interest);
@@ -766,8 +773,9 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
         if (amount == 0) {
             return;
         }
-        (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, msg.sender);
-        _rebucket(pool, msg.sender, oldScore, newScore, borrowed[pool][msg.sender].sub(amount));
+        uint256 principal = borrowed[pool][msg.sender];
+        (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, msg.sender, principal);
+        _rebucket(pool, msg.sender, oldScore, newScore, principal.sub(amount));
 
         emit PrincipalRepaid(pool, msg.sender, amount);
     }

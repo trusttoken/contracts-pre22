@@ -394,7 +394,7 @@ describe('CreditModel', () => {
     describe('conservativeCollateralRatio', () => {
       const collateral = 1000
 
-      ;[
+        ;[
         [1000, 10],
         [500, 20],
         [250, 40],
@@ -465,7 +465,7 @@ describe('CreditModel', () => {
       describe('amount of collateral affects score', async () => {
         const borrowed = 250
 
-        ;[
+          ;[
           [0, 0],
           [10, 0],
           [50, 1],
