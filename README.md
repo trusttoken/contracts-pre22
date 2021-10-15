@@ -1,6 +1,6 @@
 # 💰 TrueFi Smart Contracts
 
-[![Coverage Status](https://coveralls.io/repos/github/trusttoken/smart-contracts/badge.svg?branch=master)](https://coveralls.io/github/trusttoken/smart-contracts?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/trusttoken/smart-contracts/badge.svg?branch=main)](https://coveralls.io/github/trusttoken/smart-contracts?branch=main)
 
 ## 🗂 Table of Contents
 - [💡 Intro](#-💡-Intro)
