@@ -39,4 +39,11 @@ interface ICreditModel {
         uint256 stakedCollateralInTru,
         uint256 totalBorrowed
     ) external view returns (bool);
+
+    function effectiveScore(
+        uint8 score,
+        ITrueFiPool2 pool,
+        uint256 stakedAmount,
+        uint256 borrowedAmount
+    ) external view returns (uint8);
 }
