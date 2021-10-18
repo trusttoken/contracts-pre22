@@ -3,12 +3,12 @@
 [![Coverage Status](https://coveralls.io/repos/github/trusttoken/smart-contracts/badge.svg?branch=main)](https://coveralls.io/github/trusttoken/smart-contracts?branch=main)
 
 ## 🗂 Table of Contents
-- [💡 Intro](#-💡-Intro)
-- [📎 Projects](#-📎-Projects)
-- [🧰 Installation](#-🧰-Installation)
-- [✅ Testing](#-✅-Testing)
-- [🛡 Coverage](#-🛡-Coverage)  
-- [🚉 Addresses](#-🚉-Addresses)
+- [💡 Intro](#-Intro)
+- [📎 Projects](#-Projects)
+- [🧰 Installation](#-Installation)
+- [✅ Testing](#-Testing)
+- [🛡 Coverage](#-Coverage)  
+- [🚉 Addresses](#-Addresses)
 
 # 💡 Intro
 TrueFi is a decentralized protocol for uncollateralized lending. This repository contains all smart contracts used across TrueFi ecosystem. Contracts are written in Solidity. All key functionalities are tested with attached TypeScript test suite. Apart from contracts and tests repository contains scripts used for deployment and maintenance of existing infrastructure.
