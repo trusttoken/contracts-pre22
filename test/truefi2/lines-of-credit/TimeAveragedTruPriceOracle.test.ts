@@ -1,7 +1,7 @@
 import { expect, use } from 'chai'
 import { solidity, deployMockContract, MockContract, MockProvider } from 'ethereum-waffle'
-import { Wallet } from 'ethers'
-import { DAY, timeTravel, timeTravelTo, updateRateOracle } from 'utils'
+import { BigNumber, Wallet } from 'ethers'
+import { DAY, parseEth, parseTRU, timeTravel, timeTravelTo, updateRateOracle } from 'utils'
 import { beforeEachWithFixture } from 'utils/beforeEachWithFixture'
 
 import {
@@ -27,7 +27,7 @@ describe('TimeAveragedTruPriceOracle', () => {
   const MAX_BUFFER_SIZE = 365 + 1
   const COOLDOWN_TIME = DAY
 
-  async function setPrice (price: number) {
+  async function setPrice (price: number | BigNumber) {
     await mockAggregator.mock.latestRoundData.returns(0, price, 0, 0, 0)
   }
 
@@ -246,6 +246,27 @@ describe('TimeAveragedTruPriceOracle', () => {
           await updateBufferRightAfterCooldown(timeBaseRateOracle)
           expect(await timeBaseRateOracle.calculateAveragePrice(7)).to.eq(200)
           expect(await timeBaseRateOracle.getWeeklyPrice()).to.eq(200)
+        })
+
+        it('truToUsd converts to USD with 18 decimal places', async () => {
+          await setPrice(parseTRU(200))
+          await updateBufferRightAfterCooldown(timeBaseRateOracle)
+          await setPrice(parseTRU(100))
+          await updateBufferRightAfterCooldown(timeBaseRateOracle)
+          await setPrice(parseTRU(300))
+          await updateBufferRightAfterCooldown(timeBaseRateOracle)
+          await setPrice(parseTRU(200))
+          await updateBufferRightAfterCooldown(timeBaseRateOracle)
+          await setPrice(parseTRU(300))
+          await updateBufferRightAfterCooldown(timeBaseRateOracle)
+          await setPrice(parseTRU(200))
+          await updateBufferRightAfterCooldown(timeBaseRateOracle)
+          await setPrice(parseTRU(100))
+          await updateBufferRightAfterCooldown(timeBaseRateOracle)
+          expect(await timeBaseRateOracle.truToUsd(0)).to.eq(0)
+          expect(await timeBaseRateOracle.truToUsd(parseTRU(0.5))).to.eq(parseEth(100))
+          expect(await timeBaseRateOracle.truToUsd(parseTRU(1))).to.eq(parseEth(200))
+          expect(await timeBaseRateOracle.truToUsd(parseTRU(3))).to.eq(parseEth(600))
         })
       })
     })
