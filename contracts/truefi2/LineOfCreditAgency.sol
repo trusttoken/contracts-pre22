@@ -237,29 +237,29 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
      * @param borrower Borrower to update credit score for
      */
     function updateCreditScore(ITrueFiPool2 pool, address borrower) public {
-        (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, borrower, borrowed[pool][borrower]);
-        if (oldScore == newScore) {
+        (uint8 oldEffectiveScore, uint8 newEffectiveScore) = _updateCreditScore(pool, borrower, borrowed[pool][borrower]);
+        if (oldEffectiveScore == newEffectiveScore) {
             return;
         }
 
-        _rebucket(pool, borrower, oldScore, newScore, borrowed[pool][borrower]);
+        _rebucket(pool, borrower, oldEffectiveScore, newEffectiveScore, borrowed[pool][borrower]);
     }
 
     /**
      * @dev Internal function to update `borrower` credit score for `pool` using credit oracle
-     * @return Tuple containing (oldScore, newScore)
+     * @return Tuple containing (oldEffectiveScore, newEffectiveScore)
      */
     function _updateCreditScore(
         ITrueFiPool2 pool,
         address borrower,
         uint256 borrowedAmount
     ) internal returns (uint8, uint8) {
-        uint8 oldScore = creditScore[pool][borrower];
-        uint8 newScore = creditOracle.score(borrower);
+        uint8 oldEffectiveScore = creditScore[pool][borrower];
+        uint8 newEffectiveScore = creditOracle.score(borrower);
         uint256 stakedAmount = collateralVault.stakedAmount(borrower);
-        newScore = creditModel.effectiveScore(newScore, pool, stakedAmount, borrowedAmount);
-        creditScore[pool][borrower] = newScore;
-        return (oldScore, newScore);
+        newEffectiveScore = creditModel.effectiveScore(newEffectiveScore, pool, stakedAmount, borrowedAmount);
+        creditScore[pool][borrower] = newEffectiveScore;
+        return (oldEffectiveScore, newEffectiveScore);
     }
 
     /// @dev Get credit score adjustment from credit model
@@ -377,8 +377,8 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
         require(!_hasOverdueInterest(pool, msg.sender), "LineOfCreditAgency: Sender has overdue interest in this pool");
         uint256 currentDebt = borrowed[pool][msg.sender];
         uint256 newDebt = currentDebt.add(amount);
-        (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, msg.sender, newDebt);
-        require(newScore >= minCreditScore, "LineOfCreditAgency: Borrower has credit score below minimum");
+        (uint8 oldEffectiveScore, uint8 newEffectiveScore) = _updateCreditScore(pool, msg.sender, newDebt);
+        require(newEffectiveScore >= minCreditScore, "LineOfCreditAgency: Borrower has credit score below minimum");
         require(
             pool.oracle().tokenToUsd(amount) <= borrowLimit(pool, msg.sender),
             "LineOfCreditAgency: Borrow amount cannot exceed borrow limit"
@@ -395,7 +395,7 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
             nextInterestRepayTime[pool][msg.sender] = block.timestamp.add(interestRepaymentPeriod);
         }
         overBorrowLimitTime[pool][msg.sender] = 0;
-        _rebucket(pool, msg.sender, oldScore, newScore, newDebt);
+        _rebucket(pool, msg.sender, oldEffectiveScore, newEffectiveScore, newDebt);
 
         pool.borrow(amount);
         pool.token().safeTransfer(msg.sender, amount);
@@ -503,8 +503,8 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
                 continue;
             }
 
-            (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, borrower, principal);
-            _rebucket(pool, borrower, oldScore, newScore, 0);
+            (uint8 oldEffectiveScore, uint8 newEffectiveScore) = _updateCreditScore(pool, borrower, principal);
+            _rebucket(pool, borrower, oldEffectiveScore, newEffectiveScore, 0);
 
             borrowerTotalPaidInterest[pool][borrower] = borrowerTotalPaidInterest[pool][borrower].add(_interest);
             poolTotalPaidInterest[pool] = poolTotalPaidInterest[pool].add(_interest);
@@ -652,24 +652,26 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
      * @dev Move borrower from one bucket to another when borrower score changes
      * @param pool Pool to rebucket in
      * @param borrower Borrower to move to a new bucket
-     * @param oldScore Old credit score
-     * @param newScore New credit score
+     * @param oldEffectiveScore Old credit score
+     * @param newEffectiveScore New credit score
      * @param updatedBorrowAmount New borrower amount
      */
     function _rebucket(
         ITrueFiPool2 pool,
         address borrower,
-        uint8 oldScore,
-        uint8 newScore,
+        uint8 oldEffectiveScore,
+        uint8 newEffectiveScore,
         uint256 updatedBorrowAmount
     ) internal {
         // take out of old bucket
-        uint256 totalBorrowerInterest = oldScore > 0 ? _takeOutOfBucket(pool, buckets[pool][oldScore], oldScore, borrower) : 0;
+        uint256 totalBorrowerInterest = oldEffectiveScore > 0
+            ? _takeOutOfBucket(pool, buckets[pool][oldEffectiveScore], oldEffectiveScore, borrower)
+            : 0;
         // update borrow amount
         borrowed[pool][borrower] = updatedBorrowAmount;
-        CreditScoreBucket storage bucket = buckets[pool][newScore];
+        CreditScoreBucket storage bucket = buckets[pool][newEffectiveScore];
         // put into new bucket
-        _putIntoBucket(pool, bucket, newScore, borrower);
+        _putIntoBucket(pool, bucket, newEffectiveScore, borrower);
         // save interest
         bucket.savedInterest[borrower] = SavedInterest(totalBorrowerInterest, bucket.cumulativeInterestPerShare);
     }
@@ -784,8 +786,8 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
             return;
         }
         uint256 newPrincipal = borrowed[pool][msg.sender].sub(amount);
-        (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, msg.sender, newPrincipal);
-        _rebucket(pool, msg.sender, oldScore, newScore, newPrincipal);
+        (uint8 oldEffectiveScore, uint8 newEffectiveScore) = _updateCreditScore(pool, msg.sender, newPrincipal);
+        _rebucket(pool, msg.sender, oldEffectiveScore, newEffectiveScore, newPrincipal);
 
         emit PrincipalRepaid(pool, msg.sender, amount);
     }
