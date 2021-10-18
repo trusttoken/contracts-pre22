@@ -60,6 +60,7 @@ contract CollateralVault is ICollateralVault, UpgradeableClaimable {
         );
         stakedAmount[msg.sender] = stakedAmount[msg.sender].add(amount);
         stakedToken.safeTransferFrom(msg.sender, address(this), amount);
+        lineOfCreditAgency.updateAllCreditScores(msg.sender);
         emit Staked(msg.sender, amount);
     }
 
@@ -68,6 +69,7 @@ contract CollateralVault is ICollateralVault, UpgradeableClaimable {
 
         stakedAmount[msg.sender] = stakedAmount[msg.sender].sub(amount);
         stakedToken.safeTransfer(msg.sender, amount);
+        lineOfCreditAgency.updateAllCreditScores(msg.sender);
         emit Unstaked(msg.sender, amount);
     }
 

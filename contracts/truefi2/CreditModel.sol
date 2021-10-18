@@ -306,7 +306,7 @@ contract CreditModel is ICreditModel, UpgradeableClaimable {
         ITrueFiPool2 pool,
         uint256 stakedAmount,
         uint256 borrowedAmount
-    ) public view returns (uint8) {
+    ) public override view returns (uint8) {
         uint16 effectiveScorePower = stakingConfig.effectiveScorePower;
         uint256 creditScoreAdjustment = uint256(MAX_CREDIT_SCORE - score)
             .mul(conservativeCollateralRatio(pool, stakedAmount, borrowedAmount)**effectiveScorePower)
