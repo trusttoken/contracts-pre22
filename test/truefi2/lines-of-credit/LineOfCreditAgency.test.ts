@@ -1293,6 +1293,8 @@ describe('LineOfCreditAgency', () => {
       await collateralVault.connect(borrower).stake(parseTRU(1000))
       await creditAgency.connect(borrower).borrow(tusdPool.address, parseEth(250))
       expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(235)
+      await creditAgency.connect(borrower).borrow(tusdPool.address, parseEth(250))
+      expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(229)
     })
 
     it('updates after principal repayment when staked', async () => {
