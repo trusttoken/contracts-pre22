@@ -25,6 +25,7 @@ import {
   TestTrueRatingAgencyV2,
   TimeAveragedBaseRateOracle,
   TimeAveragedBaseRateOracle__factory,
+  TimeAveragedTruPriceOracle,
   TimeAveragedTruPriceOracle__factory,
   TrueFiCreditOracle__factory,
   TrueFiPool2__factory,
@@ -34,18 +35,28 @@ import {
   TrueRatingAgencyV2__factory,
 } from 'contracts'
 import { Wallet } from 'ethers'
-import { parseTRU, timeTravel, timeTravelTo, YEAR } from '.'
+import { parseTRU, timeTravelTo, YEAR } from '.'
 import { deployMockContract, MockProvider } from 'ethereum-waffle'
 import { AggregatorV3InterfaceJson, SpotBaseRateOracleJson } from 'build'
 import { DAY } from './constants'
 
-const weeklyFillBaseRateOracles = async (tusdOracle: TimeAveragedBaseRateOracle, usdcOracle: TimeAveragedBaseRateOracle, provider: MockProvider) => {
+const weeklyFillOracles = async (tusdOracle: TimeAveragedBaseRateOracle, usdcOracle: TimeAveragedBaseRateOracle, weeklyTruOracle: TimeAveragedTruPriceOracle, provider: MockProvider) => {
   for (let i = 0; i < 7; i++) {
     const [, timestamps, currIndex] = await tusdOracle.getTotalsBuffer()
     const newestTimestamp = timestamps[currIndex].toNumber()
     await timeTravelTo(provider, newestTimestamp + DAY - 1)
     await tusdOracle.update()
     await usdcOracle.update()
+    await weeklyTruOracle.update()
+  }
+}
+
+const weeklyFillTruPriceOracle = async (weeklyTruOracle: TimeAveragedTruPriceOracle, provider: MockProvider) => {
+  for (let i = 0; i < 7; i++) {
+    const [, timestamps, currIndex] = await weeklyTruOracle.getTotalsBuffer()
+    const newestTimestamp = timestamps[currIndex].toNumber()
+    await timeTravelTo(provider, newestTimestamp + DAY - 1)
+    await weeklyTruOracle.update()
   }
 }
 
@@ -94,7 +105,7 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
   await arbitraryDistributor.initialize(rater.address, tru.address, parseTRU(15e6))
   await rater.initialize(tru.address, stkTru.address, arbitraryDistributor.address)
   await borrowingMutex.initialize()
-  await weeklyTruPriceOracle.initialize(mockTruOracle.address, DAY * 7)
+  await weeklyTruPriceOracle.initialize(mockTruOracle.address, DAY)
   await collateralVault.initialize(tru.address, borrowingMutex.address, creditAgency.address, liquidator.address)
   await lender.initialize(stkTru.address, poolFactory.address, customDeployed?.oneInch ? customDeployed.oneInch.address : AddressZero)
   await ftlAgency.initialize(stkTru.address, poolFactory.address, customDeployed?.oneInch ? customDeployed.oneInch.address : AddressZero, creditOracle.address, creditModel.address, borrowingMutex.address, loanFactory.address)
@@ -126,11 +137,8 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
 
   await mockSpotOracle.mock.getRate.withArgs(standardToken.address).returns(300)
   await mockSpotOracle.mock.getRate.withArgs(feeToken.address).returns(300)
-  await weeklyFillBaseRateOracles(standardBaseRateOracle, feeBaseRateOracle, provider)
-
   await mockTruOracle.mock.latestRoundData.returns(0, parseTRU(0.25), 0, 0, 0)
-  await timeTravel(provider, DAY * 8)
-  await weeklyTruPriceOracle.update()
+  await weeklyFillOracles(standardBaseRateOracle, feeBaseRateOracle, weeklyTruPriceOracle, provider)
 
   await creditOracle.initialize()
   await creditOracle.setManager(owner.address)
