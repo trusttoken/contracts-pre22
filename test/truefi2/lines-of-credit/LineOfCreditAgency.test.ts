@@ -1288,10 +1288,20 @@ describe('LineOfCreditAgency', () => {
       expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(223)
     })
 
-    it('is affected by staking', async () => {
+    it('updates after borrow when staked', async () => {
       await creditAgency.allowBorrower(borrower.address, true)
       await collateralVault.connect(borrower).stake(parseTRU(1000))
       await creditAgency.connect(borrower).borrow(tusdPool.address, parseEth(250))
+      expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(235)
+    })
+
+    it('updates after principal repayment when staked', async () => {
+      await creditAgency.allowBorrower(borrower.address, true)
+      await collateralVault.connect(borrower).stake(parseTRU(1000))
+      await creditAgency.connect(borrower).borrow(tusdPool.address, parseEth(500))
+      expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(229)
+      await tusd.connect(borrower).approve(creditAgency.address, parseEth(250))
+      await creditAgency.connect(borrower).repay(tusdPool.address, parseEth(250))
       expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(235)
     })
   })

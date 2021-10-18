@@ -783,9 +783,9 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
         if (amount == 0) {
             return;
         }
-        uint256 principal = borrowed[pool][msg.sender];
-        (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, msg.sender, principal);
-        _rebucket(pool, msg.sender, oldScore, newScore, principal.sub(amount));
+        uint256 newPrincipal = borrowed[pool][msg.sender].sub(amount);
+        (uint8 oldScore, uint8 newScore) = _updateCreditScore(pool, msg.sender, newPrincipal);
+        _rebucket(pool, msg.sender, oldScore, newScore, newPrincipal);
 
         emit PrincipalRepaid(pool, msg.sender, amount);
     }
