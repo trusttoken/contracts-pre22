@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
+import {ITruPriceOracle} from "../interface/ITruPriceOracle.sol";
 import {UpgradeableClaimable} from "../../common/UpgradeableClaimable.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.6/interfaces/AggregatorV3Interface.sol";
 
@@ -12,7 +13,7 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
  * - Uses a spot oracle to capture data points over time
  * - Finds and stores time-weighted average of borrow APYs
  */
-contract TimeAveragedTruPriceOracle is UpgradeableClaimable {
+contract TimeAveragedTruPriceOracle is ITruPriceOracle, UpgradeableClaimable {
     using SafeMath for uint256;
 
     uint16 public constant BUFFER_SIZE = 365 + 1;
@@ -166,5 +167,11 @@ contract TimeAveragedTruPriceOracle is UpgradeableClaimable {
     function getWeeklyPrice() public view returns (uint256) {
         uint16 entries = uint16(TIME_WINDOW / cooldownTime);
         return calculateAveragePrice(entries);
+    }
+
+    /// @dev TRU to USD with 18 decimals
+    function truToUsd(uint256 tokenAmount) external override view returns (uint256) {
+        // 10^8 * 10^8 * 10^2 = 10^18
+        return tokenAmount.mul(getWeeklyPrice()).mul(100);
     }
 }

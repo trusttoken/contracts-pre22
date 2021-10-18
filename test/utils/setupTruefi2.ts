@@ -4,13 +4,16 @@ import {
   ArbitraryDistributor__factory,
   BorrowingMutex__factory,
   CollateralVault__factory,
+  CreditModel__factory,
+  DebtToken__factory,
   FixedTermLoanAgency__factory,
   ImplementationReference__factory,
   LinearTrueDistributor__factory,
+  LineOfCreditAgency__factory,
   Liquidator2__factory,
-  LoanToken2__factory,
   LoanFactory2,
   LoanFactory2__factory,
+  LoanToken2__factory,
   MockTrueCurrency__factory,
   MockTrueFiPoolOracle__factory,
   MockUsdc__factory,
@@ -19,23 +22,21 @@ import {
   StkTruToken__factory,
   TestLoanFactory,
   TestTrueLender,
+  TestTrueRatingAgencyV2,
   TimeAveragedBaseRateOracle,
   TimeAveragedBaseRateOracle__factory,
-  LineOfCreditAgency__factory,
+  TimeAveragedTruPriceOracle__factory,
   TrueFiCreditOracle__factory,
   TrueFiPool2__factory,
   TrueLender2,
   TrueLender2__factory,
-  CreditModel__factory,
-  TrueRatingAgencyV2__factory,
-  DebtToken__factory,
   TrueRatingAgencyV2,
-  TestTrueRatingAgencyV2,
+  TrueRatingAgencyV2__factory,
 } from 'contracts'
 import { Wallet } from 'ethers'
-import { parseTRU, timeTravelTo, YEAR } from '.'
+import { parseTRU, timeTravel, timeTravelTo, YEAR } from '.'
 import { deployMockContract, MockProvider } from 'ethereum-waffle'
-import { SpotBaseRateOracleJson } from 'build'
+import { AggregatorV3InterfaceJson, SpotBaseRateOracleJson } from 'build'
 import { DAY } from './constants'
 
 const weeklyFillBaseRateOracles = async (tusdOracle: TimeAveragedBaseRateOracle, usdcOracle: TimeAveragedBaseRateOracle, provider: MockProvider) => {
@@ -78,7 +79,9 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
   const standardBaseRateOracle = await deployContract(TimeAveragedBaseRateOracle__factory)
   const feeBaseRateOracle = await deployContract(TimeAveragedBaseRateOracle__factory)
   const mockSpotOracle = await deployMockContract(owner, SpotBaseRateOracleJson.abi)
+  const mockTruOracle = await deployMockContract(owner, AggregatorV3InterfaceJson.abi)
   const linearDistributor = await deployContract(LinearTrueDistributor__factory)
+  const weeklyTruPriceOracle = await deployContract(TimeAveragedTruPriceOracle__factory)
   const arbitraryDistributor = await deployContract(ArbitraryDistributor__factory)
 
   // ====== SETUP ======
@@ -91,12 +94,13 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
   await arbitraryDistributor.initialize(rater.address, tru.address, parseTRU(15e6))
   await rater.initialize(tru.address, stkTru.address, arbitraryDistributor.address)
   await borrowingMutex.initialize()
+  await weeklyTruPriceOracle.initialize(mockTruOracle.address, DAY * 7)
   await collateralVault.initialize(tru.address, borrowingMutex.address, creditAgency.address, liquidator.address)
   await lender.initialize(stkTru.address, poolFactory.address, customDeployed?.oneInch ? customDeployed.oneInch.address : AddressZero)
   await ftlAgency.initialize(stkTru.address, poolFactory.address, customDeployed?.oneInch ? customDeployed.oneInch.address : AddressZero, creditOracle.address, creditModel.address, borrowingMutex.address, loanFactory.address)
   await safu.initialize(loanFactory.address, liquidator.address, customDeployed?.oneInch ? customDeployed.oneInch.address : AddressZero)
   await poolFactory.initialize(implementationReference.address, lender.address, ftlAgency.address, safu.address, loanFactory.address)
-  await creditModel.initialize(poolFactory.address)
+  await creditModel.initialize(poolFactory.address, weeklyTruPriceOracle.address)
   await creditAgency.initialize(creditOracle.address, creditModel.address, borrowingMutex.address, poolFactory.address, loanFactory.address, collateralVault.address)
   await standardBaseRateOracle.initialize(mockSpotOracle.address, standardToken.address, DAY)
   await feeBaseRateOracle.initialize(mockSpotOracle.address, feeToken.address, DAY)
@@ -123,6 +127,10 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
   await mockSpotOracle.mock.getRate.withArgs(standardToken.address).returns(300)
   await mockSpotOracle.mock.getRate.withArgs(feeToken.address).returns(300)
   await weeklyFillBaseRateOracles(standardBaseRateOracle, feeBaseRateOracle, provider)
+
+  await mockTruOracle.mock.latestRoundData.returns(0, parseTRU(0.25), 0, 0, 0)
+  await timeTravel(provider, DAY * 8)
+  await weeklyTruPriceOracle.update()
 
   await creditOracle.initialize()
   await creditOracle.setManager(owner.address)

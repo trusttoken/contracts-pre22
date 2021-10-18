@@ -1,7 +1,16 @@
 import { expect, use } from 'chai'
 import { Wallet } from 'ethers'
 
-import { beforeEachWithFixture, DAY, parseEth, parseTRU, parseUSDC, timeTravelTo, updateRateOracle } from 'utils'
+import {
+  beforeEachWithFixture,
+  DAY,
+  parseEth,
+  parseTRU,
+  parseUSDC,
+  timeTravel,
+  timeTravelTo,
+  updateRateOracle,
+} from 'utils'
 import { setupDeploy } from 'scripts/utils'
 
 import {
@@ -16,11 +25,16 @@ import {
   TrueFiPool2,
   TrueFiPool2__factory,
   CreditModel,
-  CreditModel__factory,
+  CreditModel__factory, TimeAveragedTruPriceOracle__factory,
 } from 'contracts'
 
 import { deployMockContract, MockContract, MockProvider, solidity } from 'ethereum-waffle'
-import { ITimeAveragedBaseRateOracleJson, ITrueFiPool2WithDecimalsJson, SpotBaseRateOracleJson } from 'build'
+import {
+  AggregatorV3InterfaceJson,
+  ITimeAveragedBaseRateOracleJson,
+  ITrueFiPool2WithDecimalsJson,
+  SpotBaseRateOracleJson,
+} from 'build'
 
 use(solidity)
 
@@ -48,11 +62,18 @@ describe('CreditModel', () => {
     mockSpotOracle = await deployMockContract(owner, SpotBaseRateOracleJson.abi)
     await mockSpotOracle.mock.getRate.withArgs(asset.address).returns(300)
 
+    const mockTruOracle = await deployMockContract(owner, AggregatorV3InterfaceJson.abi)
+    await mockTruOracle.mock.latestRoundData.returns(0, parseTRU(0.25), 0, 0, 0)
+
+    const weeklyPriceOracle = await deployContract(TimeAveragedTruPriceOracle__factory)
+    await weeklyPriceOracle.initialize(mockTruOracle.address, DAY * 7)
+    await timeTravel(provider, DAY * 8)
+    await weeklyPriceOracle.update()
     oracle = await new TestTimeAveragedBaseRateOracle__factory(owner).deploy()
     await oracle.initialize(mockSpotOracle.address, asset.address, DAY)
 
     mockFactory = await deployContract(MockPoolFactory__factory)
-    await creditModel.initialize(mockFactory.address)
+    await creditModel.initialize(mockFactory.address, weeklyPriceOracle.address)
   })
 
   describe('initializer', () => {
@@ -158,6 +179,30 @@ describe('CreditModel', () => {
 
     it('emits event', async () => {
       await expect(creditModel.setBaseRateOracle(fakePool.address, fakeOracle.address))
+        .to.emit(creditModel, 'BaseRateOracleChanged')
+        .withArgs(fakePool.address, fakeOracle.address)
+    })
+  })
+
+  describe('setTruPriceOracle', () => {
+    let fakeOracleAddress: string
+
+    beforeEach(async () => {
+      fakeOracleAddress = Wallet.createRandom().address
+    })
+
+    it('reverts if caller is not the owner', async () => {
+      await expect(creditModel.connect(borrower).setTruPriceOracle(fakeOracleAddress))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('sets base rate oracle', async () => {
+      await creditModel.setTruPriceOracle(fakePool.address, fakeOracle.address)
+      expect(await creditModel.baseRateOracle(fakePool.address)).to.eq(fakeOracle.address)
+    })
+
+    it('emits event', async () => {
+      await expect(creditModel.setTruPriceOracle(fakePool.address, fakeOracle.address))
         .to.emit(creditModel, 'BaseRateOracleChanged')
         .withArgs(fakePool.address, fakeOracle.address)
     })
@@ -387,7 +432,7 @@ describe('CreditModel', () => {
       ].map(([collateral, ltvRatio, result]) =>
         it(`when ${collateral} TRU is staked with ltvRatio=${ltvRatio}%, borrow limit rises by up to $${result}`, async () => {
           await creditModel.setStakingConfig(ltvRatio * 100, 0)
-          expect(await creditModel.conservativeCollateralValue(mockPool.address, parseTRU(collateral))).to.equal(parseEth(result))
+          expect(await creditModel.conservativeCollateralValue(parseTRU(collateral))).to.equal(parseEth(result))
         }))
     })
 

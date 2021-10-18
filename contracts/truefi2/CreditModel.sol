@@ -9,6 +9,7 @@ import {ITimeAveragedBaseRateOracle} from "./interface/ITimeAveragedBaseRateOrac
 import {ICreditModel} from "./interface/ICreditModel.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {TrueFiFixed64x64} from "./libraries/TrueFiFixed64x64.sol";
+import {ITruPriceOracle} from "./interface/ITruPriceOracle.sol";
 
 interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
     function decimals() external view returns (uint8);
@@ -95,6 +96,8 @@ contract CreditModel is ICreditModel, UpgradeableClaimable {
 
     StakingConfig public stakingConfig;
 
+    ITruPriceOracle public truPriceOracle;
+
     // ======= STORAGE DECLARATION END ============
 
     /// @dev Emit `newRate` when risk premium changed
@@ -107,6 +110,9 @@ contract CreditModel is ICreditModel, UpgradeableClaimable {
 
     /// @dev Emit `pool` and `oracle` when base rate oracle changed
     event BaseRateOracleChanged(ITrueFiPool2 pool, ITimeAveragedBaseRateOracle oracle);
+
+    /// @dev Emits when base TRU price oracle changed
+    event TruPriceOracleChanged(ITruPriceOracle oracle);
 
     /// @dev Emit `newCoefficient` when fixed term loan adjustment coefficient changed
     event FixedTermLoanAdjustmentCoefficientChanged(uint256 newCoefficient);
@@ -125,7 +131,7 @@ contract CreditModel is ICreditModel, UpgradeableClaimable {
     event StakingConfigChanged(uint16 ltvRatio, uint16 effectiveScorePower);
 
     /// @dev initializer
-    function initialize(IPoolFactory _poolFactory) public initializer {
+    function initialize(IPoolFactory _poolFactory, ITruPriceOracle _truPriceOracle) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
         riskPremium = 200;
         utilizationRateConfig = UtilizationRateConfig(50, 2);
@@ -134,6 +140,7 @@ contract CreditModel is ICreditModel, UpgradeableClaimable {
         borrowLimitConfig = BorrowLimitConfig(40, 7500, 1500, 1500);
         stakingConfig = StakingConfig(4000, 1);
         poolFactory = _poolFactory;
+        truPriceOracle = _truPriceOracle;
     }
 
     /// @dev Set risk premium to `newRate`
@@ -152,7 +159,11 @@ contract CreditModel is ICreditModel, UpgradeableClaimable {
         emit UtilizationRateConfigChanged(coefficient, power);
     }
 
-    /// @dev Set base rate oracle for `pool` to `_baseRateOracle`
+    function setTruPriceOracle(ITruPriceOracle tTruPriceOracle) external onlyOwner {
+        truPriceOracle = tTruPriceOracle;
+        emit TruPriceOracleChanged(tTruPriceOracle);
+    }
+
     function setBaseRateOracle(ITrueFiPool2 pool, ITimeAveragedBaseRateOracle _baseRateOracle) external onlyOwner {
         baseRateOracle[pool] = _baseRateOracle;
         emit BaseRateOracleChanged(pool, _baseRateOracle);
@@ -283,11 +294,11 @@ contract CreditModel is ICreditModel, UpgradeableClaimable {
         return ((f64x64Score / MAX_CREDIT_SCORE).fixed64x64Pow(f64x64LimitAdjustmentPower / BASIS_POINTS) * BASIS_POINTS).toUInt();
     }
 
-    function conservativeCollateralValue(ITrueFiPool2 pool, uint256 stakedAmount) public view returns (uint256) {
+    function conservativeCollateralValue(uint256 stakedAmount) public view returns (uint256) {
         if (stakedAmount == 0) {
             return 0;
         }
-        return pool.oracle().truToToken(stakedAmount).mul(stakingConfig.ltvRatio).div(BASIS_POINTS);
+        return truPriceOracle.truToUsd(stakedAmount).mul(stakingConfig.ltvRatio).div(BASIS_POINTS);
     }
 
     function conservativeCollateralRatio(
@@ -298,7 +309,8 @@ contract CreditModel is ICreditModel, UpgradeableClaimable {
         if (borrowedAmount == 0) {
             return 0;
         }
-        return min(conservativeCollateralValue(pool, stakedAmount).mul(BASIS_POINTS).div(borrowedAmount), BASIS_POINTS);
+        uint256 borrowedInUsd = pool.oracle().tokenToUsd(borrowedAmount);
+        return min(conservativeCollateralValue(stakedAmount).mul(BASIS_POINTS).div(borrowedInUsd), BASIS_POINTS);
     }
 
     function effectiveScore(
@@ -354,7 +366,7 @@ contract CreditModel is ICreditModel, UpgradeableClaimable {
     ) internal view returns (uint256) {
         uint256 maxTVLLimit = poolFactory.supportedPoolsTVL().mul(borrowLimitConfig.tvlLimitCoefficient).div(BASIS_POINTS);
         uint256 adjustment = borrowLimitAdjustment(score);
-        uint256 collateralValueInUsd = pool.oracle().tokenToUsd(conservativeCollateralValue(pool, stakedCollateralInTru));
+        uint256 collateralValueInUsd = conservativeCollateralValue(stakedCollateralInTru);
         uint256 adjustedBorrowerLimit = maxBorrowerLimit.mul(adjustment).div(BASIS_POINTS).add(collateralValueInUsd);
         uint256 adjustedTVLLimit = maxTVLLimit.mul(adjustment).div(BASIS_POINTS);
         uint256 creditLimit = min(adjustedBorrowerLimit, adjustedTVLLimit);
