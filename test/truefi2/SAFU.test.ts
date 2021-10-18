@@ -42,6 +42,7 @@ import {
   MockErc20Token,
   CreditModel,
   CollateralVault,
+  LineOfCreditAgency,
 } from 'contracts'
 
 import {
@@ -66,6 +67,7 @@ describe('SAFU', () => {
   let borrowingMutex: BorrowingMutex
   let creditModel: CreditModel
   let collateralVault: CollateralVault
+  let creditAgency: LineOfCreditAgency
 
   let timeTravel: (time: number) => void
 
@@ -99,6 +101,7 @@ describe('SAFU', () => {
       borrowingMutex,
       creditModel,
       collateralVault,
+      creditAgency,
     } = await setupTruefi2(owner, _provider, { lender: lender, loanFactory: loanFactory, oneInch: oneInch }))
 
     await token.mint(owner.address, parseUSDC(1e7))
@@ -113,6 +116,7 @@ describe('SAFU', () => {
     debt = await createDebtToken(pool, defaultAmount)
     await debt.approve(pool.address, defaultAmount)
     await pool.addDebt(debt.address, defaultAmount)
+    await pool.setCreditAgency(creditAgency.address)
 
     await tru.mint(owner.address, parseTRU(1e7))
     await tru.approve(stkTru.address, parseTRU(1e7))
@@ -306,12 +310,6 @@ describe('SAFU', () => {
     })
 
     describe('Slashes tru', () => {
-      beforeEach(async () => {
-        await token.mint(safu.address, defaultAmount)
-        await loanFactory.setCreditAgency(owner.address)
-        await pool.setCreditAgency(owner.address)
-      })
-
       describe('Debt not repaid at all', () => {
         it('0 tru in staking pool balance', async () => {
           await safu.liquidate([debt.address])
@@ -377,10 +375,12 @@ describe('SAFU', () => {
         let debt2: DebtToken
 
         beforeEach(async () => {
+          await pool.setCreditAgency(owner.address)
           await token.mint(safu.address, defaultAmount)
           debt2 = await createDebtToken(pool, defaultAmount)
           await debt2.approve(pool.address, defaultAmount)
           await pool.addDebt(debt2.address, defaultAmount)
+          await pool.setCreditAgency(creditAgency.address)
         })
 
         it('returns max fetch share to assurance', async () => {

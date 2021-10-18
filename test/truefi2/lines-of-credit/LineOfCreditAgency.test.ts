@@ -105,6 +105,9 @@ describe('LineOfCreditAgency', () => {
     await creditOracle.setScore(borrower.address, 255)
     await creditOracle.setMaxBorrowerLimit(owner.address, parseEth(100_000_000))
     await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
+
+    await tru.mint(borrower.address, parseTRU(1e7))
+    await tru.connect(borrower).approve(collateralVault.address, parseTRU(1e7))
   })
 
   describe('initializer', () => {
@@ -1269,6 +1272,55 @@ describe('LineOfCreditAgency', () => {
       await creditAgency.updateCreditScore(tusdPool.address, borrower.address)
       expect(await creditAgency.creditScoreAdjustmentRate(tusdPool.address, borrower.address)).to.equal(143)
       expect('creditScoreAdjustmentRate').to.be.calledOnContractWith(creditModel, [223])
+    })
+  })
+
+  describe('updateCreditScore', () => {
+    beforeEach(async () => {
+      await creditOracle.setScore(borrower.address, 0)
+      await creditAgency.updateCreditScore(tusdPool.address, borrower.address)
+      await creditOracle.setScore(borrower.address, 223)
+    })
+
+    it('updates borrower\'s credit score', async () => {
+      expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(0)
+      await creditAgency.updateCreditScore(tusdPool.address, borrower.address)
+      expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(223)
+    })
+
+    it('updates after borrow when staked', async () => {
+      await creditAgency.allowBorrower(borrower.address, true)
+      await collateralVault.connect(borrower).stake(parseTRU(1000))
+      await creditAgency.connect(borrower).borrow(tusdPool.address, parseEth(250))
+      expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(235)
+      await creditAgency.connect(borrower).borrow(tusdPool.address, parseEth(250))
+      expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(229)
+    })
+
+    it('updates after principal repayment when staked', async () => {
+      await creditAgency.allowBorrower(borrower.address, true)
+      await collateralVault.connect(borrower).stake(parseTRU(1000))
+      await creditAgency.connect(borrower).borrow(tusdPool.address, parseEth(500))
+      expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(229)
+      await tusd.connect(borrower).approve(creditAgency.address, parseEth(250))
+      await creditAgency.connect(borrower).repay(tusdPool.address, parseEth(250))
+      expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(235)
+    })
+  })
+
+  describe('updateAllCreditScores', () => {
+    beforeEach(async () => {
+      await creditOracle.setScore(borrower.address, 0)
+      await creditAgency.updateAllCreditScores(borrower.address)
+      await creditOracle.setScore(borrower.address, 223)
+    })
+
+    it('updates credit scores for 2 pools', async () => {
+      expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(0)
+      expect(await creditAgency.creditScore(usdcPool.address, borrower.address)).to.eq(0)
+      await creditAgency.updateAllCreditScores(borrower.address)
+      expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(223)
+      expect(await creditAgency.creditScore(usdcPool.address, borrower.address)).to.eq(223)
     })
   })
 })

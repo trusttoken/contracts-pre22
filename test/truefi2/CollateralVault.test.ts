@@ -60,7 +60,15 @@ describe('CollateralVault', () => {
     await tru.mint(borrower.address, parseTRU(100))
     await tru.connect(borrower).approve(collateralVault.address, parseTRU(100))
 
+    await pool.setCreditAgency(creditAgency.address)
+    await poolToken.mint(owner.address, parseEth(2e7))
+    await poolToken.approve(pool.address, parseEth(2e7))
+    await pool.join(parseEth(2e7))
+
     await liquidator.setAssurance(safu.address)
+
+    await creditAgency.allowBorrower(borrower.address, true)
+    await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
   })
 
   describe('initializer', () => {
@@ -112,6 +120,13 @@ describe('CollateralVault', () => {
       expect(await collateralVault.stakedAmount(borrower.address)).to.be.eq(0)
       await collateralVault.connect(borrower).stake(parseTRU(100))
       expect(await collateralVault.stakedAmount(borrower.address)).to.be.eq(parseTRU(100))
+    })
+
+    it('updates credit score', async () => {
+      await creditOracle.setScore(borrower.address, 223)
+      await creditAgency.connect(borrower).borrow(pool.address, parseEth(25))
+      await collateralVault.connect(borrower).stake(parseTRU(100))
+      expect(await creditAgency.creditScore(pool.address, borrower.address)).to.eq(235)
     })
 
     it('emits event', async () => {
@@ -189,6 +204,14 @@ describe('CollateralVault', () => {
       await borrowingMutex.lock(borrower.address, owner.address)
       await expect(collateralVault.connect(borrower).unstake(parseTRU(101)))
         .to.be.revertedWith('CollateralVault: Cannot unstake')
+    })
+
+    it('updates credit score', async () => {
+      await creditOracle.setScore(borrower.address, 223)
+      await creditAgency.connect(borrower).borrow(pool.address, parseEth(25))
+      expect(await creditAgency.creditScore(pool.address, borrower.address)).to.eq(235)
+      await collateralVault.connect(borrower).unstake(parseTRU(100))
+      expect(await creditAgency.creditScore(pool.address, borrower.address)).to.eq(223)
     })
 
     it('emits event', async () => {

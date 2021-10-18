@@ -16,6 +16,7 @@ module.exports = {
     './truefi/mocks',
     './truefi2/interface',
     './truefi2/mocks',
+    './truefi2/deprecated',
     './trusttoken/interface',
     './trusttoken/mocks',
   ]
