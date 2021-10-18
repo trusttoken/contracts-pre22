@@ -159,9 +159,9 @@ contract CreditModel is ICreditModel, UpgradeableClaimable {
         emit UtilizationRateConfigChanged(coefficient, power);
     }
 
-    function setTruPriceOracle(ITruPriceOracle tTruPriceOracle) external onlyOwner {
-        truPriceOracle = tTruPriceOracle;
-        emit TruPriceOracleChanged(tTruPriceOracle);
+    function setTruPriceOracle(ITruPriceOracle TruPriceOracle) external onlyOwner {
+        truPriceOracle = TruPriceOracle;
+        emit TruPriceOracleChanged(TruPriceOracle);
     }
 
     function setBaseRateOracle(ITrueFiPool2 pool, ITimeAveragedBaseRateOracle _baseRateOracle) external onlyOwner {
