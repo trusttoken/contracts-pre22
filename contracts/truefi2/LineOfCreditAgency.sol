@@ -375,9 +375,9 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
             "LineOfCreditAgency: Sender not eligible to borrow"
         );
         require(!_hasOverdueInterest(pool, msg.sender), "LineOfCreditAgency: Sender has overdue interest in this pool");
-        uint256 currentDebt = borrowed[pool][msg.sender];
-        uint256 newDebt = currentDebt.add(amount);
-        (uint8 oldEffectiveScore, uint8 newEffectiveScore) = _updateCreditScore(pool, msg.sender, newDebt);
+        uint256 currentPrincipal = borrowed[pool][msg.sender];
+        uint256 newPrincipal = currentPrincipal.add(amount);
+        (uint8 oldEffectiveScore, uint8 newEffectiveScore) = _updateCreditScore(pool, msg.sender, newPrincipal);
         require(newEffectiveScore >= minCreditScore, "LineOfCreditAgency: Borrower has credit score below minimum");
         require(
             pool.oracle().tokenToUsd(amount) <= borrowLimit(pool, msg.sender),
@@ -391,11 +391,11 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
             "LineOfCreditAgency: Borrower cannot open two simultaneous debt positions"
         );
 
-        if (currentDebt == 0) {
+        if (currentPrincipal == 0) {
             nextInterestRepayTime[pool][msg.sender] = block.timestamp.add(interestRepaymentPeriod);
         }
         overBorrowLimitTime[pool][msg.sender] = 0;
-        _rebucket(pool, msg.sender, oldEffectiveScore, newEffectiveScore, newDebt);
+        _rebucket(pool, msg.sender, oldEffectiveScore, newEffectiveScore, newPrincipal);
 
         pool.borrow(amount);
         pool.token().safeTransfer(msg.sender, amount);
@@ -420,9 +420,9 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
      */
     function repay(ITrueFiPool2 pool, uint256 amount) public {
         require(poolFactory.isSupportedPool(pool), "LineOfCreditAgency: The pool is not supported");
-        uint256 currentDebt = borrowed[pool][msg.sender];
+        uint256 principal = borrowed[pool][msg.sender];
         uint256 accruedInterest = interest(pool, msg.sender);
-        require(currentDebt.add(accruedInterest) >= amount, "LineOfCreditAgency: Cannot repay over the debt");
+        require(principal.add(accruedInterest) >= amount, "LineOfCreditAgency: Cannot repay over the debt");
 
         // update state before making token transfer
         if (amount < accruedInterest) {
