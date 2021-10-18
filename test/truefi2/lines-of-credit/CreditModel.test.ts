@@ -196,15 +196,15 @@ describe('CreditModel', () => {
         .to.be.revertedWith('Ownable: caller is not the owner')
     })
 
-    it('sets base rate oracle', async () => {
-      await creditModel.setTruPriceOracle(fakePool.address, fakeOracle.address)
-      expect(await creditModel.baseRateOracle(fakePool.address)).to.eq(fakeOracle.address)
+    it('sets oracle', async () => {
+      await creditModel.setTruPriceOracle(fakeOracleAddress)
+      expect(await creditModel.truPriceOracle()).to.eq(fakeOracleAddress)
     })
 
     it('emits event', async () => {
-      await expect(creditModel.setTruPriceOracle(fakePool.address, fakeOracle.address))
-        .to.emit(creditModel, 'BaseRateOracleChanged')
-        .withArgs(fakePool.address, fakeOracle.address)
+      await expect(creditModel.setTruPriceOracle(fakeOracleAddress))
+        .to.emit(creditModel, 'TruPriceOracleChanged')
+        .withArgs(fakeOracleAddress)
     })
   })
 
