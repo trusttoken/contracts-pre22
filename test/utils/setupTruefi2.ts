@@ -51,15 +51,6 @@ const weeklyFillOracles = async (tusdOracle: TimeAveragedBaseRateOracle, usdcOra
   }
 }
 
-const weeklyFillTruPriceOracle = async (weeklyTruOracle: TimeAveragedTruPriceOracle, provider: MockProvider) => {
-  for (let i = 0; i < 7; i++) {
-    const [, timestamps, currIndex] = await weeklyTruOracle.getTotalsBuffer()
-    const newestTimestamp = timestamps[currIndex].toNumber()
-    await timeTravelTo(provider, newestTimestamp + DAY - 1)
-    await weeklyTruOracle.update()
-  }
-}
-
 export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, customDeployed?: any) => {
   const deployContract = setupDeploy(owner)
 
