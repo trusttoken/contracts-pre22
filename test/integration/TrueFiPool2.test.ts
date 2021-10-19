@@ -7,7 +7,6 @@ import {
   OwnedUpgradeabilityProxy__factory,
   PoolFactory__factory,
   TrueFiPool2__factory,
-  TrueLender2Deprecated__factory,
 } from 'contracts'
 import { AddressZero } from '@ethersproject/constants'
 import { expect, use } from 'chai'
