@@ -205,7 +205,14 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
         pool[token] = address(proxy);
         isPool[address(proxy)] = true;
 
-        ITrueFiPool2(address(proxy)).initialize(ERC20(token), ITrueLender2Deprecated(address(0)), ftlAgency, safu, loanFactory, this.owner());
+        ITrueFiPool2(address(proxy)).initialize(
+            ERC20(token),
+            ITrueLender2Deprecated(address(0)),
+            ftlAgency,
+            safu,
+            loanFactory,
+            this.owner()
+        );
 
         emit PoolCreated(token, address(proxy));
     }
