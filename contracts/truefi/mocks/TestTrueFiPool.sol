@@ -30,4 +30,21 @@ contract TestTrueFiPool is TrueFiPool {
 
         joiningFee = 25;
     }
+
+    function superBorrow(uint256 amount, uint256 fee) external {
+        super.borrow(amount, fee);
+    }
+
+    function borrow(uint256 amount, uint256 fee) public override nonReentrant onlyLender {
+        // if there is not enough TUSD, withdraw from curve
+        if (amount > currencyBalance()) {
+            removeLiquidityFromCurve(amount.sub(currencyBalance()));
+            require(amount <= currencyBalance(), "TrueFiPool: Not enough funds in pool to cover borrow");
+        }
+
+        mint(fee);
+        require(token.transfer(msg.sender, amount.sub(fee)));
+
+        emit Borrow(msg.sender, amount, fee);
+    }
 }
