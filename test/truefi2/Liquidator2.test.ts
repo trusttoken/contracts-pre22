@@ -46,6 +46,7 @@ use(solidity)
 
 describe('Liquidator2', () => {
   enum LoanTokenStatus { Awaiting, Funded, Withdrawn, Settled, Defaulted, Liquidated }
+  enum DebtTokenStatus { Defaulted, Liquidated }
 
   let owner: Wallet
   let otherWallet: Wallet
@@ -452,8 +453,8 @@ describe('Liquidator2', () => {
 
       it('changes status', async () => {
         await liquidator.connect(assurance).liquidate([debtToken1.address, debtToken2.address])
-        expect(await debtToken1.status()).to.equal(LoanTokenStatus.Liquidated)
-        expect(await debtToken2.status()).to.equal(LoanTokenStatus.Liquidated)
+        expect(await debtToken1.status()).to.equal(DebtTokenStatus.Liquidated)
+        expect(await debtToken2.status()).to.equal(DebtTokenStatus.Liquidated)
       })
 
       describe('reverts if', () => {
