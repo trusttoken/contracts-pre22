@@ -64,7 +64,6 @@ describe('PoolFactory', () => {
     loanFactory = await new LoanFactory2__factory(owner).deploy()
     await factory.initialize(
       implementationReference.address,
-      trueLenderInstance1.address,
       ftlAgencyInstance1.address,
       safu.address,
       loanFactory.address,
