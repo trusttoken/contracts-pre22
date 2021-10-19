@@ -10,7 +10,7 @@ use(solidity)
 
 describe('DebtToken', () => {
   enum DebtTokenStatus {
-    Defaulted = 4,
+    Defaulted,
     Liquidated
   }
 
