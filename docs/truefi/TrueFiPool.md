@@ -63,7 +63,7 @@ support borrow function from pool V2
 get currency token address
 
 
-### `setLender2(contract ITrueLender2 lender2)` (public)
+### `setLender2(contract ITrueLender2Deprecated lender2)` (public)
 
 
 

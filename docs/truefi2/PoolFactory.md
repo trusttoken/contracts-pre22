@@ -29,7 +29,7 @@ Throws if borrower is not whitelisted for creating new pool
 
 
 
-### `initialize(contract ImplementationReference _poolImplementationReference, contract ITrueLender2 _trueLender2, contract ISAFU _safu)` (external)
+### `initialize(contract ImplementationReference _poolImplementationReference, contract ISAFU _safu)` (external)
 
 
 
@@ -92,12 +92,6 @@ Change borrower allowance status
 Change allowAll status
 
 
-### `setTrueLender(contract ITrueLender2 _trueLender2)` (external)
-
-
-
-
-
 ### `setSafuAddress(contract ISAFU _safu)` (external)
 
 
@@ -138,13 +132,6 @@ Event to show that borrower is now allowed/disallowed to have a single borrower 
 
 
 Event to show that allowAll status has been changed
-
-
-### `TrueLenderChanged(contract ITrueLender2 trueLender2)`
-
-
-
-Event to show that trueLender was changed
 
 
 ### `SafuChanged(contract ISAFU newSafu)`

@@ -24,8 +24,8 @@ import {
   LineOfCreditAgency__factory,
   TrueFiCreditOracle__factory,
   TrueFiPool2__factory,
-  TrueLender2,
-  TrueLender2__factory,
+  TrueLender2Deprecated,
+  TrueLender2Deprecated__factory,
   CreditModel__factory,
   TrueRatingAgencyV2__factory,
   DebtToken__factory,
@@ -55,7 +55,7 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
   const liquidator = await deployContract(Liquidator2__factory)
   const loanFactory: LoanFactory2 & TestLoanFactory = customDeployed?.loanFactory ? customDeployed.loanFactory : await deployContract(LoanFactory2__factory)
   const rater: TrueRatingAgencyV2 & TestTrueRatingAgencyV2 = customDeployed?.rater ? customDeployed.rater : await deployContract(TrueRatingAgencyV2__factory)
-  const lender: TrueLender2 & TestTrueLender = customDeployed?.lender ? customDeployed.lender : await deployContract(TrueLender2__factory)
+  const lender: TrueLender2Deprecated & TestTrueLender = customDeployed?.lender ? customDeployed.lender : await deployContract(TrueLender2Deprecated__factory)
   const ftlAgency = await deployContract(FixedTermLoanAgency__factory)
   const safu = await deployContract(Safu__factory)
   const creditModel = await deployContract(CreditModel__factory)

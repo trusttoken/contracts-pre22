@@ -40,7 +40,7 @@ import { BigNumber, BigNumberish, utils, Wallet } from 'ethers'
 
 use(solidity)
 
-describe('TrueLender2', () => {
+describe('TrueLender2Deprecated', () => {
   let owner: Wallet
   let borrower: Wallet
 

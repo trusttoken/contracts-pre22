@@ -10,7 +10,7 @@ import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {IFixedTermLoanAgency} from "./interface/IFixedTermLoanAgency.sol";
 import {ITrueStrategy} from "./interface/ITrueStrategy.sol";
 import {ITrueFiPool2, ITrueFiPoolOracle} from "./interface/ITrueFiPool2.sol";
-import {ITrueLender2} from "./interface/ITrueLender2.sol";
+import {ITrueLender2Deprecated} from "./deprecated/ITrueLender2Deprecated.sol";
 import {ILoanToken2Deprecated} from "./deprecated/ILoanToken2Deprecated.sol";
 import {ILoanToken2} from "./interface/ILoanToken2.sol";
 import {IDebtToken} from "./interface/IDebtToken.sol";
@@ -64,7 +64,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     ERC20 public override token;
 
     ITrueStrategy public strategy;
-    ITrueLender2 public lender;
+    ITrueLender2Deprecated public lender;
 
     // fee for deposits
     // fee precision: 10000 = 100%
@@ -115,7 +115,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
 
     function initialize(
         ERC20 _token,
-        ITrueLender2 _lender,
+        ITrueLender2Deprecated _lender,
         IFixedTermLoanAgency _ftlAgency,
         ISAFU _safu,
         ILoanFactory2 _loanFactory,
@@ -136,7 +136,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      */
     function singleBorrowerInitialize(
         ERC20 _token,
-        ITrueLender2 _lender,
+        ITrueLender2Deprecated _lender,
         IFixedTermLoanAgency _ftlAgency,
         ISAFU _safu,
         ILoanFactory2 _loanFactory,

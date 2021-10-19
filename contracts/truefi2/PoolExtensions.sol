@@ -2,7 +2,7 @@
 pragma solidity 0.6.10;
 
 import {ILoanToken2Deprecated} from "./deprecated/ILoanToken2Deprecated.sol";
-import {ITrueLender2} from "./interface/ITrueLender2.sol";
+import {ITrueLender2Deprecated} from "./deprecated/ITrueLender2Deprecated.sol";
 import {ISAFU} from "./interface/ISAFU.sol";
 
 /**
@@ -14,7 +14,7 @@ library PoolExtensions {
     function _liquidate(
         ISAFU safu,
         ILoanToken2Deprecated loan,
-        ITrueLender2 lender
+        ITrueLender2Deprecated lender
     ) internal {
         require(msg.sender == address(safu), "TrueFiPool: Should be called by SAFU");
         lender.transferAllLoanTokens(loan, address(safu));

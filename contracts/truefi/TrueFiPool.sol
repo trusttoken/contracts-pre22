@@ -15,7 +15,7 @@ import {IUniswapRouter} from "./interface/IUniswapRouter.sol";
 import {ABDKMath64x64} from "./Log.sol";
 import {ICrvPriceOracle} from "./interface/ICrvPriceOracle.sol";
 import {IPauseableContract} from "../common/interface/IPauseableContract.sol";
-import {ITrueFiPool2, ITrueFiPoolOracle, ITrueLender2, ISAFU} from "../truefi2/interface/ITrueFiPool2.sol";
+import {ITrueFiPool2, ITrueFiPoolOracle, ITrueLender2Deprecated, ISAFU} from "../truefi2/interface/ITrueFiPool2.sol";
 import {ILoanToken2Deprecated} from "../truefi2/deprecated/ILoanToken2Deprecated.sol";
 import {PoolExtensions} from "../truefi2/PoolExtensions.sol";
 
@@ -75,7 +75,7 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
     // CRV price oracle
     ICrvPriceOracle public _crvOracle;
 
-    ITrueLender2 public _lender2;
+    ITrueLender2Deprecated public _lender2;
 
     ISAFU public safu;
 
@@ -244,7 +244,7 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
     /**
      * @dev set TrueLenderV2
      */
-    function setLender2(ITrueLender2 lender2) public onlyOwner {
+    function setLender2(ITrueLender2Deprecated lender2) public onlyOwner {
         require(address(_lender2) == address(0), "TrueFiPool: Lender 2 is already set");
         _lender2 = lender2;
     }

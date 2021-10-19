@@ -7,7 +7,7 @@ import {
   OwnedUpgradeabilityProxy__factory,
   PoolFactory__factory,
   TrueFiPool2__factory,
-  TrueLender2__factory,
+  TrueLender2Deprecated__factory,
 } from 'contracts'
 import { AddressZero } from '@ethersproject/constants'
 import { expect, use } from 'chai'
@@ -33,7 +33,7 @@ describe('TrueFiPool2', () => {
     const poolFactory = await deployContract(PoolFactory__factory)
     const poolImplementation = await deployContract(TrueFiPool2__factory)
     implementationReference = await deployContract(ImplementationReference__factory, poolImplementation.address)
-    const lender = await deployContract(TrueLender2__factory)
+    const lender = await deployContract(TrueLender2Deprecated__factory)
     await lender.initialize(AddressZero, poolFactory.address, AddressZero)
 
     await poolFactory.initialize(implementationReference.address, lender.address, AddressZero, AddressZero, AddressZero)

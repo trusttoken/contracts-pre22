@@ -6,17 +6,17 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
-import {ERC20} from "../common/UpgradeableERC20.sol";
-import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
-import {OneInchExchange} from "./libraries/OneInchExchange.sol";
+import {ERC20} from "../../common/UpgradeableERC20.sol";
+import {UpgradeableClaimable} from "../../common/UpgradeableClaimable.sol";
+import {OneInchExchange} from "../libraries/OneInchExchange.sol";
 
-import {ILoanToken2Deprecated} from "./deprecated/ILoanToken2Deprecated.sol";
-import {IStakingPool} from "../truefi/interface/IStakingPool.sol";
-import {ITrueLender2} from "./interface/ITrueLender2.sol";
-import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
-import {I1Inch3} from "./interface/I1Inch3.sol";
-import {IPoolFactory} from "./interface/IPoolFactory.sol";
-import {IERC20WithDecimals} from "./interface/IERC20WithDecimals.sol";
+import {ILoanToken2Deprecated} from "./ILoanToken2Deprecated.sol";
+import {IStakingPool} from "../../truefi/interface/IStakingPool.sol";
+import {ITrueLender2Deprecated} from "./ITrueLender2Deprecated.sol";
+import {ITrueFiPool2} from "../interface/ITrueFiPool2.sol";
+import {I1Inch3} from "../interface/I1Inch3.sol";
+import {IPoolFactory} from "../interface/IPoolFactory.sol";
+import {IERC20WithDecimals} from "../interface/IERC20WithDecimals.sol";
 
 /**
  * @title TrueLender v2.0
@@ -24,7 +24,7 @@ import {IERC20WithDecimals} from "./interface/IERC20WithDecimals.sol";
  * This contract is a bridge that helps to transfer funds from pool to the loans and back
  * TrueLender holds all LoanTokens and may distribute them on pool exits
  */
-contract TrueLender2 is ITrueLender2, UpgradeableClaimable {
+contract TrueLender2Deprecated is ITrueLender2Deprecated, UpgradeableClaimable {
     using SafeMath for uint256;
     using SafeERC20 for ERC20;
     using SafeERC20 for IERC20WithDecimals;
