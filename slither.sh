@@ -5,7 +5,6 @@ CONTRACTS=(
   'LoanFactory2'
   'LoanToken2'
   'StkTruToken'
-  'TrueLender2'
   'TrueRatingAgencyV2'
   'TrustToken'
   'Timelock'
