@@ -174,7 +174,7 @@ describe('LoanFactory2', () => {
 
     describe('deploys debt token contract', () => {
       it('has storage variables set properly', async () => {
-        enum Status { Awaiting, Funded, Withdrawn, Settled, Defaulted, Liquidated }
+        enum Status { Defaulted, Liquidated }
 
         expect(await debtToken.pool()).to.eq(pool.address)
         expect(await debtToken.borrower()).to.eq(borrower.address)
