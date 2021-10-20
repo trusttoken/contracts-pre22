@@ -19,7 +19,7 @@ contract DebtToken is IDebtToken, ERC20 {
 
     uint256 public redeemed;
 
-    Status public override status;
+    bool public override hasLiquidated;
 
     /**
      * @dev Emitted when a DebtToken is redeemed for underlying tokens
@@ -47,7 +47,6 @@ contract DebtToken is IDebtToken, ERC20 {
         borrower = _borrower;
         liquidator = _liquidator;
         debt = _debt;
-        status = Status.Defaulted;
         _mint(_holder, _debt);
     }
 
@@ -73,10 +72,10 @@ contract DebtToken is IDebtToken, ERC20 {
      * @dev Liquidate the debt if it has defaulted
      */
     function liquidate() external override {
-        require(status == Status.Defaulted, "DebtToken: Current status should be Defaulted");
+        require(!hasLiquidated, "DebtToken: Current status should be Defaulted");
         require(msg.sender == liquidator, "DebtToken: Caller is not the liquidator");
 
-        status = Status.Liquidated;
+        hasLiquidated = true;
 
         emit Liquidated();
     }

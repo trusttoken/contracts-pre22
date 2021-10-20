@@ -9,11 +9,6 @@ import { DebtToken, DebtToken__factory, MockTrueCurrency, MockTrueCurrency__fact
 use(solidity)
 
 describe('DebtToken', () => {
-  enum DebtTokenStatus {
-    Defaulted,
-    Liquidated
-  }
-
   const payback = async (wallet: Wallet, amount: BigNumberish) => token.mint(debtToken.address, amount)
   const debt = parseEth(1000)
 
@@ -64,8 +59,8 @@ describe('DebtToken', () => {
       expect(await debtToken.totalSupply()).to.equal(debt)
     })
 
-    it('sets status to Defaulted', async () => {
-      expect(await debtToken.status()).to.equal(DebtTokenStatus.Defaulted)
+    it('doesn\'t set hasLiquidated', async () => {
+      expect(await debtToken.hasLiquidated()).to.be.false
     })
   })
 
@@ -81,9 +76,9 @@ describe('DebtToken', () => {
         .to.be.revertedWith('DebtToken: Caller is not the liquidator')
     })
 
-    it('sets status to liquidated', async () => {
+    it('sets hasLiquidated', async () => {
       await debtToken.connect(safu).liquidate()
-      expect(await debtToken.status()).to.equal(DebtTokenStatus.Liquidated)
+      expect(await debtToken.hasLiquidated()).to.be.true
     })
 
     it('emits event', async () => {
