@@ -512,22 +512,8 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
         emit Pulled(yAmount);
     }
 
-    // prettier-ignore
-    /**
-     * @dev Remove liquidity from curve if necessary and transfer to lender
-     * @param amount amount for lender to withdraw
-     */
-    function borrow(uint256 amount, uint256 fee) public override nonReentrant onlyLender {
-        // if there is not enough TUSD, withdraw from curve
-        if (amount > currencyBalance()) {
-            removeLiquidityFromCurve(amount.sub(currencyBalance()));
-            require(amount <= currencyBalance(), "TrueFiPool: Not enough funds in pool to cover borrow");
-        }
-
-        mint(fee);
-        require(token.transfer(msg.sender, amount.sub(fee)));
-
-        emit Borrow(msg.sender, amount, fee);
+    function borrow(uint256, uint256) public virtual override onlyLender {
+        revert("TrueFiPool: Borrowing is deprecated");
     }
 
     function removeLiquidityFromCurve(uint256 amountToWithdraw) internal {
