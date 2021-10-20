@@ -68,7 +68,7 @@ describe('DebtToken', () => {
     it('reverts if liquidated twice', async () => {
       await debtToken.connect(safu).liquidate()
       await expect(debtToken.connect(safu).liquidate())
-        .to.be.revertedWith('DebtToken: Current status should be Defaulted')
+        .to.be.revertedWith('DebtToken: Debt must not be liquidated')
     })
 
     it('reverts if not called by liquidator', async () => {
