@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {ITrueFiCreditOracleDeprecated} from "./ITrueFiCreditOracleDeprecated.sol";
 import {UpgradeableClaimable} from "../../common/UpgradeableClaimable.sol";
 

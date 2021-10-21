@@ -21,7 +21,6 @@ import {ILineOfCreditAgency} from "./interface/ILineOfCreditAgency.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
 
 import {ABDKMath64x64} from "../truefi/Log.sol";
-import {OneInchExchange} from "./libraries/OneInchExchange.sol";
 
 /**
  * @title TrueFiPool2

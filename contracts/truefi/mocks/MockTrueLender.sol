@@ -2,7 +2,6 @@
 pragma solidity 0.6.10;
 
 import {ITrueFiPool} from "../interface/ITrueFiPool.sol";
-import {ITrueRatingAgency} from "../interface/ITrueRatingAgency.sol";
 
 import {TrueLender} from "../TrueLender.sol";
 

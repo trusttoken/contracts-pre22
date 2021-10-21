@@ -12,7 +12,6 @@ import {ICurveGauge, ICurveMinter, ICurvePool} from "./interface/ICurve.sol";
 import {ITrueFiPool} from "./interface/ITrueFiPool.sol";
 import {ITrueLender} from "./interface/ITrueLender.sol";
 import {IUniswapRouter} from "./interface/IUniswapRouter.sol";
-import {ABDKMath64x64} from "./Log.sol";
 import {ICrvPriceOracle} from "./interface/ICrvPriceOracle.sol";
 import {IPauseableContract} from "../common/interface/IPauseableContract.sol";
 import {ITrueFiPool2, ITrueFiPoolOracle, ITrueLender2, ISAFU} from "../truefi2/interface/ITrueFiPool2.sol";

@@ -9,7 +9,6 @@ import {UpgradeableClaimable} from "../../common/UpgradeableClaimable.sol";
 import {ITrueStrategy} from "../interface/ITrueStrategy.sol";
 import {ICurveGauge, ICurveMinter, ICurvePool, IERC20} from "../../truefi/interface/ICurve.sol";
 import {ICrvPriceOracle} from "../../truefi/interface/ICrvPriceOracle.sol";
-import {IUniswapRouter} from "../../truefi/interface/IUniswapRouter.sol";
 import {ITrueFiPool2} from "../interface/ITrueFiPool2.sol";
 import {I1Inch3} from "../interface/I1Inch3.sol";
 import {OneInchExchange} from "../libraries/OneInchExchange.sol";

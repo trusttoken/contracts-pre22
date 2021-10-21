@@ -2,8 +2,6 @@
 pragma solidity 0.6.10;
 
 import {ITrueFiPool2} from "./ITrueFiPool2.sol";
-import {ILoanToken2} from "./ILoanToken2.sol";
-import {ILoanFactory2} from "./ILoanFactory2.sol";
 
 interface IFixedTermLoanAgency {
     // @dev calculate overall value of the pools
