@@ -5,15 +5,17 @@ import { deployMockContract, MockContract, MockProvider, solidity } from 'ethere
 import { beforeEachWithFixture, DAY, expectScaledCloseTo, MAX_APY, parseEth, parseTRU, timeTravel } from 'utils'
 
 import {
+  BorrowingMutex__factory,
+  CollateralVault__factory,
   ImplementationReference__factory,
   Liquidator2,
   Liquidator2__factory,
   LoanFactory2,
   LoanFactory2__factory,
   LoanToken,
-  LoanToken__factory,
   LoanToken2,
   LoanToken2__factory,
+  LoanToken__factory,
   MockCrvPriceOracle__factory,
   MockCurvePool,
   MockCurvePool__factory,
@@ -21,7 +23,10 @@ import {
   MockErc20Token__factory,
   MockStakingPool,
   MockStakingPool__factory,
+  MockTrueFiPoolOracle__factory,
   PoolFactory__factory,
+  Safu,
+  Safu__factory,
   TestTrueFiPool,
   TestTrueFiPool__factory,
   TrueFiPool2__factory,
@@ -29,11 +34,6 @@ import {
   TrueLender2Deprecated,
   TrueLender2Deprecated__factory,
   TrueLender__factory,
-  MockTrueFiPoolOracle__factory,
-  Safu,
-  Safu__factory,
-  BorrowingMutex__factory,
-  CollateralVault__factory,
 } from 'contracts'
 import { ICurveGaugeJson, ICurveMinterJson, TrueRatingAgencyV2Json } from 'build'
 import { AddressZero } from '@ethersproject/constants'
@@ -335,7 +335,7 @@ describe('TrueFiPool', () => {
     })
   })
 
-  describe('borrow-repay', () => {
+  describe('borrow', () => {
     let pool2: TestTrueFiPool
 
     beforeEach(async () => {
@@ -349,45 +349,11 @@ describe('TrueFiPool', () => {
         AddressZero,
         AddressZero,
       )
-      await token.approve(pool2.address, includeFee(parseEth(1e7)))
-      await pool2.join(includeFee(parseEth(1e7)))
-      await pool2.flush(parseEth(5e6))
     })
 
-    it('reverts if borrower is not a lender', async () => {
-      await expect(pool2['borrow(uint256,uint256)'](parseEth(1001), 0)).to.be.revertedWith('TrueFiPool: Caller is not the lender')
-    })
-
-    it('reverts if repayer is not a lender', async () => {
-      await pool2.connect(borrower)['borrow(uint256,uint256)'](parseEth(1001), 0)
-      await expect(pool2.repay(parseEth(1001)))
-        .to.be.revertedWith('TrueFiPool: Caller is not the lender')
-    })
-
-    it('when borrowing less than trueCurrency balance, uses the balance', async () => {
-      const borrowedAmount = parseEth(5e6)
-      await pool2.connect(borrower)['borrow(uint256,uint256)'](borrowedAmount, 0)
-      expect(await token.balanceOf(borrower.address)).to.equal(borrowedAmount)
-      expect(await token.balanceOf(pool2.address)).to.equal(await pool2.claimableFees())
-
-      await token.connect(borrower).approve(pool2.address, borrowedAmount)
-      await pool2.connect(borrower).repay(borrowedAmount)
-      expect(await token.balanceOf(borrower.address)).to.equal(0)
-      expect(await token.balanceOf(pool2.address)).to.equal(borrowedAmount.add(await pool2.claimableFees()))
-    })
-
-    it('when trueCurrency balance is not enough, withdraws from curve', async () => {
-      await token.mint(curvePool.address, parseEth(2e6))
-      await curvePool.set_withdraw_price(parseEth(1.5))
-      await pool2.connect(borrower)['borrow(uint256,uint256)'](parseEth(6e6), 0)
-      expect(await token.balanceOf(borrower.address)).to.equal(parseEth(6e6))
-    })
-
-    it('curvePool allowance is 0 after borrow', async () => {
-      await token.mint(curvePool.address, parseEth(2e6))
-      await curvePool.set_withdraw_price(parseEth(1.5))
-      await pool2.connect(borrower)['borrow(uint256,uint256)'](parseEth(6e6), 0)
-      expect(await curveToken.allowance(pool.address, curvePool.address)).to.eq(0)
+    it('borrow is deprecated', async () => {
+      await expect(pool2.connect(borrower).superBorrow(0, 0))
+        .to.be.revertedWith('TrueFiPool: Borrowing is deprecated')
     })
   })
 

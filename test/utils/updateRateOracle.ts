@@ -1,8 +1,13 @@
-import { TestTimeAveragedBaseRateOracle, TimeAveragedBaseRateOracle } from 'contracts'
 import { MockProvider } from 'ethereum-waffle'
 import { timeTravelTo } from '.'
+import { BigNumber } from 'ethers'
 
-export const updateRateOracle = async (oracle: TimeAveragedBaseRateOracle | TestTimeAveragedBaseRateOracle, cooldown: number, provider: MockProvider) => {
+interface AveragedOracle {
+  update(): Promise<unknown>,
+  getTotalsBuffer(): Promise<[BigNumber[], BigNumber[], number]>,
+}
+
+export const updateRateOracle = async (oracle: AveragedOracle, cooldown: number, provider: MockProvider) => {
   const [, timestamps, currIndex] = await oracle.getTotalsBuffer()
   const newestTimestamp = timestamps[currIndex].toNumber()
   await timeTravelTo(provider, newestTimestamp + cooldown - 1)
