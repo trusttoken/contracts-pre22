@@ -131,6 +131,9 @@ describe('TrueLender2Deprecated', () => {
     await stkTru.stake(parseTRU(15e6))
     await timeTravel(1)
 
+    await pool1.setLender(lender.address)
+    await pool2.setLender(lender.address)
+
     loan1 = await createLegacyLoan(loanFactory, pool1, lender, owner, borrower, 100000, YEAR, 100)
 
     loan2 = await createLegacyLoan(loanFactory, pool2, lender, owner, borrower, 500000, YEAR, 1000)
