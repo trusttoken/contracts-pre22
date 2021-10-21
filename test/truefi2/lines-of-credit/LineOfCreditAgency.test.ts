@@ -1,7 +1,7 @@
 import { BigNumber, BigNumberish, Wallet } from 'ethers'
 import {
   BorrowingMutex,
-  CollateralVault,
+  StakingVault,
   CreditModel,
   FixedTermLoanAgency,
   LineOfCreditAgency,
@@ -54,7 +54,7 @@ describe('LineOfCreditAgency', () => {
   let mockSpotOracle: MockContract
   let borrowingMutex: BorrowingMutex
   let poolFactory: PoolFactory
-  let collateralVault: CollateralVault
+  let stakingVault: StakingVault
   let tru: MockTrueCurrency
   let timeTravel: (time: number) => void
 
@@ -88,7 +88,7 @@ describe('LineOfCreditAgency', () => {
       creditModel,
       borrowingMutex,
       poolFactory,
-      collateralVault,
+      stakingVault,
       tru,
     } = await setupTruefi2(owner, provider))
 
@@ -107,7 +107,7 @@ describe('LineOfCreditAgency', () => {
     await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
 
     await tru.mint(borrower.address, parseTRU(1e7))
-    await tru.connect(borrower).approve(collateralVault.address, parseTRU(1e7))
+    await tru.connect(borrower).approve(stakingVault.address, parseTRU(1e7))
   })
 
   describe('initializer', () => {
@@ -428,7 +428,7 @@ describe('LineOfCreditAgency', () => {
       const faultyCreditAgency = await deployContract(LineOfCreditAgency__factory)
       const faultyBorrowingMutex = await deployContract(MockBorrowingMutex__factory)
 
-      await faultyCreditAgency.initialize(creditOracle.address, creditModel.address, faultyBorrowingMutex.address, poolFactory.address, loanFactory.address, collateralVault.address)
+      await faultyCreditAgency.initialize(creditOracle.address, creditModel.address, faultyBorrowingMutex.address, poolFactory.address, loanFactory.address, stakingVault.address)
       await tusdPool.setCreditAgency(faultyCreditAgency.address)
       await faultyCreditAgency.allowBorrower(borrower.address, true)
 
@@ -521,8 +521,8 @@ describe('LineOfCreditAgency', () => {
       await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000))
         .to.be.revertedWith('LineOfCreditAgency: Borrower has credit score below minimum')
       await tru.mint(borrower.address, parseTRU(100_000))
-      await tru.connect(borrower).approve(collateralVault.address, parseTRU(100_000))
-      await collateralVault.connect(borrower).stake(parseTRU(100_000))
+      await tru.connect(borrower).approve(stakingVault.address, parseTRU(100_000))
+      await stakingVault.connect(borrower).stake(parseTRU(100_000))
       await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000))
         .not.to.be.reverted
     })
@@ -533,9 +533,9 @@ describe('LineOfCreditAgency', () => {
       await creditOracle.setScore(borrower.address, 191)
       await creditAgency.allowBorrower(borrower.address, true)
       await tru.mint(borrower.address, parseTRU(100_000))
-      await tru.connect(borrower).approve(collateralVault.address, parseTRU(100_000))
+      await tru.connect(borrower).approve(stakingVault.address, parseTRU(100_000))
       await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100))
-      await collateralVault.connect(borrower).stake(parseTRU(100_000))
+      await stakingVault.connect(borrower).stake(parseTRU(100_000))
     })
 
     it('returns true if borrower will be beyond limit with this staked amount and false otherwise', async () => {
@@ -1301,7 +1301,7 @@ describe('LineOfCreditAgency', () => {
 
     it('updates after borrow when staked', async () => {
       await creditAgency.allowBorrower(borrower.address, true)
-      await collateralVault.connect(borrower).stake(parseTRU(1000))
+      await stakingVault.connect(borrower).stake(parseTRU(1000))
       await creditAgency.connect(borrower).borrow(tusdPool.address, parseEth(250))
       expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(235)
       await creditAgency.connect(borrower).borrow(tusdPool.address, parseEth(250))
@@ -1310,7 +1310,7 @@ describe('LineOfCreditAgency', () => {
 
     it('updates after principal repayment when staked', async () => {
       await creditAgency.allowBorrower(borrower.address, true)
-      await collateralVault.connect(borrower).stake(parseTRU(1000))
+      await stakingVault.connect(borrower).stake(parseTRU(1000))
       await creditAgency.connect(borrower).borrow(tusdPool.address, parseEth(500))
       expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(229)
       await tusd.connect(borrower).approve(creditAgency.address, parseEth(250))
