@@ -129,4 +129,15 @@ describe('DebtToken', () => {
   it('version', async () => {
     expect(await debtToken.version()).to.equal(1)
   })
+
+  it('balance', async () => {
+    expect(await debtToken.balance()).to.eq(parseEth(0))
+    await token.mint(debtToken.address, parseEth(500))
+    expect(await debtToken.balance()).to.eq(parseEth(500))
+    await debtToken.connect(lender).redeem(parseEth(250))
+    expect(await debtToken.balance()).to.eq(parseEth(250))
+    await token.mint(debtToken.address, parseEth(501))
+    await debtToken.connect(lender).redeem(parseEth(750))
+    expect(await debtToken.balance()).to.eq(parseEth(0))
+  })
 })
