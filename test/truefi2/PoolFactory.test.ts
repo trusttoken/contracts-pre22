@@ -166,7 +166,7 @@ describe('PoolFactory', () => {
     })
 
     it('true lender is set correctly', async () => {
-      expect(await pool.lender()).to.eq(trueLenderInstance1.address)
+      expect(await pool.lender()).to.eq(AddressZero)
     })
 
     it('loan factory is set correctly', async () => {
@@ -287,7 +287,7 @@ describe('PoolFactory', () => {
     })
 
     it('true lender is set correctly', async () => {
-      expect(await pool.lender()).to.eq(trueLenderInstance1.address)
+      expect(await pool.lender()).to.eq(AddressZero)
     })
 
     it('fixed term loan agency is set correctly', async () => {
@@ -520,26 +520,6 @@ describe('PoolFactory', () => {
       await expect(factory.setAllowAll(false))
         .to.emit(factory, 'AllowAllStatusChanged')
         .withArgs(false)
-    })
-  })
-
-  describe('setTrueLender', () => {
-    it('only owner can set trueLender', async () => {
-      await expect(factory.connect(otherWallet).setTrueLender(trueLenderInstance2.address))
-        .to.be.revertedWith('Ownable: caller is not the owner')
-      await expect(factory.connect(owner).setTrueLender(trueLenderInstance2.address))
-        .not.to.be.reverted
-    })
-
-    it('reverts when set to 0', async () => {
-      await expect(factory.setTrueLender(AddressZero))
-        .to.be.revertedWith('PoolFactory: TrueLender address cannot be set to 0')
-    })
-
-    it('sets new true lender contract', async () => {
-      expect(await factory.trueLender2()).to.eq(trueLenderInstance1.address)
-      await factory.connect(owner).setTrueLender(trueLenderInstance2.address)
-      expect(await factory.trueLender2()).to.eq(trueLenderInstance2.address)
     })
   })
 
