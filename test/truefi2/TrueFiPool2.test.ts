@@ -138,7 +138,7 @@ describe('TrueFiPool2', () => {
     })
 
     it('sets lender', async () => {
-      expect(await tusdPool.lender()).to.eq(lender.address)
+      expect(await tusdPool.lender()).to.eq(AddressZero)
     })
 
     it('sets no initial joiningFee', async () => {
