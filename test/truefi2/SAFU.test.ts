@@ -149,7 +149,7 @@ describe('SAFU', () => {
       it('debt has already been liquidated', async () => {
         await safu.liquidate([debt.address])
         await expect(safu.liquidate([debt.address]))
-          .to.be.revertedWith('SAFU: Debt is not defaulted')
+          .to.be.revertedWith('SAFU: Debt must not be liquidated')
       })
     })
 

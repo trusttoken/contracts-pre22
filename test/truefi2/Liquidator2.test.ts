@@ -452,8 +452,8 @@ describe('Liquidator2', () => {
 
       it('changes status', async () => {
         await liquidator.connect(assurance).liquidate([debtToken1.address, debtToken2.address])
-        expect(await debtToken1.status()).to.equal(LoanTokenStatus.Liquidated)
-        expect(await debtToken2.status()).to.equal(LoanTokenStatus.Liquidated)
+        expect(await debtToken1.isLiquidated()).to.be.true
+        expect(await debtToken2.isLiquidated()).to.be.true
       })
 
       describe('reverts if', () => {
@@ -465,7 +465,7 @@ describe('Liquidator2', () => {
 
         it('attempting to default the same debt twice', async () => {
           await expect(liquidator.connect(assurance).liquidate([debtToken1.address, debtToken1.address]))
-            .to.be.revertedWith('Liquidator: Debt must be defaulted')
+            .to.be.revertedWith('Liquidator: Debt must not be liquidated')
         })
       })
 
