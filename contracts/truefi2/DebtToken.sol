@@ -19,7 +19,7 @@ contract DebtToken is IDebtToken, ERC20 {
 
     uint256 public redeemed;
 
-    bool public override hasLiquidated;
+    bool public override isLiquidated;
 
     /**
      * @dev Emitted when a DebtToken is redeemed for underlying tokens
@@ -72,10 +72,10 @@ contract DebtToken is IDebtToken, ERC20 {
      * @dev Liquidate the debt if it has defaulted
      */
     function liquidate() external override {
-        require(!hasLiquidated, "DebtToken: Debt must not be liquidated");
+        require(!isLiquidated, "DebtToken: Debt must not be liquidated");
         require(msg.sender == liquidator, "DebtToken: Caller is not the liquidator");
 
-        hasLiquidated = true;
+        isLiquidated = true;
 
         emit Liquidated();
     }

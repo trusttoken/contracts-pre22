@@ -14,7 +14,7 @@ interface IDebtToken is IERC20 {
 
     function pool() external view returns (ITrueFiPool2);
 
-    function hasLiquidated() external view returns (bool);
+    function isLiquidated() external view returns (bool);
 
     function redeem(uint256 _amount) external;
 

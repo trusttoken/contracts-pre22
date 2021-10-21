@@ -115,7 +115,7 @@ contract SAFU is ISAFU, UpgradeableClaimable {
     function liquidate(IDebtToken[] calldata debts) external onlyOwner {
         for (uint256 i = 0; i < debts.length; i++) {
             require(loanFactory.isDebtToken(debts[i]), "SAFU: Unknown debt");
-            require(!debts[i].hasLiquidated(), "SAFU: Debt must not be liquidated");
+            require(!debts[i].isLiquidated(), "SAFU: Debt must not be liquidated");
         }
 
         liquidator.liquidate(debts);

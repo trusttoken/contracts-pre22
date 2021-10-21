@@ -178,7 +178,7 @@ describe('LoanFactory2', () => {
         expect(await debtToken.borrower()).to.eq(borrower.address)
         expect(await debtToken.liquidator()).to.eq(liquidator.address)
         expect(await debtToken.debt()).to.eq(parseEth(1))
-        expect(await debtToken.hasLiquidated()).to.be.false
+        expect(await debtToken.isLiquidated()).to.be.false
         expect(await debtToken.balanceOf(fakeCreditAgency.address)).to.eq(parseEth(1))
       })
 

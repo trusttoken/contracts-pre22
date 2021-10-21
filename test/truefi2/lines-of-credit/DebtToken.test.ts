@@ -59,8 +59,8 @@ describe('DebtToken', () => {
       expect(await debtToken.totalSupply()).to.equal(debt)
     })
 
-    it('doesn\'t set hasLiquidated', async () => {
-      expect(await debtToken.hasLiquidated()).to.be.false
+    it('doesn\'t set isLiquidated', async () => {
+      expect(await debtToken.isLiquidated()).to.be.false
     })
   })
 
@@ -76,9 +76,9 @@ describe('DebtToken', () => {
         .to.be.revertedWith('DebtToken: Caller is not the liquidator')
     })
 
-    it('sets hasLiquidated', async () => {
+    it('sets isLiquidated', async () => {
       await debtToken.connect(safu).liquidate()
-      expect(await debtToken.hasLiquidated()).to.be.true
+      expect(await debtToken.isLiquidated()).to.be.true
     })
 
     it('emits event', async () => {

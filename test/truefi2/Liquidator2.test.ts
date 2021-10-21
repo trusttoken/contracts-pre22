@@ -452,8 +452,8 @@ describe('Liquidator2', () => {
 
       it('changes status', async () => {
         await liquidator.connect(assurance).liquidate([debtToken1.address, debtToken2.address])
-        expect(await debtToken1.hasLiquidated()).to.be.true
-        expect(await debtToken2.hasLiquidated()).to.be.true
+        expect(await debtToken1.isLiquidated()).to.be.true
+        expect(await debtToken2.isLiquidated()).to.be.true
       })
 
       describe('reverts if', () => {

@@ -183,7 +183,7 @@ contract Liquidator2 is ILiquidator2, UpgradeableClaimable {
         for (uint256 i = 0; i < debts.length; i++) {
             IDebtToken debt = debts[i];
             require(loanFactory.isDebtToken(debt), "Liquidator: Unknown debt");
-            require(!debt.hasLiquidated(), "Liquidator: Debt must not be liquidated");
+            require(!debt.isLiquidated(), "Liquidator: Debt must not be liquidated");
             ITrueFiPool2 pool = ITrueFiPool2(debt.pool());
             require(poolFactory.isSupportedPool(pool), "Liquidator: Pool not supported for default protection");
 
