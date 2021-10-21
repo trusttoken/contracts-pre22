@@ -425,7 +425,12 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
             return loansValueCache;
         }
         // This conversion does nothing but it silences the slither
-        return uint256(lender.value(this)).add(ftlAgency.value(this));
+        uint256 totalLoansValue = 0;
+        if (address(lender) != address(0)) {
+            totalLoansValue = totalLoansValue.add(lender.value(this));
+        }
+        totalLoansValue = totalLoansValue.add(ftlAgency.value(this));
+        return totalLoansValue;
     }
 
     /**
