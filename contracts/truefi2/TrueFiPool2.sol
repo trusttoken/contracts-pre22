@@ -267,6 +267,12 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     event LoanFactoryChanged(ILoanFactory2 newLoanFactory);
 
     /**
+     * @dev Emitted when Lender address is changed
+     * @param newLender New Lender address
+     */
+    event LenderChanged(ITrueLender2Deprecated newLender);
+
+    /**
      * @dev Emitted when DebtTokens are added to the pool
      * @param debtToken token address
      * @param amount token amount
@@ -351,6 +357,11 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
         require(address(_loanFactory) != address(0), "TrueFiPool2: loanFactory is zero address");
         loanFactory = _loanFactory;
         emit LoanFactoryChanged(_loanFactory);
+    }
+
+    function setLender(ITrueLender2Deprecated _lender) external onlyOwner {
+        lender = _lender;
+        emit LenderChanged(_lender);
     }
 
     /**
