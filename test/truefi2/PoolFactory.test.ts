@@ -15,8 +15,6 @@ import {
   Safu__factory,
   FixedTermLoanAgency,
   FixedTermLoanAgency__factory,
-  TestTrueLender,
-  TestTrueLender__factory,
   TrueFiPool2,
   TrueFiPool2__factory,
 } from 'contracts'
@@ -40,8 +38,6 @@ describe('PoolFactory', () => {
   let token2: MockErc20Token
   let token3: MockErc20Token
   let token4: MockErc20Token
-  let trueLenderInstance1: TestTrueLender
-  let trueLenderInstance2: TestTrueLender
   let ftlAgencyInstance1: FixedTermLoanAgency
   let ftlAgencyInstance2: FixedTermLoanAgency
   let loanFactory: LoanFactory2
@@ -56,8 +52,6 @@ describe('PoolFactory', () => {
     token2 = await new MockErc20Token__factory(owner).deploy()
     token3 = await new MockErc20Token__factory(owner).deploy()
     token4 = await new MockErc20Token__factory(owner).deploy()
-    trueLenderInstance1 = await new TestTrueLender__factory(owner).deploy()
-    trueLenderInstance2 = await new TestTrueLender__factory(owner).deploy()
     ftlAgencyInstance1 = await new FixedTermLoanAgency__factory(owner).deploy()
     ftlAgencyInstance2 = await new FixedTermLoanAgency__factory(owner).deploy()
     safu = await new Safu__factory(owner).deploy()
