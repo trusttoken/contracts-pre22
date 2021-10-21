@@ -552,6 +552,7 @@ describe('SAFU', () => {
     let loan: TestLegacyLoanToken2
 
     beforeEach(async () => {
+      await pool.setLender(lender.address)
       loan = await createLegacyLoan(loanFactory, pool, lender, owner, borrower, parseUSDC(1000), YEAR, 1000)
       await token.mint(lender.address, parseUSDC(1000))
       await lender.fund(loan.address)
