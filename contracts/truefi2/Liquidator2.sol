@@ -14,7 +14,7 @@ import {IStakingPool} from "../truefi/interface/IStakingPool.sol";
 import {ITrueFiPoolOracle} from "./interface/ITrueFiPoolOracle.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
 import {IDebtToken} from "./interface/IDebtToken.sol";
-import {ICollateralVault} from "./interface/ICollateralVault.sol";
+import {IStakingVault} from "./interface/IStakingVault.sol";
 
 /**
  * @title Liquidator2
@@ -52,7 +52,7 @@ contract Liquidator2 is ILiquidator2, UpgradeableClaimable {
 
     ITrueFiPoolOracle public tusdPoolOracle;
 
-    ICollateralVault public collateralVault;
+    IStakingVault public stakingVault;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -86,7 +86,7 @@ contract Liquidator2 is ILiquidator2, UpgradeableClaimable {
 
     event TusdPoolOracleChanged(ITrueFiPoolOracle poolOracle);
 
-    event CollateralVaultChanged(ICollateralVault collateralVault);
+    event StakingVaultChanged(IStakingVault stakingVault);
 
     /**
      * @dev Initialize this contract
@@ -98,7 +98,7 @@ contract Liquidator2 is ILiquidator2, UpgradeableClaimable {
         IPoolFactory _poolFactory,
         address _SAFU,
         ITrueFiPoolOracle _tusdPoolOracle,
-        ICollateralVault _collateralVault
+        IStakingVault _stakingVault
     ) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
 
@@ -108,7 +108,7 @@ contract Liquidator2 is ILiquidator2, UpgradeableClaimable {
         poolFactory = _poolFactory;
         SAFU = _SAFU;
         tusdPoolOracle = _tusdPoolOracle;
-        collateralVault = _collateralVault;
+        stakingVault = _stakingVault;
         fetchMaxShare = 1000;
     }
 
@@ -137,10 +137,10 @@ contract Liquidator2 is ILiquidator2, UpgradeableClaimable {
         emit TusdPoolOracleChanged(_tusdPoolOracle);
     }
 
-    function setCollateralVault(ICollateralVault _collateralVault) external onlyOwner {
-        require(address(_collateralVault) != address(0), "Liquidator: Collateral vault cannot be set to 0");
-        collateralVault = _collateralVault;
-        emit CollateralVaultChanged(_collateralVault);
+    function setStakingVault(IStakingVault _stakingVault) external onlyOwner {
+        require(address(_stakingVault) != address(0), "Liquidator: Staking vault cannot be set to 0");
+        stakingVault = _stakingVault;
+        emit StakingVaultChanged(_stakingVault);
     }
 
     /**
@@ -196,8 +196,8 @@ contract Liquidator2 is ILiquidator2, UpgradeableClaimable {
         stkTru.withdraw(withdrawnTru);
 
         address borrower = debts[0].borrower();
-        withdrawnTru = withdrawnTru.add(collateralVault.stakedAmount(borrower));
-        collateralVault.slash(borrower);
+        withdrawnTru = withdrawnTru.add(stakingVault.stakedAmount(borrower));
+        stakingVault.slash(borrower);
 
         tru.safeTransfer(SAFU, withdrawnTru);
         emit Liquidated(debts, totalDefaultedValue, withdrawnTru);

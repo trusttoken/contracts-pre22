@@ -10,9 +10,9 @@ import {ILineOfCreditAgency} from "./interface/ILineOfCreditAgency.sol";
 import {ILiquidator2} from "./interface/ILiquidator2.sol";
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 
-import {ICollateralVault} from "./interface/ICollateralVault.sol";
+import {IStakingVault} from "./interface/IStakingVault.sol";
 
-contract CollateralVault is ICollateralVault, UpgradeableClaimable {
+contract StakingVault is IStakingVault, UpgradeableClaimable {
     using SafeERC20 for IERC20WithDecimals;
     using SafeMath for uint256;
 
@@ -56,7 +56,7 @@ contract CollateralVault is ICollateralVault, UpgradeableClaimable {
     function stake(uint256 amount) external {
         require(
             borrowingMutex.isUnlocked(msg.sender) || borrowingMutex.locker(msg.sender) == address(lineOfCreditAgency),
-            "CollateralVault: Borrower can only stake when they're unlocked or have a line of credit"
+            "StakingVault: Borrower can only stake when they're unlocked or have a line of credit"
         );
         stakedAmount[msg.sender] = stakedAmount[msg.sender].add(amount);
         stakedToken.safeTransferFrom(msg.sender, address(this), amount);
@@ -65,7 +65,7 @@ contract CollateralVault is ICollateralVault, UpgradeableClaimable {
     }
 
     function unstake(uint256 amount) external {
-        require(canUnstake(msg.sender, amount), "CollateralVault: Cannot unstake");
+        require(canUnstake(msg.sender, amount), "StakingVault: Cannot unstake");
 
         stakedAmount[msg.sender] = stakedAmount[msg.sender].sub(amount);
         stakedToken.safeTransfer(msg.sender, amount);
@@ -74,12 +74,12 @@ contract CollateralVault is ICollateralVault, UpgradeableClaimable {
     }
 
     function slash(address borrower) external override {
-        require(msg.sender == address(liquidator), "CollateralVault: Caller is not the liquidator");
+        require(msg.sender == address(liquidator), "StakingVault: Caller is not the liquidator");
         uint256 slashedAmount = stakedAmount[borrower];
         if (slashedAmount == 0) {
             return;
         }
-        require(borrowingMutex.isBanned(borrower), "CollateralVault: Borrower has to be banned");
+        require(borrowingMutex.isBanned(borrower), "StakingVault: Borrower has to be banned");
 
         stakedAmount[borrower] = 0;
         stakedToken.safeTransfer(msg.sender, slashedAmount);
