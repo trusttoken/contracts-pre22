@@ -193,6 +193,7 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
 
     /// @dev Set creditModel to `newCreditModel` and update state
     function setCreditModel(ICreditModel newCreditModel) external onlyOwner {
+        require(address(newCreditModel) != address(0), "LineOfCreditAgency: CreditModel cannot be set to zero address");
         creditModel = newCreditModel;
         pokeAll();
         emit CreditModelChanged(newCreditModel);
