@@ -163,7 +163,7 @@ describe('Liquidator2', () => {
       expect(await liquidator.tusdPoolOracle()).to.equal(tusdOracle.address)
     })
 
-    it('sets collateral vault correctly', async () => {
+    it('sets staking vault correctly', async () => {
       expect(await liquidator.stakingVault()).to.equal(stakingVault.address)
     })
   })
@@ -238,10 +238,10 @@ describe('Liquidator2', () => {
 
     it('cannot be set to 0 address', async () => {
       await expect(liquidator.setStakingVault(AddressZero))
-        .to.be.revertedWith('Liquidator: Collateral vault cannot be set to 0')
+        .to.be.revertedWith('Liquidator: Staking vault cannot be set to 0')
     })
 
-    it('sets new collateral vault address', async () => {
+    it('sets new staking vault address', async () => {
       await liquidator.setStakingVault(fakeStakingVault.address)
       expect(await liquidator.stakingVault()).to.eq(fakeStakingVault.address)
     })
@@ -475,7 +475,7 @@ describe('Liquidator2', () => {
           .to.be.revertedWith('Liquidator: Pool not supported for default protection')
       })
 
-      it('slashes whole collateral vault stake if anything was staked', async () => {
+      it('slashes whole staking vault stake if anything was staked', async () => {
         await tru.mint(borrower.address, parseTRU(100))
         await tru.connect(borrower).approve(stakingVault.address, parseTRU(100))
         await stakingVault.connect(borrower).stake(parseTRU(100))

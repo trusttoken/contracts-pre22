@@ -420,7 +420,7 @@ describe('CreditModel', () => {
       await creditModel.setStakingConfig(ltvRatio * 100, 1)
     })
 
-    describe('conservativeCollateralValue', () => {
+    describe('conservativeStakedValue', () => {
       [
         [0, 0, 0],
         [0, 100, 0],
@@ -429,15 +429,15 @@ describe('CreditModel', () => {
         [100, 100, 25],
         [1000, 20, 50],
         [1000, 40, 100],
-      ].map(([collateral, ltvRatio, result]) =>
-        it(`when ${collateral} TRU is staked with ltvRatio=${ltvRatio}%, borrow limit rises by up to $${result}`, async () => {
+      ].map(([staked, ltvRatio, result]) =>
+        it(`when ${staked} TRU is staked with ltvRatio=${ltvRatio}%, borrow limit rises by up to $${result}`, async () => {
           await creditModel.setStakingConfig(ltvRatio * 100, 0)
-          expect(await creditModel.conservativeCollateralValue(parseTRU(collateral))).to.equal(parseEth(result))
+          expect(await creditModel.conservativeStakedValue(parseTRU(staked))).to.equal(parseEth(result))
         }))
     })
 
-    describe('conservativeCollateralRatio', () => {
-      const collateral = 1000
+    describe('conservativeStakedRatio', () => {
+      const staked = 1000
 
         ;[
         [1000, 10],
@@ -448,18 +448,18 @@ describe('CreditModel', () => {
         [75, 100],
         [0, 0],
       ].map(([borrowed, result]) =>
-        it(`when borrowed amount is ${borrowed} collateral ratio is at ${result}%`, async () => {
-          expect(await creditModel.conservativeCollateralRatio(mockPool.address, parseTRU(collateral), parseEth(borrowed)))
+        it(`when borrowed amount is ${borrowed} staked ratio is at ${result}%`, async () => {
+          expect(await creditModel.conservativeStakedRatio(mockPool.address, parseTRU(staked), parseEth(borrowed)))
             .to.equal(result * 100)
         }))
 
-      it('returns 0 if there is no collateral', async () => {
-        expect(await creditModel.conservativeCollateralRatio(mockPool.address, 0, 100)).to.equal(0)
+      it('returns 0 if there is no staked', async () => {
+        expect(await creditModel.conservativeStakedRatio(mockPool.address, 0, 100)).to.equal(0)
       })
     })
 
     describe('effectiveScore', () => {
-      const collateral = 1000
+      const staked = 1000
       const borrowedAmount = 250
 
       describe('with effectiveScorePower = 1', () => {
@@ -473,8 +473,8 @@ describe('CreditModel', () => {
           [63, 139],
           [31, 120],
         ].map(([score, effectiveScore]) =>
-          it(`staking ${collateral} TRU increases score from ${score} to ${effectiveScore}`, async () => {
-            expect(await creditModel.effectiveScore(score, mockPool.address, parseTRU(collateral), parseEth(borrowedAmount))).to.eq(effectiveScore)
+          it(`staking ${staked} TRU increases score from ${score} to ${effectiveScore}`, async () => {
+            expect(await creditModel.effectiveScore(score, mockPool.address, parseTRU(staked), parseEth(borrowedAmount))).to.eq(effectiveScore)
           }))
       })
 
@@ -495,19 +495,19 @@ describe('CreditModel', () => {
           [63, 93],
           [31, 66],
         ].map(([score, effectiveScore]) =>
-          it(`staking ${collateral} TRU increases score from ${score} to ${effectiveScore}`, async () => {
-            expect(await creditModel.effectiveScore(score, mockPool.address, parseTRU(collateral), parseEth(borrowedAmount))).to.eq(effectiveScore)
+          it(`staking ${staked} TRU increases score from ${score} to ${effectiveScore}`, async () => {
+            expect(await creditModel.effectiveScore(score, mockPool.address, parseTRU(staked), parseEth(borrowedAmount))).to.eq(effectiveScore)
           }))
       })
 
       it('doesn\'t depend on pool decimal count', async () => {
         await mockPool.mock.decimals.returns(6)
-        expect(await creditModel.effectiveScore(191, mockPool.address, parseTRU(collateral), parseEth(250))).to.eq(216)
+        expect(await creditModel.effectiveScore(191, mockPool.address, parseTRU(staked), parseEth(250))).to.eq(216)
         await mockPool.mock.decimals.returns(18)
-        expect(await creditModel.effectiveScore(191, mockPool.address, parseTRU(collateral), parseEth(250))).to.eq(216)
+        expect(await creditModel.effectiveScore(191, mockPool.address, parseTRU(staked), parseEth(250))).to.eq(216)
       })
 
-      describe('amount of collateral affects score', async () => {
+      describe('amount of staked affects score', async () => {
         const borrowed = 250
 
           ;[
@@ -518,9 +518,9 @@ describe('CreditModel', () => {
           [1000, 25],
           [2500, 64],
           [10 ** 10, 64],
-        ].map(([collateral, expectedScoreChange]) =>
-          it(`when borrowed $${borrowed} staking ${collateral} TRU increases score by ${expectedScoreChange}`, async () => {
-            const effectiveScore = await creditModel.effectiveScore(191, mockPool.address, parseTRU(collateral), parseEth(borrowed))
+        ].map(([staked, expectedScoreChange]) =>
+          it(`when borrowed $${borrowed} staking ${staked} TRU increases score by ${expectedScoreChange}`, async () => {
+            const effectiveScore = await creditModel.effectiveScore(191, mockPool.address, parseTRU(staked), parseEth(borrowed))
             const scoreChange = effectiveScore - 191
             expect(scoreChange).to.eq(expectedScoreChange)
           }),
@@ -574,7 +574,7 @@ describe('CreditModel', () => {
         expect(await creditModel.borrowLimit(mockPool.address, 191, parseEth(100), parseTRU(1000), 0)).to.equal(parseEth(80.51).add(parseEth(100)))
       })
 
-      it('collateral TRU cannot increase limit over TVL limit', async () => {
+      it('staked TRU cannot increase limit over TVL limit', async () => {
         const maxTVLLimit = parseEth(20)
         await mockPool.mock.poolValue.returns(maxTVLLimit.sub(parseEth(1)))
         await mockPool2.mock.poolValue.returns(parseUSDC(1))
@@ -582,7 +582,7 @@ describe('CreditModel', () => {
         expect(await creditModel.borrowLimit(mockPool.address, 191, parseEth(1), parseTRU(1000), 0)).to.equal(maxTVLLimit.mul(15).div(100).mul(8051).div(10000))
       })
 
-      it('collateral TRU cannot increase limit over pool limit', async () => {
+      it('staked TRU cannot increase limit over pool limit', async () => {
         await mockPool.mock.poolValue.returns(parseEth(20))
         await mockPool.mock.decimals.returns(18)
         expect(await creditModel.borrowLimit(mockPool.address, 191, parseEth(1), 0, 0)).to.equal(parseEth(0.8051))
@@ -632,7 +632,7 @@ describe('CreditModel', () => {
         expect(await creditModel.borrowLimit(mockPool.address, 191, parseEth(100), parseTRU(1000), 0)).to.equal(parseEth(80.51).add(parseEth(100)))
       })
 
-      it('collateral TRU cannot increase limit over TVL limit', async () => {
+      it('staked TRU cannot increase limit over TVL limit', async () => {
         const maxTVLLimit = parseEth(20)
         await mockPool.mock.poolValue.returns(maxTVLLimit.div(1e6).div(1e6).sub(parseUSDC(1)))
         await mockPool2.mock.poolValue.returns(parseUSDC(1))
@@ -640,7 +640,7 @@ describe('CreditModel', () => {
         expect(await creditModel.borrowLimit(mockPool.address, 191, parseEth(1), parseTRU(1000), 0)).to.equal(maxTVLLimit.mul(15).div(100).mul(8051).div(10000))
       })
 
-      it('collateral TRU cannot increase limit over pool limit', async () => {
+      it('staked TRU cannot increase limit over pool limit', async () => {
         await mockPool.mock.poolValue.returns(parseUSDC(20))
         expect(await creditModel.borrowLimit(mockPool.address, 191, parseEth(1), 0, 0)).to.equal(parseEth(0.8051))
         expect(await creditModel.borrowLimit(mockPool.address, 191, parseEth(1), parseTRU(1000), 0)).to.equal(parseEth(20).mul(15).div(100))

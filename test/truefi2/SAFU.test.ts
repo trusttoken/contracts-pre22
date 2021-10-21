@@ -330,7 +330,7 @@ describe('SAFU', () => {
           expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(4400))
         })
 
-        it('also slashes collateral vault tru', async () => {
+        it('also slashes staking vault tru', async () => {
           await stkTru.stake(parseTRU(1e3))
 
           await tru.mint(borrower.address, parseTRU(100))

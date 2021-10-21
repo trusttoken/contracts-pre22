@@ -138,7 +138,7 @@ contract Liquidator2 is ILiquidator2, UpgradeableClaimable {
     }
 
     function setStakingVault(IStakingVault _stakingVault) external onlyOwner {
-        require(address(_stakingVault) != address(0), "Liquidator: Collateral vault cannot be set to 0");
+        require(address(_stakingVault) != address(0), "Liquidator: Staking vault cannot be set to 0");
         stakingVault = _stakingVault;
         emit StakingVaultChanged(_stakingVault);
     }
