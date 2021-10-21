@@ -29,6 +29,8 @@ import {
   TrueFiPool2,
   TrueFiPool2__factory,
   CreditModel,
+  MockTrueCurrency,
+  CollateralVault,
 } from 'contracts'
 
 import { BorrowingMutexJson, LoanToken2Json, Mock1InchV3Json } from 'build'
@@ -59,12 +61,14 @@ describe('FixedTermLoanAgency', () => {
 
   let poolFactory: PoolFactory
 
+  let tru: MockTrueCurrency
   let stkTru: StkTruToken
   let usdc: MockUsdc
   let oneInch: Mock1InchV3
   let borrowingMutex: BorrowingMutex
   let creditModel: CreditModel
   let baseRateOracle: TimeAveragedBaseRateOracle
+  let collateralVault: CollateralVault
 
   const YEAR = DAY * 365
 
@@ -80,6 +84,7 @@ describe('FixedTermLoanAgency', () => {
     oneInch = await new Mock1InchV3__factory(owner).deploy()
 
     ; ({
+      tru,
       loanFactory,
       feePool,
       standardTokenOracle: poolOracle,
@@ -91,6 +96,7 @@ describe('FixedTermLoanAgency', () => {
       borrowingMutex,
       creditModel,
       standardBaseRateOracle: baseRateOracle,
+      collateralVault: collateralVault,
     } = await setupTruefi2(owner, _provider, { oneInch: oneInch }))
 
     token1 = await deployContract(owner, MockErc20Token__factory)
@@ -437,6 +443,17 @@ describe('FixedTermLoanAgency', () => {
       it('locks borrowing mutex', async () => {
         const loan = await extractLoanTokenAddress(borrow(borrower, pool1, 100000, YEAR))
         expect(await borrowingMutex.locker(borrower.address)).to.equal(loan.address)
+      })
+
+      it('can increase max borrow limit after staking TRU', async () => {
+        await creditOracle.setMaxBorrowerLimit(borrower.address, 90000)
+        await expect(borrow(borrower, pool1, 100000, YEAR))
+          .to.be.revertedWith("FixedTermLoanAgency: Loan amount cannot exceed borrow limit")
+        await tru.mint(borrower.address, parseTRU(100))
+        await tru.connect(borrower).approve(collateralVault.address, parseTRU(100))
+        await collateralVault.connect(borrower).stake(parseTRU(100))
+        await expect(borrow(borrower, pool1, 100000, YEAR))
+          .not.to.be.reverted
       })
 
       it('emits event', async () => {
