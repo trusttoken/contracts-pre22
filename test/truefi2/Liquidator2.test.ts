@@ -418,7 +418,7 @@ describe('Liquidator2', () => {
           })
         })
 
-        describe.only('half of debt has defaulted and half redeemed', () => {
+        describe('half of debt has defaulted and half redeemed', () => {
           beforeEach(async () => {
             await usdc.mint(loan.address, parseUSDC(550))
             await lender.reclaim(loan.address, '0x')
