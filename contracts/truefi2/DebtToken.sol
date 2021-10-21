@@ -58,7 +58,7 @@ contract DebtToken is IDebtToken, ERC20 {
         require(_amount <= _balance(), "DebtToken: Insufficient repaid amount");
 
         uint256 amountToReturn = _amount;
-        if (_amount == totalSupply() && repaid() > debt) {
+        if (_amount == totalSupply()) {
             amountToReturn = _balance();
         }
         redeemed = redeemed.add(amountToReturn);
