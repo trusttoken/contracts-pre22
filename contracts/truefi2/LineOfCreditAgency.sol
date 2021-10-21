@@ -13,7 +13,7 @@ import {ILineOfCreditAgency} from "./interface/ILineOfCreditAgency.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
 import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
 import {IDebtToken} from "./interface/IDebtToken.sol";
-import {ICollateralVault} from "./interface/ICollateralVault.sol";
+import {IStakingVault} from "./interface/IStakingVault.sol";
 
 interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
     function decimals() external view returns (uint8);
@@ -132,7 +132,7 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
 
     mapping(ITrueFiPool2 => mapping(address => uint256)) public overBorrowLimitTime;
 
-    ICollateralVault public collateralVault;
+    IStakingVault public stakingVault;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -172,7 +172,7 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
         IBorrowingMutex _borrowingMutex,
         IPoolFactory _poolFactory,
         ILoanFactory2 _loanFactory,
-        ICollateralVault _collateralVault
+        IStakingVault _stakingVault
     ) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
         creditOracle = _creditOracle;
@@ -180,7 +180,7 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
         borrowingMutex = _borrowingMutex;
         poolFactory = _poolFactory;
         loanFactory = _loanFactory;
-        collateralVault = _collateralVault;
+        stakingVault = _stakingVault;
         minCreditScore = 191;
         interestRepaymentPeriod = 31 days;
     }
@@ -256,7 +256,7 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
     ) internal returns (uint8, uint8) {
         uint8 oldEffectiveScore = creditScore[pool][borrower];
         uint8 newEffectiveScore = creditOracle.score(borrower);
-        uint256 stakedAmount = collateralVault.stakedAmount(borrower);
+        uint256 stakedAmount = stakingVault.stakedAmount(borrower);
         newEffectiveScore = creditModel.effectiveScore(newEffectiveScore, pool, stakedAmount, borrowedAmount);
         creditScore[pool][borrower] = newEffectiveScore;
         return (oldEffectiveScore, newEffectiveScore);
@@ -309,7 +309,7 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
                 pool,
                 creditOracle.score(borrower),
                 creditOracle.maxBorrowerLimit(borrower),
-                collateralVault.stakedAmount(borrower),
+                stakingVault.stakedAmount(borrower),
                 totalBorrowed(borrower)
             );
     }
@@ -320,7 +320,7 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
                 pool,
                 creditOracle.score(borrower),
                 creditOracle.maxBorrowerLimit(borrower),
-                collateralVault.stakedAmount(borrower),
+                stakingVault.stakedAmount(borrower),
                 totalBorrowed(borrower)
             );
     }

@@ -6,7 +6,7 @@ import {ERC20} from "../../common/UpgradeableERC20.sol";
 import {ITrueFiPool2} from "./ITrueFiPool2.sol";
 
 interface IDebtToken is IERC20 {
-    enum Status {Awaiting, Funded, Withdrawn, Settled, Defaulted, Liquidated}
+    enum Status {Defaulted, Liquidated}
 
     function borrower() external view returns (address);
 
@@ -14,7 +14,7 @@ interface IDebtToken is IERC20 {
 
     function pool() external view returns (ITrueFiPool2);
 
-    function status() external view returns (Status);
+    function isLiquidated() external view returns (bool);
 
     function redeem(uint256 _amount) external;
 

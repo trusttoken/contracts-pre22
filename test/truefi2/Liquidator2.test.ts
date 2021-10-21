@@ -20,8 +20,8 @@ import {
   TestTrueLender__factory,
   TrueFiCreditOracle,
   TrueFiCreditOracle__factory,
-  CollateralVault,
-  CollateralVault__factory,
+  StakingVault,
+  StakingVault__factory,
   TrueFiPool2,
   BorrowingMutex,
 } from 'contracts'
@@ -69,7 +69,7 @@ describe('Liquidator2', () => {
   let creditOracle: TrueFiCreditOracle
   let tusdOracle: MockTrueFiPoolOracle
   let creditModel: CreditModel
-  let collateralVault: CollateralVault
+  let stakingVault: StakingVault
   let borrowingMutex: BorrowingMutex
 
   let timeTravel: (time: number) => void
@@ -102,7 +102,7 @@ describe('Liquidator2', () => {
       creditOracle,
       standardTokenOracle: tusdOracle,
       creditModel,
-      collateralVault,
+      stakingVault,
       borrowingMutex,
     } = await setupTruefi2(owner, _provider, { lender, loanFactory }))
 
@@ -163,8 +163,8 @@ describe('Liquidator2', () => {
       expect(await liquidator.tusdPoolOracle()).to.equal(tusdOracle.address)
     })
 
-    it('sets collateral vault correctly', async () => {
-      expect(await liquidator.collateralVault()).to.equal(collateralVault.address)
+    it('sets staking vault correctly', async () => {
+      expect(await liquidator.stakingVault()).to.equal(stakingVault.address)
     })
   })
 
@@ -224,32 +224,32 @@ describe('Liquidator2', () => {
     })
   })
 
-  describe('setCollateralVault', () => {
-    let fakeCollateralVault: CollateralVault
+  describe('setStakingVault', () => {
+    let fakeStakingVault: StakingVault
 
     beforeEach(async () => {
-      fakeCollateralVault = await new CollateralVault__factory(owner).deploy()
+      fakeStakingVault = await new StakingVault__factory(owner).deploy()
     })
 
     it('only owner', async () => {
-      await expect(liquidator.connect(otherWallet).setCollateralVault(fakeCollateralVault.address))
+      await expect(liquidator.connect(otherWallet).setStakingVault(fakeStakingVault.address))
         .to.be.revertedWith('Ownable: caller is not the owner')
     })
 
     it('cannot be set to 0 address', async () => {
-      await expect(liquidator.setCollateralVault(AddressZero))
-        .to.be.revertedWith('Liquidator: Collateral vault cannot be set to 0')
+      await expect(liquidator.setStakingVault(AddressZero))
+        .to.be.revertedWith('Liquidator: Staking vault cannot be set to 0')
     })
 
-    it('sets new collateral vault address', async () => {
-      await liquidator.setCollateralVault(fakeCollateralVault.address)
-      expect(await liquidator.collateralVault()).to.eq(fakeCollateralVault.address)
+    it('sets new staking vault address', async () => {
+      await liquidator.setStakingVault(fakeStakingVault.address)
+      expect(await liquidator.stakingVault()).to.eq(fakeStakingVault.address)
     })
 
     it('emits event', async () => {
-      await expect(liquidator.setCollateralVault(fakeCollateralVault.address))
-        .to.emit(liquidator, 'CollateralVaultChanged')
-        .withArgs(fakeCollateralVault.address)
+      await expect(liquidator.setStakingVault(fakeStakingVault.address))
+        .to.emit(liquidator, 'StakingVaultChanged')
+        .withArgs(fakeStakingVault.address)
     })
   })
 
@@ -452,8 +452,8 @@ describe('Liquidator2', () => {
 
       it('changes status', async () => {
         await liquidator.connect(assurance).liquidate([debtToken1.address, debtToken2.address])
-        expect(await debtToken1.status()).to.equal(LoanTokenStatus.Liquidated)
-        expect(await debtToken2.status()).to.equal(LoanTokenStatus.Liquidated)
+        expect(await debtToken1.isLiquidated()).to.be.true
+        expect(await debtToken2.isLiquidated()).to.be.true
       })
 
       describe('reverts if', () => {
@@ -465,7 +465,7 @@ describe('Liquidator2', () => {
 
         it('attempting to default the same debt twice', async () => {
           await expect(liquidator.connect(assurance).liquidate([debtToken1.address, debtToken1.address]))
-            .to.be.revertedWith('Liquidator: Debt must be defaulted')
+            .to.be.revertedWith('Liquidator: Debt must not be liquidated')
         })
       })
 
@@ -475,10 +475,10 @@ describe('Liquidator2', () => {
           .to.be.revertedWith('Liquidator: Pool not supported for default protection')
       })
 
-      it('slashes whole collateral vault stake if anything was staked', async () => {
+      it('slashes whole staking vault stake if anything was staked', async () => {
         await tru.mint(borrower.address, parseTRU(100))
-        await tru.connect(borrower).approve(collateralVault.address, parseTRU(100))
-        await collateralVault.connect(borrower).stake(parseTRU(100))
+        await tru.connect(borrower).approve(stakingVault.address, parseTRU(100))
+        await stakingVault.connect(borrower).stake(parseTRU(100))
         await borrowingMutex.allowLocker(owner.address, true)
         await borrowingMutex.lock(borrower.address, owner.address)
         await borrowingMutex.ban(borrower.address)

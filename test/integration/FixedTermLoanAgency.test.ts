@@ -3,7 +3,7 @@ import { setupDeploy } from 'scripts/utils'
 import {
   BorrowingMutex,
   BorrowingMutex__factory,
-  CollateralVault__factory,
+  StakingVault__factory,
   Erc20Mock,
   Erc20Mock__factory,
   FixedTermLoanAgency,
@@ -75,11 +75,11 @@ describe('FixedTermLoanAgency', () => {
     borrowingMutex = await deployContract(BorrowingMutex__factory)
     await borrowingMutex.initialize()
 
-    const collateralVault = await deployContract(CollateralVault__factory)
-    await collateralVault.initialize(stkTru.address, borrowingMutex.address, mockLineOfCreditAgency.address, AddressZero)
+    const stakingVault = await deployContract(StakingVault__factory)
+    await stakingVault.initialize(stkTru.address, borrowingMutex.address, mockLineOfCreditAgency.address, AddressZero)
 
     ftlAgency = await deployContract(FixedTermLoanAgency__factory)
-    await ftlAgency.initialize(stkTru.address, poolFactory.address, INCH_ADDRESS, mockCreditOracle.address, mockCreditModel.address, borrowingMutex.address, loanFactory.address, collateralVault.address)
+    await ftlAgency.initialize(stkTru.address, poolFactory.address, INCH_ADDRESS, mockCreditOracle.address, mockCreditModel.address, borrowingMutex.address, loanFactory.address, stakingVault.address)
     await ftlAgency.allowBorrower(await owner.getAddress())
 
     await poolFactory.initialize(implementationReference.address, AddressZero, ftlAgency.address, AddressZero, AddressZero)
