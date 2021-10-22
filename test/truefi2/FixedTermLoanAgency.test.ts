@@ -409,7 +409,7 @@ describe('FixedTermLoanAgency', () => {
 
       it('amount to borrow exceeds borrow limit due to decimals mismatch', async () => {
         expect(await ftlAgency.borrowLimit(usdcPool.address, borrower.address)).to.be.lt(parseEth(1e7))
-        expect(borrow(borrower, usdcPool, parseUSDC(1e7), YEAR)).to.be.revertedWith("FixedTermLoanAgency: Loan amount cannot exceed borrow limit")
+        expect(borrow(borrower, usdcPool, parseUSDC(1e7), YEAR)).to.be.revertedWith('FixedTermLoanAgency: Loan amount cannot exceed borrow limit')
       })
 
       it('taking new loans is locked by mutex', async () => {
