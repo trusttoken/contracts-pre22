@@ -127,6 +127,7 @@ describe('FixedTermLoanAgency', () => {
     await usdcPool.setOracle(usdcPoolOracle.address)
     await creditModel.setBaseRateOracle(pool1.address, baseRateOracle.address)
     await creditModel.setBaseRateOracle(pool2.address, baseRateOracle.address)
+    await creditModel.setBaseRateOracle(usdcPool.address, baseRateOracle.address)
 
     await ftlAgency.setFeePool(feePool.address)
     await ftlAgency.allowBorrower(borrower.address)
@@ -409,7 +410,8 @@ describe('FixedTermLoanAgency', () => {
 
       it('amount to borrow exceeds borrow limit due to decimals mismatch', async () => {
         expect(await ftlAgency.borrowLimit(usdcPool.address, borrower.address)).to.be.lt(parseEth(1e7))
-        expect(borrow(borrower, usdcPool, parseUSDC(1e7), YEAR)).to.be.revertedWith('FixedTermLoanAgency: Loan amount cannot exceed borrow limit')
+        await expect(borrow(borrower, usdcPool, parseUSDC(1e7), YEAR))
+          .to.be.revertedWith('FixedTermLoanAgency: Loan amount cannot exceed borrow limit')
       })
 
       it('taking new loans is locked by mutex', async () => {
