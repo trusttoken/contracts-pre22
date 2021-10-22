@@ -638,6 +638,15 @@ describe('LineOfCreditAgency', () => {
     })
   })
 
+  describe('pokeAll', () => {
+    it('pokes all supported pools', async () => {
+      expect(await poolFactory.getSupportedPools()).to.deep.eq([usdcPool.address, tusdPool.address])
+      await creditAgency.pokeAll()
+      expect('isSupportedPool').to.be.calledOnContractWith(poolFactory, [usdcPool.address])
+      expect('isSupportedPool').to.be.calledOnContractWith(poolFactory, [tusdPool.address])
+    })
+  })
+
   describe('repay', () => {
     beforeEach(async () => {
       await creditAgency.allowBorrower(borrower.address, true)
