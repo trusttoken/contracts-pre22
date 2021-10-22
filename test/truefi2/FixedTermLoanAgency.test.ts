@@ -530,6 +530,25 @@ describe('FixedTermLoanAgency', () => {
     })
   })
 
+  describe('rate', () => {
+    it('returns correct rate', async () => {
+      const baseRate = await creditModel.rate(pool1.address, 255, parseEth(1e5))
+      const ftlAdjustment = await creditModel.fixedTermLoanAdjustment(YEAR)
+      expect(await ftlAgency.rate(pool1.address, borrower.address, parseEth(1e5), YEAR))
+        .to.eq(baseRate.add(ftlAdjustment))
+    })
+
+    it('reduces rate after staking TRU', async () => {
+      await creditOracle.setScore(borrower.address, 200)
+      const noStakingRate = await ftlAgency.rate(pool1.address, borrower.address, parseEth(1e5), YEAR)
+      await tru.mint(borrower.address, parseTRU(1e7))
+      await tru.connect(borrower).approve(stakingVault.address, parseTRU(1e7))
+      await stakingVault.connect(borrower).stake(parseTRU(1e7))
+      expect(await ftlAgency.rate(pool1.address, borrower.address, parseEth(1e5), YEAR))
+        .to.be.lt(noStakingRate)
+    })
+  })
+
   describe('Reclaiming', () => {
     const payBack = async (token: MockErc20Token, loan: LoanToken2) => {
       const balance = await loan.balance()
