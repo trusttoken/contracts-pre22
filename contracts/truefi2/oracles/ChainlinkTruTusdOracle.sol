@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {ChainlinkTruOracle, IERC20WithDecimals} from "./ChainlinkTruOracle.sol";
 
 contract ChainlinkTruTusdOracle is ChainlinkTruOracle {

@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20WithDecimals} from "../truefi2/interface/IERC20WithDecimals.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
@@ -10,7 +9,6 @@ import {IVoteTokenWithERC20} from "../governance/interface/IVoteToken.sol";
 
 import {Ownable} from "../common/UpgradeableOwnable.sol";
 import {IArbitraryDistributor} from "./interface/IArbitraryDistributor.sol";
-import {ILoanFactory} from "./interface/ILoanFactory.sol";
 import {ILoanToken2Deprecated} from "../truefi2/deprecated/ILoanToken2Deprecated.sol";
 import {ITrueRatingAgencyV2} from "./interface/ITrueRatingAgencyV2.sol";
 

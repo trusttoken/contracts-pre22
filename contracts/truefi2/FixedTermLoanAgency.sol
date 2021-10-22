@@ -2,7 +2,6 @@
 pragma solidity 0.6.10;
 pragma experimental ABIEncoderV2;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
@@ -15,10 +14,8 @@ import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
 import {IStakingPool} from "../truefi/interface/IStakingPool.sol";
 import {IFixedTermLoanAgency} from "./interface/IFixedTermLoanAgency.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
-import {ITrueFiPoolOracle} from "./interface/ITrueFiPoolOracle.sol";
 import {I1Inch3} from "./interface/I1Inch3.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
-import {ITrueRatingAgency} from "../truefi/interface/ITrueRatingAgency.sol";
 import {IERC20WithDecimals} from "./interface/IERC20WithDecimals.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
 import {ICreditModel} from "./interface/ICreditModel.sol";

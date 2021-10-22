@@ -7,7 +7,6 @@ import {IFixedTermLoanAgency} from "../interface/IFixedTermLoanAgency.sol";
 import {ILoanToken2Deprecated} from "../deprecated/ILoanToken2Deprecated.sol";
 import {IDebtToken} from "../interface/IDebtToken.sol";
 import {ITrueFiPoolOracle} from "./ITrueFiPoolOracle.sol";
-import {I1Inch3} from "./I1Inch3.sol";
 import {ISAFU} from "./ISAFU.sol";
 import {ILoanFactory2} from "./ILoanFactory2.sol";
 

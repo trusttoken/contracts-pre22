@@ -7,13 +7,10 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IOwnedUpgradeabilityProxy as OwnedUpgradeabilityProxy} from "../proxy/interface/IOwnedUpgradeabilityProxy.sol";
 
 import {IRegistry as Registry} from "../registry/interface/IRegistry.sol";
-import {IRegistryClone as RegistryClone} from "../registry/interface/IRegistryClone.sol";
 
 import {IHasOwner as HasOwner} from "./interface/IHasOwner.sol";
 import {IHook as Hook} from "./interface/IHook.sol";
 import {ITrueCurrency as TrueCurrency} from "./interface/ITrueCurrency.sol";
-
-import {TrueCurrencyWithGasRefund} from "./TrueCurrencyWithGasRefund.sol";
 
 /** @title TokenController
  * @dev This contract allows us to split ownership of the TrueCurrency contract
