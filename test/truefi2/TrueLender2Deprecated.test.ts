@@ -28,7 +28,7 @@ import {
   TestTrueLender__factory,
   TrueFiCreditOracle,
   TrueFiPool2,
-  TrueFiPool2__factory,
+  TestTrueFiPool2__factory,
   TestLegacyLoanToken2__factory,
 } from 'contracts'
 
@@ -104,13 +104,13 @@ describe('TrueLender2Deprecated', () => {
     await poolFactory.createPool(token1.address)
     await poolFactory.createPool(token2.address)
 
-    pool1 = TrueFiPool2__factory.connect(await poolFactory.pool(token1.address), owner)
-    pool2 = TrueFiPool2__factory.connect(await poolFactory.pool(token2.address), owner)
+    pool1 = TestTrueFiPool2__factory.connect(await poolFactory.pool(token1.address), owner)
+    pool2 = TestTrueFiPool2__factory.connect(await poolFactory.pool(token2.address), owner)
 
     await poolFactory.supportPool(pool1.address)
     await poolFactory.supportPool(pool2.address)
 
-    counterfeitPool = await deployContract(owner, TrueFiPool2__factory)
+    counterfeitPool = await deployContract(owner, TestTrueFiPool2__factory)
     await counterfeitPool.initialize(token1.address, lender.address, AddressZero, AddressZero, loanFactory.address, owner.address)
 
     await pool1.setOracle(poolOracle.address)
