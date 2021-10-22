@@ -548,7 +548,7 @@ describe('CreditModel', () => {
     })
 
     describe('works for pool with 18 decimal places', () => {
-      it('borrow limit is 0 if credit score below score floor', async () => {
+      it('borrow limit is 0 if credit score is below minimum required score', async () => {
         expect(await creditModel.borrowLimit(mockPool.address, 30, parseEth(100), 0, 0)).to.equal(0)
       })
 
@@ -611,7 +611,7 @@ describe('CreditModel', () => {
         await mockPool.mock.oracle.returns(oracle.address)
       })
 
-      it('borrow limit is 0 if credit score below score floor', async () => {
+      it('borrow limit is 0 if credit score is below minimum required score', async () => {
         expect(await creditModel.borrowLimit(mockPool.address, 30, parseEth(100), 0, 0)).to.equal(0)
       })
 
