@@ -151,6 +151,29 @@ describe('LineOfCreditAgency', () => {
     })
   })
 
+  describe('setCreditModel', () => {
+    it('only owner can set credit model', async () => {
+      await expect(creditAgency.connect(borrower).setCreditModel(creditModel.address))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('cannot be set to zero address', async () => {
+      await expect(creditAgency.setCreditModel(AddressZero))
+        .to.be.revertedWith('LineOfCreditAgency: CreditModel cannot be set to zero address')
+    })
+
+    it('credit model is properly set', async () => {
+      await creditAgency.setCreditModel(creditModel.address)
+      expect(await creditAgency.creditModel()).to.equal(creditModel.address)
+    })
+
+    it('emits a proper event', async () => {
+      await expect(creditAgency.setCreditModel(creditModel.address))
+        .to.emit(creditAgency, 'CreditModelChanged')
+        .withArgs(creditModel.address)
+    })
+  })
+
   describe('setPoolFactory', () => {
     it('only owner can set pool factory', async () => {
       await expect(creditAgency.connect(borrower).setPoolFactory(poolFactory.address))
