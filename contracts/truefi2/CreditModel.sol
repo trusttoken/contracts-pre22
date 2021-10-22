@@ -269,7 +269,7 @@ contract CreditModel is ICreditModel, UpgradeableClaimable {
         }
         uint256 coefficient = uint256(utilizationRateConfig.coefficient);
         uint256 power = uint256(utilizationRateConfig.power);
-        return min(coefficient.mul(1e4**power).div(liquidRatio**power).sub(coefficient), MAX_RATE_CAP);
+        return min(coefficient.mul(uint256(BASIS_POINTS)**power).div(liquidRatio**power).sub(coefficient), MAX_RATE_CAP);
     }
 
     /**
