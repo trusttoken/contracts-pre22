@@ -23,6 +23,7 @@ import {IERC20WithDecimals} from "./interface/IERC20WithDecimals.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
 import {ICreditModel} from "./interface/ICreditModel.sol";
 import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
+import {IStakingVault} from "./interface/IStakingVault.sol";
 
 interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
     function decimals() external view returns (uint8);
@@ -91,6 +92,8 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
     ILoanFactory2 public loanFactory;
 
     mapping(address => bool) public isBorrowerAllowed;
+
+    IStakingVault public stakingVault;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -185,7 +188,8 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
         ITrueFiCreditOracle _creditOracle,
         ICreditModel _creditModel,
         IBorrowingMutex _borrowingMutex,
-        ILoanFactory2 _loanFactory
+        ILoanFactory2 _loanFactory,
+        IStakingVault _stakingVault
     ) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
 
@@ -196,6 +200,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
         creditModel = _creditModel;
         borrowingMutex = _borrowingMutex;
         loanFactory = _loanFactory;
+        stakingVault = _stakingVault;
 
         swapFeeSlippage = 100; // 1%
         fee = 1000;
@@ -430,7 +435,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
                 pool,
                 creditOracle.score(borrower),
                 creditOracle.maxBorrowerLimit(borrower),
-                0,
+                stakingVault.stakedAmount(borrower),
                 totalBorrowed(borrower, poolDecimals)
             );
     }
