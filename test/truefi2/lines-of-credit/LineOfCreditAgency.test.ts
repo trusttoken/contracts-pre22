@@ -642,6 +642,8 @@ describe('LineOfCreditAgency', () => {
     it('pokes all supported pools', async () => {
       expect(await poolFactory.getSupportedPools()).to.deep.eq([usdcPool.address, tusdPool.address])
       await creditAgency.pokeAll()
+      // waffle is not able to check directly if poke() was called,
+      // using external call check to confirm that poke() was called twice
       expect('isSupportedPool').to.be.calledOnContractWith(poolFactory, [usdcPool.address])
       expect('isSupportedPool').to.be.calledOnContractWith(poolFactory, [tusdPool.address])
     })
