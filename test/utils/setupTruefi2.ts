@@ -28,7 +28,7 @@ import {
   TimeAveragedTruPriceOracle,
   TimeAveragedTruPriceOracle__factory,
   TrueFiCreditOracle__factory,
-  TrueFiPool2__factory,
+  TestTrueFiPool2__factory,
   TrueLender2Deprecated,
   TrueLender2Deprecated__factory,
   TrueRatingAgencyV2,
@@ -67,7 +67,7 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
   const collateralVault = await deployContract(CollateralVault__factory)
 
   const poolFactory = await deployContract(PoolFactory__factory)
-  const poolImplementation = await deployContract(TrueFiPool2__factory)
+  const poolImplementation = await deployContract(TestTrueFiPool2__factory)
   const implementationReference = await deployContract(ImplementationReference__factory, poolImplementation.address)
 
   const tru = await deployContract(MockTrueCurrency__factory)
