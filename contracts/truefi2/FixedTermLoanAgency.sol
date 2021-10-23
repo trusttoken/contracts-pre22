@@ -308,9 +308,11 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
         uint256 amount,
         uint256 term
     ) public view returns (uint256) {
-        uint8 borrowerScore = creditOracle.score(borrower);
+        uint8 rawScore = creditOracle.score(borrower);
+        uint256 stakedAmount = stakingVault.stakedAmount(borrower);
+        uint8 effectiveScore = creditModel.effectiveScore(rawScore, pool, stakedAmount, amount);
         uint256 fixedTermLoanAdjustment = creditModel.fixedTermLoanAdjustment(term);
-        return creditModel.rate(pool, borrowerScore, amount).add(fixedTermLoanAdjustment);
+        return creditModel.rate(pool, effectiveScore, amount).add(fixedTermLoanAdjustment);
     }
 
     /**
