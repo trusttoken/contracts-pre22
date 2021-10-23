@@ -126,6 +126,9 @@ describe('FixedTermLoanAgency', () => {
   })
 
   it('funds tether loan tokens', async () => {
+    const oracle = await deployContract(MockUsdStableCoinOracle__factory)
+    await usdtLoanPool.setOracle(oracle.address)
+
     await usdt.connect(usdtHolder).approve(usdtLoanPool.address, 10_000_000)
     await usdtLoanPool.connect(usdtHolder).join(10_000_000)
 
