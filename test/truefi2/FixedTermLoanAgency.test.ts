@@ -49,10 +49,8 @@ describe('FixedTermLoanAgency', () => {
   let loanFactory: LoanFactory2
   let pool1: TrueFiPool2
   let pool2: TrueFiPool2
-  let usdcPool: TrueFiPool2
   let feePool: TrueFiPool2
   let poolOracle: MockTrueFiPoolOracle
-  let usdcPoolOracle: MockTrueFiPoolOracle
 
   let ftlAgency: FixedTermLoanAgency
   let creditOracle: TrueFiCreditOracle
@@ -65,7 +63,6 @@ describe('FixedTermLoanAgency', () => {
 
   let stkTru: StkTruToken
   let usdc: MockUsdc
-  let usdc2: MockUsdc
   let oneInch: Mock1InchV3
   let borrowingMutex: BorrowingMutex
   let creditModel: CreditModel
@@ -100,34 +97,26 @@ describe('FixedTermLoanAgency', () => {
 
     token1 = await deployContract(owner, MockErc20Token__factory)
     token2 = await deployContract(owner, MockErc20Token__factory)
-    usdc2 = await deployContract(owner, MockUsdc__factory)
 
     await poolFactory.allowToken(token1.address, true)
     await poolFactory.allowToken(token2.address, true)
-    await poolFactory.allowToken(usdc2.address, true)
 
     await poolFactory.createPool(token1.address)
     await poolFactory.createPool(token2.address)
-    await poolFactory.createPool(usdc2.address)
 
     pool1 = TrueFiPool2__factory.connect(await poolFactory.pool(token1.address), owner)
     pool2 = TrueFiPool2__factory.connect(await poolFactory.pool(token2.address), owner)
-    usdcPool = TrueFiPool2__factory.connect(await poolFactory.pool(usdc2.address), owner)
 
     await poolFactory.supportPool(pool1.address)
     await poolFactory.supportPool(pool2.address)
-    await poolFactory.supportPool(usdcPool.address)
 
     counterfeitPool = await deployContract(owner, TrueFiPool2__factory)
     await counterfeitPool.initialize(token1.address, AddressZero, ftlAgency.address, AddressZero, loanFactory.address, owner.address)
 
     await pool1.setOracle(poolOracle.address)
     await pool2.setOracle(poolOracle.address)
-    usdcPoolOracle = await deployContract(owner, MockTrueFiPoolOracle__factory, [usdc2.address])
-    await usdcPool.setOracle(usdcPoolOracle.address)
     await creditModel.setBaseRateOracle(pool1.address, baseRateOracle.address)
     await creditModel.setBaseRateOracle(pool2.address, baseRateOracle.address)
-    await creditModel.setBaseRateOracle(usdcPool.address, baseRateOracle.address)
 
     await ftlAgency.setFeePool(feePool.address)
     await ftlAgency.allowBorrower(borrower.address)
@@ -135,13 +124,13 @@ describe('FixedTermLoanAgency', () => {
 
     await token1.mint(owner.address, parseEth(1e7))
     await token2.mint(owner.address, parseEth(1e7))
-    await usdc2.mint(owner.address, parseUSDC(1e7))
+    await usdc.mint(owner.address, parseUSDC(1e7))
     await token1.approve(pool1.address, parseEth(1e7))
     await token2.approve(pool2.address, parseEth(1e7))
-    await usdc2.approve(usdcPool.address, parseUSDC(1e7))
+    await usdc.approve(feePool.address, parseUSDC(1e7))
     await pool1.join(parseEth(1e7))
     await pool2.join(parseEth(1e7))
-    await usdcPool.join(parseUSDC(1e7))
+    await feePool.join(parseUSDC(1e7))
 
     await creditOracle.setCreditUpdatePeriod(YEAR)
     await creditOracle.setScore(borrower.address, 255)
@@ -409,6 +398,8 @@ describe('FixedTermLoanAgency', () => {
       })
 
       it('amount to borrow exceeds borrow limit due to decimals mismatch', async () => {
+        const usdcPool = feePool
+
         expect(await ftlAgency.borrowLimit(usdcPool.address, borrower.address)).to.be.lt(parseEth(1e7))
         await expect(borrow(borrower, usdcPool, parseUSDC(1e7), YEAR))
           .to.be.revertedWith('FixedTermLoanAgency: Loan amount cannot exceed borrow limit')
