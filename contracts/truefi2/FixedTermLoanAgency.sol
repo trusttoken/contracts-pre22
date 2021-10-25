@@ -339,7 +339,10 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
         );
 
         require(amount > 0, "FixedTermLoanAgency: Loans of amount 0, will not be approved");
-        require(amount <= borrowLimit(pool, borrower), "FixedTermLoanAgency: Loan amount cannot exceed borrow limit");
+        require(
+            pool.oracle().tokenToUsd(amount) <= borrowLimit(pool, borrower),
+            "FixedTermLoanAgency: Loan amount cannot exceed borrow limit"
+        );
 
         require(term > 0, "FixedTermLoanAgency: Loans cannot have instantaneous term of repay");
         require(isTermBelowMax(term), "FixedTermLoanAgency: Loan's term is too long");

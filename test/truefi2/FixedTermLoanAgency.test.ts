@@ -128,10 +128,13 @@ describe('FixedTermLoanAgency', () => {
 
     await token1.mint(owner.address, parseEth(1e7))
     await token2.mint(owner.address, parseEth(1e7))
+    await usdc.mint(owner.address, parseUSDC(1e7))
     await token1.approve(pool1.address, parseEth(1e7))
     await token2.approve(pool2.address, parseEth(1e7))
+    await usdc.approve(feePool.address, parseUSDC(1e7))
     await pool1.join(parseEth(1e7))
     await pool2.join(parseEth(1e7))
+    await feePool.join(parseUSDC(1e7))
 
     await creditOracle.setCreditUpdatePeriod(YEAR)
     await creditOracle.setScore(borrower.address, 255)
@@ -395,6 +398,14 @@ describe('FixedTermLoanAgency', () => {
       it('amount to borrow exceeds borrow limit', async () => {
         const amountToBorrow = parseEth(1e7).mul(15).div(100).add(1) // 15% of pool value + 1
         await expect(borrow(borrower, pool1, amountToBorrow, YEAR))
+          .to.be.revertedWith('FixedTermLoanAgency: Loan amount cannot exceed borrow limit')
+      })
+
+      it('amount to borrow exceeds borrow limit due to decimals mismatch', async () => {
+        const usdcPool = feePool
+
+        expect(await ftlAgency.borrowLimit(usdcPool.address, borrower.address)).to.be.lt(parseEth(1e7))
+        await expect(borrow(borrower, usdcPool, parseUSDC(1e7), YEAR))
           .to.be.revertedWith('FixedTermLoanAgency: Loan amount cannot exceed borrow limit')
       })
 
