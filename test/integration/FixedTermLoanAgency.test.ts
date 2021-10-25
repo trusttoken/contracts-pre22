@@ -63,6 +63,7 @@ describe('FixedTermLoanAgency', () => {
 
     const mockCreditModel = await deployMockContract(owner, CreditModelJson.abi)
     await mockCreditModel.mock.rate.returns(0)
+    await mockCreditModel.mock.effectiveScore.returns(255)
     await mockCreditModel.mock.fixedTermLoanAdjustment.returns(1000)
     const mockCreditOracle = await deployMockContract(owner, TrueFiCreditOracleJson.abi)
     await mockCreditOracle.mock.score.returns(255)
