@@ -213,6 +213,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
      * @param _creditOracle new credit oracle
      */
     function setCreditOracle(ITrueFiCreditOracle _creditOracle) external onlyOwner {
+        require(address(_creditOracle) != address(0), "FixedTermLoanAgency: CreditOracle cannot be set to zero address");
         creditOracle = _creditOracle;
         emit CreditOracleChanged(_creditOracle);
     }
@@ -222,6 +223,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
      * @param newMutex borrowing mutex address to be set
      */
     function setBorrowingMutex(IBorrowingMutex newMutex) public onlyOwner {
+        require(address(newMutex) != address(0), "FixedTermLoanAgency: BorrowingMutex cannot be set to zero address");
         borrowingMutex = newMutex;
         emit BorrowingMutexChanged(newMutex);
     }

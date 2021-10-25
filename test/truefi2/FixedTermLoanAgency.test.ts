@@ -31,6 +31,7 @@ import {
   CreditModel,
   MockTrueCurrency,
   StakingVault,
+  BorrowingMutex__factory,
 } from 'contracts'
 
 import { BorrowingMutexJson, LoanToken2Json, Mock1InchV3Json } from 'build'
@@ -282,22 +283,38 @@ describe('FixedTermLoanAgency', () => {
         await expect(ftlAgency.connect(borrower).setCreditOracle(newOracle.address))
           .to.be.revertedWith('Ownable: caller is not the owner')
       })
+
+      it('cannot set creditOracle to zero address', async () => {
+        await expect(ftlAgency.setCreditOracle(AddressZero))
+          .to.be.revertedWith('FixedTermLoanAgency: CreditOracle cannot be set to zero address')
+      })
     })
 
     describe('setBorrowingMutex', () => {
+      let fakeBorrowingMutex: BorrowingMutex
+
+      beforeEach(async () => {
+        fakeBorrowingMutex = await deployContract(owner, BorrowingMutex__factory)
+      })
+
       it('changes borrowingMutex', async () => {
-        await ftlAgency.setBorrowingMutex(AddressZero)
-        expect(await ftlAgency.borrowingMutex()).to.equal(AddressZero)
+        await ftlAgency.setBorrowingMutex(fakeBorrowingMutex.address)
+        expect(await ftlAgency.borrowingMutex()).to.equal(fakeBorrowingMutex.address)
       })
 
       it('emits BorrowingMutexChanged', async () => {
-        await expect(ftlAgency.setBorrowingMutex(AddressZero))
-          .to.emit(ftlAgency, 'BorrowingMutexChanged').withArgs(AddressZero)
+        await expect(ftlAgency.setBorrowingMutex(fakeBorrowingMutex.address))
+          .to.emit(ftlAgency, 'BorrowingMutexChanged').withArgs(fakeBorrowingMutex.address)
       })
 
       it('must be called by owner', async () => {
-        await expect(ftlAgency.connect(borrower).setBorrowingMutex(AddressZero))
+        await expect(ftlAgency.connect(borrower).setBorrowingMutex(fakeBorrowingMutex.address))
           .to.be.revertedWith('Ownable: caller is not the owner')
+      })
+
+      it('cannot set borrowingMutex to zero address', async () => {
+        await expect(ftlAgency.setBorrowingMutex(AddressZero))
+          .to.be.revertedWith('FixedTermLoanAgency: BorrowingMutex cannot be set to zero address')
       })
     })
 
