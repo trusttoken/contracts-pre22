@@ -287,22 +287,20 @@ describe('LoanToken2', () => {
     })
 
     it('reverts if called before loan is closed', async () => {
-      await expect(loanToken.redeem(1)).to.be.revertedWith('LoanToken2: Only after loan has been closed')
-      await expect(loanToken.redeem(1)).to.be.revertedWith('LoanToken2: Only after loan has been closed')
-      await expect(loanToken.redeem(1)).to.be.revertedWith('LoanToken2: Only after loan has been closed')
+      await expect(loanToken.redeem()).to.be.revertedWith('LoanToken2: Only after loan has been closed')
     })
 
     it('reverts if redeeming more than own balance', async () => {
       await timeTravel(provider, yearInSeconds)
       await payback(borrower, parseEth(100))
-      await expect(loanToken.redeem(parseEth(1100))).to.be.revertedWith('LoanToken2: Only after loan has been closed')
+      await expect(loanToken.redeem()).to.be.revertedWith('LoanToken2: Only after loan has been closed')
     })
 
     it('emits event', async () => {
       await timeTravel(provider, defaultedLoanCloseTime)
       await payback(borrower, parseEth(1000))
       await loanToken.enterDefault()
-      await expect(loanToken.redeem(parseEth(1100))).to.emit(loanToken, 'Redeemed').withArgs(lender.address, parseEth(1100), parseEth(1000))
+      await expect(loanToken.redeem()).to.emit(loanToken, 'Redeemed').withArgs(lender.address, parseEth(1100), parseEth(1000))
     })
 
     describe('Simple case: loan settled, redeem all', () => {
@@ -310,7 +308,7 @@ describe('LoanToken2', () => {
         await timeTravel(provider, yearInSeconds)
         await payback(borrower, await parseEth(1100))
         await loanToken.settle()
-        await expect(() => loanToken.redeem(parseEth(1100))).to.changeTokenBalance(token, lender, parseEth(1100))
+        await expect(() => loanToken.redeem()).to.changeTokenBalance(token, lender, parseEth(1100))
       })
 
       it('burns loan tokens', async () => {
@@ -328,7 +326,7 @@ describe('LoanToken2', () => {
         await timeTravel(provider, defaultedLoanCloseTime)
         await payback(borrower, parseEth(825))
         await loanToken.enterDefault()
-        await expect(() => loanToken.redeem(parseEth(1100))).to.changeTokenBalance(token, lender, parseEth(825))
+        await expect(() => loanToken.redeem()).to.changeTokenBalance(token, lender, parseEth(825))
       })
 
       it('burns loan tokens', async () => {
@@ -346,10 +344,10 @@ describe('LoanToken2', () => {
         await timeTravel(provider, defaultedLoanCloseTime)
         await payback(borrower, parseEth(550))
         await loanToken.enterDefault()
-        await loanToken.redeem(parseEth(550))
+        await loanToken.redeem()
         expect(await token.balanceOf(lender.address)).to.equal(await parseEth(275))
         await payback(borrower, parseEth(550))
-        await loanToken.redeem(parseEth(550))
+        await loanToken.redeem()
       })
 
       it('transfers all trueCurrency tokens to lender', async () => {
@@ -378,11 +376,11 @@ describe('LoanToken2', () => {
         await timeTravel(provider, defaultedLoanCloseTime)
         await payback(borrower, parseEth(550))
         await loanToken.enterDefault()
-        await loanToken.redeem(parseEth(275))
+        await loanToken.redeem()
         expect(await token.balanceOf(lender.address)).to.equal(parseEth(275).div(2))
         await payback(borrower, parseEth(550))
-        await loanToken.redeem(parseEth(275))
-        await loanToken.connect(other).redeem(parseEth(550))
+        await loanToken.redeem()
+        await loanToken.connect(other).redeem()
       })
 
       it('transfers all trueCurrency tokens to LOAN holders', async () => {
@@ -413,7 +411,7 @@ describe('LoanToken2', () => {
 
     const paybackRedeemPayback = async () => {
       await payback(borrower, parseEth(900))
-      await loanToken.redeem(parseEth(1100))
+      await loanToken.redeem()
       await payback(borrower, parseEth(200))
     }
 
@@ -437,7 +435,7 @@ describe('LoanToken2', () => {
     it('reverts when balance is 0', async () => {
       await loanToken.enterDefault()
       await payback(borrower, parseEth(1100))
-      await loanToken.redeem(parseEth(1100))
+      await loanToken.redeem()
       await expect(loanToken.connect(borrower).reclaim())
         .to.be.revertedWith('LoanToken2: Cannot reclaim when balance 0')
     })
@@ -460,7 +458,7 @@ describe('LoanToken2', () => {
     it('reclaims, pays some more and reclaims again', async () => {
       await loanToken.enterDefault()
       await payback(borrower, parseEth(900))
-      await loanToken.redeem(parseEth(1100))
+      await loanToken.redeem()
       await payback(borrower, parseEth(100))
       await expect(() => loanToken.connect(borrower).reclaim())
         .to.changeTokenBalance(token, borrower, parseEth(100))
