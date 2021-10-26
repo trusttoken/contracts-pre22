@@ -423,6 +423,17 @@ describe('LineOfCreditAgency', () => {
         .to.be.revertedWith('LineOfCreditAgency: Borrower has credit score below minimum')
     })
 
+    it('fails if borrower has pure credit score below required', async () => {
+      await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
+      await tru.connect(borrower).approve(stakingVault.address, 1000)
+      await stakingVault.connect(borrower).stake(1000)
+
+      await creditOracle.setScore(borrower.address, 191)
+      await creditAgency.setMinCreditScore(192)
+      await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000))
+        .to.be.revertedWith('LineOfCreditAgency: Borrower has credit score below minimum')
+    })
+
     it('fails if the credit score was not updated for too long', async () => {
       await creditOracle.connect(owner).setEligibleForDuration(borrower.address, DAY * 15)
       await timeTravel(DAY * 16)
