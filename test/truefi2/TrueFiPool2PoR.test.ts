@@ -37,7 +37,7 @@ const exp = (base: BigNumberish, exponent: BigNumberish): BigNumber => {
 
 describe("TrueFiPool2PoR", () => {
   const ONE_DAY_SECONDS = 24 * 60 * 60; // seconds in a day
-  const TUSD_FEED_INITIAL_ANSWER = exp(1_000_000, 8).toString(); // "1M TUSD in reserves"
+  const TUSD_FEED_INITIAL_ANSWER = exp(1_000_000, 18).toString(); // "1M TUSD in reserves"
   let provider: MockProvider;
   let owner: Wallet;
   let borrower: Wallet;
@@ -126,11 +126,11 @@ describe("TrueFiPool2PoR", () => {
   });
 
   describe("Proof-of-reserves check", () => {
-    const amountToDeposit = parseEth(1e6);
+    const AMOUNT_TO_DEPOSIT = parseEth(1e6);
 
     beforeEach(async () => {
-      await tusd.mint(owner.address, amountToDeposit);
-      await tusd.connect(owner).approve(tusdPool.address, amountToDeposit);
+      await tusd.mint(owner.address, AMOUNT_TO_DEPOSIT);
+      await tusd.connect(owner).approve(tusdPool.address, AMOUNT_TO_DEPOSIT);
 
       // Reset pool PoR feed defaults
       await tusdPool.setFeed(mockV3Aggregator.address);
@@ -148,20 +148,20 @@ describe("TrueFiPool2PoR", () => {
 
       // Deposit TUSD - the pool will call the feed before minting to check PoR
       const balanceBefore = await tusdPool.balanceOf(owner.address);
-      await tusdPool.connect(owner).join(amountToDeposit);
+      await tusdPool.connect(owner).join(AMOUNT_TO_DEPOSIT);
       expect(await tusdPool.balanceOf(owner.address)).to.equal(
-        balanceBefore.add(amountToDeposit)
+        balanceBefore.add(AMOUNT_TO_DEPOSIT)
       );
     });
 
     it("should mint successfully when feed is set, but heartbeat is unset (defaulting to MAX_AGE)", async () => {
       // Deposit TUSD - the pool will call the feed before minting to check PoR
       const balanceBefore = await tusdPool.balanceOf(owner.address);
-      await tusdPool.connect(owner).join(amountToDeposit, {
+      await tusdPool.connect(owner).join(AMOUNT_TO_DEPOSIT, {
         gasLimit: 200_000,
       });
       expect(await tusdPool.balanceOf(owner.address)).to.equal(
-        amountToDeposit.add(balanceBefore)
+        AMOUNT_TO_DEPOSIT.add(balanceBefore)
       );
     });
 
@@ -172,9 +172,9 @@ describe("TrueFiPool2PoR", () => {
 
       // Deposit TUSD - the pool will call the feed before minting to check PoR
       const balanceBefore = await tusdPool.balanceOf(owner.address);
-      await tusdPool.connect(owner).join(amountToDeposit);
+      await tusdPool.connect(owner).join(AMOUNT_TO_DEPOSIT);
       expect(await tusdPool.balanceOf(owner.address)).to.equal(
-        balanceBefore.add(amountToDeposit)
+        balanceBefore.add(AMOUNT_TO_DEPOSIT)
       );
     });
 
@@ -196,9 +196,9 @@ describe("TrueFiPool2PoR", () => {
 
       // Deposit TUSD - the pool will call the feed before minting to check PoR
       const balanceBefore = await tusdPool.balanceOf(owner.address);
-      await tusdPool.connect(owner).join(amountToDeposit);
+      await tusdPool.connect(owner).join(AMOUNT_TO_DEPOSIT);
       expect(await tusdPool.balanceOf(owner.address)).to.equal(
-        balanceBefore.add(amountToDeposit)
+        balanceBefore.add(AMOUNT_TO_DEPOSIT)
       );
     });
 
@@ -220,9 +220,9 @@ describe("TrueFiPool2PoR", () => {
 
       // Deposit TUSD - the pool will call the feed before minting to check PoR
       const balanceBefore = await tusdPool.balanceOf(owner.address);
-      await tusdPool.connect(owner).join(amountToDeposit);
+      await tusdPool.connect(owner).join(AMOUNT_TO_DEPOSIT);
       expect(await tusdPool.balanceOf(owner.address)).to.equal(
-        balanceBefore.add(amountToDeposit)
+        balanceBefore.add(AMOUNT_TO_DEPOSIT)
       );
     });
 
@@ -233,9 +233,9 @@ describe("TrueFiPool2PoR", () => {
 
       // Deposit TUSD - the pool will call the feed before minting to check PoR
       const balanceBefore = await tusdPool.balanceOf(owner.address);
-      await tusdPool.connect(owner).join(amountToDeposit);
+      await tusdPool.connect(owner).join(AMOUNT_TO_DEPOSIT);
       expect(await tusdPool.balanceOf(owner.address)).to.equal(
-        balanceBefore.add(amountToDeposit)
+        balanceBefore.add(AMOUNT_TO_DEPOSIT)
       );
     });
 
@@ -252,7 +252,7 @@ describe("TrueFiPool2PoR", () => {
       // Deposit TUSD - the pool will call the feed before minting to check PoR
       const balanceBefore = await tusdPool.balanceOf(owner.address);
       await expect(
-        tusdPool.connect(owner).join(amountToDeposit)
+        tusdPool.connect(owner).join(AMOUNT_TO_DEPOSIT)
       ).to.be.revertedWith(
         "TrueFiPool: underlying supply exceeds proof-of-reserves"
       );
@@ -270,7 +270,7 @@ describe("TrueFiPool2PoR", () => {
       // Deposit TUSD - the pool will call the feed before minting to check PoR
       const balanceBefore = await tusdPool.balanceOf(owner.address);
       await expect(
-        tusdPool.connect(owner).join(amountToDeposit)
+        tusdPool.connect(owner).join(AMOUNT_TO_DEPOSIT)
       ).to.be.revertedWith("TrueFiPool: PoR answer too old");
       expect(await tusdPool.balanceOf(owner.address)).to.equal(balanceBefore);
     });
@@ -286,7 +286,7 @@ describe("TrueFiPool2PoR", () => {
       // Deposit TUSD - the pool will call the feed before minting to check PoR
       const balanceBefore = await tusdPool.balanceOf(owner.address);
       await expect(
-        tusdPool.connect(owner).join(amountToDeposit)
+        tusdPool.connect(owner).join(AMOUNT_TO_DEPOSIT)
       ).to.be.revertedWith("TrueFiPool: Invalid answer from PoR feed");
       expect(await tusdPool.balanceOf(owner.address)).to.equal(balanceBefore);
     });
