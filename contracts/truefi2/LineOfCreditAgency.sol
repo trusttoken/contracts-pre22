@@ -735,7 +735,7 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
 
     function _add16(uint16 a, uint16 b) private pure returns (uint16) {
         uint16 c = a + b;
-        require(c > a, "LineOfCreditAgency: addition overflow");
+        require(c >= a, "LineOfCreditAgency: addition overflow");
         return c;
     }
 
