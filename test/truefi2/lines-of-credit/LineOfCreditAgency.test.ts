@@ -423,7 +423,7 @@ describe('LineOfCreditAgency', () => {
         .to.be.revertedWith('LineOfCreditAgency: Borrower has credit score below minimum')
     })
 
-    it('fails if required credit score is lesser than effective score and greater than pure score', async () => {
+    it('fails if required credit score is smaller than effective score and greater than pure score', async () => {
       await tru.connect(borrower).approve(stakingVault.address, 1000)
       await stakingVault.connect(borrower).stake(1000)
       await creditOracle.setScore(borrower.address, 191)
