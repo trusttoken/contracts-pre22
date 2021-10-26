@@ -724,13 +724,19 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
         // update  bucket state
         pokeSingleBucket(pool, bucketNumber);
         // increment count for this bucket
-        bucket.borrowersCount = bucket.borrowersCount.add(1);
+        bucket.borrowersCount = _add16(bucket.borrowersCount, 1);
         // add to bitmap if first time in this bucket
         if (bucket.borrowersCount == 1) {
             usedBucketsBitmap |= uint256(1) << bucketNumber;
         }
         // adjust total borrow in bucket
         bucket.totalBorrowed = bucket.totalBorrowed.add(borrowed[pool][borrower]);
+    }
+
+    function _add16(uint16 a, uint16 b) public pure returns (uint16) {
+        uint16 c = a + b;
+        require(c > a, "LineOfCreditAgency: addition overflow");
+        return c;
     }
 
     /**
