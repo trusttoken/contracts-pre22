@@ -318,8 +318,8 @@ describe('LoanToken2', () => {
         expect(await loanToken.balanceOf(lender.address)).to.equal(0)
       })
 
-      it('repaid amount does not change', async () => {
-        expect(await loanToken.repaid()).to.equal(parseEth(1100))
+      it('decreases unpaidDebt down to 0', async () => {
+        expect(await loanToken.unpaidDebt()).to.equal(0)
       })
     })
 
@@ -336,8 +336,8 @@ describe('LoanToken2', () => {
         expect(await loanToken.balanceOf(lender.address)).to.equal(0)
       })
 
-      it('repaid amount does not change', async () => {
-        expect(await loanToken.repaid()).to.equal(parseEth(825))
+      it('decreases unpaidDebt', async () => {
+        expect(await loanToken.unpaidDebt()).to.equal(parseEth(275))
       })
     })
 
