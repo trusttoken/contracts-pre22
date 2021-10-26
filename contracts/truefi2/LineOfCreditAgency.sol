@@ -724,7 +724,7 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
         // update  bucket state
         pokeSingleBucket(pool, bucketNumber);
         // increment count for this bucket
-        bucket.borrowersCount = bucket.borrowersCount + 1;
+        bucket.borrowersCount = bucket.borrowersCount.add(1);
         // add to bitmap if first time in this bucket
         if (bucket.borrowersCount == 1) {
             usedBucketsBitmap |= uint256(1) << bucketNumber;
