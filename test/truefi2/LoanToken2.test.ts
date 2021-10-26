@@ -28,8 +28,7 @@ use(solidity)
 
 describe('LoanToken2', () => {
   enum LoanTokenStatus {
-    Awaiting, Funded, Withdrawn, Settled, Defaulted,
-    Liquidated
+    Withdrawn, Settled, Defaulted, Liquidated
   }
 
   const dayInSeconds = 60 * 60 * 24
@@ -106,12 +105,15 @@ describe('LoanToken2', () => {
     })
 
     it('sets loan params', async () => {
-      expect(await loanToken.borrower()).to.equal(borrower.address)
-      expect(await loanToken.amount()).to.equal(parseEth(1000))
-      expect(await loanToken.term()).to.equal(yearInSeconds)
-      expect(await loanToken.apy()).to.equal(1000)
-      expect(await loanToken.start()).to.be.equal(creationTimestamp)
       expect(await loanToken.status()).to.equal(LoanTokenStatus.Withdrawn)
+      expect(await loanToken.borrower()).to.equal(borrower.address)
+      expect(await loanToken.principal()).to.equal(parseEth(1000))
+      expect(await loanToken.interest()).to.equal(parseEth(100))
+      expect(await loanToken.tokenRedeemed()).to.equal(0)
+      expect(await loanToken.start()).to.be.equal(creationTimestamp)
+      expect(await loanToken.term()).to.equal(yearInSeconds)
+      expect(await loanToken.token()).to.equal(token.address)
+      expect(await loanToken.debtToken()).to.equal(AddressZero)
     })
 
     it('sets borrowers debt', async () => {
