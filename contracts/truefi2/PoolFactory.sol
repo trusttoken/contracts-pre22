@@ -40,9 +40,9 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
 
     ImplementationReference public poolImplementationReference;
 
-    address public DEPRECATED__liquidationToken;
+    address private DEPRECATED__liquidationToken;
 
-    address public DEPRECATED__trueLender2;
+    address private DEPRECATED__trueLender2;
 
     ISAFU public safu;
 
