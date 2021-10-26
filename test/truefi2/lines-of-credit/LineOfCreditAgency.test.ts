@@ -424,10 +424,8 @@ describe('LineOfCreditAgency', () => {
     })
 
     it('fails if borrower has pure credit score below required', async () => {
-      await creditAgency.connect(borrower).borrow(tusdPool.address, 1000)
       await tru.connect(borrower).approve(stakingVault.address, 1000)
       await stakingVault.connect(borrower).stake(1000)
-
       await creditOracle.setScore(borrower.address, 191)
       await creditAgency.setMinCreditScore(192)
       await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000))
