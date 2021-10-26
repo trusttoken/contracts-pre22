@@ -219,7 +219,7 @@ describe('LoanToken2', () => {
       await loanToken.enterDefault()
       const debtToken = DebtToken__factory.connect(await loanToken.debtToken(), lender)
       expect(await debtToken.balanceOf(poolAddress)).to.equal(parseEth(550))
-      expect(await loanToken.value(await loanToken.totalSupply())).to.equal(parseEth(550))
+      expect(await loanToken.currentValue(lender.address)).to.equal(parseEth(550))
     })
   })
 
@@ -462,44 +462,34 @@ describe('LoanToken2', () => {
   })
 
   describe('Value', () => {
-    let loanTokenBalance: BigNumber
-
-    beforeEach(async () => {
-      loanTokenBalance = await loanToken.balanceOf(lender.address)
-    })
-
     it('beginning of the loan', async () => {
-      expectScaledCloseTo(await loanToken.value(loanTokenBalance), parseEth(1000))
-      expectScaledCloseTo(await loanToken.value(loanTokenBalance.div(2)), parseEth(1000).div(2))
+      expectScaledCloseTo(await loanToken.currentValue(lender.address), parseEth(1000))
     })
 
     it('middle of the loan', async () => {
       await timeTravel(provider, averageMonthInSeconds * 6)
-      expectScaledCloseTo(await loanToken.value(loanTokenBalance), parseEth(1050))
-      expectScaledCloseTo(await loanToken.value(loanTokenBalance.div(2)), parseEth(1050).div(2))
+      expectScaledCloseTo(await loanToken.currentValue(lender.address), parseEth(1050))
       await timeTravel(provider, averageMonthInSeconds * 3)
-      expectScaledCloseTo(await loanToken.value(loanTokenBalance), parseEth(1075))
-      expectScaledCloseTo(await loanToken.value(loanTokenBalance.div(2)), parseEth(1075).div(2))
+      expectScaledCloseTo(await loanToken.currentValue(lender.address), parseEth(1075))
     })
 
     it('end of the loan', async () => {
       await timeTravel(provider, yearInSeconds)
-      expectScaledCloseTo(await loanToken.value(loanTokenBalance), parseEth(1100))
-      expectScaledCloseTo(await loanToken.value(loanTokenBalance.div(2)), parseEth(1100).div(2))
+      expectScaledCloseTo(await loanToken.currentValue(lender.address), parseEth(1100))
     })
 
     it('loan fully repaid and closed before term', async () => {
       await token.mint(loanToken.address, parseEth(1100))
       await loanToken.settle()
-      expect(await loanToken.value(loanTokenBalance)).to.be.equal(parseEth(1100))
+      expect(await loanToken.currentValue(lender.address)).to.eq(parseEth(1100))
     })
 
     it('loan partially repaid, defaulted', async () => {
       await timeTravel(provider, defaultedLoanCloseTime)
       await token.mint(loanToken.address, parseEth(123))
-      expect(await loanToken.value(loanTokenBalance)).to.be.equal(parseEth(1100))
+      expect(await loanToken.currentValue(lender.address)).to.eq(parseEth(1100))
       await loanToken.enterDefault()
-      expect(await loanToken.value(loanTokenBalance)).to.be.equal(parseEth(123))
+      expect(await loanToken.currentValue(lender.address)).to.eq(parseEth(123))
     })
   })
 })
