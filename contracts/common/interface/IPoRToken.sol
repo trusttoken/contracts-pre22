@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: agpl-3.0
 pragma solidity 0.6.10;
 
-import {ITrueFiPool2} from "./ITrueFiPool2.sol";
-
-interface ITrueFiPool2PoR is ITrueFiPool2 {
+interface IPoRToken {
     /**
      * @notice Event emitted when the feed is updated
      */

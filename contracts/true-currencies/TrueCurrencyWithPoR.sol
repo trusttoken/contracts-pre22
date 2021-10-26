@@ -1,42 +1,22 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
-pragma experimental ABIEncoderV2;
 
-import {TrueFiPool2} from "./TrueFiPool2.sol";
+import {TrueCurrency} from "./TrueCurrency.sol";
 import {IChainlinkAggregatorV3} from "../common/interface/IChainlinkAggregatorV3.sol";
-import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import {ERC20} from "../common/UpgradeableERC20.sol";
 import {IPoRToken} from "../common/interface/IPoRToken.sol";
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 /**
- * @title TrueFiPool2PoR
- * @dev Lending pool which inherits from TrueFiPool2.
+ * @title TrueCurrencyWithPoR
+ * @dev TrueCurrencyPoR is an ERC20 with blacklist & redemption addresses.
+ *  Please see TrueCurrency for the implementation that this contract inherits from.
  *  This contract implements an additional check against a Proof-of-Reserves feed before
  *  allowing tokens to be minted.
  */
-contract TrueFiPool2PoR is TrueFiPool2, IPoRToken {
+abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
     using SafeMath for uint256;
-    using SafeERC20 for ERC20;
 
     uint256 public constant MAX_AGE = 7 days;
-
-    // ================ WARNING ==================
-    // ===== THIS CONTRACT IS INITIALIZABLE ======
-    // === STORAGE VARIABLES ARE DECLARED BELOW ==
-    // REMOVAL OR REORDER OF VARIABLES WILL RESULT
-    // ========= IN STORAGE CORRUPTION ===========
-
-    // ===========================================
-    // This contract inherits TrueFiPool2, so
-    // TrueFiPool2 storage is defined before this
-    // contract's storage slot!
-    // ===========================================
-
-    address public feed;
-    uint256 public heartbeat;
-
-    // ======= STORAGE DECLARATION END ===========
 
     /**
      * @dev This constructor only serves to set a default heartbeat.
@@ -69,8 +49,8 @@ contract TrueFiPool2PoR is TrueFiPool2, IPoRToken {
         require(updatedAt >= oldestAllowed, "TrueFiPool: PoR answer too old");
 
         // Get required info about underlying/reserves supply & decimals
-        uint256 underlyingSupply = ERC20(token).totalSupply();
-        uint8 underlyingDecimals = ERC20(token).decimals();
+        uint256 underlyingSupply = totalSupply();
+        uint8 underlyingDecimals = decimals();
         uint8 reserveDecimals = IChainlinkAggregatorV3(feed).decimals();
         uint256 reserves = uint256(answer);
         // Normalise underlying & reserve decimals

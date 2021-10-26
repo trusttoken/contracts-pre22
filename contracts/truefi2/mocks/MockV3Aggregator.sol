@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: agpl-3.0
 pragma solidity 0.6.10;
 
-import "../interface/IChainlinkAggregatorV3.sol";
+import {IChainlinkAggregatorV3} from "../../common/interface/IChainlinkAggregatorV3.sol";
 
 /**
  * @title MockV3Aggregator
