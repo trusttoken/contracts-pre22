@@ -3,6 +3,7 @@ import { setupDeploy } from 'scripts/utils'
 import {
   BorrowingMutex,
   BorrowingMutex__factory,
+  StakingVault__factory,
   Erc20Mock,
   Erc20Mock__factory,
   FixedTermLoanAgency,
@@ -21,7 +22,7 @@ import { DAY, extractLoanTokenAddress, MAX_APY, parseEth } from 'utils'
 import { expect, use } from 'chai'
 import { deployMockContract, solidity } from 'ethereum-waffle'
 import { utils, Wallet } from 'ethers'
-import { TrueFiCreditOracleJson, CreditModelJson } from 'build'
+import { TrueFiCreditOracleJson, CreditModelJson, LineOfCreditAgencyJson } from 'build'
 import { AddressZero } from '@ethersproject/constants'
 import { mock1Inch_TL2 } from './data'
 
@@ -62,17 +63,24 @@ describe('FixedTermLoanAgency', () => {
 
     const mockCreditModel = await deployMockContract(owner, CreditModelJson.abi)
     await mockCreditModel.mock.rate.returns(0)
+    await mockCreditModel.mock.effectiveScore.returns(255)
     await mockCreditModel.mock.fixedTermLoanAdjustment.returns(1000)
     const mockCreditOracle = await deployMockContract(owner, TrueFiCreditOracleJson.abi)
     await mockCreditOracle.mock.score.returns(255)
     await mockCreditOracle.mock.maxBorrowerLimit.withArgs(OWNER).returns(parseEth(100_000_000))
     await mockCreditOracle.mock.status.withArgs(OWNER).returns(0)
 
+    const mockLineOfCreditAgency = await deployMockContract(owner, LineOfCreditAgencyJson.abi)
+    await mockLineOfCreditAgency.mock.updateAllCreditScores.returns()
+
     borrowingMutex = await deployContract(BorrowingMutex__factory)
     await borrowingMutex.initialize()
 
+    const stakingVault = await deployContract(StakingVault__factory)
+    await stakingVault.initialize(stkTru.address, borrowingMutex.address, mockLineOfCreditAgency.address, AddressZero)
+
     ftlAgency = await deployContract(FixedTermLoanAgency__factory)
-    await ftlAgency.initialize(stkTru.address, poolFactory.address, INCH_ADDRESS, mockCreditOracle.address, mockCreditModel.address, borrowingMutex.address, loanFactory.address)
+    await ftlAgency.initialize(stkTru.address, poolFactory.address, INCH_ADDRESS, mockCreditOracle.address, mockCreditModel.address, borrowingMutex.address, loanFactory.address, stakingVault.address)
     await ftlAgency.allowBorrower(await owner.getAddress())
 
     await poolFactory.initialize(implementationReference.address, ftlAgency.address, AddressZero, AddressZero)
@@ -126,6 +134,9 @@ describe('FixedTermLoanAgency', () => {
   })
 
   it('funds tether loan tokens', async () => {
+    const oracle = await deployContract(MockUsdStableCoinOracle__factory)
+    await usdtLoanPool.setOracle(oracle.address)
+
     await usdt.connect(usdtHolder).approve(usdtLoanPool.address, 10_000_000)
     await usdtLoanPool.connect(usdtHolder).join(10_000_000)
 

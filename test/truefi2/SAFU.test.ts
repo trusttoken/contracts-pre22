@@ -41,7 +41,7 @@ import {
   MockTrueFiPoolOracle__factory,
   MockErc20Token,
   CreditModel,
-  CollateralVault,
+  StakingVault,
   LineOfCreditAgency,
 } from 'contracts'
 
@@ -66,7 +66,7 @@ describe('SAFU', () => {
   let creditOracle: TrueFiCreditOracle
   let borrowingMutex: BorrowingMutex
   let creditModel: CreditModel
-  let collateralVault: CollateralVault
+  let stakingVault: StakingVault
   let creditAgency: LineOfCreditAgency
 
   let timeTravel: (time: number) => void
@@ -100,7 +100,7 @@ describe('SAFU', () => {
       creditOracle,
       borrowingMutex,
       creditModel,
-      collateralVault,
+      stakingVault,
       creditAgency,
     } = await setupTruefi2(owner, _provider, { lender: lender, loanFactory: loanFactory, oneInch: oneInch }))
 
@@ -149,7 +149,7 @@ describe('SAFU', () => {
       it('debt has already been liquidated', async () => {
         await safu.liquidate([debt.address])
         await expect(safu.liquidate([debt.address]))
-          .to.be.revertedWith('SAFU: Debt is not defaulted')
+          .to.be.revertedWith('SAFU: Debt must not be liquidated')
       })
     })
 
@@ -159,7 +159,7 @@ describe('SAFU', () => {
         await expect(await debt.balanceOf(safu.address)).to.equal(defaultAmount)
       })
 
-      describe('Slashes staked tru from CollateralVault', () => {
+      describe('Slashes staked tru from StakingVault', () => {
         it('works with no tru staked', async () => {
           await safu.liquidate([debt.address])
           expect(await tru.balanceOf(safu.address)).to.equal(0)
@@ -167,8 +167,8 @@ describe('SAFU', () => {
 
         it('works with tru staked', async () => {
           await tru.mint(borrower.address, parseTRU(100))
-          await tru.connect(borrower).approve(collateralVault.address, parseTRU(100))
-          await collateralVault.connect(borrower).stake(parseTRU(100))
+          await tru.connect(borrower).approve(stakingVault.address, parseTRU(100))
+          await stakingVault.connect(borrower).stake(parseTRU(100))
 
           await borrowingMutex.allowLocker(owner.address, true)
           await borrowingMutex.lock(borrower.address, owner.address)
@@ -330,12 +330,12 @@ describe('SAFU', () => {
           expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(4400))
         })
 
-        it('also slashes collateral vault tru', async () => {
+        it('also slashes staking vault tru', async () => {
           await stkTru.stake(parseTRU(1e3))
 
           await tru.mint(borrower.address, parseTRU(100))
-          await tru.connect(borrower).approve(collateralVault.address, parseTRU(100))
-          await collateralVault.connect(borrower).stake(parseTRU(100))
+          await tru.connect(borrower).approve(stakingVault.address, parseTRU(100))
+          await stakingVault.connect(borrower).stake(parseTRU(100))
 
           await borrowingMutex.allowLocker(owner.address, true)
           await borrowingMutex.lock(borrower.address, owner.address)

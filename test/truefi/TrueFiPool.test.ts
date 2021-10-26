@@ -6,7 +6,7 @@ import { beforeEachWithFixture, DAY, expectScaledCloseTo, MAX_APY, parseEth, par
 
 import {
   BorrowingMutex__factory,
-  CollateralVault__factory,
+  StakingVault__factory,
   ImplementationReference__factory,
   Liquidator2,
   Liquidator2__factory,
@@ -483,9 +483,9 @@ describe('TrueFiPool', () => {
     const loanFactory2 = await new LoanFactory2__factory(owner).deploy()
     const liquidator2 = await new Liquidator2__factory(owner).deploy()
     await loanFactory2.initialize(AddressZero, liquidator2.address, AddressZero, borrowingMutex.address, AddressZero)
-    const collateralVault = await new CollateralVault__factory(owner).deploy()
-    collateralVault.initialize(AddressZero, borrowingMutex.address, AddressZero, liquidator2.address)
-    await liquidator2.initialize(mockStakingPool.address, trustToken.address, loanFactory2.address, AddressZero, owner.address, AddressZero, collateralVault.address)
+    const stakingVault = await new StakingVault__factory(owner).deploy()
+    stakingVault.initialize(AddressZero, borrowingMutex.address, AddressZero, liquidator2.address)
+    await liquidator2.initialize(mockStakingPool.address, trustToken.address, loanFactory2.address, AddressZero, owner.address, AddressZero, stakingVault.address)
 
     return { lender2, loanFactory2, liquidator2 }
   }

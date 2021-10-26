@@ -269,7 +269,7 @@ contract CreditModel is ICreditModel, UpgradeableClaimable {
         }
         uint256 coefficient = uint256(utilizationRateConfig.coefficient);
         uint256 power = uint256(utilizationRateConfig.power);
-        return min(coefficient.mul(1e4**power).div(liquidRatio**power).sub(coefficient), MAX_RATE_CAP);
+        return min(coefficient.mul(uint256(BASIS_POINTS)**power).div(liquidRatio**power).sub(coefficient), MAX_RATE_CAP);
     }
 
     /**
@@ -294,14 +294,14 @@ contract CreditModel is ICreditModel, UpgradeableClaimable {
         return ((f64x64Score / MAX_CREDIT_SCORE).fixed64x64Pow(f64x64LimitAdjustmentPower / BASIS_POINTS) * BASIS_POINTS).toUInt();
     }
 
-    function conservativeCollateralValue(uint256 stakedAmount) public view returns (uint256) {
+    function conservativeStakedValue(uint256 stakedAmount) public view returns (uint256) {
         if (stakedAmount == 0) {
             return 0;
         }
         return truPriceOracle.truToUsd(stakedAmount).mul(stakingConfig.ltvRatio).div(BASIS_POINTS);
     }
 
-    function conservativeCollateralRatio(
+    function conservativeStakedRatio(
         ITrueFiPool2 pool,
         uint256 stakedAmount,
         uint256 borrowedAmount
@@ -310,7 +310,7 @@ contract CreditModel is ICreditModel, UpgradeableClaimable {
         if (borrowedInUsd == 0) {
             return 0;
         }
-        return min(conservativeCollateralValue(stakedAmount).mul(BASIS_POINTS).div(borrowedInUsd), BASIS_POINTS);
+        return min(conservativeStakedValue(stakedAmount).mul(BASIS_POINTS).div(borrowedInUsd), BASIS_POINTS);
     }
 
     function effectiveScore(
@@ -321,7 +321,7 @@ contract CreditModel is ICreditModel, UpgradeableClaimable {
     ) public override view returns (uint8) {
         uint16 effectiveScorePower = stakingConfig.effectiveScorePower;
         uint256 creditScoreAdjustment = uint256(MAX_CREDIT_SCORE - score)
-            .mul(conservativeCollateralRatio(pool, stakedAmount, borrowedAmount)**effectiveScorePower)
+            .mul(conservativeStakedRatio(pool, stakedAmount, borrowedAmount)**effectiveScorePower)
             .div(uint256(BASIS_POINTS)**effectiveScorePower);
         uint256 _effectiveScore = min(creditScoreAdjustment.add(score), MAX_CREDIT_SCORE);
         return uint8(_effectiveScore);
@@ -339,35 +339,35 @@ contract CreditModel is ICreditModel, UpgradeableClaimable {
         ITrueFiPool2 pool,
         uint8 score,
         uint256 maxBorrowerLimit,
-        uint256 stakedCollateralInTru,
+        uint256 stakedTru,
         uint256 totalBorrowedInUsd
     ) public override view returns (uint256) {
         if (score < borrowLimitConfig.scoreFloor) {
             return 0;
         }
-        return saturatingSub(poolBorrowMax(pool, score, maxBorrowerLimit, stakedCollateralInTru), totalBorrowedInUsd);
+        return saturatingSub(poolBorrowMax(pool, score, maxBorrowerLimit, stakedTru), totalBorrowedInUsd);
     }
 
     function isOverLimit(
         ITrueFiPool2 pool,
         uint8 score,
         uint256 maxBorrowerLimit,
-        uint256 stakedCollateralInTru,
+        uint256 stakedTru,
         uint256 totalBorrowedInUsd
     ) public override view returns (bool) {
-        return poolBorrowMax(pool, score, maxBorrowerLimit, stakedCollateralInTru) < totalBorrowedInUsd;
+        return poolBorrowMax(pool, score, maxBorrowerLimit, stakedTru) < totalBorrowedInUsd;
     }
 
     function poolBorrowMax(
         ITrueFiPool2 pool,
         uint8 score,
         uint256 maxBorrowerLimit,
-        uint256 stakedCollateralInTru
+        uint256 stakedTru
     ) internal view returns (uint256) {
         uint256 maxTVLLimit = poolFactory.supportedPoolsTVL().mul(borrowLimitConfig.tvlLimitCoefficient).div(BASIS_POINTS);
         uint256 adjustment = borrowLimitAdjustment(score);
-        uint256 collateralValueInUsd = conservativeCollateralValue(stakedCollateralInTru);
-        uint256 adjustedBorrowerLimit = maxBorrowerLimit.mul(adjustment).div(BASIS_POINTS).add(collateralValueInUsd);
+        uint256 stakedValueInUsd = conservativeStakedValue(stakedTru);
+        uint256 adjustedBorrowerLimit = maxBorrowerLimit.mul(adjustment).div(BASIS_POINTS).add(stakedValueInUsd);
         uint256 adjustedTVLLimit = maxTVLLimit.mul(adjustment).div(BASIS_POINTS);
         uint256 creditLimit = min(adjustedBorrowerLimit, adjustedTVLLimit);
         uint256 poolValueInUsd = pool.oracle().tokenToUsd(pool.poolValue());

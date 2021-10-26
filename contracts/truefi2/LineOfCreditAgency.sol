@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import {ERC20, IERC20, SafeMath} from "../common/UpgradeableERC20.sol";
+
+import {ERC20} from "../common/UpgradeableERC20.sol";
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
@@ -13,7 +15,7 @@ import {ILineOfCreditAgency} from "./interface/ILineOfCreditAgency.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
 import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
 import {IDebtToken} from "./interface/IDebtToken.sol";
-import {ICollateralVault} from "./interface/ICollateralVault.sol";
+import {IStakingVault} from "./interface/IStakingVault.sol";
 
 interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
     function decimals() external view returns (uint8);
@@ -132,7 +134,7 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
 
     mapping(ITrueFiPool2 => mapping(address => uint256)) public overBorrowLimitTime;
 
-    ICollateralVault public collateralVault;
+    IStakingVault public stakingVault;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -172,7 +174,7 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
         IBorrowingMutex _borrowingMutex,
         IPoolFactory _poolFactory,
         ILoanFactory2 _loanFactory,
-        ICollateralVault _collateralVault
+        IStakingVault _stakingVault
     ) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
         creditOracle = _creditOracle;
@@ -180,7 +182,7 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
         borrowingMutex = _borrowingMutex;
         poolFactory = _poolFactory;
         loanFactory = _loanFactory;
-        collateralVault = _collateralVault;
+        stakingVault = _stakingVault;
         minCreditScore = 191;
         interestRepaymentPeriod = 31 days;
     }
@@ -193,6 +195,7 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
 
     /// @dev Set creditModel to `newCreditModel` and update state
     function setCreditModel(ICreditModel newCreditModel) external onlyOwner {
+        require(address(newCreditModel) != address(0), "LineOfCreditAgency: CreditModel cannot be set to zero address");
         creditModel = newCreditModel;
         pokeAll();
         emit CreditModelChanged(newCreditModel);
@@ -256,7 +259,7 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
     ) internal returns (uint8, uint8) {
         uint8 oldEffectiveScore = creditScore[pool][borrower];
         uint8 newEffectiveScore = creditOracle.score(borrower);
-        uint256 stakedAmount = collateralVault.stakedAmount(borrower);
+        uint256 stakedAmount = stakingVault.stakedAmount(borrower);
         newEffectiveScore = creditModel.effectiveScore(newEffectiveScore, pool, stakedAmount, borrowedAmount);
         creditScore[pool][borrower] = newEffectiveScore;
         return (oldEffectiveScore, newEffectiveScore);
@@ -309,7 +312,7 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
                 pool,
                 creditOracle.score(borrower),
                 creditOracle.maxBorrowerLimit(borrower),
-                collateralVault.stakedAmount(borrower),
+                stakingVault.stakedAmount(borrower),
                 totalBorrowed(borrower)
             );
     }
@@ -320,7 +323,7 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
                 pool,
                 creditOracle.score(borrower),
                 creditOracle.maxBorrowerLimit(borrower),
-                collateralVault.stakedAmount(borrower),
+                stakingVault.stakedAmount(borrower),
                 totalBorrowed(borrower)
             );
     }

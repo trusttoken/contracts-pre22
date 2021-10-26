@@ -4,14 +4,14 @@ pragma solidity 0.6.10;
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
+import {ERC20} from "../common/UpgradeableERC20.sol";
 import {OwnedProxyWithReference} from "../proxy/OwnedProxyWithReference.sol";
-import {ERC20, IERC20} from "../common/UpgradeableERC20.sol";
+import {ImplementationReference} from "../proxy/ImplementationReference.sol";
 
 import {IFixedTermLoanAgency} from "./interface/IFixedTermLoanAgency.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
-import {ITrueFiPool2, I1Inch3} from "./interface/ITrueFiPool2.sol";
-import {ITrueLender2Deprecated} from "./deprecated/ITrueLender2Deprecated.sol";
-import {ImplementationReference} from "../proxy/ImplementationReference.sol";
+import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
+import {ITrueLender2Deprecated} from "./interface/ITrueLender2Deprecated.sol";
 import {ISAFU} from "./interface/ISAFU.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
 
