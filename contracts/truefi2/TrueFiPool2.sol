@@ -114,7 +114,6 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
 
     function initialize(
         ERC20 _token,
-        ITrueLender2Deprecated _lender,
         IFixedTermLoanAgency _ftlAgency,
         ISAFU _safu,
         ILoanFactory2 _loanFactory,
@@ -124,7 +123,6 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
         UpgradeableClaimable.initialize(__owner);
 
         token = _token;
-        lender = _lender;
         ftlAgency = _ftlAgency;
         safu = _safu;
         loanFactory = _loanFactory;
@@ -135,7 +133,6 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      */
     function singleBorrowerInitialize(
         ERC20 _token,
-        ITrueLender2Deprecated _lender,
         IFixedTermLoanAgency _ftlAgency,
         ISAFU _safu,
         ILoanFactory2 _loanFactory,
@@ -150,7 +147,6 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
         UpgradeableClaimable.initialize(__owner);
 
         token = _token;
-        lender = _lender;
         ftlAgency = _ftlAgency;
         safu = _safu;
         loanFactory = _loanFactory;

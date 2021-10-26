@@ -13,7 +13,6 @@ import {ILoanFactory2} from "./ILoanFactory2.sol";
 interface ITrueFiPool2 is IERC20 {
     function initialize(
         ERC20 _token,
-        ITrueLender2Deprecated _lender,
         IFixedTermLoanAgency _ftlAgency,
         ISAFU safu,
         ILoanFactory2 _loanFactory,
@@ -22,7 +21,6 @@ interface ITrueFiPool2 is IERC20 {
 
     function singleBorrowerInitialize(
         ERC20 _token,
-        ITrueLender2Deprecated _lender,
         IFixedTermLoanAgency _ftlAgency,
         ISAFU safu,
         ILoanFactory2 _loanFactory,
