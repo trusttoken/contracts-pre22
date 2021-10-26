@@ -433,28 +433,31 @@ describe('LoanToken2', () => {
     })
   })
 
-  describe('Is repaid?', () => {
-    it('reverts if called after settling', async () => {
-      const debt = await loanToken.debt()
-      await token.connect(borrower).approve(loanToken.address, debt)
-      await token.mint(borrower.address, parseEth(300))
-      await loanToken.repayInFull(borrower.address)
-      await expect(loanToken.isRepaid()).to.be.revertedWith('LoanToken2: Current status should be Funded or Withdrawn')
-    })
-
-    it('returns false before full repayment', async () => {
+  describe('unpaidDebt', () => {
+    it('decreases after repayment', async () => {
+      expect(await loanToken.unpaidDebt()).to.eq(parseEth(1100))
       await token.connect(borrower).approve(loanToken.address, parseEth(100))
       await loanToken.repay(borrower.address, parseEth(100))
-
-      expect(await loanToken.isRepaid()).to.be.false
+      expect(await loanToken.unpaidDebt()).to.eq(parseEth(1000))
     })
 
-    it('returns true after transfer repayment', async () => {
-      await token.connect(borrower).approve(loanToken.address, parseEth(900))
-      await loanToken.repay(borrower.address, parseEth(900))
-      await token.mint(loanToken.address, parseEth(300))
+    it('doesn\'t change after redeem', async () => {
+      await timeTravel(provider, defaultedLoanCloseTime)
+      await loanToken.enterDefault()
+      await payback(borrower, parseEth(100))
+      expect(await loanToken.unpaidDebt()).to.eq(parseEth(1000))
+      await loanToken.redeem()
+      expect(await loanToken.unpaidDebt()).to.eq(parseEth(1000))
+    })
 
-      expect(await loanToken.isRepaid()).to.be.true
+    it('is 0 when repaid whole debt or more', async () => {
+      await payback(borrower, parseEth(1100))
+      expect(await loanToken.unpaidDebt()).to.eq(0)
+      await payback(borrower, parseEth(100))
+      expect(await loanToken.unpaidDebt()).to.eq(0)
+      await loanToken.settle()
+      await loanToken.redeem()
+      expect(await loanToken.unpaidDebt()).to.eq(0)
     })
   })
 
