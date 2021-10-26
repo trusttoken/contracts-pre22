@@ -258,9 +258,9 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
         uint256 borrowedAmount
     ) internal returns (uint8, uint8) {
         uint8 oldEffectiveScore = creditScore[pool][borrower];
-        uint8 newEffectiveScore = creditOracle.score(borrower);
+        uint8 pureScore = creditOracle.score(borrower);
         uint256 stakedAmount = stakingVault.stakedAmount(borrower);
-        newEffectiveScore = creditModel.effectiveScore(newEffectiveScore, pool, stakedAmount, borrowedAmount);
+        uint8 newEffectiveScore = creditModel.effectiveScore(pureScore, pool, stakedAmount, borrowedAmount);
         creditScore[pool][borrower] = newEffectiveScore;
         return (oldEffectiveScore, newEffectiveScore);
     }
