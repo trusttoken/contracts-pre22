@@ -733,7 +733,7 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
         bucket.totalBorrowed = bucket.totalBorrowed.add(borrowed[pool][borrower]);
     }
 
-    function _add16(uint16 a, uint16 b) public pure returns (uint16) {
+    function _add16(uint16 a, uint16 b) private pure returns (uint16) {
         uint16 c = a + b;
         require(c > a, "LineOfCreditAgency: addition overflow");
         return c;
