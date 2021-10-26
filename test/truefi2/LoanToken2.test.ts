@@ -622,8 +622,4 @@ describe('LoanToken2', () => {
       expect(await loanToken.value(loanTokenBalance)).to.be.equal(parseEth(123))
     })
   })
-
-  it('version', async () => {
-    expect(await loanToken.version()).to.equal(7)
-  })
 })
