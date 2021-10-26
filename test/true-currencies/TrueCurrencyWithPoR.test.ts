@@ -48,7 +48,7 @@ describe("TrueCurrency with Proof-of-reserves check", () => {
 
     // Set fresh, valid answer on mock PoR feed
     const tusdSupply = await token.totalSupply();
-    await mockV3Aggregator.updateAnswer(tusdSupply);
+    await mockV3Aggregator.updateAnswer(tusdSupply.add(AMOUNT_TO_MINT));
   });
 
   it("should mint successfully when feed is unset", async () => {
@@ -67,7 +67,9 @@ describe("TrueCurrency with Proof-of-reserves check", () => {
   it("should mint successfully when feed is set, but heartbeat is unset (defaulting to MAX_AGE)", async () => {
     // Mint TUSD
     const balanceBefore = await token.balanceOf(owner.address);
-    await token.mint(owner.address, AMOUNT_TO_MINT);
+    await token.mint(owner.address, AMOUNT_TO_MINT, {
+      gasLimit: 200_000,
+    });
     expect(await token.balanceOf(owner.address)).to.equal(
       AMOUNT_TO_MINT.add(balanceBefore)
     );
@@ -86,12 +88,13 @@ describe("TrueCurrency with Proof-of-reserves check", () => {
     );
   });
 
-  it("should mint successfully when feed decimals < underlying decimals", async () => {
+  it("should mint successfully when feed decimals < TrueCurrency decimals", async () => {
     // Re-deploy a mock aggregator with fewer decimals
     const currentTusdSupply = await token.totalSupply();
+    const validReserve = currentTusdSupply.div(exp(1, 12)).add(AMOUNT_TO_MINT);
     const mockV3AggregatorWith6Decimals = await new MockV3Aggregator__factory(
       owner
-    ).deploy("6", currentTusdSupply.div(exp(1, 12)).toString());
+    ).deploy("6", validReserve);
     // Set feed and heartbeat on newly-deployed aggregator
     await token.setFeed(mockV3AggregatorWith6Decimals.address);
     expect(await token.feed()).to.equal(mockV3AggregatorWith6Decimals.address);
@@ -100,18 +103,21 @@ describe("TrueCurrency with Proof-of-reserves check", () => {
 
     // Mint TUSD
     const balanceBefore = await token.balanceOf(owner.address);
-    await token.mint(owner.address, AMOUNT_TO_MINT);
+    await token.mint(owner.address, AMOUNT_TO_MINT, {
+      gasLimit: 200_000,
+    });
     expect(await token.balanceOf(owner.address)).to.equal(
       balanceBefore.add(AMOUNT_TO_MINT)
     );
   });
 
-  it("should mint successfully when feed decimals > underlying decimals", async () => {
+  it("should mint successfully when feed decimals > TrueCurrency decimals", async () => {
     // Re-deploy a mock aggregator with more decimals
     const currentTusdSupply = await token.totalSupply();
+    const validReserve = currentTusdSupply.mul(exp(1, 2)).add(AMOUNT_TO_MINT);
     const mockV3AggregatorWith20Decimals = await new MockV3Aggregator__factory(
       owner
-    ).deploy("20", currentTusdSupply.mul(exp(1, 2)).toString());
+    ).deploy("20", validReserve);
     // Set feed and heartbeat on newly-deployed aggregator
     await token.setFeed(mockV3AggregatorWith20Decimals.address);
     expect(await token.feed()).to.equal(mockV3AggregatorWith20Decimals.address);
@@ -120,13 +126,15 @@ describe("TrueCurrency with Proof-of-reserves check", () => {
 
     // Mint TUSD
     const balanceBefore = await token.balanceOf(owner.address);
-    await token.mint(owner.address, AMOUNT_TO_MINT);
+    await token.mint(owner.address, AMOUNT_TO_MINT, {
+      gasLimit: 200_000,
+    });
     expect(await token.balanceOf(owner.address)).to.equal(
       balanceBefore.add(AMOUNT_TO_MINT)
     );
   });
 
-  it("should mint successfully when underlying supply == proof-of-reserves", async () => {
+  it("should mint successfully when TrueCurrency supply == proof-of-reserves", async () => {
     // Set heartbeat to 1 day
     await token.setHeartbeat(ONE_DAY_SECONDS);
     expect(await token.heartbeat()).to.equal(ONE_DAY_SECONDS);
@@ -139,7 +147,7 @@ describe("TrueCurrency with Proof-of-reserves check", () => {
     );
   });
 
-  it("should revert if underlying supply > proof-of-reserves", async () => {
+  it("should revert if TrueCurrency supply > proof-of-reserves", async () => {
     // Re-deploy aggregator with fewer TUSD in reserves
     const currentTusdSupply = await token.totalSupply();
     const notEnoughReserves = currentTusdSupply.sub("1");
@@ -152,7 +160,7 @@ describe("TrueCurrency with Proof-of-reserves check", () => {
     // Mint TUSD
     const balanceBefore = await token.balanceOf(owner.address);
     await expect(token.mint(owner.address, AMOUNT_TO_MINT)).to.be.revertedWith(
-      "TrueCurrency: underlying supply exceeds proof-of-reserves"
+      "TrueCurrency: total supply would exceed reserves after mint"
     );
     expect(await token.balanceOf(owner.address)).to.equal(balanceBefore);
   });

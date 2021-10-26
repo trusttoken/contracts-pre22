@@ -45,20 +45,20 @@ abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
         require(updatedAt >= oldestAllowed, "TrueCurrency: PoR answer too old");
 
         // Get required info about underlying/reserves supply & decimals
-        uint256 underlyingSupply = totalSupply();
-        uint8 underlyingDecimals = decimals();
+        uint256 currentSupply = totalSupply();
+        uint8 trueDecimals = decimals();
         uint8 reserveDecimals = IChainlinkAggregatorV3(feed).decimals();
         uint256 reserves = uint256(answer);
         // Normalise underlying & reserve decimals
-        if (underlyingDecimals < reserveDecimals) {
-            underlyingSupply = underlyingSupply.mul(10**uint256(reserveDecimals - underlyingDecimals));
-        } else if (underlyingDecimals > reserveDecimals) {
-            reserves = reserves.mul(10**uint256(underlyingDecimals - reserveDecimals));
+        if (trueDecimals < reserveDecimals) {
+            currentSupply = currentSupply.mul(10**uint256(reserveDecimals - trueDecimals));
+        } else if (trueDecimals > reserveDecimals) {
+            reserves = reserves.mul(10**uint256(trueDecimals - reserveDecimals));
         }
 
-        // Check that the supply of underlying tokens is NOT greater than the supply
-        // provided by the latest valid proof-of-reserves.
-        require(underlyingSupply <= reserves, "TrueCurrency: underlying supply exceeds proof-of-reserves");
+        // Check that after minting more tokens, the total supply would NOT exceed the reserves
+        // reported by the latest valid proof-of-reserves feed.
+        require(currentSupply + amount <= reserves, "TrueCurrency: total supply would exceed reserves after mint");
         super._mint(account, amount);
     }
 
