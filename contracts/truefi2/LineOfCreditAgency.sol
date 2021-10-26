@@ -258,9 +258,9 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
         uint256 borrowedAmount
     ) internal returns (uint8, uint8) {
         uint8 oldEffectiveScore = creditScore[pool][borrower];
-        uint8 pureScore = creditOracle.score(borrower);
+        uint8 rawScore = creditOracle.score(borrower);
         uint256 stakedAmount = stakingVault.stakedAmount(borrower);
-        uint8 newEffectiveScore = creditModel.effectiveScore(pureScore, pool, stakedAmount, borrowedAmount);
+        uint8 newEffectiveScore = creditModel.effectiveScore(rawScore, pool, stakedAmount, borrowedAmount);
         creditScore[pool][borrower] = newEffectiveScore;
         return (oldEffectiveScore, newEffectiveScore);
     }
@@ -378,8 +378,8 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
             "LineOfCreditAgency: Sender not eligible to borrow"
         );
         require(!_hasOverdueInterest(pool, msg.sender), "LineOfCreditAgency: Sender has overdue interest in this pool");
-        uint8 pureScore = creditOracle.score(msg.sender);
-        require(pureScore >= minCreditScore, "LineOfCreditAgency: Borrower has credit score below minimum");
+        uint8 rawScore = creditOracle.score(msg.sender);
+        require(rawScore >= minCreditScore, "LineOfCreditAgency: Borrower has credit score below minimum");
         require(
             pool.oracle().tokenToUsd(amount) <= borrowLimit(pool, msg.sender),
             "LineOfCreditAgency: Borrow amount cannot exceed borrow limit"
