@@ -547,17 +547,6 @@ describe('LineOfCreditAgency', () => {
       await timeTravel(DAY * 60)
       await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000)).to.be.not.reverted
     })
-
-    it('borrower has required score only after staking TRU', async () => {
-      await creditOracle.setScore(borrower.address, 159)
-      await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000))
-        .to.be.revertedWith('LineOfCreditAgency: Borrower has credit score below minimum')
-      await tru.mint(borrower.address, parseTRU(100_000))
-      await tru.connect(borrower).approve(stakingVault.address, parseTRU(100_000))
-      await stakingVault.connect(borrower).stake(parseTRU(100_000))
-      await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000))
-        .not.to.be.reverted
-    })
   })
 
   describe('isOverProFormaLimit', () => {
