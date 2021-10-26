@@ -11,7 +11,7 @@ import {ImplementationReference} from "../proxy/ImplementationReference.sol";
 import {IFixedTermLoanAgency} from "./interface/IFixedTermLoanAgency.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
-import {ITrueLender2Deprecated} from "./interface/ITrueLender2Deprecated.sol";
+import {ITrueLender2Deprecated} from "./deprecated/ITrueLender2Deprecated.sol";
 import {ISAFU} from "./interface/ISAFU.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
 
