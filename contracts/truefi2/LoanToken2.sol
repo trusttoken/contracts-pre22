@@ -142,7 +142,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @dev Only when loan is Settled or Defaulted
      */
     modifier onlySettledOrDefaulted() {
-        require(status == Status.Settled || status == Status.Defaulted, "LoanToken2: Status is not Settled or Defaulted");
+        require(status == Status.Settled || status == Status.Defaulted, "LoanToken2: Only after loan has been closed");
         _;
     }
 
