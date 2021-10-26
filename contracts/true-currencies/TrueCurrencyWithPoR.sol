@@ -18,10 +18,6 @@ abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
 
     uint256 public constant MAX_AGE = 7 days;
 
-    /**
-     * @dev This constructor only serves to set a default heartbeat.
-     *  Don't forget to use `initialize(...)` as you would with a regular TrueFiPool2 token.
-     */
     constructor() public {
         heartbeat = MAX_AGE;
     }
@@ -42,11 +38,11 @@ abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
 
         // Get latest proof-of-reserves from the feed
         (, int256 answer, , uint256 updatedAt, ) = IChainlinkAggregatorV3(feed).latestRoundData();
-        require(answer > 0, "TrueFiPool: Invalid answer from PoR feed");
+        require(answer > 0, "TrueCurrency: Invalid answer from PoR feed");
 
         // Check the answer is fresh enough (i.e., within the specified heartbeat)
-        uint256 oldestAllowed = block.timestamp.sub(heartbeat, "TrueFiPool: Invalid timestamp from PoR feed");
-        require(updatedAt >= oldestAllowed, "TrueFiPool: PoR answer too old");
+        uint256 oldestAllowed = block.timestamp.sub(heartbeat, "TrueCurrency: Invalid timestamp from PoR feed");
+        require(updatedAt >= oldestAllowed, "TrueCurrency: PoR answer too old");
 
         // Get required info about underlying/reserves supply & decimals
         uint256 underlyingSupply = totalSupply();
@@ -62,7 +58,7 @@ abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
 
         // Check that the supply of underlying tokens is NOT greater than the supply
         // provided by the latest valid proof-of-reserves.
-        require(underlyingSupply <= reserves, "TrueFiPool: underlying supply exceeds proof-of-reserves");
+        require(underlyingSupply <= reserves, "TrueCurrency: underlying supply exceeds proof-of-reserves");
         super._mint(account, amount);
     }
 
@@ -82,7 +78,7 @@ abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
      * @param newHeartbeat Value of the age of the latest update from the feed
      */
     function setHeartbeat(uint256 newHeartbeat) external override onlyOwner returns (uint256) {
-        require(newHeartbeat <= MAX_AGE, "TrueFiPool: PoR heartbeat greater than MAX_AGE");
+        require(newHeartbeat <= MAX_AGE, "TrueCurrency: PoR heartbeat greater than MAX_AGE");
 
         emit NewHeartbeat(heartbeat, newHeartbeat);
         heartbeat = newHeartbeat == 0 ? MAX_AGE : newHeartbeat;

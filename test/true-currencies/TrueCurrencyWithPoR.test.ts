@@ -152,7 +152,7 @@ describe("TrueCurrency with Proof-of-reserves check", () => {
     // Mint TUSD
     const balanceBefore = await token.balanceOf(owner.address);
     await expect(token.mint(owner.address, AMOUNT_TO_MINT)).to.be.revertedWith(
-      "TrueFiPool: underlying supply exceeds proof-of-reserves"
+      "TrueCurrency: underlying supply exceeds proof-of-reserves"
     );
     expect(await token.balanceOf(owner.address)).to.equal(balanceBefore);
   });
@@ -168,7 +168,7 @@ describe("TrueCurrency with Proof-of-reserves check", () => {
     // Mint TUSD
     const balanceBefore = await token.balanceOf(owner.address);
     await expect(token.mint(owner.address, AMOUNT_TO_MINT)).to.be.revertedWith(
-      "TrueFiPool: PoR answer too old"
+      "TrueCurrency: PoR answer too old"
     );
     expect(await token.balanceOf(owner.address)).to.equal(balanceBefore);
   });
@@ -184,7 +184,7 @@ describe("TrueCurrency with Proof-of-reserves check", () => {
     // Mint TUSD
     const balanceBefore = await token.balanceOf(owner.address);
     await expect(token.mint(owner.address, AMOUNT_TO_MINT)).to.be.revertedWith(
-      "TrueFiPool: Invalid answer from PoR feed"
+      "TrueCurrency: Invalid answer from PoR feed"
     );
     expect(await token.balanceOf(owner.address)).to.equal(balanceBefore);
   });
