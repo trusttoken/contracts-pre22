@@ -124,6 +124,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
 
         token = _token;
         ftlAgency = _ftlAgency;
+        lender = ITrueLender2Deprecated(address(0));
         safu = _safu;
         loanFactory = _loanFactory;
     }
@@ -421,7 +422,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
         }
         uint256 lenderLoansValue = 0;
         if (address(lender) != address(0)) {
-            totalLoansValue = lender.value(this);
+            lenderLoansValue = lender.value(this);
         }
         return lenderLoansValue.add(ftlAgency.value(this));
     }
