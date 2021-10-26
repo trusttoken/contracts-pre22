@@ -147,7 +147,7 @@ describe('LoanToken2', () => {
 
     it('loan can be payed back 1 day after term has ended', async () => {
       await timeTravel(provider, yearInSeconds + dayInSeconds / 2)
-      await expect(loanToken.enterDefault()).to.be.revertedWith('LoanToken2: Loan cannot be defaulted yet')
+      await expect(loanToken.enterDefault()).to.be.revertedWith('LoanToken2: Loan has not reached end of term')
       await token.mint(loanToken.address, parseEth(1100))
       await loanToken.settle()
       expect(await loanToken.status()).to.equal(LoanTokenStatus.Settled)
@@ -176,18 +176,18 @@ describe('LoanToken2', () => {
     })
 
     it('reverts when closing right after creation', async () => {
-      await expect(loanToken.enterDefault()).to.be.revertedWith('LoanToken2: Loan cannot be defaulted yet')
+      await expect(loanToken.enterDefault()).to.be.revertedWith('LoanToken2: Loan has not reached end of term')
     })
 
     it('reverts when closing ongoing loan', async () => {
       await timeTravel(provider, yearInSeconds - 10)
-      await expect(loanToken.enterDefault()).to.be.revertedWith('LoanToken2: Loan cannot be defaulted yet')
+      await expect(loanToken.enterDefault()).to.be.revertedWith('LoanToken2: Loan has not reached end of term')
     })
 
     it('reverts when trying to close already closed loan', async () => {
       await timeTravel(provider, defaultedLoanCloseTime)
       await loanToken.enterDefault()
-      await expect(loanToken.enterDefault()).to.be.revertedWith('LoanToken2: Current status should be Funded or Withdrawn')
+      await expect(loanToken.enterDefault()).to.be.revertedWith('LoanToken2: Status is not Withdrawn')
     })
 
     it('emits event', async () => {
@@ -237,12 +237,12 @@ describe('LoanToken2', () => {
       await token.connect(borrower).approve(loanToken.address, parseEth(1200))
 
       await expect(loanToken.repay(borrower.address, parseEth(1200)))
-        .to.be.revertedWith('LoanToken2: Cannot repay over the debt')
+        .to.be.revertedWith('LoanToken2: Repay amount more than unpaid debt')
 
       await loanToken.repay(borrower.address, parseEth(500))
 
       await expect(loanToken.repay(borrower.address, parseEth(1000)))
-        .to.be.revertedWith('LoanToken2: Cannot repay over the debt')
+        .to.be.revertedWith('LoanToken2: Repay amount more than unpaid debt')
     })
 
     it('emits proper event', async () => {
