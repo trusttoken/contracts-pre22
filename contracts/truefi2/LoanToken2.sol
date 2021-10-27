@@ -233,7 +233,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     function unpaidDebt() public view returns (uint256) {
         uint256 tokenRepaid = _tokenBalance().add(tokenRedeemed);
         uint256 _debt = debt();
-        return tokenRepaid <= _debt ? _debt.sub(tokenRepaid) : 0;
+        return tokenRepaid < _debt ? _debt.sub(tokenRepaid) : 0;
     }
 
     /**
