@@ -117,11 +117,9 @@ contract LoanToken2 is ILoanToken2, ERC20 {
         borrower = _borrower;
         principal = _principal;
         interest = principal.mul(_apy).mul(_term).div(365 days).div(BASIS_POINTS);
-        tokenRedeemed;
         start = block.timestamp;
         term = _term;
         token = IERC20WithDecimals(address(_pool.token()));
-        debtToken;
         pool = _pool;
         borrowingMutex = _mutex;
         creditOracle = _creditOracle;
