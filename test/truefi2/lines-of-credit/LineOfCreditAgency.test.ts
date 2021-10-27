@@ -1,7 +1,7 @@
 import { BigNumber, BigNumberish, Wallet } from 'ethers'
 import {
   BorrowingMutex,
-  CollateralVault,
+  StakingVault,
   CreditModel,
   FixedTermLoanAgency,
   LineOfCreditAgency,
@@ -54,7 +54,7 @@ describe('LineOfCreditAgency', () => {
   let mockSpotOracle: MockContract
   let borrowingMutex: BorrowingMutex
   let poolFactory: PoolFactory
-  let collateralVault: CollateralVault
+  let stakingVault: StakingVault
   let tru: MockTrueCurrency
   let timeTravel: (time: number) => void
 
@@ -88,7 +88,7 @@ describe('LineOfCreditAgency', () => {
       creditModel,
       borrowingMutex,
       poolFactory,
-      collateralVault,
+      stakingVault,
       tru,
     } = await setupTruefi2(owner, provider))
 
@@ -105,6 +105,9 @@ describe('LineOfCreditAgency', () => {
     await creditOracle.setScore(borrower.address, 255)
     await creditOracle.setMaxBorrowerLimit(owner.address, parseEth(100_000_000))
     await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
+
+    await tru.mint(borrower.address, parseTRU(1e7))
+    await tru.connect(borrower).approve(stakingVault.address, parseTRU(1e7))
   })
 
   describe('initializer', () => {
@@ -145,6 +148,29 @@ describe('LineOfCreditAgency', () => {
       await creditAgency.connect(borrower).claimOwnership()
       expect(await creditAgency.owner()).to.equal(borrower.address)
       expect(await creditAgency.pendingOwner()).to.equal(AddressZero)
+    })
+  })
+
+  describe('setCreditModel', () => {
+    it('only owner can set credit model', async () => {
+      await expect(creditAgency.connect(borrower).setCreditModel(creditModel.address))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('cannot be set to zero address', async () => {
+      await expect(creditAgency.setCreditModel(AddressZero))
+        .to.be.revertedWith('LineOfCreditAgency: CreditModel cannot be set to zero address')
+    })
+
+    it('credit model is properly set', async () => {
+      await creditAgency.setCreditModel(creditModel.address)
+      expect(await creditAgency.creditModel()).to.equal(creditModel.address)
+    })
+
+    it('emits a proper event', async () => {
+      await expect(creditAgency.setCreditModel(creditModel.address))
+        .to.emit(creditAgency, 'CreditModelChanged')
+        .withArgs(creditModel.address)
     })
   })
 
@@ -397,6 +423,15 @@ describe('LineOfCreditAgency', () => {
         .to.be.revertedWith('LineOfCreditAgency: Borrower has credit score below minimum')
     })
 
+    it('fails if required credit score is smaller than effective score and greater than pure score', async () => {
+      await tru.connect(borrower).approve(stakingVault.address, 1000)
+      await stakingVault.connect(borrower).stake(1000)
+      await creditOracle.setScore(borrower.address, 191)
+      await creditAgency.setMinCreditScore(192)
+      await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000))
+        .to.be.revertedWith('LineOfCreditAgency: Borrower has credit score below minimum')
+    })
+
     it('fails if the credit score was not updated for too long', async () => {
       await creditOracle.connect(owner).setEligibleForDuration(borrower.address, DAY * 15)
       await timeTravel(DAY * 16)
@@ -425,7 +460,7 @@ describe('LineOfCreditAgency', () => {
       const faultyCreditAgency = await deployContract(LineOfCreditAgency__factory)
       const faultyBorrowingMutex = await deployContract(MockBorrowingMutex__factory)
 
-      await faultyCreditAgency.initialize(creditOracle.address, creditModel.address, faultyBorrowingMutex.address, poolFactory.address, loanFactory.address, collateralVault.address)
+      await faultyCreditAgency.initialize(creditOracle.address, creditModel.address, faultyBorrowingMutex.address, poolFactory.address, loanFactory.address, stakingVault.address)
       await tusdPool.setCreditAgency(faultyCreditAgency.address)
       await faultyCreditAgency.allowBorrower(borrower.address, true)
 
@@ -519,9 +554,9 @@ describe('LineOfCreditAgency', () => {
       await creditOracle.setScore(borrower.address, 191)
       await creditAgency.allowBorrower(borrower.address, true)
       await tru.mint(borrower.address, parseTRU(100_000))
-      await tru.connect(borrower).approve(collateralVault.address, parseTRU(100_000))
+      await tru.connect(borrower).approve(stakingVault.address, parseTRU(100_000))
       await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100))
-      await collateralVault.connect(borrower).stake(parseTRU(100_000))
+      await stakingVault.connect(borrower).stake(parseTRU(100_000))
     })
 
     it('returns true if borrower will be beyond limit with this staked amount and false otherwise', async () => {
@@ -598,6 +633,17 @@ describe('LineOfCreditAgency', () => {
       await poolFactory.unsupportPool(tusdPool.address)
       await expect(creditAgency.poke(tusdPool.address))
         .to.be.revertedWith('LineOfCreditAgency: The pool is not supported for poking')
+    })
+  })
+
+  describe('pokeAll', () => {
+    it('pokes all supported pools', async () => {
+      expect(await poolFactory.getSupportedPools()).to.deep.eq([usdcPool.address, tusdPool.address])
+      await creditAgency.pokeAll()
+      // waffle is not able to check directly if poke() was called,
+      // using external call check to confirm that poke() was called twice
+      expect('isSupportedPool').to.be.calledOnContractWith(poolFactory, [usdcPool.address])
+      expect('isSupportedPool').to.be.calledOnContractWith(poolFactory, [tusdPool.address])
     })
   })
 
@@ -1269,6 +1315,55 @@ describe('LineOfCreditAgency', () => {
       await creditAgency.updateCreditScore(tusdPool.address, borrower.address)
       expect(await creditAgency.creditScoreAdjustmentRate(tusdPool.address, borrower.address)).to.equal(143)
       expect('creditScoreAdjustmentRate').to.be.calledOnContractWith(creditModel, [223])
+    })
+  })
+
+  describe('updateCreditScore', () => {
+    beforeEach(async () => {
+      await creditOracle.setScore(borrower.address, 0)
+      await creditAgency.updateCreditScore(tusdPool.address, borrower.address)
+      await creditOracle.setScore(borrower.address, 223)
+    })
+
+    it('updates borrower\'s credit score', async () => {
+      expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(0)
+      await creditAgency.updateCreditScore(tusdPool.address, borrower.address)
+      expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(223)
+    })
+
+    it('updates after borrow when staked', async () => {
+      await creditAgency.allowBorrower(borrower.address, true)
+      await stakingVault.connect(borrower).stake(parseTRU(1000))
+      await creditAgency.connect(borrower).borrow(tusdPool.address, parseEth(250))
+      expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(235)
+      await creditAgency.connect(borrower).borrow(tusdPool.address, parseEth(250))
+      expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(229)
+    })
+
+    it('updates after principal repayment when staked', async () => {
+      await creditAgency.allowBorrower(borrower.address, true)
+      await stakingVault.connect(borrower).stake(parseTRU(1000))
+      await creditAgency.connect(borrower).borrow(tusdPool.address, parseEth(500))
+      expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(229)
+      await tusd.connect(borrower).approve(creditAgency.address, parseEth(250))
+      await creditAgency.connect(borrower).repay(tusdPool.address, parseEth(250))
+      expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(235)
+    })
+  })
+
+  describe('updateAllCreditScores', () => {
+    beforeEach(async () => {
+      await creditOracle.setScore(borrower.address, 0)
+      await creditAgency.updateAllCreditScores(borrower.address)
+      await creditOracle.setScore(borrower.address, 223)
+    })
+
+    it('updates credit scores for 2 pools', async () => {
+      expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(0)
+      expect(await creditAgency.creditScore(usdcPool.address, borrower.address)).to.eq(0)
+      await creditAgency.updateAllCreditScores(borrower.address)
+      expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(223)
+      expect(await creditAgency.creditScore(usdcPool.address, borrower.address)).to.eq(223)
     })
   })
 })

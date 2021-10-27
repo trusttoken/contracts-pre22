@@ -8,7 +8,6 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import {ITrueFiPool2} from "../interface/ITrueFiPool2.sol";
 import {ILoanToken2Deprecated as ILoanToken2} from "./ILoanToken2Deprecated.sol";
-import {LoanToken} from "../../truefi/LoanToken.sol";
 
 /**
  * @title LoanToken V2

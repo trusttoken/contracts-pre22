@@ -4,8 +4,9 @@ pragma solidity 0.6.10;
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 
-import {IFixedTermLoanAgency} from "./interface/IFixedTermLoanAgency.sol";
 import {Initializable} from "../common/Initializable.sol";
+
+import {IFixedTermLoanAgency} from "./interface/IFixedTermLoanAgency.sol";
 import {ILoanToken2Deprecated} from "./deprecated/ILoanToken2Deprecated.sol";
 import {ILoanToken2} from "./interface/ILoanToken2.sol";
 import {IDebtToken} from "./interface/IDebtToken.sol";
@@ -15,7 +16,7 @@ import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
 import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
 import {ILineOfCreditAgency} from "./interface/ILineOfCreditAgency.sol";
 
-import {LoanToken2, IERC20} from "./LoanToken2.sol";
+import {LoanToken2} from "./LoanToken2.sol";
 import {DebtToken} from "./DebtToken.sol";
 
 /**
@@ -160,10 +161,6 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
 
         emit DebtTokenCreated(newToken);
         return newToken;
-    }
-
-    function isCreatedByFactory(address loanOrDebt) external override view returns (bool) {
-        return isLoanToken[ILoanToken2(loanOrDebt)] || isDebtToken[IDebtToken(loanOrDebt)];
     }
 
     function setCreditOracle(ITrueFiCreditOracle _creditOracle) external onlyAdmin {

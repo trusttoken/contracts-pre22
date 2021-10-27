@@ -21,7 +21,6 @@ import {ILineOfCreditAgency} from "./interface/ILineOfCreditAgency.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
 
 import {ABDKMath64x64} from "../truefi/Log.sol";
-import {OneInchExchange} from "./libraries/OneInchExchange.sol";
 
 /**
  * @title TrueFiPool2
@@ -636,14 +635,6 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
     function liquidateLegacyLoan(ILoanToken2Deprecated loan) external override {
         require(msg.sender == address(safu), "TrueFiPool: Should be called by SAFU");
         lender.transferAllLoanTokens(loan, address(safu));
-    }
-
-    /**
-     * @dev Function called by SAFU when liquidation happens. It will transfer all tokens of this loan the SAFU
-     */
-    function liquidateLoan(IDebtToken loan) external override {
-        require(msg.sender == address(safu), "TrueFiPool: Should be called by SAFU");
-        ftlAgency.transferAllLoanTokens(ILoanToken2(address(loan)), address(safu));
     }
 
     /**

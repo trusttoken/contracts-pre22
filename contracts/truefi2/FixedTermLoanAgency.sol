@@ -2,7 +2,6 @@
 pragma solidity 0.6.10;
 pragma experimental ABIEncoderV2;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
@@ -15,14 +14,13 @@ import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
 import {IStakingPool} from "../truefi/interface/IStakingPool.sol";
 import {IFixedTermLoanAgency} from "./interface/IFixedTermLoanAgency.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
-import {ITrueFiPoolOracle} from "./interface/ITrueFiPoolOracle.sol";
 import {I1Inch3} from "./interface/I1Inch3.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
-import {ITrueRatingAgency} from "../truefi/interface/ITrueRatingAgency.sol";
 import {IERC20WithDecimals} from "./interface/IERC20WithDecimals.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
 import {ICreditModel} from "./interface/ICreditModel.sol";
 import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
+import {IStakingVault} from "./interface/IStakingVault.sol";
 
 interface ITrueFiPool2WithDecimals is ITrueFiPool2 {
     function decimals() external view returns (uint8);
@@ -39,7 +37,6 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
     using SafeERC20 for ERC20;
     using SafeERC20 for IERC20WithDecimals;
     using SafeERC20 for ITrueFiPool2;
-    using SafeERC20 for ILoanToken2;
     using OneInchExchange for I1Inch3;
 
     // basis point for ratio
@@ -89,9 +86,11 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
     // mutex ensuring there's only one running loan or credit line for borrower
     IBorrowingMutex public borrowingMutex;
 
-    ILoanFactory2 public override loanFactory;
+    ILoanFactory2 public loanFactory;
 
     mapping(address => bool) public isBorrowerAllowed;
+
+    IStakingVault public stakingVault;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -186,7 +185,8 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
         ITrueFiCreditOracle _creditOracle,
         ICreditModel _creditModel,
         IBorrowingMutex _borrowingMutex,
-        ILoanFactory2 _loanFactory
+        ILoanFactory2 _loanFactory,
+        IStakingVault _stakingVault
     ) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
 
@@ -197,6 +197,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
         creditModel = _creditModel;
         borrowingMutex = _borrowingMutex;
         loanFactory = _loanFactory;
+        stakingVault = _stakingVault;
 
         swapFeeSlippage = 100; // 1%
         fee = 1000;
@@ -212,6 +213,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
      * @param _creditOracle new credit oracle
      */
     function setCreditOracle(ITrueFiCreditOracle _creditOracle) external onlyOwner {
+        require(address(_creditOracle) != address(0), "FixedTermLoanAgency: CreditOracle cannot be set to zero address");
         creditOracle = _creditOracle;
         emit CreditOracleChanged(_creditOracle);
     }
@@ -221,6 +223,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
      * @param newMutex borrowing mutex address to be set
      */
     function setBorrowingMutex(IBorrowingMutex newMutex) public onlyOwner {
+        require(address(newMutex) != address(0), "FixedTermLoanAgency: BorrowingMutex cannot be set to zero address");
         borrowingMutex = newMutex;
         emit BorrowingMutexChanged(newMutex);
     }
@@ -307,9 +310,11 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
         uint256 amount,
         uint256 term
     ) public view returns (uint256) {
-        uint8 borrowerScore = creditOracle.score(borrower);
+        uint8 rawScore = creditOracle.score(borrower);
+        uint256 stakedAmount = stakingVault.stakedAmount(borrower);
+        uint8 effectiveScore = creditModel.effectiveScore(rawScore, pool, stakedAmount, amount);
         uint256 fixedTermLoanAdjustment = creditModel.fixedTermLoanAdjustment(term);
-        return creditModel.rate(pool, borrowerScore, amount).add(fixedTermLoanAdjustment);
+        return creditModel.rate(pool, effectiveScore, amount).add(fixedTermLoanAdjustment);
     }
 
     /**
@@ -336,7 +341,10 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
         );
 
         require(amount > 0, "FixedTermLoanAgency: Loans of amount 0, will not be approved");
-        require(amount <= borrowLimit(pool, borrower), "FixedTermLoanAgency: Loan amount cannot exceed borrow limit");
+        require(
+            pool.oracle().tokenToUsd(amount) <= borrowLimit(pool, borrower),
+            "FixedTermLoanAgency: Loan amount cannot exceed borrow limit"
+        );
 
         require(term > 0, "FixedTermLoanAgency: Loans cannot have instantaneous term of repay");
         require(isTermBelowMax(term), "FixedTermLoanAgency: Loan's term is too long");
@@ -433,7 +441,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
                 pool,
                 creditOracle.score(borrower),
                 creditOracle.maxBorrowerLimit(borrower),
-                0,
+                stakingVault.stakedAmount(borrower),
                 totalBorrowed(borrower, poolDecimals)
             );
     }
@@ -511,32 +519,6 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
         feeToken.safeApprove(address(feePool), amount);
         feePool.join(amount);
         feePool.safeTransfer(address(stakingPool), feePool.balanceOf(address(this)));
-    }
-
-    /**
-     * @dev Allow pool to transfer all LoanTokens to the SAFU in case of liquidation
-     * @param loan LoanToken address
-     * @param recipient expected to be SAFU address
-     */
-    function transferAllLoanTokens(ILoanToken2 loan, address recipient) external override onlySupportedPool {
-        _transferAllLoanTokens(loan, recipient);
-    }
-
-    function _transferAllLoanTokens(ILoanToken2 loan, address recipient) internal {
-        // find the token, transfer to SAFU and remove loan from loans list
-        ILoanToken2[] storage _loans = poolLoans[loan.pool()];
-        for (uint256 index = 0; index < _loans.length; index++) {
-            if (_loans[index] == loan) {
-                _loans[index] = _loans[_loans.length - 1];
-                _loans.pop();
-
-                loan.safeTransfer(recipient, loan.balanceOf(address(this)));
-                return;
-            }
-        }
-        // If we reach this, it means loanToken was not present in _loans array
-        // This prevents invalid loans from being reclaimed
-        revert("FixedTermLoanAgency: This loan has not been funded by the agency");
     }
 
     function isCredibleForTerm(uint256 term) internal view returns (bool) {

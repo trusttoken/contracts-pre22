@@ -2,7 +2,6 @@
 pragma solidity 0.6.10;
 
 import {DeficiencyToken} from "../DeficiencyToken.sol";
-import {ERC20} from "../../common/UpgradeableERC20.sol";
 import {IDebtToken} from "../interface/IDebtToken.sol";
 
 /**

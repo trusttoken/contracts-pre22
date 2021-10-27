@@ -12,6 +12,7 @@ import {
 import { deployContract } from 'scripts/utils/deployContract'
 import {
   BorrowingMutex,
+  FixedTermLoanAgency,
   LoanFactory2,
   LoanToken2,
   Mock1InchV3,
@@ -22,14 +23,15 @@ import {
   MockUsdc,
   PoolFactory,
   StkTruToken,
-  TestFixedTermLoanAgency,
-  TestFixedTermLoanAgency__factory,
   TimeAveragedBaseRateOracle,
   TrueFiCreditOracle,
   TrueFiCreditOracle__factory,
   TrueFiPool2,
   TrueFiPool2__factory,
   CreditModel,
+  MockTrueCurrency,
+  StakingVault,
+  BorrowingMutex__factory,
 } from 'contracts'
 
 import { BorrowingMutexJson, LoanToken2Json, Mock1InchV3Json } from 'build'
@@ -51,7 +53,7 @@ describe('FixedTermLoanAgency', () => {
   let feePool: TrueFiPool2
   let poolOracle: MockTrueFiPoolOracle
 
-  let ftlAgency: TestFixedTermLoanAgency
+  let ftlAgency: FixedTermLoanAgency
   let creditOracle: TrueFiCreditOracle
 
   let counterfeitPool: TrueFiPool2
@@ -60,12 +62,14 @@ describe('FixedTermLoanAgency', () => {
 
   let poolFactory: PoolFactory
 
+  let tru: MockTrueCurrency
   let stkTru: StkTruToken
   let usdc: MockUsdc
   let oneInch: Mock1InchV3
   let borrowingMutex: BorrowingMutex
   let creditModel: CreditModel
   let baseRateOracle: TimeAveragedBaseRateOracle
+  let stakingVault: StakingVault
 
   const YEAR = DAY * 365
 
@@ -78,10 +82,10 @@ describe('FixedTermLoanAgency', () => {
     extractLoanTokenAddress = (pendingTx: Promise<ContractTransaction>) =>
       _extractLoanTokenAddress(pendingTx, owner, loanFactory)
 
-    ftlAgency = await deployContract(owner, TestFixedTermLoanAgency__factory)
     oneInch = await new Mock1InchV3__factory(owner).deploy()
 
     ; ({
+      tru,
       loanFactory,
       feePool,
       standardTokenOracle: poolOracle,
@@ -93,7 +97,8 @@ describe('FixedTermLoanAgency', () => {
       borrowingMutex,
       creditModel,
       standardBaseRateOracle: baseRateOracle,
-    } = await setupTruefi2(owner, _provider, { ftlAgency: ftlAgency, oneInch: oneInch }))
+      stakingVault,
+    } = await setupTruefi2(owner, _provider, { oneInch: oneInch }))
 
     token1 = await deployContract(owner, MockErc20Token__factory)
     token2 = await deployContract(owner, MockErc20Token__factory)
@@ -124,10 +129,13 @@ describe('FixedTermLoanAgency', () => {
 
     await token1.mint(owner.address, parseEth(1e7))
     await token2.mint(owner.address, parseEth(1e7))
+    await usdc.mint(owner.address, parseUSDC(1e7))
     await token1.approve(pool1.address, parseEth(1e7))
     await token2.approve(pool2.address, parseEth(1e7))
+    await usdc.approve(feePool.address, parseUSDC(1e7))
     await pool1.join(parseEth(1e7))
     await pool2.join(parseEth(1e7))
+    await feePool.join(parseUSDC(1e7))
 
     await creditOracle.setCreditUpdatePeriod(YEAR)
     await creditOracle.setScore(borrower.address, 255)
@@ -278,22 +286,38 @@ describe('FixedTermLoanAgency', () => {
         await expect(ftlAgency.connect(borrower).setCreditOracle(newOracle.address))
           .to.be.revertedWith('Ownable: caller is not the owner')
       })
+
+      it('cannot set creditOracle to zero address', async () => {
+        await expect(ftlAgency.setCreditOracle(AddressZero))
+          .to.be.revertedWith('FixedTermLoanAgency: CreditOracle cannot be set to zero address')
+      })
     })
 
     describe('setBorrowingMutex', () => {
+      let fakeBorrowingMutex: BorrowingMutex
+
+      beforeEach(async () => {
+        fakeBorrowingMutex = await deployContract(owner, BorrowingMutex__factory)
+      })
+
       it('changes borrowingMutex', async () => {
-        await ftlAgency.setBorrowingMutex(AddressZero)
-        expect(await ftlAgency.borrowingMutex()).to.equal(AddressZero)
+        await ftlAgency.setBorrowingMutex(fakeBorrowingMutex.address)
+        expect(await ftlAgency.borrowingMutex()).to.equal(fakeBorrowingMutex.address)
       })
 
       it('emits BorrowingMutexChanged', async () => {
-        await expect(ftlAgency.setBorrowingMutex(AddressZero))
-          .to.emit(ftlAgency, 'BorrowingMutexChanged').withArgs(AddressZero)
+        await expect(ftlAgency.setBorrowingMutex(fakeBorrowingMutex.address))
+          .to.emit(ftlAgency, 'BorrowingMutexChanged').withArgs(fakeBorrowingMutex.address)
       })
 
       it('must be called by owner', async () => {
-        await expect(ftlAgency.connect(borrower).setBorrowingMutex(AddressZero))
+        await expect(ftlAgency.connect(borrower).setBorrowingMutex(fakeBorrowingMutex.address))
           .to.be.revertedWith('Ownable: caller is not the owner')
+      })
+
+      it('cannot set borrowingMutex to zero address', async () => {
+        await expect(ftlAgency.setBorrowingMutex(AddressZero))
+          .to.be.revertedWith('FixedTermLoanAgency: BorrowingMutex cannot be set to zero address')
       })
     })
 
@@ -394,6 +418,14 @@ describe('FixedTermLoanAgency', () => {
           .to.be.revertedWith('FixedTermLoanAgency: Loan amount cannot exceed borrow limit')
       })
 
+      it('amount to borrow exceeds borrow limit due to decimals mismatch', async () => {
+        const usdcPool = feePool
+
+        expect(await ftlAgency.borrowLimit(usdcPool.address, borrower.address)).to.be.lt(parseEth(1e7))
+        await expect(borrow(borrower, usdcPool, parseUSDC(1e7), YEAR))
+          .to.be.revertedWith('FixedTermLoanAgency: Loan amount cannot exceed borrow limit')
+      })
+
       it('taking new loans is locked by mutex', async () => {
         await borrowingMutex.allowLocker(owner.address, true)
         await borrowingMutex.lock(borrower.address, owner.address)
@@ -439,6 +471,17 @@ describe('FixedTermLoanAgency', () => {
       it('locks borrowing mutex', async () => {
         const loan = await extractLoanTokenAddress(borrow(borrower, pool1, 100000, YEAR))
         expect(await borrowingMutex.locker(borrower.address)).to.equal(loan.address)
+      })
+
+      it('can increase max borrow limit after staking TRU', async () => {
+        await creditOracle.setMaxBorrowerLimit(borrower.address, 90000)
+        await expect(borrow(borrower, pool1, 100000, YEAR))
+          .to.be.revertedWith('FixedTermLoanAgency: Loan amount cannot exceed borrow limit')
+        await tru.mint(borrower.address, parseTRU(100))
+        await tru.connect(borrower).approve(stakingVault.address, parseTRU(100))
+        await stakingVault.connect(borrower).stake(parseTRU(100))
+        await expect(borrow(borrower, pool1, 100000, YEAR))
+          .not.to.be.reverted
       })
 
       it('emits event', async () => {
@@ -512,6 +555,25 @@ describe('FixedTermLoanAgency', () => {
       await timeTravel(YEAR * 10)
       expect(await ftlAgency.value(pool1.address)).to.equal(208013)
       expect(await ftlAgency.value(pool2.address)).to.equal(540000)
+    })
+  })
+
+  describe('rate', () => {
+    it('returns correct rate', async () => {
+      const baseRate = await creditModel.rate(pool1.address, 255, parseEth(1e5))
+      const ftlAdjustment = await creditModel.fixedTermLoanAdjustment(YEAR)
+      expect(await ftlAgency.rate(pool1.address, borrower.address, parseEth(1e5), YEAR))
+        .to.eq(baseRate.add(ftlAdjustment))
+    })
+
+    it('reduces rate after staking TRU', async () => {
+      await creditOracle.setScore(borrower.address, 200)
+      const noStakingRate = await ftlAgency.rate(pool1.address, borrower.address, parseEth(1e5), YEAR)
+      await tru.mint(borrower.address, parseTRU(1e7))
+      await tru.connect(borrower).approve(stakingVault.address, parseTRU(1e7))
+      await stakingVault.connect(borrower).stake(parseTRU(1e7))
+      expect(await ftlAgency.rate(pool1.address, borrower.address, parseEth(1e5), YEAR))
+        .to.be.lt(noStakingRate)
     })
   })
 
@@ -696,31 +758,6 @@ describe('FixedTermLoanAgency', () => {
           .and.to.emit(feePool, 'Transfer')
           .withArgs(ftlAgency.address, stkTru.address, parseEth(25))
       })
-    })
-  })
-
-  describe('transferAllLoanTokens', () => {
-    let newLoan1: LoanToken2
-
-    beforeEach(async () => {
-      newLoan1 = await extractLoanTokenAddress(ftlAgency.connect(borrower).borrow(pool1.address, 100000, YEAR, 1000))
-      await ftlAgency.setFee(0)
-    })
-
-    it('can only be called by the pool', async () => {
-      await expect(ftlAgency.transferAllLoanTokens(newLoan1.address, owner.address)).to.be.revertedWith('FixedTermLoanAgency: Pool not supported by the factory')
-    })
-
-    it('transfers whole LT balance to the recipient', async () => {
-      const balance = await newLoan1.balanceOf(ftlAgency.address)
-      await expect(ftlAgency.testTransferAllLoanTokens(newLoan1.address, owner.address))
-        .to.emit(newLoan1, 'Transfer').withArgs(ftlAgency.address, owner.address, balance)
-    })
-
-    it('removes LT from the list', async () => {
-      expect(await ftlAgency.loans(pool1.address)).to.deep.equal([newLoan1.address])
-      await ftlAgency.testTransferAllLoanTokens(newLoan1.address, owner.address)
-      expect(await ftlAgency.loans(pool1.address)).to.deep.equal([])
     })
   })
 })

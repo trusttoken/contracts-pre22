@@ -1,12 +1,14 @@
 # 💰 TrueFi Smart Contracts
 
+[![Coverage Status](https://coveralls.io/repos/github/trusttoken/smart-contracts/badge.svg?branch=main)](https://coveralls.io/github/trusttoken/smart-contracts?branch=main)
+
 ## 🗂 Table of Contents
-- [💡 Intro](#-💡-Intro)
-- [📎 Projects](#-📎-Projects)
-- [🧰 Installation](#-🧰-Installation)
-- [✅ Testing](#-✅-Testing)
-- [🛡 Coverage](#-🛡-Coverage)  
-- [🚉 Addresses](#-🚉-Addresses)
+- [💡 Intro](#-Intro)
+- [📎 Projects](#-Projects)
+- [🧰 Installation](#-Installation)
+- [✅ Testing](#-Testing)
+- [🛡 Coverage](#-Coverage)  
+- [🚉 Addresses](#-Addresses)
 
 # 💡 Intro
 TrueFi is a decentralized protocol for uncollateralized lending. This repository contains all smart contracts used across TrueFi ecosystem. Contracts are written in Solidity. All key functionalities are tested with attached TypeScript test suite. Apart from contracts and tests repository contains scripts used for deployment and maintenance of existing infrastructure.
@@ -92,18 +94,18 @@ it may take longer for tests to complete.
 | TrueCAD | [`0x00000100F2A2bd000715001920eB70D229700085`](https://etherscan.io/address/0x00000100F2A2bd000715001920eB70D229700085) |
 | TrueHKD | [`0x0000852600CEB001E08e00bC008be620d60031F2`](https://etherscan.io/address/0x0000852600CEB001E08e00bC008be620d60031F2) |
 | Registry | [`0x0000000000013949f288172bd7e36837bddc7211`](https://etherscan.io/address/0x0000000000013949f288172bd7e36837bddc7211) |
-| TrueFi | [`0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784`](https://etherscan.io/address/0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784) || TrustToken | [`0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784`](https://etherscan.io/address/0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784) |
+| TrueFi token | [`0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784`](https://etherscan.io/address/0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784) |
 | Staked TrueFi | [`0x23696914Ca9737466D8553a2d619948f548Ee424`](https://etherscan.io/address/0x23696914Ca9737466D8553a2d619948f548Ee424) |
 | TrueFi Pool | [`0xa1e72267084192Db7387c8CC1328fadE470e4149`](https://etherscan.io/address/0xa1e72267084192Db7387c8CC1328fadE470e4149) |
-| TrueLender | [`0x16d02Dc67EB237C387023339356b25d1D54b0922`](https://etherscan.io/address/0x16d02Dc67EB237C387023339356b25d1D54b0922) |
+| TrueLender2 | [`0xa606dd423dF7dFb65Efe14ab66f5fDEBf62FF583`](https://etherscan.io/address/0xa606dd423dF7dFb65Efe14ab66f5fDEBf62FF583) |
 | TrueRatingAgency | [`0x05461334340568075bE35438b221A3a0D261Fb6b`](https://etherscan.io/address/0x05461334340568075bE35438b221A3a0D261Fb6b)|
-| LoanFactory | [`0x4ACE6dE67E9a9EDFf5c2d0a584390Fb5394119e7`](https://etherscan.io/address/0x4ACE6dE67E9a9EDFf5c2d0a584390Fb5394119e7) |
+| LoanFactory2 | [`0x69d844fB5928d0e7Bc530cC6325A88e53d6685BC`](https://etherscan.io/address/0x69d844fB5928d0e7Bc530cC6325A88e53d6685BC) |
 | TrueFi LP Farm | [`0x8FD832757F58F71BAC53196270A4a55c8E1a29D9`](https://etherscan.io/address/0x8FD832757F58F71BAC53196270A4a55c8E1a29D9) |
 | Uniswap TUSD/TFI-LP Farm | [`0xf8F14Fbb93fa0cEFe35Acf7e004fD4Ef92d8315a`](https://etherscan.io/address/0xf8F14Fbb93fa0cEFe35Acf7e004fD4Ef92d8315a) |
 | Uniswap ETH/TRU Farm | [`0xED45Cf4895C110f464cE857eBE5f270949eC2ff4`](https://etherscan.io/address/0xED45Cf4895C110f464cE857eBE5f270949eC2ff4) |
 | tfTUSD Distributor | [`0xfB8d918428373f766B352564b70d1DcC1e3b6383`](https://etherscan.io/address/0xfB8d918428373f766B352564b70d1DcC1e3b6383) |
 | Uni TUSD/tfTUSD Distributor | [`0xCc527F4f8c76dB1EBA217d001cCc6f8bD9e0D86E`](https://etherscan.io/address/0xCc527F4f8c76dB1EBA217d001cCc6f8bD9e0D86E) |
-| Uni ETH/TRU Distributor | [`0x8EFF7d12118Fd599772D6448CDAd11D5fb2568e0`](https://etherscan.io/address/0x8EFF7d12118Fd599772D6448CDAd11D5fb2568e0) || Uni ETH/TRU Distributor | [`0x8EFF7d12118Fd599772D6448CDAd11D5fb2568e0`](https://etherscan.io/address/0x8EFF7d12118Fd599772D6448CDAd11D5fb2568e0) |
+| Uni ETH/TRU Distributor | [`0x8EFF7d12118Fd599772D6448CDAd11D5fb2568e0`](https://etherscan.io/address/0x8EFF7d12118Fd599772D6448CDAd11D5fb2568e0) |
 | RatingAgencyV2Distributor | [`0x6151570934470214592AA051c28805cF4744BCA7`](https://etherscan.io/address/0x6151570934470214592AA051c28805cF4744BCA7) |
 | stkTRUDistributor | [`0xecfD4F2C07EABdb7b592308732B59713728A957F`](https://etherscan.io/address/0xecfD4F2C07EABdb7b592308732B59713728A957F) |
 | Uniswap Router | [`0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D`](https://etherscan.io/address/0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D) |

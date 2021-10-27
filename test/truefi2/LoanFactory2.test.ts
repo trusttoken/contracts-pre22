@@ -173,48 +173,16 @@ describe('LoanFactory2', () => {
 
     describe('deploys debt token contract', () => {
       it('has storage variables set properly', async () => {
-        enum Status { Awaiting, Funded, Withdrawn, Settled, Defaulted }
-
         expect(await debtToken.pool()).to.eq(pool.address)
         expect(await debtToken.borrower()).to.eq(borrower.address)
         expect(await debtToken.liquidator()).to.eq(liquidator.address)
         expect(await debtToken.debt()).to.eq(parseEth(1))
-        expect(await debtToken.status()).to.eq(Status.Defaulted)
+        expect(await debtToken.isLiquidated()).to.be.false
         expect(await debtToken.balanceOf(fakeCreditAgency.address)).to.eq(parseEth(1))
       })
 
       it('marks deployed contract as debt token', async () => {
         expect(await loanFactory.isDebtToken(debtToken.address)).to.be.true
-      })
-    })
-  })
-
-  describe('isCreatedByFactory', () => {
-    describe('returns true for', () => {
-      it('loan token created by factory', async () => {
-        const loanToken = await createLoanToken(pool, borrower, parseEth(1), DAY, 1000)
-        expect(await loanFactory.isCreatedByFactory(loanToken.address)).to.eq(true)
-      })
-
-      it('debt token created by factory', async () => {
-        const debtToken = await createDebtToken(pool, borrower, parseEth(1))
-        expect(await loanFactory.isCreatedByFactory(debtToken.address)).to.eq(true)
-      })
-    })
-
-    describe('returns false for', () => {
-      it('loan token not created by factory', async () => {
-        const loanToken = await new LoanToken2__factory(owner).deploy()
-        expect(await loanFactory.isCreatedByFactory(loanToken.address)).to.eq(false)
-      })
-
-      it('debt token not created by factory', async () => {
-        const debtToken = await new DebtToken__factory(owner).deploy()
-        expect(await loanFactory.isCreatedByFactory(debtToken.address)).to.eq(false)
-      })
-
-      it('non-loan address', async () => {
-        expect(await loanFactory.isCreatedByFactory(owner.address)).to.eq(false)
       })
     })
   })

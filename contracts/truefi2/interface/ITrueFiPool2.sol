@@ -7,7 +7,6 @@ import {IFixedTermLoanAgency} from "../interface/IFixedTermLoanAgency.sol";
 import {ILoanToken2Deprecated} from "../deprecated/ILoanToken2Deprecated.sol";
 import {IDebtToken} from "../interface/IDebtToken.sol";
 import {ITrueFiPoolOracle} from "./ITrueFiPoolOracle.sol";
-import {I1Inch3} from "./I1Inch3.sol";
 import {ISAFU} from "./ISAFU.sol";
 import {ILoanFactory2} from "./ILoanFactory2.sol";
 
@@ -65,11 +64,6 @@ interface ITrueFiPool2 is IERC20 {
     function repay(uint256 currencyAmount) external;
 
     function liquidateLegacyLoan(ILoanToken2Deprecated loan) external;
-
-    /**
-     * @dev SAFU buys LoanTokens from the pool
-     */
-    function liquidateLoan(IDebtToken loan) external;
 
     /**
      * @dev SAFU buys DebtTokens from the pool

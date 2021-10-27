@@ -19,7 +19,7 @@ contract DebtToken is IDebtToken, ERC20 {
 
     uint256 public redeemed;
 
-    Status public override status;
+    bool public override isLiquidated;
 
     /**
      * @dev Emitted when a DebtToken is redeemed for underlying tokens
@@ -47,7 +47,6 @@ contract DebtToken is IDebtToken, ERC20 {
         borrower = _borrower;
         liquidator = _liquidator;
         debt = _debt;
-        status = Status.Defaulted;
         _mint(_holder, _debt);
     }
 
@@ -56,12 +55,10 @@ contract DebtToken is IDebtToken, ERC20 {
      * @param _amount amount to redeem
      */
     function redeem(uint256 _amount) external override {
-        // TODO remove the require checks when Awaiting/Funded/Withdrawn enum values are removed from IDebtToken
-        require(status >= Status.Defaulted, "DebtToken: The debt has not defaulted yet");
         require(_amount <= _balance(), "DebtToken: Insufficient repaid amount");
 
         uint256 amountToReturn = _amount;
-        if (_amount == totalSupply() && repaid() > debt) {
+        if (_amount == totalSupply()) {
             amountToReturn = _balance();
         }
         redeemed = redeemed.add(amountToReturn);
@@ -75,10 +72,10 @@ contract DebtToken is IDebtToken, ERC20 {
      * @dev Liquidate the debt if it has defaulted
      */
     function liquidate() external override {
-        require(status == Status.Defaulted, "DebtToken: Current status should be Defaulted");
+        require(!isLiquidated, "DebtToken: Debt must not be liquidated");
         require(msg.sender == liquidator, "DebtToken: Caller is not the liquidator");
 
-        status = Status.Liquidated;
+        isLiquidated = true;
 
         emit Liquidated();
     }
