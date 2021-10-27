@@ -340,69 +340,6 @@ describe('LoanToken2', () => {
         expect(await loanToken.unpaidDebt()).to.equal(parseEth(275))
       })
     })
-
-    describe('loan defaulted (1/2 paid back), redeem half, then rest is paid back, redeem rest', () => {
-      beforeEach(async () => {
-        await timeTravel(provider, defaultedLoanCloseTime)
-        await payback(borrower, parseEth(550))
-        await loanToken.enterDefault()
-        await loanToken.redeem()
-        expect(await token.balanceOf(lender.address)).to.equal(await parseEth(275))
-        await payback(borrower, parseEth(550))
-        await loanToken.redeem()
-      })
-
-      it('transfers all trueCurrency tokens to lender', async () => {
-        expect(await token.balanceOf(lender.address)).to.equal(await parseEth(1100))
-      })
-
-      it('burns loan tokens', async () => {
-        expect(await loanToken.totalSupply()).to.equal(0)
-        expect(await loanToken.balanceOf(lender.address)).to.equal(0)
-      })
-
-      it('repaid is total paid back amount', async () => {
-        expect(await loanToken.repaid()).to.equal(parseEth(1100))
-      })
-
-      it('status is still DEFAULTED', async () => {
-        expect(await loanToken.status()).to.equal(LoanTokenStatus.Defaulted)
-      })
-    })
-
-    describe('loan defaulted (1/2 paid back), redeem part, then rest is paid back, redeem rest - many LOAN holders', () => {
-      beforeEach(async () => {
-        // burn excessive tokens
-        await token.transfer(Wallet.createRandom().address, await token.balanceOf(lender.address))
-        await loanToken.transfer(other.address, parseEth(550))
-        await timeTravel(provider, defaultedLoanCloseTime)
-        await payback(borrower, parseEth(550))
-        await loanToken.enterDefault()
-        await loanToken.redeem()
-        expect(await token.balanceOf(lender.address)).to.equal(parseEth(275).div(2))
-        await payback(borrower, parseEth(550))
-        await loanToken.redeem()
-        await loanToken.connect(other).redeem()
-      })
-
-      it('transfers all trueCurrency tokens to LOAN holders', async () => {
-        expect(await token.balanceOf(lender.address)).to.equal(parseEth(275).div(2).add(parseEth(1100).mul(7).div(24)))
-        expect(await token.balanceOf(other.address)).to.equal(parseEth(1100).mul(7).div(12).add(1)) // 1 wei err
-      })
-
-      it('burns loan tokens', async () => {
-        expect(await loanToken.totalSupply()).to.equal(0)
-        expect(await loanToken.balanceOf(lender.address)).to.equal(0)
-      })
-
-      it('repaid is total paid back amount', async () => {
-        expect(await loanToken.repaid()).to.equal(parseEth(1100))
-      })
-
-      it('status is still DEFAULTED', async () => {
-        expect(await loanToken.status()).to.equal(LoanTokenStatus.Defaulted)
-      })
-    })
   })
 
   describe('Debt calculation', () => {
