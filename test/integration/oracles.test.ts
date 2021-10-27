@@ -10,7 +10,7 @@ import { solidity } from 'ethereum-waffle'
 use(solidity)
 
 describe('Oracles', () => {
-  const provider = forkChain('https://eth-mainnet.alchemyapi.io/v2/Vc3xNXIWdxEbDOToa69DhWeyhgFVBDWl', [CONTRACTS_OWNER], 11971336)
+  const provider = forkChain([CONTRACTS_OWNER], 11971336)
   const owner = provider.getSigner(CONTRACTS_OWNER)
   const deployContract = setupDeploy(owner)
   it('TRU oracle', async () => {

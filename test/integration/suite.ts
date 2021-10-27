@@ -9,12 +9,18 @@ import { parseEth } from 'utils'
 export const CONTRACTS_OWNER = '0x16cEa306506c387713C70b9C1205fd5aC997E78E'
 export const ETHER_HOLDER = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
 
-export function forkChain (rpc: string, unlockedAccounts: string[] = [], blockNumber?: BigNumberish,
+function _forkChain (rpc: string, unlockedAccounts: string[] = [], blockNumber?: BigNumberish,
 ) {
   return new providers.Web3Provider(ganache.provider({
     fork: blockNumber ? `${rpc}@${blockNumber.toString()}` : rpc,
     unlocked_accounts: unlockedAccounts,
   }))
+}
+
+export function forkChain (unlockedAccounts: string[] = [], blockNumber?: BigNumberish) {
+  const infura_key = process.env.INFURA_PROJECT_ID
+  const rpc = infura_key ? `https://mainnet.infura.io/v3/${infura_key}` : 'https://eth-mainnet.alchemyapi.io/v2/Vc3xNXIWdxEbDOToa69DhWeyhgFVBDWl'
+  return _forkChain(rpc, unlockedAccounts, blockNumber)
 }
 
 type Getter<T extends Contract> = keyof T['callStatic'] | ((contract: T) => any)
@@ -48,7 +54,7 @@ async function _upgradeSuite<T extends Contract> (
   contractsOwner: string = CONTRACTS_OWNER,
   blockNumber?: number | undefined,
 ) {
-  const provider = forkChain('https://eth-mainnet.alchemyapi.io/v2/Vc3xNXIWdxEbDOToa69DhWeyhgFVBDWl', [contractsOwner, ETHER_HOLDER], blockNumber)
+  const provider = forkChain([contractsOwner, ETHER_HOLDER], blockNumber)
   const owner = provider.getSigner(contractsOwner)
   const holder = provider.getSigner(ETHER_HOLDER)
   await holder.sendTransaction({ value: parseEth(100), to: contractsOwner })
