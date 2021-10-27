@@ -258,9 +258,9 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
         uint256 borrowedAmount
     ) internal returns (uint8, uint8) {
         uint8 oldEffectiveScore = creditScore[pool][borrower];
-        uint8 newEffectiveScore = creditOracle.score(borrower);
+        uint8 rawScore = creditOracle.score(borrower);
         uint256 stakedAmount = stakingVault.stakedAmount(borrower);
-        newEffectiveScore = creditModel.effectiveScore(newEffectiveScore, pool, stakedAmount, borrowedAmount);
+        uint8 newEffectiveScore = creditModel.effectiveScore(rawScore, pool, stakedAmount, borrowedAmount);
         creditScore[pool][borrower] = newEffectiveScore;
         return (oldEffectiveScore, newEffectiveScore);
     }
@@ -378,10 +378,8 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
             "LineOfCreditAgency: Sender not eligible to borrow"
         );
         require(!_hasOverdueInterest(pool, msg.sender), "LineOfCreditAgency: Sender has overdue interest in this pool");
-        uint256 currentPrincipal = borrowed[pool][msg.sender];
-        uint256 newPrincipal = currentPrincipal.add(amount);
-        (uint8 oldEffectiveScore, uint8 newEffectiveScore) = _updateCreditScore(pool, msg.sender, newPrincipal);
-        require(newEffectiveScore >= minCreditScore, "LineOfCreditAgency: Borrower has credit score below minimum");
+        uint8 rawScore = creditOracle.score(msg.sender);
+        require(rawScore >= minCreditScore, "LineOfCreditAgency: Borrower has credit score below minimum");
         require(
             pool.oracle().tokenToUsd(amount) <= borrowLimit(pool, msg.sender),
             "LineOfCreditAgency: Borrow amount cannot exceed borrow limit"
@@ -394,6 +392,9 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
             "LineOfCreditAgency: Borrower cannot open two simultaneous debt positions"
         );
 
+        uint256 currentPrincipal = borrowed[pool][msg.sender];
+        uint256 newPrincipal = currentPrincipal.add(amount);
+        (uint8 oldEffectiveScore, uint8 newEffectiveScore) = _updateCreditScore(pool, msg.sender, newPrincipal);
         if (currentPrincipal == 0) {
             nextInterestRepayTime[pool][msg.sender] = block.timestamp.add(interestRepaymentPeriod);
         }
