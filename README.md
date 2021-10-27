@@ -94,7 +94,7 @@ it may take longer for tests to complete.
 | TrueCAD | [`0x00000100F2A2bd000715001920eB70D229700085`](https://etherscan.io/address/0x00000100F2A2bd000715001920eB70D229700085) |
 | TrueHKD | [`0x0000852600CEB001E08e00bC008be620d60031F2`](https://etherscan.io/address/0x0000852600CEB001E08e00bC008be620d60031F2) |
 | Registry | [`0x0000000000013949f288172bd7e36837bddc7211`](https://etherscan.io/address/0x0000000000013949f288172bd7e36837bddc7211) |
-| TrustToken | [`0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784`](https://etherscan.io/address/0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784) |
+| TrueFi token | [`0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784`](https://etherscan.io/address/0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784) |
 | Staked TrueFi | [`0x23696914Ca9737466D8553a2d619948f548Ee424`](https://etherscan.io/address/0x23696914Ca9737466D8553a2d619948f548Ee424) |
 | TrueFi Pool | [`0xa1e72267084192Db7387c8CC1328fadE470e4149`](https://etherscan.io/address/0xa1e72267084192Db7387c8CC1328fadE470e4149) |
 | TrueLender2 | [`0xa606dd423dF7dFb65Efe14ab66f5fDEBf62FF583`](https://etherscan.io/address/0xa606dd423dF7dFb65Efe14ab66f5fDEBf62FF583) |
