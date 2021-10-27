@@ -92,9 +92,11 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     /**
      * @dev Create a Loan
      * @param _pool Pool to lend from
+     * @param _mutex Mutex to release/block borrower on loan closure
      * @param _borrower Borrower address
      * @param _ftlAgency FixedTermLoanAgency address
      * @param _loanFactory LoanFactory to create DebtTokens in case of default
+     * @param _creditOracle Oracle to check if loan reached end of term
      * @param _principal Borrow amount of underlying tokens
      * @param _term Loan length
      * @param _apy Loan APY
