@@ -24,7 +24,7 @@ abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
 
     /**
      * @notice Overriden mint function that checks the specified proof-of-reserves feed to
-     * ensure that the supply of the underlying assets is not greater than the reported
+     * ensure that the total supply of this TrueCurrency is not greater than the reported
      * reserves.
      * @dev The proof-of-reserves check is bypassed if feed is not set.
      * @param account The address to mint tokens to
@@ -44,12 +44,12 @@ abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
         uint256 oldestAllowed = block.timestamp.sub(heartbeat, "TrueCurrency: Invalid timestamp from PoR feed");
         require(updatedAt >= oldestAllowed, "TrueCurrency: PoR answer too old");
 
-        // Get required info about underlying/reserves supply & decimals
+        // Get required info about total supply & decimals
         uint256 currentSupply = totalSupply();
         uint8 trueDecimals = decimals();
         uint8 reserveDecimals = IChainlinkAggregatorV3(feed).decimals();
         uint256 reserves = uint256(answer);
-        // Normalise underlying & reserve decimals
+        // Normalise TrueCurrency & reserve decimals
         if (trueDecimals < reserveDecimals) {
             currentSupply = currentSupply.mul(10**uint256(reserveDecimals - trueDecimals));
         } else if (trueDecimals > reserveDecimals) {
