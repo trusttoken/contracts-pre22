@@ -21,7 +21,6 @@ export function forkChain(unlockedAccounts: string[] = [], blockNumber?: BigNumb
   const infura_key = process.env.INFURA_PROJECT_ID
   const rpc = infura_key ? `https://mainnet.infura.io/v3/${infura_key}` : 'https://eth-mainnet.alchemyapi.io/v2/Vc3xNXIWdxEbDOToa69DhWeyhgFVBDWl'
   return _forkChain(rpc, unlockedAccounts, blockNumber)
-
 }
 
 type Getter<T extends Contract> = keyof T['callStatic'] | ((contract: T) => any)
