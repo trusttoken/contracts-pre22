@@ -1,6 +1,6 @@
 import { expect, use } from 'chai'
 import { MockProvider, solidity } from 'ethereum-waffle'
-import { BigNumber, BigNumberish, Wallet } from 'ethers'
+import { BigNumberish, Wallet } from 'ethers'
 
 import { beforeEachWithFixture, expectScaledCloseTo, extractDebtTokens, parseEth, timeTravel } from 'utils'
 
@@ -40,7 +40,6 @@ describe('LoanToken2', () => {
 
   let lender: Wallet
   let borrower: Wallet
-  let other: Wallet
   let loanToken: LoanToken2
   let token: MockTrueCurrency
   let poolAddress: string
@@ -50,7 +49,7 @@ describe('LoanToken2', () => {
   let creationTimestamp: BigNumberish
 
   beforeEachWithFixture(async (wallets, _provider) => {
-    [lender, borrower, other] = wallets
+    [lender, borrower] = wallets
     provider = _provider
 
     token = await new MockTrueCurrency__factory(lender).deploy()
