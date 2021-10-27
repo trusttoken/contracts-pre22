@@ -9,7 +9,7 @@ import { parseEth } from 'utils'
 export const CONTRACTS_OWNER = '0x16cEa306506c387713C70b9C1205fd5aC997E78E'
 export const ETHER_HOLDER = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
 
-function _forkChain(rpc: string, unlockedAccounts: string[] = [], blockNumber?: BigNumberish,
+function _forkChain (rpc: string, unlockedAccounts: string[] = [], blockNumber?: BigNumberish,
 ) {
   return new providers.Web3Provider(ganache.provider({
     fork: blockNumber ? `${rpc}@${blockNumber.toString()}` : rpc,
@@ -17,12 +17,9 @@ function _forkChain(rpc: string, unlockedAccounts: string[] = [], blockNumber?: 
   }))
 }
 
-export function forkChain(unlockedAccounts: string[] = [], blockNumber?: BigNumberish) {
+export function forkChain (unlockedAccounts: string[] = [], blockNumber?: BigNumberish) {
   const infura_key = process.env.INFURA_PROJECT_ID
   const rpc = infura_key ? `https://mainnet.infura.io/v3/${infura_key}` : 'https://eth-mainnet.alchemyapi.io/v2/Vc3xNXIWdxEbDOToa69DhWeyhgFVBDWl'
-  if (infura_key) {
-    console.log('using infura')
-  }
   return _forkChain(rpc, unlockedAccounts, blockNumber)
 }
 
@@ -41,7 +38,7 @@ export function upgradeSuite<T extends Contract>(blockNumber: number, Factory: C
   getters: Getter<T>[], contractsOwner?: string): Promise<T>
 export function upgradeSuite<T extends Contract>(Factory: ContractFactoryConstructor<T>, currentAddress: string,
   getters: Getter<T>[], contractsOwner?: string): Promise<T>
-export function upgradeSuite(...args: any[]): any {
+export function upgradeSuite (...args: any[]): any {
   if (typeof args[0] === 'number') {
     const [bn, factory, address, getters, owner] = args
     return _upgradeSuite(factory, address, getters, owner, bn)
@@ -50,7 +47,7 @@ export function upgradeSuite(...args: any[]): any {
   return _upgradeSuite(factory, address, getters, owner)
 }
 
-async function _upgradeSuite<T extends Contract>(
+async function _upgradeSuite<T extends Contract> (
   Factory: ContractFactoryConstructor<T>,
   currentAddress: string,
   getters: Getter<T>[],
