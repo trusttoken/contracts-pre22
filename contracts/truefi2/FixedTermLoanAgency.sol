@@ -493,7 +493,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
             return 0;
         }
         (I1Inch3.SwapDescription memory swap, uint256 balanceDiff) = _1inch.exchange(data);
-        uint256 expectedDiff = pool.oracle().tokenToUsd(feeAmount).mul(10**feeToken.decimals()).div(1 ether);
+        uint256 expectedDiff = pool.oracle().tokenToUsd(feeAmount).mul(uint256(10)**feeToken.decimals()).div(1 ether);
 
         require(swap.srcToken == address(token), "FixedTermLoanAgency: Source token is not same as pool's token");
         require(swap.dstToken == address(feeToken), "FixedTermLoanAgency: Destination token is not fee token");
