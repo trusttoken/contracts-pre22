@@ -173,12 +173,12 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      */
     function _repay(address _sender, uint256 _amount) private {
         require(_amount <= unpaidDebt(), "LoanToken2: Repay amount more than unpaid debt");
-        emit Repaid(_sender, _amount);
 
         token.safeTransferFrom(_sender, address(this), _amount);
         if (unpaidDebt() == 0) {
             settle();
         }
+        emit Repaid(_sender, _amount);
     }
 
     /**
