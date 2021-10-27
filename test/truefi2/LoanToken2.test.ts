@@ -27,9 +27,7 @@ import { formatEther } from '@ethersproject/units'
 use(solidity)
 
 describe('LoanToken2', () => {
-  enum LoanTokenStatus {
-    Withdrawn, Settled, Defaulted, Liquidated
-  }
+  enum LoanTokenStatus { Withdrawn, Settled, Defaulted }
 
   const dayInSeconds = 60 * 60 * 24
   const yearInSeconds = dayInSeconds * 365

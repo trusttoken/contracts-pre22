@@ -533,7 +533,7 @@ describe('FixedTermLoanAgency', () => {
     })
 
     it('reverts if loan has not been previously funded', async () => {
-      enum Status { Withdrawn, Settled, Defaulted, Liquidated }
+      enum Status { Withdrawn, Settled, Defaulted }
 
       const mockLoanToken = await deployMockContract(owner, LoanToken2Json.abi)
       await mockLoanToken.mock.status.returns(Status.Settled)
