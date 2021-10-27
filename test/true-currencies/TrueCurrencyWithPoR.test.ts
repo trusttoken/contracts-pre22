@@ -43,8 +43,15 @@ describe("TrueCurrency with Proof-of-reserves check", () => {
 
   beforeEach(async () => {
     // Reset pool PoR feed defaults
-    await token.setFeed(mockV3Aggregator.address);
-    await token.setHeartbeat(0);
+    const currentFeed = await token.feed();
+    if (currentFeed.toLowerCase() !== mockV3Aggregator.address.toLowerCase()) {
+      await token.setFeed(mockV3Aggregator.address);
+    }
+    const currentHeartbeat = await token.heartbeat();
+    const MAX_AGE = await token.MAX_AGE();
+    if (!currentHeartbeat.eq(MAX_AGE)) {
+      await token.setHeartbeat(0);
+    }
 
     // Set fresh, valid answer on mock PoR feed
     const tusdSupply = await token.totalSupply();

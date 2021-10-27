@@ -68,6 +68,8 @@ abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
      * @param newFeed Address of the new feed
      */
     function setFeed(address newFeed) external override onlyOwner returns (uint256) {
+        require(newFeed != feed, "TrueCurrency: new feed must be different to current feed");
+
         emit NewFeed(feed, newFeed);
         feed = newFeed;
     }
@@ -79,6 +81,14 @@ abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
      */
     function setHeartbeat(uint256 newHeartbeat) external override onlyOwner returns (uint256) {
         require(newHeartbeat <= MAX_AGE, "TrueCurrency: PoR heartbeat greater than MAX_AGE");
+        // Allowable scenarios:
+        //  - heartbeat is not initialised (0 instead of default MAX_AGE); OR
+        //  - new heartbeat is different AND
+        //    new heartbeat is not resetting to default while current heartbeat is already set to the default
+        require(
+            heartbeat == 0 || (newHeartbeat != heartbeat && !(newHeartbeat == 0 && heartbeat == MAX_AGE)),
+            "TrueCurrency: new heartbeat must be different to current heartbeat"
+        );
 
         emit NewHeartbeat(heartbeat, newHeartbeat);
         heartbeat = newHeartbeat == 0 ? MAX_AGE : newHeartbeat;

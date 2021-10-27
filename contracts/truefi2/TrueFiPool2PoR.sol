@@ -39,14 +39,6 @@ contract TrueFiPool2PoR is TrueFiPool2, IPoRToken {
     // ======= STORAGE DECLARATION END ===========
 
     /**
-     * @dev This constructor only serves to set a default heartbeat.
-     *  Don't forget to use `initialize(...)` as you would with a regular TrueFiPool2 token.
-     */
-    constructor() public {
-        heartbeat = MAX_AGE;
-    }
-
-    /**
      * @notice Overriden mint function that checks the specified proof-of-reserves feed to
      * ensure that the supply of the underlying assets is not greater than the reported
      * reserves.
@@ -92,8 +84,17 @@ contract TrueFiPool2PoR is TrueFiPool2, IPoRToken {
      * @param newFeed Address of the new feed
      */
     function setFeed(address newFeed) external override onlyOwner returns (uint256) {
+        require(newFeed != feed, "TrueFiPool: new feed must be different to current feed");
+
         emit NewFeed(feed, newFeed);
         feed = newFeed;
+
+        if (heartbeat == 0) {
+            // Set the heartbeat to a sane default (MAX_AGE) when setting a feed.
+            // Necessary here as TrueFiPool2PoR inherits from an initializable contract and
+            // does not have its own initializer/constructor.
+            setHeartbeat(MAX_AGE);
+        }
     }
 
     /**
@@ -101,8 +102,16 @@ contract TrueFiPool2PoR is TrueFiPool2, IPoRToken {
      * @dev Admin function to set the heartbeat
      * @param newHeartbeat Value of the age of the latest update from the feed
      */
-    function setHeartbeat(uint256 newHeartbeat) external override onlyOwner returns (uint256) {
+    function setHeartbeat(uint256 newHeartbeat) public override onlyOwner returns (uint256) {
         require(newHeartbeat <= MAX_AGE, "TrueFiPool: PoR heartbeat greater than MAX_AGE");
+        // Allowable scenarios:
+        //  - heartbeat is not initialised (0 instead of default MAX_AGE); OR
+        //  - new heartbeat is different AND
+        //    new heartbeat is not resetting to default while current heartbeat is already set to the default
+        require(
+            heartbeat == 0 || (newHeartbeat != heartbeat && !(newHeartbeat == 0 && heartbeat == MAX_AGE)),
+            "TrueFiPool: new heartbeat must be different to current heartbeat"
+        );
 
         emit NewHeartbeat(heartbeat, newHeartbeat);
         heartbeat = newHeartbeat == 0 ? MAX_AGE : newHeartbeat;

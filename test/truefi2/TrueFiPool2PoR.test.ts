@@ -133,8 +133,17 @@ describe("TrueFiPool2PoR", () => {
       await tusd.connect(owner).approve(tusdPool.address, AMOUNT_TO_DEPOSIT);
 
       // Reset pool PoR feed defaults
-      await tusdPool.setFeed(mockV3Aggregator.address);
-      await tusdPool.setHeartbeat(0);
+      const currentFeed = await tusdPool.feed();
+      if (
+        currentFeed.toLowerCase() !== mockV3Aggregator.address.toLowerCase()
+      ) {
+        await tusdPool.setFeed(mockV3Aggregator.address);
+      }
+      const currentHeartbeat = await tusdPool.heartbeat();
+      const MAX_AGE = await tusdPool.MAX_AGE();
+      if (!currentHeartbeat.eq(MAX_AGE)) {
+        await tusdPool.setHeartbeat(0);
+      }
 
       // Set fresh, valid answer on mock PoR feed
       const tusdSupply = await tusd.totalSupply();
