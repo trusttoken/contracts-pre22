@@ -369,7 +369,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
      * @return Theoretical value of all the loans funded by this strategy
      */
     function value(ITrueFiPool2 pool) external override view returns (uint256) {
-        ILoanToken2[] storage _loans = poolLoans[pool];
+        ILoanToken2[] memory _loans = poolLoans[pool];
         uint256 totalValue;
         for (uint256 index = 0; index < _loans.length; index++) {
             totalValue = totalValue.add(_loans[index].value(_loans[index].balanceOf(address(this))));
