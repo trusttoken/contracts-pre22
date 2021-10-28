@@ -334,6 +334,18 @@ describe('LoanToken2', () => {
       it('decreases unpaidDebt', async () => {
         expect(await loanToken.unpaidDebt()).to.equal(parseEth(275))
       })
+
+      it('cannot repay rest', async () => {
+        await token.connect(borrower).approve(loanToken.address, parseEth(275))
+        await expect(loanToken.connect(borrower).repay(borrower.address, parseEth(275)))
+          .to.be.revertedWith('LoanToken2: Status is not Withdrawn')
+      })
+
+      it('cannot call redeem for the second time', async () => {
+        await expect(loanToken.redeem()).to.be.revertedWith('SafeMath: division by zero')
+        await payback(borrower, parseEth(100))
+        await expect(loanToken.redeem()).to.be.revertedWith('SafeMath: division by zero')
+      })
     })
   })
 
