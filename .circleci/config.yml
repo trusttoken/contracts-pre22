@@ -26,6 +26,12 @@ commands:
           paths:
             - ./node_modules
             - ./venv
+  setup_local_variables:
+    steps:
+      - run:
+          name: Setup Environment Variables
+          command: |
+            echo 'export INFURA_PROJECT_ID=$INFURA_PROJECT_ID' >> $BASH_ENV
 
 jobs:
   setup:
