@@ -92,7 +92,7 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
     }
 
     /**
-     * @dev Is there any reward allocatiion for given token
+     * @dev Is there any reward allocation for given token
      */
     modifier hasShares(IERC20 token) {
         require(shares.staked[address(token)] > 0, "TrueMultiFarm: This token has no shares");
