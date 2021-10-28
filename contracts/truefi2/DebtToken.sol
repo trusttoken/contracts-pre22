@@ -22,6 +22,13 @@ contract DebtToken is IDebtToken, ERC20 {
     bool public override isLiquidated;
 
     /**
+     * @dev Emitted when a DebtToken is repaid by the borrower in underlying tokens
+     * @param repayer Sender of tokens
+     * @param repaidAmount Amount of token repaid
+     */
+    event Repaid(address repayer, uint256 repaidAmount);
+
+    /**
      * @dev Emitted when a DebtToken is redeemed for underlying tokens
      * @param receiver Receiver of tokens
      * @param burnedAmount Amount of DebtTokens burned
@@ -48,6 +55,37 @@ contract DebtToken is IDebtToken, ERC20 {
         liquidator = _liquidator;
         debt = _debt;
         _mint(_holder, _debt);
+    }
+
+    /**
+     * @dev Function for borrower to repay the debt
+     * Borrower can repay at any time
+     * @param _sender account sending token to repay
+     * @param _amount amount of token to repay
+     */
+    function repay(address _sender, uint256 _amount) external {
+        // _repay(_sender, _amount);
+    }
+
+    /**
+     * @dev Function for borrower to repay all of the remaining debt balance
+     * Borrower should use this to ensure full repayment
+     * @param _sender account sending token to repay
+     */
+    function repayInFull(address _sender) external {
+        // _repay(_sender, unpaidDebt());
+    }
+
+    /**
+     * @dev Internal function for debt repayment
+     * @param _sender account sending token to repay
+     * @param _amount amount of token to repay
+     */
+    function _repay(address _sender, uint256 _amount) private {
+        // require(_amount <= unpaidDebt(), "LoanToken2: Repay amount more than unpaid debt");
+
+        // token.safeTransferFrom(_sender, address(this), _amount);
+        // emit Repaid(_sender, _amount);
     }
 
     /**
