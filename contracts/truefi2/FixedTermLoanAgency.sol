@@ -427,7 +427,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
     }
 
     /**
-     * @dev Get borrow limit for `borrower` in `pool` using credit model
+     * @dev Get borrow limit for `borrower` in `pool` using rate model
      * @param pool Pool to get borrow limit for
      * @param borrower Borrower to get borrow limit for
      * @return borrow limit for `borrower` in `pool`

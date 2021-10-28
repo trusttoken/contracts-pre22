@@ -73,19 +73,19 @@ Internal function to update `borrower` credit score for `pool` using credit orac
 
 
 
-Get credit score adjustment from credit model
+Get credit score adjustment from rate model
 
 ### `utilizationAdjustmentRate(contract ITrueFiPool2 pool) → uint256` (public)
 
 
 
-Get utilization adjustment from credit model
+Get utilization adjustment from rate model
 
 ### `borrowLimitAdjustment(uint8 score) → uint256` (public)
 
 
 
-Get borrow limit adjustment from credit model
+Get borrow limit adjustment from rate model
 
 ### `totalTVL(uint8 decimals) → uint256` (public)
 
@@ -105,14 +105,14 @@ Get total amount borrowed for `borrower` from lines of credit in USD
 
 
 
-Get borrow limit for `borrower` in `pool` using credit model
+Get borrow limit for `borrower` in `pool` using rate model
 
 
 ### `currentRate(contract ITrueFiPool2 pool, address borrower) → uint256` (external)
 
 
 
-Get current rate for `borrower` in `pool` from credit model
+Get current rate for `borrower` in `pool` from rate model
 
 
 ### `interest(contract ITrueFiPool2 pool, address borrower) → uint256` (public)
@@ -265,7 +265,7 @@ emit `pool` and `oracle` when base rate oracle changed
 
 
 
-emit `newRateModel` when credit model changed
+emit `newRateModel` when rate model changed
 
 ### `BorrowerAllowed(address who, bool isAllowed)`
 

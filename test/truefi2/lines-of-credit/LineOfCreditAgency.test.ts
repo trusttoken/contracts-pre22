@@ -152,7 +152,7 @@ describe('LineOfCreditAgency', () => {
   })
 
   describe('setRateModel', () => {
-    it('only owner can set credit model', async () => {
+    it('only owner can set rate model', async () => {
       await expect(creditAgency.connect(borrower).setRateModel(rateModel.address))
         .to.be.revertedWith('Ownable: caller is not the owner')
     })
@@ -162,7 +162,7 @@ describe('LineOfCreditAgency', () => {
         .to.be.revertedWith('LineOfCreditAgency: RateModel cannot be set to zero address')
     })
 
-    it('credit model is properly set', async () => {
+    it('rate model is properly set', async () => {
       await creditAgency.setRateModel(rateModel.address)
       expect(await creditAgency.rateModel()).to.equal(rateModel.address)
     })
@@ -1274,7 +1274,7 @@ describe('LineOfCreditAgency', () => {
     })
   })
 
-  describe('credit model integration', () => {
+  describe('rate model integration', () => {
     beforeEach(async () => {
       await setupBorrower(owner, 255, 0)
       await creditAgency.connect(owner).repayInFull(tusdPool.address)

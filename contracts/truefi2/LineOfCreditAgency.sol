@@ -106,7 +106,7 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
     /// @dev period over which regular interest payments must be made
     uint256 public interestRepaymentPeriod;
 
-    /// @dev credit model
+    /// @dev rate model
     IRateModel public rateModel;
 
     /// @dev credit oracle
@@ -138,7 +138,7 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
 
     // ======= STORAGE DECLARATION END ============
 
-    /// @dev emit `newRateModel` when credit model changed
+    /// @dev emit `newRateModel` when rate model changed
     event RateModelChanged(IRateModel newRateModel);
 
     /// @dev emit `newPoolFactory` when pool factory changed
@@ -265,22 +265,22 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
         return (oldEffectiveScore, newEffectiveScore);
     }
 
-    /// @dev Get credit score adjustment from credit model
+    /// @dev Get credit score adjustment from rate model
     function creditScoreAdjustmentRate(ITrueFiPool2 pool, address borrower) public view returns (uint256) {
         return rateModel.creditScoreAdjustmentRate(creditScore[pool][borrower]);
     }
 
-    /// @dev Get utilization adjustment from credit model
+    /// @dev Get utilization adjustment from rate model
     function utilizationAdjustmentRate(ITrueFiPool2 pool) public view returns (uint256) {
         return rateModel.utilizationAdjustmentRate(pool, 0);
     }
 
-    /// @dev Get pool basic rate from credit model
+    /// @dev Get pool basic rate from rate model
     function poolBasicRate(ITrueFiPool2 pool) public view returns (uint256) {
         return rateModel.poolBasicRate(pool, 0);
     }
 
-    /// @dev Get borrow limit adjustment from credit model
+    /// @dev Get borrow limit adjustment from rate model
     function borrowLimitAdjustment(uint8 score) public view returns (uint256) {
         return rateModel.borrowLimitAdjustment(score);
     }
@@ -301,7 +301,7 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
     }
 
     /**
-     * @dev Get borrow limit for `borrower` in `pool` using credit model
+     * @dev Get borrow limit for `borrower` in `pool` using rate model
      * @param pool Pool to get borrow limit for
      * @param borrower Borrower to get borrow limit for
      * @return borrow limit for `borrower` in `pool`
@@ -349,7 +349,7 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
     }
 
     /**
-     * @dev Get current rate for `borrower` in `pool` from credit model
+     * @dev Get current rate for `borrower` in `pool` from rate model
      * @return current rate for `borrower` in `pool`
      */
     function currentRate(ITrueFiPool2 pool, address borrower) external view returns (uint256) {
