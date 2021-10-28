@@ -64,7 +64,7 @@ contract DebtToken is IDebtToken, ERC20 {
      * @param _amount amount of token to repay
      */
     function repay(address _sender, uint256 _amount) external {
-        // _repay(_sender, _amount);
+        _repay(_sender, _amount);
     }
 
     /**
@@ -73,7 +73,7 @@ contract DebtToken is IDebtToken, ERC20 {
      * @param _sender account sending token to repay
      */
     function repayInFull(address _sender) external {
-        // _repay(_sender, unpaidDebt());
+        _repay(_sender, debt.sub(repaid()));
     }
 
     /**
@@ -82,10 +82,10 @@ contract DebtToken is IDebtToken, ERC20 {
      * @param _amount amount of token to repay
      */
     function _repay(address _sender, uint256 _amount) private {
-        // require(_amount <= unpaidDebt(), "LoanToken2: Repay amount more than unpaid debt");
+        require(_amount <= debt.sub(repaid()), "DebtToken: Repay amount more than unpaid debt");
 
-        // token.safeTransferFrom(_sender, address(this), _amount);
-        // emit Repaid(_sender, _amount);
+        token().safeTransferFrom(_sender, address(this), _amount);
+        emit Repaid(_sender, _amount);
     }
 
     /**

@@ -86,7 +86,7 @@ describe('DebtToken', () => {
     })
   })
 
-  describe.only('Repay', () => {
+  describe('Repay', () => {
     beforeEach(async () => {
       await token.mint(borrower.address, parseEth(1000))
     })
@@ -119,7 +119,7 @@ describe('DebtToken', () => {
     })
   })
 
-  describe.only('Repay in full', () => {
+  describe('Repay in full', () => {
     beforeEach(async () => {
       await token.mint(borrower.address, parseEth(1000))
     })
