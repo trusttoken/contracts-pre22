@@ -9,7 +9,7 @@ CONTRACTS=(
   'TrueRatingAgencyV2'
   'TrustToken'
   'Timelock'
-  'CreditModel'
+  'RateModel'
   'TrueMultiFarm'
   'TrueFiPool2'
   'TrueFiCreditOracle'

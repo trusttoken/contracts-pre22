@@ -1,7 +1,7 @@
 import { expect, use } from 'chai'
 import {
   BorrowingMutex__factory,
-  CreditModel,
+  RateModel,
   DebtToken,
   FixedTermLoanAgency,
   Liquidator2,
@@ -68,7 +68,7 @@ describe('Liquidator2', () => {
   let debtToken2: DebtToken
   let creditOracle: TrueFiCreditOracle
   let tusdOracle: MockTrueFiPoolOracle
-  let creditModel: CreditModel
+  let rateModel: RateModel
   let stakingVault: StakingVault
   let borrowingMutex: BorrowingMutex
 
@@ -101,7 +101,7 @@ describe('Liquidator2', () => {
       standardPool: tusdPool,
       creditOracle,
       standardTokenOracle: tusdOracle,
-      creditModel,
+      rateModel,
       stakingVault,
       borrowingMutex,
     } = await setupTruefi2(owner, _provider, { lender, loanFactory }))
@@ -131,7 +131,7 @@ describe('Liquidator2', () => {
     await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
     await ftlAgency.allowBorrower(borrower.address)
 
-    await creditModel.setRiskPremium(400)
+    await rateModel.setRiskPremium(400)
   })
 
   describe('Initializer', () => {

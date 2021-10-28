@@ -7,7 +7,7 @@ https://github.com/trusttoken/truefi-spec/blob/master/TrueFi2.0.md#lines-of-cred
 - Tracks interest rates and cumulative interest owed
 - Data is grouped by score in "buckets" for scalability
 - poke() functions used to update state for buckets
-- Uses CreditModel to calculate rates & limits
+- Uses RateModel to calculate rates & limits
 - Responsible for approving borrowing from TrueFi pools using Lines of Credit
 
 ### `onlyAllowedBorrowers()`
@@ -17,17 +17,17 @@ https://github.com/trusttoken/truefi-spec/blob/master/TrueFi2.0.md#lines-of-cred
 modifier for only whitelisted borrowers
 
 
-### `initialize(contract ITrueFiCreditOracle _creditOracle, contract ICreditModel _creditModel)` (public)
+### `initialize(contract ITrueFiCreditOracle _creditOracle, contract IRateModel _rateModel)` (public)
 
 
 
 initialize
 
-### `setCreditModel(contract ICreditModel newcreditModel)` (external)
+### `setRateModel(contract IRateModel newRateModel)` (external)
 
 
 
-Set creditModel to `newCreditModel` and update state
+Set rateModel to `newRateModel` and update state
 
 ### `setInterestRepaymentPeriod(uint256 newPeriod)` (external)
 
@@ -261,11 +261,11 @@ Called after "payWithoutTransfer" functions to satisfy check-effects interaction
 
 emit `pool` and `oracle` when base rate oracle changed
 
-### `CreditModelChanged(contract ICreditModel newCreditModel)`
+### `RateModelChanged(contract IRateModel newRateModel)`
 
 
 
-emit `newCreditModel` when credit model changed
+emit `newRateModel` when credit model changed
 
 ### `BorrowerAllowed(address who, bool isAllowed)`
 
