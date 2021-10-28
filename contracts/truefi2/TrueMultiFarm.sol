@@ -50,7 +50,7 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
     // REMOVAL OR REORDER OF VARIABLES WILL RESULT
     // ========= IN STORAGE CORRUPTION ===========
 
-    IERC20 public rewardToken;
+    IERC20 public tru;
     ITrueDistributor public override trueDistributor;
 
     mapping(IERC20 => Stakes) public stakes;
@@ -120,7 +120,7 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
     function initialize(ITrueDistributor _trueDistributor, IStkTruToken _stkTru) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
         trueDistributor = _trueDistributor;
-        rewardToken = _trueDistributor.trustToken();
+        tru = _trueDistributor.trustToken();
         stkTru = _stkTru;
         require(trueDistributor.farm() == address(this), "TrueMultiFarm: Distributor farm is not set");
     }
@@ -238,7 +238,7 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
         stakerRewards[token].claimableReward[msg.sender] = 0;
         farmRewards.claimableReward[address(token)] = farmRewards.claimableReward[address(token)].sub(rewardToClaim);
 
-        rewardToken.safeApprove(address(stkTru), rewardToClaim);
+        tru.safeApprove(address(stkTru), rewardToClaim);
         stkTru.stake(rewardToClaim);
         stkTru.safeTransfer(msg.sender, rewardToClaim);
         emit Claim(token, msg.sender, rewardToClaim);
@@ -276,9 +276,7 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
         uint256 pending = trueDistributor.farm() == address(this) ? trueDistributor.nextDistribution() : 0;
 
         // calculate new total rewards ever received by farm
-        uint256 newTotalRewards = rewardToken.balanceOf(address(this)).add(pending).add(farmRewards.totalClaimedRewards).mul(
-            PRECISION
-        );
+        uint256 newTotalRewards = tru.balanceOf(address(this)).add(pending).add(farmRewards.totalClaimedRewards).mul(PRECISION);
         // calculate new rewards that were received since previous distribution
         uint256 totalBlockReward = newTotalRewards.sub(farmRewards.totalRewards);
 
@@ -315,7 +313,7 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
      */
     function _updateCumulativeRewardPerShare() internal {
         // calculate new total rewards ever received by farm
-        uint256 newTotalRewards = rewardToken.balanceOf(address(this)).add(farmRewards.totalClaimedRewards).mul(PRECISION);
+        uint256 newTotalRewards = tru.balanceOf(address(this)).add(farmRewards.totalClaimedRewards).mul(PRECISION);
         // calculate new rewards that were received since previous distribution
         uint256 rewardSinceLastUpdate = newTotalRewards.sub(farmRewards.totalRewards);
         // update info about total farm rewards
