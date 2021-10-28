@@ -17,6 +17,7 @@ import {
   PoolFactory__factory,
   TestLoanFactory,
   TestLoanFactory__factory,
+  TrueFiCreditOracle,
   TrueFiCreditOracle__factory,
   TrueFiPool2__factory,
 } from 'contracts'
@@ -43,6 +44,7 @@ describe('LoanToken2', () => {
   let poolAddress: string
   let provider: MockProvider
   let borrowingMutex: BorrowingMutex
+  let creditOracle: TrueFiCreditOracle
   let loanFactory: TestLoanFactory
   let creationTimestamp: BigNumberish
 
@@ -58,7 +60,7 @@ describe('LoanToken2', () => {
     loanFactory = await deployContract(lender, TestLoanFactory__factory)
     const poolImplementation = await deployContract(lender, TrueFiPool2__factory)
     const implementationReference = await deployContract(lender, ImplementationReference__factory, [poolImplementation.address])
-    const creditOracle = await deployContract(lender, TrueFiCreditOracle__factory)
+    creditOracle = await deployContract(lender, TrueFiCreditOracle__factory)
     const ftlAgency = await deployContract(lender, FixedTermLoanAgency__factory)
     await ftlAgency.initialize(AddressZero, AddressZero, AddressZero, AddressZero, AddressZero, AddressZero, loanFactory.address, AddressZero)
     await poolFactory.initialize(implementationReference.address, AddressZero, ftlAgency.address, AddressZero, loanFactory.address)
@@ -109,7 +111,9 @@ describe('LoanToken2', () => {
       expect(await loanToken.tokenRedeemed()).to.equal(0)
       expect(await loanToken.start()).to.be.equal(creationTimestamp)
       expect(await loanToken.term()).to.equal(yearInSeconds)
-      expect(await loanToken.token()).to.equal(token.address)
+      expect(await loanToken.borrowingMutex()).to.equal(borrowingMutex.address)
+      expect(await loanToken.creditOracle()).to.equal(creditOracle.address)
+      expect(await loanToken.loanFactory()).to.equal(loanFactory.address)
       expect(await loanToken.debtToken()).to.equal(AddressZero)
     })
 
