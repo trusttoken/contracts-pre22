@@ -42,6 +42,7 @@ jobs:
       - setup_remote_docker
       - pull_submodules
       - install_dependencies
+      - setup_local_variables
       - persist_to_workspace:
           root: .
           paths:
