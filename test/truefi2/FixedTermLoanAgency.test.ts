@@ -28,7 +28,7 @@ import {
   TrueFiCreditOracle__factory,
   TrueFiPool2,
   TrueFiPool2__factory,
-  CreditModel,
+  RateModel,
   MockTrueCurrency,
   StakingVault,
   BorrowingMutex__factory,
@@ -67,7 +67,7 @@ describe('FixedTermLoanAgency', () => {
   let usdc: MockUsdc
   let oneInch: Mock1InchV3
   let borrowingMutex: BorrowingMutex
-  let creditModel: CreditModel
+  let rateModel: RateModel
   let baseRateOracle: TimeAveragedBaseRateOracle
   let stakingVault: StakingVault
 
@@ -95,7 +95,7 @@ describe('FixedTermLoanAgency', () => {
       ftlAgency,
       creditOracle,
       borrowingMutex,
-      creditModel,
+      rateModel,
       standardBaseRateOracle: baseRateOracle,
       stakingVault,
     } = await setupTruefi2(owner, _provider, { oneInch: oneInch }))
@@ -120,8 +120,8 @@ describe('FixedTermLoanAgency', () => {
 
     await pool1.setOracle(poolOracle.address)
     await pool2.setOracle(poolOracle.address)
-    await creditModel.setBaseRateOracle(pool1.address, baseRateOracle.address)
-    await creditModel.setBaseRateOracle(pool2.address, baseRateOracle.address)
+    await rateModel.setBaseRateOracle(pool1.address, baseRateOracle.address)
+    await rateModel.setBaseRateOracle(pool2.address, baseRateOracle.address)
 
     await ftlAgency.setFeePool(feePool.address)
     await ftlAgency.allowBorrower(borrower.address)
@@ -560,8 +560,8 @@ describe('FixedTermLoanAgency', () => {
 
   describe('rate', () => {
     it('returns correct rate', async () => {
-      const baseRate = await creditModel.rate(pool1.address, 255, parseEth(1e5))
-      const ftlAdjustment = await creditModel.fixedTermLoanAdjustment(YEAR)
+      const baseRate = await rateModel.rate(pool1.address, 255, parseEth(1e5))
+      const ftlAdjustment = await rateModel.fixedTermLoanAdjustment(YEAR)
       expect(await ftlAgency.rate(pool1.address, borrower.address, parseEth(1e5), YEAR))
         .to.eq(baseRate.add(ftlAdjustment))
     })

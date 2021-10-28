@@ -24,8 +24,8 @@ import {
   TimeAveragedBaseRateOracle__factory,
   TrueFiPool2,
   TrueFiPool2__factory,
-  CreditModel,
-  CreditModel__factory, TimeAveragedTruPriceOracle__factory,
+  RateModel,
+  RateModel__factory, TimeAveragedTruPriceOracle__factory,
 } from 'contracts'
 
 import { deployMockContract, MockContract, MockProvider, solidity } from 'ethereum-waffle'
@@ -38,11 +38,11 @@ import {
 
 use(solidity)
 
-describe('CreditModel', () => {
+describe('RateModel', () => {
   let provider: MockProvider
   let owner: Wallet
   let borrower: Wallet
-  let creditModel: CreditModel
+  let rateModel: RateModel
   let mockPool: MockContract
   let asset: MockErc20Token
   let mockSpotOracle: MockContract
@@ -55,7 +55,7 @@ describe('CreditModel', () => {
 
     const deployContract = setupDeploy(owner)
 
-    creditModel = await deployContract(CreditModel__factory)
+    rateModel = await deployContract(RateModel__factory)
     mockPool = await deployMockContract(owner, ITrueFiPool2WithDecimalsJson.abi)
 
     asset = await deployContract(MockErc20Token__factory)
@@ -73,87 +73,87 @@ describe('CreditModel', () => {
     await oracle.initialize(mockSpotOracle.address, asset.address, DAY)
 
     mockFactory = await deployContract(MockPoolFactory__factory)
-    await creditModel.initialize(mockFactory.address, weeklyPriceOracle.address)
+    await rateModel.initialize(mockFactory.address, weeklyPriceOracle.address)
   })
 
   describe('initializer', () => {
     it('transfers ownership', async () => {
-      expect(await creditModel.owner()).to.eq(owner.address)
+      expect(await rateModel.owner()).to.eq(owner.address)
     })
 
     it('sets riskPremium', async () => {
-      expect(await creditModel.riskPremium()).to.eq(200)
+      expect(await rateModel.riskPremium()).to.eq(200)
     })
 
     it('sets credit score rate config', async () => {
-      expect(await creditModel.creditScoreRateConfig()).to.deep.eq([1000, 1])
+      expect(await rateModel.creditScoreRateConfig()).to.deep.eq([1000, 1])
     })
 
     it('sets utilization rate config', async () => {
-      expect(await creditModel.utilizationRateConfig()).to.deep.eq([50, 2])
+      expect(await rateModel.utilizationRateConfig()).to.deep.eq([50, 2])
     })
 
     it('sets borrow limit config', async () => {
-      expect(await creditModel.borrowLimitConfig()).to.deep.eq([40, 7500, 1500, 1500])
+      expect(await rateModel.borrowLimitConfig()).to.deep.eq([40, 7500, 1500, 1500])
     })
 
     it('sets staking config', async () => {
-      expect(await creditModel.stakingConfig()).to.deep.eq([4000, 1])
+      expect(await rateModel.stakingConfig()).to.deep.eq([4000, 1])
     })
   })
 
   describe('setRiskPremium', () => {
     it('reverts if caller is not the owner', async () => {
-      await expect(creditModel.connect(borrower).setRiskPremium(0))
+      await expect(rateModel.connect(borrower).setRiskPremium(0))
         .to.be.revertedWith('Ownable: caller is not the owner')
     })
 
     it('sets riskPremium', async () => {
-      await creditModel.setRiskPremium(300)
-      expect(await creditModel.riskPremium()).to.eq(300)
+      await rateModel.setRiskPremium(300)
+      expect(await rateModel.riskPremium()).to.eq(300)
     })
 
     it('emits event', async () => {
-      await expect(creditModel.setRiskPremium(300))
-        .to.emit(creditModel, 'RiskPremiumChanged')
+      await expect(rateModel.setRiskPremium(300))
+        .to.emit(rateModel, 'RiskPremiumChanged')
         .withArgs(300)
     })
   })
 
   describe('setCreditScoreRateConfig', () => {
     it('reverts if caller is not the owner', async () => {
-      await expect(creditModel.connect(borrower).setCreditScoreRateConfig(0, 0))
+      await expect(rateModel.connect(borrower).setCreditScoreRateConfig(0, 0))
         .to.be.revertedWith('Ownable: caller is not the owner')
     })
 
     it('sets credit score rate config', async () => {
-      await creditModel.setCreditScoreRateConfig(1, 2)
-      const [creditScoreRateCoefficient, creditScoreRatePower] = await creditModel.creditScoreRateConfig()
+      await rateModel.setCreditScoreRateConfig(1, 2)
+      const [creditScoreRateCoefficient, creditScoreRatePower] = await rateModel.creditScoreRateConfig()
       expect([creditScoreRateCoefficient, creditScoreRatePower]).to.deep.eq([1, 2])
     })
 
     it('emits event', async () => {
-      await expect(creditModel.setCreditScoreRateConfig(1, 2))
-        .to.emit(creditModel, 'CreditScoreRateConfigChanged')
+      await expect(rateModel.setCreditScoreRateConfig(1, 2))
+        .to.emit(rateModel, 'CreditScoreRateConfigChanged')
         .withArgs(1, 2)
     })
   })
 
   describe('setUtilizationRateConfig', () => {
     it('reverts if caller is not the owner', async () => {
-      await expect(creditModel.connect(borrower).setUtilizationRateConfig(0, 0))
+      await expect(rateModel.connect(borrower).setUtilizationRateConfig(0, 0))
         .to.be.revertedWith('Ownable: caller is not the owner')
     })
 
     it('sets utilization rate config', async () => {
-      await creditModel.setUtilizationRateConfig(1, 2)
-      const [utilizationRateCoefficient, utilizationRatePower] = await creditModel.utilizationRateConfig()
+      await rateModel.setUtilizationRateConfig(1, 2)
+      const [utilizationRateCoefficient, utilizationRatePower] = await rateModel.utilizationRateConfig()
       expect([utilizationRateCoefficient, utilizationRatePower]).to.deep.eq([1, 2])
     })
 
     it('emits event', async () => {
-      await expect(creditModel.setUtilizationRateConfig(1, 2))
-        .to.emit(creditModel, 'UtilizationRateConfigChanged')
+      await expect(rateModel.setUtilizationRateConfig(1, 2))
+        .to.emit(rateModel, 'UtilizationRateConfigChanged')
         .withArgs(1, 2)
     })
   })
@@ -168,18 +168,18 @@ describe('CreditModel', () => {
     })
 
     it('reverts if caller is not the owner', async () => {
-      await expect(creditModel.connect(borrower).setBaseRateOracle(fakePool.address, fakeOracle.address))
+      await expect(rateModel.connect(borrower).setBaseRateOracle(fakePool.address, fakeOracle.address))
         .to.be.revertedWith('Ownable: caller is not the owner')
     })
 
     it('sets base rate oracle', async () => {
-      await creditModel.setBaseRateOracle(fakePool.address, fakeOracle.address)
-      expect(await creditModel.baseRateOracle(fakePool.address)).to.eq(fakeOracle.address)
+      await rateModel.setBaseRateOracle(fakePool.address, fakeOracle.address)
+      expect(await rateModel.baseRateOracle(fakePool.address)).to.eq(fakeOracle.address)
     })
 
     it('emits event', async () => {
-      await expect(creditModel.setBaseRateOracle(fakePool.address, fakeOracle.address))
-        .to.emit(creditModel, 'BaseRateOracleChanged')
+      await expect(rateModel.setBaseRateOracle(fakePool.address, fakeOracle.address))
+        .to.emit(rateModel, 'BaseRateOracleChanged')
         .withArgs(fakePool.address, fakeOracle.address)
     })
   })
@@ -192,72 +192,72 @@ describe('CreditModel', () => {
     })
 
     it('reverts if caller is not the owner', async () => {
-      await expect(creditModel.connect(borrower).setTruPriceOracle(fakeOracleAddress))
+      await expect(rateModel.connect(borrower).setTruPriceOracle(fakeOracleAddress))
         .to.be.revertedWith('Ownable: caller is not the owner')
     })
 
     it('sets oracle', async () => {
-      await creditModel.setTruPriceOracle(fakeOracleAddress)
-      expect(await creditModel.truPriceOracle()).to.eq(fakeOracleAddress)
+      await rateModel.setTruPriceOracle(fakeOracleAddress)
+      expect(await rateModel.truPriceOracle()).to.eq(fakeOracleAddress)
     })
 
     it('emits event', async () => {
-      await expect(creditModel.setTruPriceOracle(fakeOracleAddress))
-        .to.emit(creditModel, 'TruPriceOracleChanged')
+      await expect(rateModel.setTruPriceOracle(fakeOracleAddress))
+        .to.emit(rateModel, 'TruPriceOracleChanged')
         .withArgs(fakeOracleAddress)
     })
   })
 
   describe('setFixedTermLoanAdjustmentCoefficient', () => {
     it('reverts if caller is not the owner', async () => {
-      await expect(creditModel.connect(borrower).setFixedTermLoanAdjustmentCoefficient(0))
+      await expect(rateModel.connect(borrower).setFixedTermLoanAdjustmentCoefficient(0))
         .to.be.revertedWith('Ownable: caller is not the owner')
     })
 
     it('sets fixed-term loan adjustment coefficient', async () => {
-      await creditModel.setFixedTermLoanAdjustmentCoefficient(50)
-      expect(await creditModel.fixedTermLoanAdjustmentCoefficient()).to.eq(50)
+      await rateModel.setFixedTermLoanAdjustmentCoefficient(50)
+      expect(await rateModel.fixedTermLoanAdjustmentCoefficient()).to.eq(50)
     })
 
     it('emits event', async () => {
-      await expect(creditModel.setFixedTermLoanAdjustmentCoefficient(50))
-        .to.emit(creditModel, 'FixedTermLoanAdjustmentCoefficientChanged')
+      await expect(rateModel.setFixedTermLoanAdjustmentCoefficient(50))
+        .to.emit(rateModel, 'FixedTermLoanAdjustmentCoefficientChanged')
         .withArgs(50)
     })
   })
 
   describe('setBorrowLimitConfig', () => {
     it('reverts if caller is not the owner', async () => {
-      await expect(creditModel.connect(borrower).setBorrowLimitConfig(0, 0, 0, 0))
+      await expect(rateModel.connect(borrower).setBorrowLimitConfig(0, 0, 0, 0))
         .to.be.revertedWith('Ownable: caller is not the owner')
     })
 
     it('sets borrow limit config', async () => {
-      await creditModel.setBorrowLimitConfig(1, 2, 3, 4)
-      expect(await creditModel.borrowLimitConfig()).to.deep.eq([1, 2, 3, 4])
+      await rateModel.setBorrowLimitConfig(1, 2, 3, 4)
+      expect(await rateModel.borrowLimitConfig()).to.deep.eq([1, 2, 3, 4])
     })
 
     it('emits event', async () => {
-      await expect(creditModel.setBorrowLimitConfig(1, 2, 3, 4))
-        .to.emit(creditModel, 'BorrowLimitConfigChanged')
+      await expect(rateModel.setBorrowLimitConfig(1, 2, 3, 4))
+        .to.emit(rateModel, 'BorrowLimitConfigChanged')
         .withArgs(1, 2, 3, 4)
     })
   })
 
   describe('setStakingConfig', () => {
     it('reverts if caller is not the owner', async () => {
-      await expect(creditModel.connect(borrower).setStakingConfig(0, 0))
+      await expect(rateModel.connect(borrower).setStakingConfig(0, 0))
         .to.be.revertedWith('Ownable: caller is not the owner')
     })
 
     it('sets staking config', async () => {
-      await creditModel.setStakingConfig(1, 2)
-      expect(await creditModel.stakingConfig()).to.deep.eq([1, 2])
+      await rateModel.setStakingConfig(1, 2)
+      expect(await rateModel.stakingConfig()).to.deep.eq([1, 2])
     })
 
     it('emits event', async () => {
-      await expect(creditModel.setStakingConfig(1, 2))
-        .to.emit(creditModel, 'StakingConfigChanged')
+      await expect(rateModel.setStakingConfig(1, 2))
+        .to.emit(rateModel, 'StakingConfigChanged')
         .withArgs(1, 2)
     })
   })
@@ -268,29 +268,29 @@ describe('CreditModel', () => {
     beforeEach(async () => {
       mockOracle = await deployMockContract(owner, ITimeAveragedBaseRateOracleJson.abi)
       await mockOracle.mock.getWeeklyAPY.returns(300)
-      await creditModel.setBaseRateOracle(mockPool.address, mockOracle.address)
+      await rateModel.setBaseRateOracle(mockPool.address, mockOracle.address)
     })
 
     it('calculates pro forma rate correctly', async () => {
-      await creditModel.setRiskPremium(100)
+      await rateModel.setRiskPremium(100)
       const borrowerScore = 223
       // pool value: 100_000
       // initial utilization: 35%
       // pro forma utilization: 50%
       await mockPool.mock.liquidRatio.withArgs(15_000).returns(10000 - 50 * 100)
       const expectedProFormaRate = 693 // 300 + 100 + 143 + 150
-      expect(await creditModel.rate(mockPool.address, borrowerScore, 15_000)).to.eq(expectedProFormaRate)
+      expect(await rateModel.rate(mockPool.address, borrowerScore, 15_000)).to.eq(expectedProFormaRate)
     })
 
     it('caps pro forma rate if it exceeds max rate', async () => {
-      await creditModel.setRiskPremium(22600)
+      await rateModel.setRiskPremium(22600)
       const borrowerScore = 31
       // pool value: 100_000
       // initial utilization: 80%
       // pro forma utilization: 95%
       await mockPool.mock.liquidRatio.withArgs(15_000).returns(10000 - 95 * 100)
       const expectedProFormaRate = 50000 // min(300 + 22600 + 7225 + 19950 = 50075, 50000)
-      expect(await creditModel.rate(mockPool.address, borrowerScore, 15_000)).to.eq(expectedProFormaRate)
+      expect(await rateModel.rate(mockPool.address, borrowerScore, 15_000)).to.eq(expectedProFormaRate)
     })
   })
 
@@ -300,29 +300,29 @@ describe('CreditModel', () => {
     beforeEach(async () => {
       mockOracle = await deployMockContract(owner, ITimeAveragedBaseRateOracleJson.abi)
       await mockOracle.mock.getWeeklyAPY.returns(300)
-      await creditModel.setBaseRateOracle(mockPool.address, mockOracle.address)
+      await rateModel.setBaseRateOracle(mockPool.address, mockOracle.address)
     })
 
     it('calculates rate correctly', async () => {
-      await creditModel.setRiskPremium(100)
+      await rateModel.setRiskPremium(100)
       // pro forma utilization: 50%
       await mockPool.mock.liquidRatio.withArgs(15_000).returns(10000 - 50 * 100)
       const expectedPoolBasicRate = 550 // 300 + 100 + 150
-      expect(await creditModel.poolBasicRate(mockPool.address, 15_000)).to.eq(expectedPoolBasicRate)
+      expect(await rateModel.poolBasicRate(mockPool.address, 15_000)).to.eq(expectedPoolBasicRate)
     })
 
     it('caps pool basic rate if it exceeds max rate', async () => {
-      await creditModel.setRiskPremium(29825)
+      await rateModel.setRiskPremium(29825)
       // pro forma utilization: 95%
       await mockPool.mock.liquidRatio.withArgs(15_000).returns(10000 - 95 * 100)
       const expectedPoolBasicRate = 50000 // min(300 + 29825 + 19950 = 50075, 50000)
-      expect(await creditModel.poolBasicRate(mockPool.address, 15_000)).to.eq(expectedPoolBasicRate)
+      expect(await rateModel.poolBasicRate(mockPool.address, 15_000)).to.eq(expectedPoolBasicRate)
     })
   })
 
   describe('fixedTermLoanAdjustment', () => {
     beforeEach(async () => {
-      await creditModel.setFixedTermLoanAdjustmentCoefficient(25)
+      await rateModel.setFixedTermLoanAdjustmentCoefficient(25)
     })
 
     ;[
@@ -335,7 +335,7 @@ describe('CreditModel', () => {
       [180 * DAY, 150],
     ].map(([term, adjustment]) =>
       it(`returns adjustment of ${adjustment} basis points for term of ${term / DAY} days`, async () => {
-        expect(await creditModel.fixedTermLoanAdjustment(term)).to.eq(adjustment)
+        expect(await rateModel.fixedTermLoanAdjustment(term)).to.eq(adjustment)
       }),
     )
   })
@@ -358,7 +358,7 @@ describe('CreditModel', () => {
     ].map(([utilization, adjustment]) =>
       it(`returns ${adjustment} if pro forma utilization is at ${utilization} percent`, async () => {
         await mockPool.mock.liquidRatio.withArgs(utilization).returns(10000 - utilization * 100)
-        expect(await creditModel.utilizationAdjustmentRate(mockPool.address, utilization)).to.eq(adjustment)
+        expect(await rateModel.utilizationAdjustmentRate(mockPool.address, utilization)).to.eq(adjustment)
       }),
     )
   })
@@ -378,18 +378,18 @@ describe('CreditModel', () => {
       [0, 50000],
     ].map(([score, adjustment]) =>
       it(`returns ${adjustment} when score is ${score}`, async () => {
-        expect(await creditModel.creditScoreAdjustmentRate(score)).to.equal(adjustment)
+        expect(await rateModel.creditScoreAdjustmentRate(score)).to.equal(adjustment)
       }),
     )
   })
 
   describe('combinedRate', () => {
     it('returns sum of two rates', async () => {
-      expect(await creditModel.combinedRate(29999, 20000)).to.eq(49999)
+      expect(await rateModel.combinedRate(29999, 20000)).to.eq(49999)
     })
 
     it('caps rate at 500%', async () => {
-      expect(await creditModel.combinedRate(30000, 20001)).to.eq(50000)
+      expect(await rateModel.combinedRate(30000, 20001)).to.eq(50000)
     })
   })
 
@@ -407,7 +407,7 @@ describe('CreditModel', () => {
       [0, 0],
     ].map(([score, adjustment]) =>
       it(`returns ${adjustment} when score is ${score}`, async () => {
-        expect(await creditModel.borrowLimitAdjustment(score)).to.equal(adjustment)
+        expect(await rateModel.borrowLimitAdjustment(score)).to.equal(adjustment)
       }),
     )
   })
@@ -417,7 +417,7 @@ describe('CreditModel', () => {
       const oracle = await new MockUsdStableCoinOracle__factory(owner).deploy()
       await mockPool.mock.oracle.returns(oracle.address)
       const ltvRatio = 40
-      await creditModel.setStakingConfig(ltvRatio * 100, 1)
+      await rateModel.setStakingConfig(ltvRatio * 100, 1)
     })
 
     describe('conservativeStakedValue', () => {
@@ -431,8 +431,8 @@ describe('CreditModel', () => {
         [1000, 40, 100],
       ].map(([staked, ltvRatio, result]) =>
         it(`when ${staked} TRU is staked with ltvRatio=${ltvRatio}%, borrow limit rises by up to $${result}`, async () => {
-          await creditModel.setStakingConfig(ltvRatio * 100, 0)
-          expect(await creditModel.conservativeStakedValue(parseTRU(staked))).to.equal(parseEth(result))
+          await rateModel.setStakingConfig(ltvRatio * 100, 0)
+          expect(await rateModel.conservativeStakedValue(parseTRU(staked))).to.equal(parseEth(result))
         }))
     })
 
@@ -449,12 +449,12 @@ describe('CreditModel', () => {
         [0, 0],
       ].map(([borrowed, result]) =>
         it(`when borrowed amount is ${borrowed} staked ratio is at ${result}%`, async () => {
-          expect(await creditModel.conservativeStakedRatio(mockPool.address, parseTRU(staked), parseEth(borrowed)))
+          expect(await rateModel.conservativeStakedRatio(mockPool.address, parseTRU(staked), parseEth(borrowed)))
             .to.equal(result * 100)
         }))
 
       it('returns 0 if there is no staked', async () => {
-        expect(await creditModel.conservativeStakedRatio(mockPool.address, 0, 100)).to.equal(0)
+        expect(await rateModel.conservativeStakedRatio(mockPool.address, 0, 100)).to.equal(0)
       })
     })
 
@@ -474,7 +474,7 @@ describe('CreditModel', () => {
           [31, 120],
         ].map(([score, effectiveScore]) =>
           it(`staking ${staked} TRU increases score from ${score} to ${effectiveScore}`, async () => {
-            expect(await creditModel.effectiveScore(score, mockPool.address, parseTRU(staked), parseEth(borrowedAmount))).to.eq(effectiveScore)
+            expect(await rateModel.effectiveScore(score, mockPool.address, parseTRU(staked), parseEth(borrowedAmount))).to.eq(effectiveScore)
           }))
       })
 
@@ -482,7 +482,7 @@ describe('CreditModel', () => {
         beforeEach(async () => {
           const ltvRatio = 40
           const effectiveScorePower = 2
-          await creditModel.setStakingConfig(ltvRatio * 100, effectiveScorePower)
+          await rateModel.setStakingConfig(ltvRatio * 100, effectiveScorePower)
         })
 
         ;[
@@ -496,15 +496,15 @@ describe('CreditModel', () => {
           [31, 66],
         ].map(([score, effectiveScore]) =>
           it(`staking ${staked} TRU increases score from ${score} to ${effectiveScore}`, async () => {
-            expect(await creditModel.effectiveScore(score, mockPool.address, parseTRU(staked), parseEth(borrowedAmount))).to.eq(effectiveScore)
+            expect(await rateModel.effectiveScore(score, mockPool.address, parseTRU(staked), parseEth(borrowedAmount))).to.eq(effectiveScore)
           }))
       })
 
       it('doesn\'t depend on pool decimal count', async () => {
         await mockPool.mock.decimals.returns(6)
-        expect(await creditModel.effectiveScore(191, mockPool.address, parseTRU(staked), parseEth(250))).to.eq(216)
+        expect(await rateModel.effectiveScore(191, mockPool.address, parseTRU(staked), parseEth(250))).to.eq(216)
         await mockPool.mock.decimals.returns(18)
-        expect(await creditModel.effectiveScore(191, mockPool.address, parseTRU(staked), parseEth(250))).to.eq(216)
+        expect(await rateModel.effectiveScore(191, mockPool.address, parseTRU(staked), parseEth(250))).to.eq(216)
       })
 
       describe('amount of staked affects score', async () => {
@@ -520,7 +520,7 @@ describe('CreditModel', () => {
           [10 ** 10, 64],
         ].map(([staked, expectedScoreChange]) =>
           it(`when borrowed $${borrowed} staking ${staked} TRU increases score by ${expectedScoreChange}`, async () => {
-            const effectiveScore = await creditModel.effectiveScore(191, mockPool.address, parseTRU(staked), parseEth(borrowed))
+            const effectiveScore = await rateModel.effectiveScore(191, mockPool.address, parseTRU(staked), parseEth(borrowed))
             const scoreChange = effectiveScore - 191
             expect(scoreChange).to.eq(expectedScoreChange)
           }),
@@ -549,56 +549,56 @@ describe('CreditModel', () => {
 
     describe('works for pool with 18 decimal places', () => {
       it('borrow limit is 0 if credit score is below minimum required score', async () => {
-        expect(await creditModel.borrowLimit(mockPool.address, 30, parseEth(100), 0, 0)).to.equal(0)
+        expect(await rateModel.borrowLimit(mockPool.address, 30, parseEth(100), 0, 0)).to.equal(0)
       })
 
       it('borrow amount is limited by borrower limit', async () => {
-        expect(await creditModel.borrowLimit(mockPool.address, 191, parseEth(100), 0, 0)).to.equal(parseEth(80.51)) // borrowLimitAdjustment(191)
+        expect(await rateModel.borrowLimit(mockPool.address, 191, parseEth(100), 0, 0)).to.equal(parseEth(80.51)) // borrowLimitAdjustment(191)
       })
 
       it('borrow limit depends on decimal count of the pool', async () => {
-        expect(await creditModel.borrowLimit(mockPool2.address, 191, parseEth(100), 0, 0)).to.equal(parseEth(80.51))
+        expect(await rateModel.borrowLimit(mockPool2.address, 191, parseEth(100), 0, 0)).to.equal(parseEth(80.51))
       })
 
       it('borrow amount is limited by total TVL', async () => {
         const maxTVLLimit = parseEth(20)
         await mockPool.mock.poolValue.returns(maxTVLLimit.sub(parseEth(1)))
         await mockPool2.mock.poolValue.returns(parseUSDC(1))
-        expect(await creditModel.borrowLimit(mockPool.address, 191, parseEth(100), 0, 0)).to.equal(maxTVLLimit.mul(15).div(100).mul(8051).div(10000))
+        expect(await rateModel.borrowLimit(mockPool.address, 191, parseEth(100), 0, 0)).to.equal(maxTVLLimit.mul(15).div(100).mul(8051).div(10000))
       })
 
       it('borrow amount is limited by a single pool value', async () => {
         await mockPool.mock.poolValue.returns(parseUSDC(100))
         await mockPool.mock.decimals.returns(18)
-        expect(await creditModel.borrowLimit(mockPool.address, 191, parseEth(100), 0, 0)).to.equal(parseUSDC(100).mul(15).div(100))
+        expect(await rateModel.borrowLimit(mockPool.address, 191, parseEth(100), 0, 0)).to.equal(parseUSDC(100).mul(15).div(100))
       })
 
       it('borrow limit can be increased by staking TRU', async () => {
-        expect(await creditModel.borrowLimit(mockPool.address, 191, parseEth(100), parseTRU(100), 0)).to.equal(parseEth(80.51).add(parseEth(10)))
-        expect(await creditModel.borrowLimit(mockPool.address, 191, parseEth(100), parseTRU(1000), 0)).to.equal(parseEth(80.51).add(parseEth(100)))
+        expect(await rateModel.borrowLimit(mockPool.address, 191, parseEth(100), parseTRU(100), 0)).to.equal(parseEth(80.51).add(parseEth(10)))
+        expect(await rateModel.borrowLimit(mockPool.address, 191, parseEth(100), parseTRU(1000), 0)).to.equal(parseEth(80.51).add(parseEth(100)))
       })
 
       it('staked TRU cannot increase limit over TVL limit', async () => {
         const maxTVLLimit = parseEth(20)
         await mockPool.mock.poolValue.returns(maxTVLLimit.sub(parseEth(1)))
         await mockPool2.mock.poolValue.returns(parseUSDC(1))
-        expect(await creditModel.borrowLimit(mockPool.address, 191, parseEth(1), 0, 0)).to.equal(parseEth(0.8051))
-        expect(await creditModel.borrowLimit(mockPool.address, 191, parseEth(1), parseTRU(1000), 0)).to.equal(maxTVLLimit.mul(15).div(100).mul(8051).div(10000))
+        expect(await rateModel.borrowLimit(mockPool.address, 191, parseEth(1), 0, 0)).to.equal(parseEth(0.8051))
+        expect(await rateModel.borrowLimit(mockPool.address, 191, parseEth(1), parseTRU(1000), 0)).to.equal(maxTVLLimit.mul(15).div(100).mul(8051).div(10000))
       })
 
       it('staked TRU cannot increase limit over pool limit', async () => {
         await mockPool.mock.poolValue.returns(parseEth(20))
         await mockPool.mock.decimals.returns(18)
-        expect(await creditModel.borrowLimit(mockPool.address, 191, parseEth(1), 0, 0)).to.equal(parseEth(0.8051))
-        expect(await creditModel.borrowLimit(mockPool.address, 191, parseEth(1), parseTRU(1000), 0)).to.equal(parseEth(20).mul(15).div(100))
+        expect(await rateModel.borrowLimit(mockPool.address, 191, parseEth(1), 0, 0)).to.equal(parseEth(0.8051))
+        expect(await rateModel.borrowLimit(mockPool.address, 191, parseEth(1), parseTRU(1000), 0)).to.equal(parseEth(20).mul(15).div(100))
       })
 
       it('subtracts borrowed amount from credit limit', async () => {
-        expect(await creditModel.borrowLimit(mockPool.address, 191, parseEth(100), 0, 100)).to.equal(parseEth(80.51).sub(100))
+        expect(await rateModel.borrowLimit(mockPool.address, 191, parseEth(100), 0, 100)).to.equal(parseEth(80.51).sub(100))
       })
 
       it('borrow limit is 0 if credit limit is below the borrowed amount', async () => {
-        expect(await creditModel.borrowLimit(mockPool.address, 191, parseEth(100), 0, parseEth(100))).to.equal(0)
+        expect(await rateModel.borrowLimit(mockPool.address, 191, parseEth(100), 0, parseEth(100))).to.equal(0)
       })
     })
 
@@ -612,64 +612,64 @@ describe('CreditModel', () => {
       })
 
       it('borrow limit is 0 if credit score is below minimum required score', async () => {
-        expect(await creditModel.borrowLimit(mockPool.address, 30, parseEth(100), 0, 0)).to.equal(0)
+        expect(await rateModel.borrowLimit(mockPool.address, 30, parseEth(100), 0, 0)).to.equal(0)
       })
 
       it('borrow amount is limited by borrower limit', async () => {
-        expect(await creditModel.borrowLimit(mockPool.address, 191, parseEth(100), 0, 0)).to.equal(parseEth(80.51)) // borrowLimitAdjustment(191)
+        expect(await rateModel.borrowLimit(mockPool.address, 191, parseEth(100), 0, 0)).to.equal(parseEth(80.51)) // borrowLimitAdjustment(191)
       })
 
       it('borrow limit depends on decimal count of the pool', async () => {
-        expect(await creditModel.borrowLimit(mockPool2.address, 191, parseEth(100), 0, 0)).to.equal(parseEth(80.51))
+        expect(await rateModel.borrowLimit(mockPool2.address, 191, parseEth(100), 0, 0)).to.equal(parseEth(80.51))
       })
 
       it('borrow amount is limited by total TVL', async () => {
         const maxTVLLimit = parseEth(20)
         await mockPool.mock.poolValue.returns(maxTVLLimit.div(1e6).div(1e6).sub(parseUSDC(1)))
         await mockPool2.mock.poolValue.returns(parseUSDC(1))
-        expect(await creditModel.borrowLimit(mockPool.address, 191, parseEth(100), 0, 0)).to.equal(maxTVLLimit.mul(15).div(100).mul(8051).div(10000))
+        expect(await rateModel.borrowLimit(mockPool.address, 191, parseEth(100), 0, 0)).to.equal(maxTVLLimit.mul(15).div(100).mul(8051).div(10000))
       })
 
       it('borrow amount is limited by a single pool value', async () => {
         await mockPool.mock.poolValue.returns(100)
-        expect(await creditModel.borrowLimit(mockPool.address, 191, parseEth(100), 0, 0)).to.equal(parseEth(15).div(1e6))
+        expect(await rateModel.borrowLimit(mockPool.address, 191, parseEth(100), 0, 0)).to.equal(parseEth(15).div(1e6))
       })
 
       it('borrow limit can be increased by staking TRU', async () => {
-        expect(await creditModel.borrowLimit(mockPool.address, 191, parseEth(100), parseTRU(100), 0)).to.equal(parseEth(80.51).add(parseEth(10)))
-        expect(await creditModel.borrowLimit(mockPool.address, 191, parseEth(100), parseTRU(1000), 0)).to.equal(parseEth(80.51).add(parseEth(100)))
+        expect(await rateModel.borrowLimit(mockPool.address, 191, parseEth(100), parseTRU(100), 0)).to.equal(parseEth(80.51).add(parseEth(10)))
+        expect(await rateModel.borrowLimit(mockPool.address, 191, parseEth(100), parseTRU(1000), 0)).to.equal(parseEth(80.51).add(parseEth(100)))
       })
 
       it('staked TRU cannot increase limit over TVL limit', async () => {
         const maxTVLLimit = parseEth(20)
         await mockPool.mock.poolValue.returns(maxTVLLimit.div(1e6).div(1e6).sub(parseUSDC(1)))
         await mockPool2.mock.poolValue.returns(parseUSDC(1))
-        expect(await creditModel.borrowLimit(mockPool.address, 191, parseEth(1), 0, 0)).to.equal(parseEth(0.8051))
-        expect(await creditModel.borrowLimit(mockPool.address, 191, parseEth(1), parseTRU(1000), 0)).to.equal(maxTVLLimit.mul(15).div(100).mul(8051).div(10000))
+        expect(await rateModel.borrowLimit(mockPool.address, 191, parseEth(1), 0, 0)).to.equal(parseEth(0.8051))
+        expect(await rateModel.borrowLimit(mockPool.address, 191, parseEth(1), parseTRU(1000), 0)).to.equal(maxTVLLimit.mul(15).div(100).mul(8051).div(10000))
       })
 
       it('staked TRU cannot increase limit over pool limit', async () => {
         await mockPool.mock.poolValue.returns(parseUSDC(20))
-        expect(await creditModel.borrowLimit(mockPool.address, 191, parseEth(1), 0, 0)).to.equal(parseEth(0.8051))
-        expect(await creditModel.borrowLimit(mockPool.address, 191, parseEth(1), parseTRU(1000), 0)).to.equal(parseEth(20).mul(15).div(100))
+        expect(await rateModel.borrowLimit(mockPool.address, 191, parseEth(1), 0, 0)).to.equal(parseEth(0.8051))
+        expect(await rateModel.borrowLimit(mockPool.address, 191, parseEth(1), parseTRU(1000), 0)).to.equal(parseEth(20).mul(15).div(100))
       })
 
       it('subtracts borrowed amount from credit limit', async () => {
-        expect(await creditModel.borrowLimit(mockPool.address, 191, parseEth(100), 0, 100)).to.equal(parseEth(80.51).sub(100))
+        expect(await rateModel.borrowLimit(mockPool.address, 191, parseEth(100), 0, 100)).to.equal(parseEth(80.51).sub(100))
       })
 
       it('borrow limit is 0 if credit limit is below the borrowed amount', async () => {
-        expect(await creditModel.borrowLimit(mockPool.address, 191, parseEth(100), 0, parseEth(100))).to.equal(0)
+        expect(await rateModel.borrowLimit(mockPool.address, 191, parseEth(100), 0, parseEth(100))).to.equal(0)
       })
     })
 
     describe('isOverLimit', () => {
       it('returns true when over limit', async () => {
-        expect(await creditModel.isOverLimit(mockPool.address, 191, parseEth(100), 0, parseEth(80.51).add(1))).to.equal(true)
+        expect(await rateModel.isOverLimit(mockPool.address, 191, parseEth(100), 0, parseEth(80.51).add(1))).to.equal(true)
       })
 
       it('returns false when below limit', async () => {
-        expect(await creditModel.isOverLimit(mockPool.address, 191, parseEth(100), 0, parseEth(80.51))).to.equal(false)
+        expect(await rateModel.isOverLimit(mockPool.address, 191, parseEth(100), 0, parseEth(80.51))).to.equal(false)
       })
     })
   })
@@ -685,18 +685,18 @@ describe('CreditModel', () => {
 
   describe('securedRate', () => {
     beforeEach(async () => {
-      await creditModel.setBaseRateOracle(mockPool.address, oracle.address)
+      await rateModel.setBaseRateOracle(mockPool.address, oracle.address)
       await weeklyFillOracle(oracle)
     })
 
     it('gets correct rate', async () => {
-      expect(await creditModel.securedRate(mockPool.address)).to.eq(300)
+      expect(await rateModel.securedRate(mockPool.address)).to.eq(300)
     })
 
     it('changes with oracle update', async () => {
       await mockSpotOracle.mock.getRate.withArgs(asset.address).returns(307)
       await updateRateOracle(oracle, DAY, provider)
-      expect(await creditModel.securedRate(mockPool.address)).to.eq(301)
+      expect(await rateModel.securedRate(mockPool.address)).to.eq(301)
     })
   })
 })

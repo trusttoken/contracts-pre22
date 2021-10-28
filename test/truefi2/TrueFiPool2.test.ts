@@ -15,7 +15,7 @@ import {
   DeficiencyToken,
   LineOfCreditAgency,
   TrueFiCreditOracle,
-  CreditModel,
+  RateModel,
   MockTrueCurrency__factory,
   FixedTermLoanAgency,
   TestTrueLender,
@@ -60,7 +60,7 @@ describe('TrueFiPool2', () => {
   let poolStrategy1: MockStrategy
   let poolStrategy2: MockStrategy
   let badPoolStrategy: BadStrategy
-  let creditModel: CreditModel
+  let rateModel: RateModel
   let ftlAgency: FixedTermLoanAgency
   let borrowingMutex: BorrowingMutex
 
@@ -85,7 +85,7 @@ describe('TrueFiPool2', () => {
       safu,
       creditAgency,
       creditOracle,
-      creditModel,
+      rateModel,
       ftlAgency,
       borrowingMutex,
     } = await setupTruefi2(owner, provider, { lender: lender, loanFactory: loanFactory }))
@@ -98,7 +98,7 @@ describe('TrueFiPool2', () => {
 
     await tusdPool.setCreditAgency(creditAgency.address)
     await tusdPool.setFixedTermLoanAgency(ftlAgency.address)
-    await creditModel.setRiskPremium(700)
+    await rateModel.setRiskPremium(700)
 
     for (const wallet of [borrower, borrower2, borrower3]) {
       await creditOracle.setScore(wallet.address, 255)
