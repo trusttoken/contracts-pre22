@@ -392,9 +392,10 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
 
         // find the token, repay loan and remove loan from loan array
         ILoanToken2[] storage _loans = poolLoans[pool];
-        for (uint256 index = 0; index < _loans.length; index++) {
+        uint256 loansLength = _loans.length;
+        for (uint256 index = 0; index < loansLength; index++) {
             if (_loans[index] == loanToken) {
-                _loans[index] = _loans[_loans.length - 1];
+                _loans[index] = _loans[loansLength - 1];
                 _loans.pop();
 
                 uint256 fundsReclaimed = _redeemAndRepay(loanToken, pool, data);
