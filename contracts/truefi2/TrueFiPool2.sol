@@ -118,7 +118,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
         ISAFU _safu,
         ILoanFactory2 _loanFactory,
         address __owner
-    ) external override initializer {
+    ) external virtual override initializer {
         ERC20.__ERC20_initialize(concat("TrueFi ", _token.name()), concat("tf", _token.symbol()));
         UpgradeableClaimable.initialize(__owner);
 

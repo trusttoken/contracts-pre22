@@ -8,6 +8,11 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import {ERC20} from "../common/UpgradeableERC20.sol";
 import {IPoRToken} from "../common/interface/IPoRToken.sol";
+import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
+import {ITrueLender2} from "./interface/ITrueLender2.sol";
+import {IFixedTermLoanAgency} from "./interface/IFixedTermLoanAgency.sol";
+import {ISAFU} from "./interface/ISAFU.sol";
+import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
 
 /**
  * @title TrueFiPool2PoR
@@ -37,6 +42,27 @@ contract TrueFiPool2PoR is TrueFiPool2, IPoRToken {
     uint256 public heartbeat;
 
     // ======= STORAGE DECLARATION END ===========
+
+    function initialize(
+        ERC20 _token,
+        ITrueLender2 _lender,
+        IFixedTermLoanAgency _ftlAgency,
+        ISAFU _safu,
+        ILoanFactory2 _loanFactory,
+        address __owner
+    ) external override initializer {
+        ERC20.__ERC20_initialize(concat("TrueFi ", _token.name()), concat("tf", _token.symbol()));
+        UpgradeableClaimable.initialize(__owner);
+
+        token = _token;
+        lender = _lender;
+        ftlAgency = _ftlAgency;
+        safu = _safu;
+        loanFactory = _loanFactory;
+
+        // Set default heartbeat for PoR feed
+        heartbeat = MAX_AGE;
+    }
 
     /**
      * @notice Overriden mint function that checks the specified proof-of-reserves feed to
@@ -88,13 +114,6 @@ contract TrueFiPool2PoR is TrueFiPool2, IPoRToken {
 
         emit NewFeed(feed, newFeed);
         feed = newFeed;
-
-        if (heartbeat == 0) {
-            // Set the heartbeat to a sane default (MAX_AGE) when setting a feed.
-            // Necessary here as TrueFiPool2PoR inherits from an initializable contract and
-            // does not have its own initializer/constructor.
-            setHeartbeat(MAX_AGE);
-        }
     }
 
     /**
