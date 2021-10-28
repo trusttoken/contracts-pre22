@@ -293,12 +293,6 @@ describe('LoanToken2', () => {
       await expect(loanToken.redeem()).to.be.revertedWith('LoanToken2: Only after loan has been closed')
     })
 
-    it('reverts if redeeming more than own balance', async () => {
-      await timeTravel(provider, yearInSeconds)
-      await payback(borrower, parseEth(100))
-      await expect(loanToken.redeem()).to.be.revertedWith('LoanToken2: Only after loan has been closed')
-    })
-
     it('emits event', async () => {
       await timeTravel(provider, defaultedLoanCloseTime)
       await payback(borrower, parseEth(1000))
