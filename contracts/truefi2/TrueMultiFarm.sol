@@ -22,6 +22,7 @@ import {IStkTruToken} from "../governance/interface/IStkTruToken.sol";
 contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
+    using SafeERC20 for IStkTruToken;
     uint256 private constant PRECISION = 1e30;
 
     struct Stakes {
@@ -237,7 +238,9 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
         stakerRewards[token].claimableReward[msg.sender] = 0;
         farmRewards.claimableReward[address(token)] = farmRewards.claimableReward[address(token)].sub(rewardToClaim);
 
-        rewardToken.safeTransfer(msg.sender, rewardToClaim);
+        rewardToken.safeApprove(address(stkTru), rewardToClaim);
+        stkTru.stake(rewardToClaim);
+        stkTru.safeTransfer(msg.sender, rewardToClaim);
         emit Claim(token, msg.sender, rewardToClaim);
     }
 
