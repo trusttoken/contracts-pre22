@@ -19,6 +19,9 @@ function _forkChain (rpc: string, unlockedAccounts: string[] = [], blockNumber?:
 
 export function forkChain (unlockedAccounts: string[] = [], blockNumber?: BigNumberish) {
   const infura_key = process.env.INFURA_PROJECT_ID
+  if (infura_key) {
+    console.log('Running tests with infura')
+  }
   const rpc = infura_key ? `https://mainnet.infura.io/v3/${infura_key}` : 'https://eth-mainnet.alchemyapi.io/v2/Vc3xNXIWdxEbDOToa69DhWeyhgFVBDWl'
   return _forkChain(rpc, unlockedAccounts, blockNumber)
 }
