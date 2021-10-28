@@ -484,7 +484,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      * @dev Deposit idle funds into strategy
      * @param amount Amount of funds to deposit into strategy
      */
-    function flush(uint256 amount) external {
+    function flush(uint256 amount) external onlyOwner {
         require(address(strategy) != address(0), "TrueFiPool: Pool has no strategy set up");
         require(amount <= currencyBalance(), "TrueFiPool: Insufficient currency balance");
 
