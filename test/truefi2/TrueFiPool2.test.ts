@@ -697,6 +697,12 @@ describe('TrueFiPool2', () => {
         .to.be.revertedWith('TrueFiPool: Pool has no strategy set up')
     })
 
+    it('reverts when caller is not owner', async () => {
+      await tusdPool.connect(owner).switchStrategy(poolStrategy1.address)
+      await expect(tusdPool.connect(borrower).flush(100))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
     it('funds for deposit should go directly into strategy', async () => {
       await tusdPool.connect(owner).switchStrategy(badPoolStrategy.address)
       await badPoolStrategy.setErrorPercents(500)
