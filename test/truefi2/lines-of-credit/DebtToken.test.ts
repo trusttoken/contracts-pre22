@@ -86,6 +86,63 @@ describe('DebtToken', () => {
     })
   })
 
+  describe('Repay', () => {
+    beforeEach(async () => {
+      await token.mint(borrower.address, parseEth(1000))
+    })
+
+    it('transfers trueCurrencies to debtToken', async () => {
+      await token.connect(borrower).approve(debtToken.address, parseEth(100))
+      await debtToken.repay(borrower.address, parseEth(100))
+      expect(await token.balanceOf(borrower.address)).to.equal(parseEth(1000).sub(parseEth(100)))
+      expect(await token.balanceOf(debtToken.address)).to.equal(parseEth(100))
+    })
+
+    it('reverts if borrower tries to repay more than remaining debt', async () => {
+      await token.mint(borrower.address, parseEth(300))
+      await token.connect(borrower).approve(debtToken.address, parseEth(1200))
+
+      await expect(debtToken.repay(borrower.address, parseEth(1200)))
+        .to.be.revertedWith('DebtToken: Repay amount more than unpaid debt')
+
+      await debtToken.repay(borrower.address, parseEth(500))
+
+      await expect(debtToken.repay(borrower.address, parseEth(1000)))
+        .to.be.revertedWith('DebtToken: Repay amount more than unpaid debt')
+    })
+
+    it('emits proper event', async () => {
+      await token.connect(borrower).approve(debtToken.address, parseEth(100))
+      await expect(debtToken.repay(borrower.address, parseEth(100)))
+        .to.emit(debtToken, 'Repaid')
+        .withArgs(borrower.address, parseEth(100))
+    })
+  })
+
+  describe('Repay in full', () => {
+    beforeEach(async () => {
+      await token.mint(borrower.address, parseEth(1000))
+    })
+
+    it('transfers trueCurrencies to debtToken', async () => {
+      const debt = await debtToken.debt()
+      await token.connect(borrower).approve(debtToken.address, debt)
+      await token.mint(borrower.address, parseEth(300))
+      await debtToken.repayInFull(borrower.address)
+      expect(await token.balanceOf(borrower.address)).to.equal(parseEth(1000).add(parseEth(300)).sub(debt))
+      expect(await token.balanceOf(debtToken.address)).to.equal(debt)
+    })
+
+    it('emits Repaid event', async () => {
+      const debt = await debtToken.debt()
+      await token.connect(borrower).approve(debtToken.address, debt)
+      await token.mint(borrower.address, parseEth(300))
+      await expect(debtToken.repayInFull(borrower.address))
+        .to.emit(debtToken, 'Repaid')
+        .withArgs(borrower.address, debt)
+    })
+  })
+
   describe('Redeem', () => {
     it('reverts if redeeming more than own balance', async () => {
       await payback(borrower, debt.add(1))
