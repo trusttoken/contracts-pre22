@@ -40,7 +40,7 @@ import {
   MockErc20Token__factory,
   MockTrueFiPoolOracle__factory,
   MockErc20Token,
-  CreditModel,
+  RateModel,
   StakingVault,
   LineOfCreditAgency,
 } from 'contracts'
@@ -65,7 +65,7 @@ describe('SAFU', () => {
   let stkTru: StkTruToken
   let creditOracle: TrueFiCreditOracle
   let borrowingMutex: BorrowingMutex
-  let creditModel: CreditModel
+  let rateModel: RateModel
   let stakingVault: StakingVault
   let creditAgency: LineOfCreditAgency
 
@@ -99,7 +99,7 @@ describe('SAFU', () => {
       liquidator,
       creditOracle,
       borrowingMutex,
-      creditModel,
+      rateModel,
       stakingVault,
       creditAgency,
     } = await setupTruefi2(owner, _provider, { lender: lender, loanFactory: loanFactory, oneInch: oneInch }))
@@ -110,7 +110,7 @@ describe('SAFU', () => {
 
     await creditOracle.setScore(borrower.address, 255)
     await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100_000_000))
-    await creditModel.setRiskPremium(400)
+    await rateModel.setRiskPremium(400)
 
     await pool.setCreditAgency(owner.address)
     debt = await createDebtToken(pool, defaultAmount)

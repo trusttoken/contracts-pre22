@@ -1,4 +1,4 @@
-## `ICreditModel`
+## `IRateModel`
 
 
 
