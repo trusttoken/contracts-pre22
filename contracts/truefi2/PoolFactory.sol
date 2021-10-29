@@ -24,6 +24,9 @@ import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
  */
 contract PoolFactory is IPoolFactory, UpgradeableClaimable {
     using SafeMath for uint256;
+
+    uint256 public constant MAX_DECIMAL_COUNT = 36;
+
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
     // === STORAGE VARIABLES ARE DECLARED BELOW ==
@@ -139,6 +142,16 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
     }
 
     /**
+     * @dev Throws if token has decimal count greater than 36.
+     * This is an arbitrarily chosen constant to prevent potential exponentiation overflows.
+     * @param token Token to be checked
+     */
+    modifier onlyWithRestrictedDecimals(address token) {
+        require(ERC20(token).decimals() <= MAX_DECIMAL_COUNT, "PoolFactory: Token must not have decimal count greater than 36");
+        _;
+    }
+
+    /**
      * @dev Throws if borrower is not whitelisted for creating new pool
      * @param borrower Address of borrower to be checked in whitelist
      */
@@ -200,7 +213,12 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
      * Transfer ownership of created pool to Factory owner.
      * @param token Address of token which the pool will correspond to.
      */
-    function createPool(address token) external onlyAllowedTokens(token) onlyNotExistingPools(token) {
+    function createPool(address token)
+        external
+        onlyAllowedTokens(token)
+        onlyWithRestrictedDecimals(token)
+        onlyNotExistingPools(token)
+    {
         OwnedProxyWithReference proxy = new OwnedProxyWithReference(this.owner(), address(poolImplementationReference));
         pool[token] = address(proxy);
         isPool[address(proxy)] = true;
@@ -219,7 +237,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
         address token,
         string memory borrowerName,
         string memory borrowerSymbol
-    ) external onlyAllowedTokens(token) onlyWhitelistedBorrowers(msg.sender) {
+    ) external onlyAllowedTokens(token) onlyWithRestrictedDecimals(token) onlyWhitelistedBorrowers(msg.sender) {
         require(
             singleBorrowerPool[msg.sender][token] == address(0),
             "PoolFactory: This borrower and token already have a corresponding pool"

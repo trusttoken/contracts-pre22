@@ -18,11 +18,12 @@ import {
   TrueFiPool2,
   TrueFiPool2__factory,
 } from 'contracts'
-import { solidity } from 'ethereum-waffle'
+import { solidity, deployMockContract } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
 import { beforeEachWithFixture } from 'utils/beforeEachWithFixture'
 import { AddressZero } from '@ethersproject/constants'
 import { parseEth, parseUSDC } from 'utils'
+import { MockERC20TokenJson } from 'build'
 
 use(solidity)
 
@@ -130,6 +131,14 @@ describe('PoolFactory', () => {
       proxy = OwnedProxyWithReference__factory.connect(await factory.pool(token1.address), owner)
 
       pool = poolImplementation.attach(proxy.address)
+    })
+
+    it('reverts if token of pool has decimal count greater than 36', async () => {
+      const otherToken = await deployMockContract(owner, MockERC20TokenJson.abi)
+      await otherToken.mock.decimals.returns(37)
+      await factory.allowToken(otherToken.address, true)
+      await expect(factory.createPool(otherToken.address))
+        .to.be.revertedWith('PoolFactory: Token must not have decimal count greater than 36')
     })
 
     it('transfers proxy ownership', async () => {
@@ -246,6 +255,14 @@ describe('PoolFactory', () => {
       proxy = OwnedProxyWithReference__factory.connect(await factory.singleBorrowerPool(borrower.address, token1.address), owner)
 
       pool = poolImplementation.attach(proxy.address)
+    })
+
+    it('reverts if token of pool has decimal count greater than 36', async () => {
+      const otherToken = await deployMockContract(owner, MockERC20TokenJson.abi)
+      await otherToken.mock.decimals.returns(37)
+      await factory.allowToken(otherToken.address, true)
+      await expect(factory.connect(borrower).createSingleBorrowerPool(otherToken.address, 'CompanyName', 'CN'))
+        .to.be.revertedWith('PoolFactory: Token must not have decimal count greater than 36')
     })
 
     it('transfers proxy ownership', async () => {

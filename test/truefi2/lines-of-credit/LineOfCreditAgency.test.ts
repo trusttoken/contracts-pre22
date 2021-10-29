@@ -423,6 +423,15 @@ describe('LineOfCreditAgency', () => {
         .to.be.revertedWith('LineOfCreditAgency: Borrower has credit score below minimum')
     })
 
+    it('fails if required credit score is smaller than effective score and greater than pure score', async () => {
+      await tru.connect(borrower).approve(stakingVault.address, 1000)
+      await stakingVault.connect(borrower).stake(1000)
+      await creditOracle.setScore(borrower.address, 191)
+      await creditAgency.setMinCreditScore(192)
+      await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000))
+        .to.be.revertedWith('LineOfCreditAgency: Borrower has credit score below minimum')
+    })
+
     it('fails if the credit score was not updated for too long', async () => {
       await creditOracle.connect(owner).setEligibleForDuration(borrower.address, DAY * 15)
       await timeTravel(DAY * 16)
@@ -537,17 +546,6 @@ describe('LineOfCreditAgency', () => {
       await creditAgency.connect(borrower).repayInFull(tusdPool.address)
       await timeTravel(DAY * 60)
       await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000)).to.be.not.reverted
-    })
-
-    it('borrower has required score only after staking TRU', async () => {
-      await creditOracle.setScore(borrower.address, 159)
-      await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000))
-        .to.be.revertedWith('LineOfCreditAgency: Borrower has credit score below minimum')
-      await tru.mint(borrower.address, parseTRU(100_000))
-      await tru.connect(borrower).approve(stakingVault.address, parseTRU(100_000))
-      await stakingVault.connect(borrower).stake(parseTRU(100_000))
-      await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000))
-        .not.to.be.reverted
     })
   })
 
