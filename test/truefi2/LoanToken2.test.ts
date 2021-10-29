@@ -342,9 +342,9 @@ describe('LoanToken2', () => {
       })
 
       it('cannot call redeem for the second time', async () => {
-        await expect(loanToken.redeem()).to.be.revertedWith('SafeMath: division by zero')
+        await expect(loanToken.redeem()).to.be.revertedWith('LoanToken2: Total token supply should be greater than 0')
         await payback(borrower, parseEth(100))
-        await expect(loanToken.redeem()).to.be.revertedWith('SafeMath: division by zero')
+        await expect(loanToken.redeem()).to.be.revertedWith('LoanToken2: Total token supply should be greater than 0')
       })
     })
   })

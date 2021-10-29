@@ -215,8 +215,10 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * Can only call this function after the loan is Closed
      */
     function redeem() external override onlySettledOrDefaulted {
+        uint256 _totalSupply = totalSupply();
+        require(_totalSupply > 0, "LoanToken2: Total token supply should be greater than 0");
         uint256 loanRedeemAmount = balanceOf(msg.sender);
-        uint256 tokenRedeemAmount = loanRedeemAmount.mul(_tokenBalance()).div(totalSupply());
+        uint256 tokenRedeemAmount = loanRedeemAmount.mul(_tokenBalance()).div(_totalSupply);
         tokenRedeemed = tokenRedeemed.add(tokenRedeemAmount);
 
         _burn(msg.sender, loanRedeemAmount);
