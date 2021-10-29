@@ -579,9 +579,7 @@ describe('FixedTermLoanAgency', () => {
 
   describe('Reclaiming', () => {
     const payBack = async (token: MockErc20Token, loan: LoanToken2) => {
-      const balance = await loan.balance()
-      const debt = await loan.debt()
-      await token.mint(loan.address, debt.sub(balance))
+      await token.mint(loan.address, await loan.unpaidDebt())
     }
 
     let loan: LoanToken2
@@ -597,8 +595,10 @@ describe('FixedTermLoanAgency', () => {
     })
 
     it('reverts if loan has not been previously funded', async () => {
+      enum Status { Withdrawn, Settled, Defaulted }
+
       const mockLoanToken = await deployMockContract(owner, LoanToken2Json.abi)
-      await mockLoanToken.mock.status.returns(3)
+      await mockLoanToken.mock.status.returns(Status.Settled)
       await mockLoanToken.mock.pool.returns(pool1.address)
       await expect(ftlAgency.reclaim(mockLoanToken.address, '0x'))
         .to.be.revertedWith('FixedTermLoanAgency: This loan has not been funded by the agency')
@@ -694,7 +694,7 @@ describe('FixedTermLoanAgency', () => {
         await oneInch.setOutputAmount(parseEth(25))
         await payBack(token1, newLoan1)
         await newLoan1.settle()
-        fee = (await newLoan1.debt()).sub(await newLoan1.amount()).div(10)
+        fee = (await newLoan1.interest()).div(10)
       })
 
       const encodeData = (fromToken: string, toToken: string, sender: string, receiver: string, amount: BigNumberish, flags = 0) => {

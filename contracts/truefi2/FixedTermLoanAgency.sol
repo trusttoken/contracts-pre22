@@ -372,7 +372,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
         ILoanToken2[] storage _loans = poolLoans[pool];
         uint256 totalValue;
         for (uint256 index = 0; index < _loans.length; index++) {
-            totalValue = totalValue.add(_loans[index].value(_loans[index].balanceOf(address(this))));
+            totalValue = totalValue.add(_loans[index].currentValue(address(this)));
         }
         return totalValue;
     }
@@ -382,15 +382,17 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
      * @param loanToken Loan to reclaim capital from (must be previously funded)
      */
     function reclaim(ILoanToken2 loanToken, bytes calldata data) external {
-        ITrueFiPool2 pool = loanToken.pool();
         ILoanToken2.Status status = loanToken.status();
-        require(status >= ILoanToken2.Status.Settled, "FixedTermLoanAgency: LoanToken is not closed yet");
-
-        if (status != ILoanToken2.Status.Settled) {
+        require(
+            status == ILoanToken2.Status.Settled || status == ILoanToken2.Status.Defaulted,
+            "FixedTermLoanAgency: LoanToken is not closed yet"
+        );
+        if (status == ILoanToken2.Status.Defaulted) {
             require(msg.sender == owner(), "FixedTermLoanAgency: Only owner can reclaim from defaulted loan");
         }
 
         // find the token, repay loan and remove loan from loan array
+        ITrueFiPool2 pool = loanToken.pool();
         ILoanToken2[] storage _loans = poolLoans[pool];
         for (uint256 index = 0; index < _loans.length; index++) {
             if (_loans[index] == loanToken) {
@@ -456,7 +458,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
     ) internal returns (uint256) {
         // call redeem function on LoanToken
         uint256 balanceBefore = pool.token().balanceOf(address(this));
-        loanToken.redeem(loanToken.balanceOf(address(this)));
+        loanToken.redeem();
         uint256 balanceAfter = pool.token().balanceOf(address(this));
 
         // gets reclaimed amount and pays back to pool
@@ -484,7 +486,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
         ILoanToken2 loanToken,
         bytes calldata data
     ) internal returns (uint256) {
-        uint256 feeAmount = loanToken.debt().sub(loanToken.amount()).mul(fee).div(BASIS_RATIO);
+        uint256 feeAmount = loanToken.interest().mul(fee).div(BASIS_RATIO);
         IERC20WithDecimals token = IERC20WithDecimals(address(pool.token()));
         if (token == feeToken) {
             return feeAmount;

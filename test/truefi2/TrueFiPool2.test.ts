@@ -812,9 +812,7 @@ describe('TrueFiPool2', () => {
     let loan: LoanToken2
 
     const payBack = async (token: MockTrueCurrency, loan: LoanToken2) => {
-      const balance = await loan.balance()
-      const debt = await loan.debt()
-      await token.mint(loan.address, debt.sub(balance))
+      await token.mint(loan.address, await loan.unpaidDebt())
     }
 
     beforeEach(async () => {
