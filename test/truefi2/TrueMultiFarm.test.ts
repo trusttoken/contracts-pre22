@@ -263,6 +263,19 @@ describe('TrueMultiFarm', () => {
         await timeTravel(provider, DAY)
         await farm.connect(staker1).unstake(firstToken.address, parseEth(500), txArgs)
       })
+
+      it('scales withdrawn stkTru after slash', async () => {
+        await tru.mint(owner.address, parseTRU(1000))
+        await tru.approve(stkTru.address, parseTRU(1000))
+        await stkTru.stake(parseTRU(1000))
+        await stkTru.setLiquidator(owner.address)
+        await stkTru.withdraw(parseTRU(100))
+
+        await farm.connect(staker1).stake(firstToken.address, parseEth(500), txArgs)
+        await timeTravel(provider, DAY * REWARD_DAYS)
+        await farm.connect(staker1).claim([firstToken.address], txArgs)
+        expect(expectScaledCloseTo((await stkTru.balanceOf(staker1.address)), amount.mul(10).div(9)))
+      })
     })
 
     describe('with two stakers', function () {

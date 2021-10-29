@@ -240,7 +240,7 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
 
         tru.safeApprove(address(stkTru), rewardToClaim);
         stkTru.stake(rewardToClaim);
-        stkTru.safeTransfer(msg.sender, rewardToClaim);
+        stkTru.safeTransfer(msg.sender, stkTru.balanceOf(address(this)));
         emit Claim(token, msg.sender, rewardToClaim);
     }
 
