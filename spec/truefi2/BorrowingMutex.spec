@@ -4,7 +4,7 @@ methods {
 }
 
 definition isReasonableAddress(address alice) returns bool = alice != 0 && alice != 1;
-definition isReasonableEnv(env e) returns bool = isReasonableAddress(e.msg.sender)
+definition isReasonableEnv(env e) returns bool = isReasonableAddress(e.msg.sender);
 
 rule onePlusTwoEqualsThree(uint one, uint two) {
     require one == 1 && two == 2;
