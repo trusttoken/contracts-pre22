@@ -13,7 +13,7 @@ import {
   Liquidator2__factory,
   LoanFactory2,
   LoanFactory2__factory,
-  LoanToken2__factory,
+  FixedTermLoan__factory,
   MockTrueCurrency__factory,
   MockTrueFiPoolOracle__factory,
   MockUsdc__factory,
@@ -89,7 +89,7 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
   // ====== SETUP ======
   await liquidator.initialize(stkTru.address, tru.address, loanFactory.address, poolFactory.address, safu.address, standardTokenOracle.address, stakingVault.address)
   await loanFactory.initialize(ftlAgency.address, liquidator.address, creditOracle.address, borrowingMutex.address, creditAgency.address)
-  const loanTokenImplementation = await new LoanToken2__factory(owner).deploy()
+  const loanTokenImplementation = await new FixedTermLoan__factory(owner).deploy()
   const debtTokenImplementation = await new DebtToken__factory(owner).deploy()
   await loanFactory.setLoanTokenImplementation(loanTokenImplementation.address)
   await loanFactory.setDebtTokenImplementation(debtTokenImplementation.address)

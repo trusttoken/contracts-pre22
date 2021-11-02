@@ -8,7 +8,7 @@ import {Initializable} from "../common/Initializable.sol";
 
 import {IFixedTermLoanAgency} from "./interface/IFixedTermLoanAgency.sol";
 import {ILoanToken2Deprecated} from "./deprecated/ILoanToken2Deprecated.sol";
-import {ILoanToken2} from "./interface/ILoanToken2.sol";
+import {IFixedTermLoan} from "./interface/IFixedTermLoan.sol";
 import {IDebtToken} from "./interface/IDebtToken.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
@@ -16,7 +16,7 @@ import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
 import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
 import {ILineOfCreditAgency} from "./interface/ILineOfCreditAgency.sol";
 
-import {LoanToken2} from "./LoanToken2.sol";
+import {FixedTermLoan} from "./FixedTermLoan.sol";
 import {DebtToken} from "./DebtToken.sol";
 
 /**
@@ -46,7 +46,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
     address private DEPRECATED__rateModel;
     ITrueFiCreditOracle public creditOracle;
     IBorrowingMutex public borrowingMutex;
-    ILoanToken2 public loanTokenImplementation;
+    IFixedTermLoan public loanTokenImplementation;
     ILineOfCreditAgency public creditAgency;
     IDebtToken public debtTokenImplementation;
 
@@ -55,7 +55,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
 
     IFixedTermLoanAgency public ftlAgency;
 
-    mapping(ILoanToken2 => bool) public override isLoanToken;
+    mapping(IFixedTermLoan => bool) public override isLoanToken;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -63,7 +63,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
      * @dev Emitted when a LoanToken is created
      * @param loanToken LoanToken contract address
      */
-    event LoanTokenCreated(ILoanToken2 loanToken);
+    event LoanTokenCreated(IFixedTermLoan loanToken);
 
     /**
      * @dev Emitted when a DebtToken is created
@@ -75,7 +75,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
 
     event BorrowingMutexChanged(IBorrowingMutex borrowingMutex);
 
-    event LoanTokenImplementationChanged(ILoanToken2 loanTokenImplementation);
+    event LoanTokenImplementationChanged(IFixedTermLoan loanTokenImplementation);
 
     event CreditAgencyChanged(ILineOfCreditAgency creditAgency);
 
@@ -115,7 +115,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
 
     modifier onlyLineOfCreditAgencyOrLoanToken() {
         require(
-            msg.sender == address(creditAgency) || isLoanToken[ILoanToken2(msg.sender)],
+            msg.sender == address(creditAgency) || isLoanToken[IFixedTermLoan(msg.sender)],
             "LoanFactory: Caller is neither credit agency nor loan"
         );
         _;
@@ -135,11 +135,11 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         uint256 _amount,
         uint256 _term,
         uint256 _apy
-    ) external override onlyFTLA returns (ILoanToken2) {
+    ) external override onlyFTLA returns (IFixedTermLoan) {
         address ltImplementationAddress = address(loanTokenImplementation);
         require(ltImplementationAddress != address(0), "LoanFactory: Loan token implementation should be set");
 
-        LoanToken2 newToken = LoanToken2(Clones.clone(ltImplementationAddress));
+        FixedTermLoan newToken = FixedTermLoan(Clones.clone(ltImplementationAddress));
         newToken.initialize(_pool, borrowingMutex, _borrower, ftlAgency, admin, this, creditOracle, _amount, _term, _apy);
         isLoanToken[newToken] = true;
 
@@ -175,7 +175,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         emit BorrowingMutexChanged(_mutex);
     }
 
-    function setLoanTokenImplementation(ILoanToken2 _implementation) external onlyAdmin {
+    function setLoanTokenImplementation(IFixedTermLoan _implementation) external onlyAdmin {
         require(address(_implementation) != address(0), "LoanFactory: Cannot set loan token implementation to zero address");
         loanTokenImplementation = _implementation;
         emit LoanTokenImplementationChanged(_implementation);

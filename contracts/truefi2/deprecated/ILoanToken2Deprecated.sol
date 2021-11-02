@@ -74,6 +74,6 @@ interface ILoanToken2Deprecated is IERC20 {
 //}
 //
 //// Had to be split because of multiple inheritance problem
-//interface ILoanToken2 is ILoanToken, IContractWithPool {
+//interface IFixedTermLoan is ILoanToken, IContractWithPool {
 //
 //}

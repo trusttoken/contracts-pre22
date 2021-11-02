@@ -13,8 +13,8 @@ import {
   LoanFactory2,
   LoanFactory2__factory,
   LoanToken,
-  LoanToken2,
-  LoanToken2__factory,
+  FixedTermLoan,
+  FixedTermLoan__factory,
   LoanToken__factory,
   MockCrvPriceOracle__factory,
   MockCurvePool,
@@ -493,7 +493,7 @@ describe('TrueFiPool', () => {
   async function fundLoan (loanFactory2: LoanFactory2, lender2: TrueLender2Deprecated) {
     const tx = await (await loanFactory2.createLoanToken_REMOVED(pool.address, 1000, DAY, MAX_APY)).wait()
     const newLoanAddress = tx.events[0].args.loanToken
-    const loan = LoanToken2__factory.connect(newLoanAddress, owner)
+    const loan = FixedTermLoan__factory.connect(newLoanAddress, owner)
     await mockRatingAgency.mock.getResults.returns(0, 0, parseEth(100))
     await lender2.fund(newLoanAddress)
     return { newLoanAddress, loan }
@@ -539,7 +539,7 @@ describe('TrueFiPool', () => {
   // This tests are skipped because we can't create new loans on legacy pool anymore.
   // Since the pool is now deprecated and the code is frozen, it shouldn't be a big problem
   xdescribe('liquidate', () => {
-    let loan: LoanToken2
+    let loan: FixedTermLoan
 
     beforeEach(async () => {
       const { lender2, loanFactory2, liquidator2 } = await deployLender2()

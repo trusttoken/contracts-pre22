@@ -1,6 +1,6 @@
 import { expect, use } from 'chai'
 import {
-  LoanToken2,
+  FixedTermLoan,
   MockStrategy,
   MockStrategy__factory,
   BadStrategy,
@@ -54,7 +54,7 @@ describe('TrueFiPool2', () => {
   let usdcPool: TrueFiPool2
   let loanFactory: TestLoanFactory
   let lender: TestTrueLender
-  let loan: LoanToken2
+  let loan: FixedTermLoan
   let safu: Safu
   let deployContract: Deployer
   let poolStrategy1: MockStrategy
@@ -810,9 +810,9 @@ describe('TrueFiPool2', () => {
   })
 
   describe('repay', () => {
-    let loan: LoanToken2
+    let loan: FixedTermLoan
 
-    const payBack = async (token: MockTrueCurrency, loan: LoanToken2) => {
+    const payBack = async (token: MockTrueCurrency, loan: FixedTermLoan) => {
       await token.mint(loan.address, await loan.unpaidDebt())
     }
 

@@ -10,8 +10,8 @@ import {
   DebtToken__factory,
   FixedTermLoanAgency__factory,
   ImplementationReference__factory,
-  LoanToken2,
-  LoanToken2__factory,
+  FixedTermLoan,
+  FixedTermLoan__factory,
   MockTrueCurrency,
   MockTrueCurrency__factory,
   PoolFactory__factory,
@@ -27,7 +27,7 @@ import { formatEther } from '@ethersproject/units'
 
 use(solidity)
 
-describe('LoanToken2', () => {
+describe('FixedTermLoan', () => {
   enum LoanTokenStatus { Withdrawn, Settled, Defaulted }
 
   const dayInSeconds = 60 * 60 * 24
@@ -39,7 +39,7 @@ describe('LoanToken2', () => {
 
   let lender: Wallet
   let borrower: Wallet
-  let loanToken: LoanToken2
+  let loanToken: FixedTermLoan
   let token: MockTrueCurrency
   let poolAddress: string
   let provider: MockProvider
@@ -74,7 +74,7 @@ describe('LoanToken2', () => {
     await loanFactory.initialize(AddressZero, AddressZero, AddressZero, borrowingMutex.address, AddressZero)
     const debtToken = await deployContract(lender, DebtToken__factory)
     await loanFactory.setDebtTokenImplementation(debtToken.address)
-    loanToken = await new LoanToken2__factory(lender).deploy()
+    loanToken = await new FixedTermLoan__factory(lender).deploy()
     const tx = await loanToken.initialize(
       poolAddress,
       borrowingMutex.address,
@@ -148,7 +148,7 @@ describe('LoanToken2', () => {
 
     it('loan can be payed back 1 day after term has ended', async () => {
       await timeTravel(provider, yearInSeconds + dayInSeconds / 2)
-      await expect(loanToken.enterDefault()).to.be.revertedWith('LoanToken2: Loan has not reached end of term')
+      await expect(loanToken.enterDefault()).to.be.revertedWith('FixedTermLoan: Loan has not reached end of term')
       await token.mint(loanToken.address, parseEth(1100))
       await loanToken.settle()
       expect(await loanToken.status()).to.equal(LoanTokenStatus.Settled)
@@ -177,18 +177,18 @@ describe('LoanToken2', () => {
     })
 
     it('reverts when closing right after creation', async () => {
-      await expect(loanToken.enterDefault()).to.be.revertedWith('LoanToken2: Loan has not reached end of term')
+      await expect(loanToken.enterDefault()).to.be.revertedWith('FixedTermLoan: Loan has not reached end of term')
     })
 
     it('reverts when closing ongoing loan', async () => {
       await timeTravel(provider, yearInSeconds - 10)
-      await expect(loanToken.enterDefault()).to.be.revertedWith('LoanToken2: Loan has not reached end of term')
+      await expect(loanToken.enterDefault()).to.be.revertedWith('FixedTermLoan: Loan has not reached end of term')
     })
 
     it('reverts when trying to close already closed loan', async () => {
       await timeTravel(provider, defaultedLoanCloseTime)
       await loanToken.enterDefault()
-      await expect(loanToken.enterDefault()).to.be.revertedWith('LoanToken2: Status is not Withdrawn')
+      await expect(loanToken.enterDefault()).to.be.revertedWith('FixedTermLoan: Status is not Withdrawn')
     })
 
     it('emits event', async () => {
@@ -238,12 +238,12 @@ describe('LoanToken2', () => {
       await token.connect(borrower).approve(loanToken.address, parseEth(1200))
 
       await expect(loanToken.repay(borrower.address, parseEth(1200)))
-        .to.be.revertedWith('LoanToken2: Repay amount more than unpaid debt')
+        .to.be.revertedWith('FixedTermLoan: Repay amount more than unpaid debt')
 
       await loanToken.repay(borrower.address, parseEth(500))
 
       await expect(loanToken.repay(borrower.address, parseEth(1000)))
-        .to.be.revertedWith('LoanToken2: Repay amount more than unpaid debt')
+        .to.be.revertedWith('FixedTermLoan: Repay amount more than unpaid debt')
     })
 
     it('emits proper event', async () => {
@@ -290,7 +290,7 @@ describe('LoanToken2', () => {
     })
 
     it('reverts if called before loan is closed', async () => {
-      await expect(loanToken.redeem()).to.be.revertedWith('LoanToken2: Only after loan has been closed')
+      await expect(loanToken.redeem()).to.be.revertedWith('FixedTermLoan: Only after loan has been closed')
     })
 
     it('emits event', async () => {
@@ -338,20 +338,20 @@ describe('LoanToken2', () => {
       it('cannot repay rest', async () => {
         await token.connect(borrower).approve(loanToken.address, parseEth(275))
         await expect(loanToken.connect(borrower).repay(borrower.address, parseEth(275)))
-          .to.be.revertedWith('LoanToken2: Status is not Withdrawn')
+          .to.be.revertedWith('FixedTermLoan: Status is not Withdrawn')
       })
 
       it('cannot call redeem for the second time', async () => {
-        await expect(loanToken.redeem()).to.be.revertedWith('LoanToken2: Total token supply should be greater than 0')
+        await expect(loanToken.redeem()).to.be.revertedWith('FixedTermLoan: Total token supply should be greater than 0')
         await payback(borrower, parseEth(100))
-        await expect(loanToken.redeem()).to.be.revertedWith('LoanToken2: Total token supply should be greater than 0')
+        await expect(loanToken.redeem()).to.be.revertedWith('FixedTermLoan: Total token supply should be greater than 0')
       })
     })
   })
 
   describe('Debt calculation', () => {
     const getDebt = async (amount: number, termInMonths: number, apy: number) => {
-      const contract = await new LoanToken2__factory(borrower).deploy()
+      const contract = await new FixedTermLoan__factory(borrower).deploy()
       await contract.initialize(poolAddress, borrowingMutex.address, borrower.address, lender.address, lender.address, lender.address, AddressZero, parseEth(amount.toString()), termInMonths * averageMonthInSeconds, apy)
       return Number.parseInt(formatEther(await contract.debt()))
     }
