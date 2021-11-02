@@ -14,7 +14,7 @@ rule onePlusTwoEqualsThree(uint one, uint two) {
     assert three == 3, "One plus two does not equal three";
 }
 
-rule unlockedIntoBanned() {
+rule functionDoesNotBanUnlockedBorrower() {
     address borrower;
     require isReasonableAddress(borrower);
     require isUnlocked(borrower);
