@@ -137,7 +137,7 @@ contract RateModel is IRateModel, UpgradeableClaimable {
         utilizationRateConfig = UtilizationRateConfig(50, 2);
         creditScoreRateConfig = CreditScoreRateConfig(1000, 1);
         fixedTermLoanAdjustmentCoefficient = 25;
-        borrowLimitConfig = BorrowLimitConfig(40, 7500, 1500, 1500);
+        borrowLimitConfig = BorrowLimitConfig(40, 7500, 1500, 1000);
         stakingConfig = StakingConfig(4000, 1);
         poolFactory = _poolFactory;
         truPriceOracle = _truPriceOracle;
