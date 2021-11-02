@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {ITrueFiPool2} from "./ITrueFiPool2.sol";
+import {ITrueFiPool2} from "../interface/ITrueFiPool2.sol";
 import {ILoanToken2Deprecated} from "../deprecated/ILoanToken2Deprecated.sol";
 
-interface ITrueLender2 {
+interface ITrueLender2Deprecated {
     // @dev calculate overall value of the pools
     function value(ITrueFiPool2 pool) external view returns (uint256);
 

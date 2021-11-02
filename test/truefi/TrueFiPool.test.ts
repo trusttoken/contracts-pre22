@@ -31,8 +31,8 @@ import {
   TestTrueFiPool__factory,
   TrueFiPool2__factory,
   TrueLender,
-  TrueLender2,
-  TrueLender2__factory,
+  TrueLender2Deprecated,
+  TrueLender2Deprecated__factory,
   TrueLender__factory,
 } from 'contracts'
 import { ICurveGaugeJson, ICurveMinterJson, TrueRatingAgencyV2Json } from 'build'
@@ -467,12 +467,12 @@ describe('TrueFiPool', () => {
     const implementationReference = await new ImplementationReference__factory(owner).deploy(poolImplementation.address)
 
     const factory = await new PoolFactory__factory(owner).deploy()
-    const lender2 = await new TrueLender2__factory(owner).deploy()
+    const lender2 = await new TrueLender2Deprecated__factory(owner).deploy()
     const borrowingMutex = await new BorrowingMutex__factory(owner).deploy()
     await borrowingMutex.initialize()
     await borrowingMutex.allowLocker(lender2.address, true)
     await lender2.initialize(mockStakingPool.address, factory.address, AddressZero)
-    await factory.initialize(implementationReference.address, lender2.address, AddressZero, safu.address, AddressZero)
+    await factory.initialize(implementationReference.address, AddressZero, safu.address, AddressZero)
     await factory.addLegacyPool(pool.address)
     const usdc = await new MockErc20Token__factory(owner).deploy()
     await factory.setAllowAll(true)
@@ -490,7 +490,7 @@ describe('TrueFiPool', () => {
     return { lender2, loanFactory2, liquidator2 }
   }
 
-  async function fundLoan (loanFactory2: LoanFactory2, lender2: TrueLender2) {
+  async function fundLoan (loanFactory2: LoanFactory2, lender2: TrueLender2Deprecated) {
     const tx = await (await loanFactory2.createLoanToken_REMOVED(pool.address, 1000, DAY, MAX_APY)).wait()
     const newLoanAddress = tx.events[0].args.loanToken
     const loan = LoanToken2__factory.connect(newLoanAddress, owner)
@@ -502,7 +502,7 @@ describe('TrueFiPool', () => {
   // Will not work with new Loan Factory, but no more loans are expected to be created on legacy pool
   xdescribe('flow with TrueFi2', () => {
     let loanFactory2: LoanFactory2
-    let lender2: TrueLender2
+    let lender2: TrueLender2Deprecated
 
     let liquidator2: Liquidator2
 

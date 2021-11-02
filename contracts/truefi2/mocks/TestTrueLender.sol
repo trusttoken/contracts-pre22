@@ -2,14 +2,14 @@
 pragma solidity 0.6.10;
 pragma experimental ABIEncoderV2;
 
-import {TrueLender2} from "../TrueLender2.sol";
+import {TrueLender2Deprecated} from "../deprecated/TrueLender2Deprecated.sol";
 import {ILoanToken2Deprecated} from "../deprecated/ILoanToken2Deprecated.sol";
 import {ITrueFiPool2} from "../interface/ITrueFiPool2.sol";
 
 /**
- * @dev Helper contract to test distribute feature of the TrueLender2
+ * @dev Helper contract to test distribute feature of the TrueLender2Deprecated
  */
-contract TestTrueLender is TrueLender2 {
+contract TestTrueLender is TrueLender2Deprecated {
     function testDistribute(
         address recipient,
         uint256 numerator,

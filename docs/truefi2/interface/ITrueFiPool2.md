@@ -5,13 +5,13 @@
 
 
 
-### `initialize(contract ERC20 _token, contract ITrueLender2 _lender, contract ISAFU safu, address __owner)` (external)
+### `initialize(contract ERC20 _token, contract ITrueLender2Deprecated _lender, contract ISAFU safu, address __owner)` (external)
 
 
 
 
 
-### `singleBorrowerInitialize(contract ERC20 _token, contract ITrueLender2 _lender, contract ISAFU safu, address __owner, string borrowerName, string borrowerSymbol)` (external)
+### `singleBorrowerInitialize(contract ERC20 _token, contract ITrueLender2Deprecated _lender, contract ISAFU safu, address __owner, string borrowerName, string borrowerSymbol)` (external)
 
 
 
