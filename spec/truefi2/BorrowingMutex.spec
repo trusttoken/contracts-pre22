@@ -16,7 +16,6 @@ rule onePlusTwoEqualsThree(uint one, uint two) {
 
 rule functionDoesNotBanUnlockedBorrower() {
     address borrower;
-    require isReasonableAddress(borrower);
     require isUnlocked(borrower);
 
     method f;
