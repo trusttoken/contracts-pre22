@@ -571,7 +571,9 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
     function updateAllCreditScores(address borrower) external override {
         ITrueFiPool2[] memory pools = poolFactory.getSupportedPools();
         for (uint256 i = 0; i < pools.length; i++) {
-            updateCreditScore(pools[i], borrower);
+            if (borrowed[pools[i]][borrower] > 0) {
+                updateCreditScore(pools[i], borrower);
+            }
         }
     }
 
