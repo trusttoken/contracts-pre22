@@ -117,9 +117,6 @@ jobs:
   integration:
     docker:
       - image: cimg/node:16.1.0
-    environment:
-      INFURA_PROJECT_ID: "TESTTT"
-      INFURA_PROJECT_SECRET: "TESTTTTTTT"
     steps:
       - attach_workspace:
           at: .
