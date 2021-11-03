@@ -370,20 +370,23 @@ describe('LineOfCreditAgency', () => {
     })
 
     it('borrow amount is limited by total TVL', async () => {
+      // increase single pool limit coefficient to not be constrained by it
+      await rateModel.setBorrowLimitConfig(40, 7500, 1500, 3000)
+
       await usdcPool.liquidExit(parseUSDC(19e6))
       const maxTVLLimit = (await poolFactory.supportedPoolsTVL()).mul(15).div(100)
       expect(await creditAgency.borrowLimit(tusdPool.address, borrower.address)).to.equal(maxTVLLimit.mul(8051).div(10000))
     })
 
     it('borrow amount is limited by a single pool value', async () => {
-      expect(await creditAgency.borrowLimit(usdcPool.address, borrower.address)).to.equal(parseEth(2e7).mul(15).div(100))
+      expect(await creditAgency.borrowLimit(usdcPool.address, borrower.address)).to.equal(parseEth(2e7).mul(10).div(100))
     })
 
     it('cannot borrow more than 15% of a single pool in total', async () => {
       const expectLimitCloseTo = async (expectedAmount: BigNumber) =>
         expect(expectedAmount.sub(await creditAgency.borrowLimit(usdcPool.address, borrower.address))).to.be.lte(parseEth(1))
-      await expectLimitCloseTo(parseEth(3e6))
-      await creditAgency.connect(borrower).borrow(usdcPool.address, parseUSDC(2e6))
+      await expectLimitCloseTo(parseEth(2e6))
+      await creditAgency.connect(borrower).borrow(usdcPool.address, parseUSDC(1e6))
       await expectLimitCloseTo(parseEth(1e6))
       await creditAgency.connect(borrower).borrow(usdcPool.address, parseUSDC(5e5))
       await expectLimitCloseTo(parseEth(5e5))
