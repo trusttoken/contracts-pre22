@@ -20,10 +20,13 @@ function _forkChain(rpc: string, unlockedAccounts: string[] = [], blockNumber?: 
 export function forkChain(unlockedAccounts: string[] = [], blockNumber?: BigNumberish) {
   const infura_key = process.env.INFURA_PROJECT_ID
   const infura_secret = process.env.INFURA_PROJECT_SECRET
-  // const infura_key = '78c12244f5974c0ba769ed56df2482c3'
-  // const infura_secret = '048b97cec2bb499c8b317687c37a4cb9'
-  // console.log(infura_key == '78c12244f5974c0ba769ed56df2482c3')
-  // console.log(infura_secret == '048b97cec2bb499c8b317687c37a4cb9')
+  if (infura_key) {
+    console.log('infura key loaded');
+  }
+  if (infura_secret) {
+    console.log('infura secret loaded');
+  }
+
   if (infura_key) {
     console.log('Running tests with infura')
 
@@ -31,7 +34,6 @@ export function forkChain(unlockedAccounts: string[] = [], blockNumber?: BigNumb
     console.log('Running tests with alchemy')
   }
   const rpc = infura_key ? `https://:${infura_secret}@mainnet.infura.io/v3/${infura_key}` : 'https://eth-mainnet.alchemyapi.io/v2/Vc3xNXIWdxEbDOToa69DhWeyhgFVBDWl'
-  // const rpc = `https://:048b97cec2bb499c8b317687c37a4cb9@mainnet.infura.io/v3/78c12244f5974c0ba769ed56df2482c3`
   return _forkChain(rpc, unlockedAccounts, blockNumber)
 }
 
