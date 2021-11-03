@@ -20,15 +20,11 @@ function _forkChain(rpc: string, unlockedAccounts: string[] = [], blockNumber?: 
 export function forkChain(unlockedAccounts: string[] = [], blockNumber?: BigNumberish) {
   const infura_key = process.env.INFURA_PROJECT_ID
   const infura_secret = process.env.INFURA_PROJECT_SECRET
-  if (infura_key) {
-    console.log('infura key loaded');
-  }
-  if (infura_secret) {
-    console.log('infura secret loaded');
-  }
 
   if (infura_key) {
     console.log('Running tests with infura')
+    console.log(infura_key.slice(infura_key.length - 5))
+    console.log(infura_secret.slice(infura_secret.length - 5))
 
   } else {
     console.log('Running tests with alchemy')
