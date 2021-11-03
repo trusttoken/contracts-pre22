@@ -15,7 +15,7 @@ import {
   DeficiencyToken,
   LineOfCreditAgency,
   TrueFiCreditOracle,
-  CreditModel,
+  RateModel,
   MockTrueCurrency__factory,
   FixedTermLoanAgency,
   TestTrueLender,
@@ -60,7 +60,7 @@ describe('TrueFiPool2', () => {
   let poolStrategy1: MockStrategy
   let poolStrategy2: MockStrategy
   let badPoolStrategy: BadStrategy
-  let creditModel: CreditModel
+  let rateModel: RateModel
   let ftlAgency: FixedTermLoanAgency
   let borrowingMutex: BorrowingMutex
 
@@ -85,7 +85,7 @@ describe('TrueFiPool2', () => {
       safu,
       creditAgency,
       creditOracle,
-      creditModel,
+      rateModel,
       ftlAgency,
       borrowingMutex,
     } = await setupTruefi2(owner, provider, { lender: lender, loanFactory: loanFactory }))
@@ -98,7 +98,7 @@ describe('TrueFiPool2', () => {
 
     await tusdPool.setCreditAgency(creditAgency.address)
     await tusdPool.setFixedTermLoanAgency(ftlAgency.address)
-    await creditModel.setRiskPremium(700)
+    await rateModel.setRiskPremium(700)
 
     for (const wallet of [borrower, borrower2, borrower3]) {
       await creditOracle.setScore(wallet.address, 255)
@@ -138,7 +138,7 @@ describe('TrueFiPool2', () => {
     })
 
     it('sets lender', async () => {
-      expect(await tusdPool.lender()).to.eq(lender.address)
+      expect(await tusdPool.lender()).to.eq(AddressZero)
     })
 
     it('sets no initial joiningFee', async () => {
@@ -452,6 +452,7 @@ describe('TrueFiPool2', () => {
       })
 
       it('when there are ongoing loans in both trueLender and FTLA, pool value contains both', async () => {
+        await tusdPool.setLender(lender.address)
         const legacyLoan = await createLegacyLoan(loanFactory, tusdPool, lender, owner, borrower, 500000, DAY, 1000)
         await tusd.mint(lender.address, 500000)
         await lender.connect(borrower).fund(legacyLoan.address)
@@ -697,6 +698,12 @@ describe('TrueFiPool2', () => {
         .to.be.revertedWith('TrueFiPool: Pool has no strategy set up')
     })
 
+    it('reverts when caller is not owner', async () => {
+      await tusdPool.connect(owner).switchStrategy(poolStrategy1.address)
+      await expect(tusdPool.connect(borrower).flush(100))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
     it('funds for deposit should go directly into strategy', async () => {
       await tusdPool.connect(owner).switchStrategy(badPoolStrategy.address)
       await badPoolStrategy.setErrorPercents(500)
@@ -806,9 +813,7 @@ describe('TrueFiPool2', () => {
     let loan: LoanToken2
 
     const payBack = async (token: MockTrueCurrency, loan: LoanToken2) => {
-      const balance = await loan.balance()
-      const debt = await loan.debt()
-      await token.mint(loan.address, debt.sub(balance))
+      await token.mint(loan.address, await loan.unpaidDebt())
     }
 
     beforeEach(async () => {
@@ -827,6 +832,7 @@ describe('TrueFiPool2', () => {
     })
 
     it('lender can repay', async () => {
+      await tusdPool.setLender(lender.address)
       const legacyLoan = await createLegacyLoan(loanFactory, tusdPool, lender, owner, borrower, 500000, DAY, 1000)
       await borrowingMutex.lock(borrower.address, legacyLoan.address)
       await tusd.mint(lender.address, 500000)
@@ -953,6 +959,7 @@ describe('TrueFiPool2', () => {
     beforeEach(async () => {
       await tusd.approve(tusdPool.address, parseEth(100))
       await tusdPool.join(parseEth(100))
+      await tusdPool.setLender(lender.address)
       loan = await createLegacyLoan(loanFactory, tusdPool, lender, owner, borrower, 100000, DAY, 1000)
       await tusd.mint(lender.address, 100000)
       await lender.fund(loan.address)

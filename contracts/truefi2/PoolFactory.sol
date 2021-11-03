@@ -11,7 +11,7 @@ import {ImplementationReference} from "../proxy/ImplementationReference.sol";
 import {IFixedTermLoanAgency} from "./interface/IFixedTermLoanAgency.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
-import {ITrueLender2} from "./interface/ITrueLender2.sol";
+import {ITrueLender2Deprecated} from "./deprecated/ITrueLender2Deprecated.sol";
 import {ISAFU} from "./interface/ISAFU.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
 
@@ -24,6 +24,9 @@ import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
  */
 contract PoolFactory is IPoolFactory, UpgradeableClaimable {
     using SafeMath for uint256;
+
+    uint256 public constant MAX_DECIMAL_COUNT = 36;
+
     // ================ WARNING ==================
     // ===== THIS CONTRACT IS INITIALIZABLE ======
     // === STORAGE VARIABLES ARE DECLARED BELOW ==
@@ -40,9 +43,9 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
 
     ImplementationReference public poolImplementationReference;
 
-    address public DEPRECATED__liquidationToken;
+    address private DEPRECATED__liquidationToken;
 
-    ITrueLender2 public trueLender2;
+    address private DEPRECATED__trueLender2;
 
     ISAFU public safu;
 
@@ -103,12 +106,6 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
      */
     event AllowAllStatusChanged(bool status);
 
-    /**
-     * @dev Event to show that trueLender was changed
-     * @param trueLender2 New instance of ITrueLender2
-     */
-    event TrueLenderChanged(ITrueLender2 trueLender2);
-
     event FixedTermLoanAgencyChanged(IFixedTermLoanAgency ftlAgency);
 
     /**
@@ -145,6 +142,16 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
     }
 
     /**
+     * @dev Throws if token has decimal count greater than 36.
+     * This is an arbitrarily chosen constant to prevent potential exponentiation overflows.
+     * @param token Token to be checked
+     */
+    modifier onlyWithRestrictedDecimals(address token) {
+        require(ERC20(token).decimals() <= MAX_DECIMAL_COUNT, "PoolFactory: Token must not have decimal count greater than 36");
+        _;
+    }
+
+    /**
      * @dev Throws if borrower is not whitelisted for creating new pool
      * @param borrower Address of borrower to be checked in whitelist
      */
@@ -159,7 +166,6 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
      */
     function initialize(
         ImplementationReference _poolImplementationReference,
-        ITrueLender2 _trueLender2,
         IFixedTermLoanAgency _ftlAgency,
         ISAFU _safu,
         ILoanFactory2 _loanFactory
@@ -167,7 +173,6 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
         UpgradeableClaimable.initialize(msg.sender);
 
         poolImplementationReference = _poolImplementationReference;
-        trueLender2 = _trueLender2;
         ftlAgency = _ftlAgency;
         safu = _safu;
         loanFactory = _loanFactory;
@@ -208,12 +213,17 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
      * Transfer ownership of created pool to Factory owner.
      * @param token Address of token which the pool will correspond to.
      */
-    function createPool(address token) external onlyAllowedTokens(token) onlyNotExistingPools(token) {
+    function createPool(address token)
+        external
+        onlyAllowedTokens(token)
+        onlyWithRestrictedDecimals(token)
+        onlyNotExistingPools(token)
+    {
         OwnedProxyWithReference proxy = new OwnedProxyWithReference(this.owner(), address(poolImplementationReference));
         pool[token] = address(proxy);
         isPool[address(proxy)] = true;
 
-        ITrueFiPool2(address(proxy)).initialize(ERC20(token), trueLender2, ftlAgency, safu, loanFactory, this.owner());
+        ITrueFiPool2(address(proxy)).initialize(ERC20(token), ftlAgency, safu, loanFactory, this.owner());
 
         emit PoolCreated(token, address(proxy));
     }
@@ -227,7 +237,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
         address token,
         string memory borrowerName,
         string memory borrowerSymbol
-    ) external onlyAllowedTokens(token) onlyWhitelistedBorrowers(msg.sender) {
+    ) external onlyAllowedTokens(token) onlyWithRestrictedDecimals(token) onlyWhitelistedBorrowers(msg.sender) {
         require(
             singleBorrowerPool[msg.sender][token] == address(0),
             "PoolFactory: This borrower and token already have a corresponding pool"
@@ -238,7 +248,6 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
 
         ITrueFiPool2(address(proxy)).singleBorrowerInitialize(
             ERC20(token),
-            trueLender2,
             ftlAgency,
             safu,
             loanFactory,
@@ -319,12 +328,6 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
     function setAllowAll(bool status) external onlyOwner {
         allowAll = status;
         emit AllowAllStatusChanged(status);
-    }
-
-    function setTrueLender(ITrueLender2 _trueLender2) external onlyOwner {
-        require(address(_trueLender2) != address(0), "PoolFactory: TrueLender address cannot be set to 0");
-        trueLender2 = _trueLender2;
-        emit TrueLenderChanged(trueLender2);
     }
 
     function setFixedTermLoanAgency(IFixedTermLoanAgency _ftlAgency) external onlyOwner {

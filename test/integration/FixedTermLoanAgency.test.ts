@@ -22,7 +22,7 @@ import { DAY, extractLoanTokenAddress, MAX_APY, parseEth } from 'utils'
 import { expect, use } from 'chai'
 import { deployMockContract, solidity } from 'ethereum-waffle'
 import { utils, Wallet } from 'ethers'
-import { TrueFiCreditOracleJson, CreditModelJson, LineOfCreditAgencyJson } from 'build'
+import { TrueFiCreditOracleJson, RateModelJson, LineOfCreditAgencyJson } from 'build'
 import { AddressZero } from '@ethersproject/constants'
 import { mock1Inch_TL2 } from './data'
 
@@ -61,10 +61,10 @@ describe('FixedTermLoanAgency', () => {
     const implementationReference = await deployContract(ImplementationReference__factory, poolImplementation.address)
     loanFactory = await new LoanFactory2__factory(owner).deploy()
 
-    const mockCreditModel = await deployMockContract(owner, CreditModelJson.abi)
-    await mockCreditModel.mock.rate.returns(0)
-    await mockCreditModel.mock.effectiveScore.returns(255)
-    await mockCreditModel.mock.fixedTermLoanAdjustment.returns(1000)
+    const mockRateModel = await deployMockContract(owner, RateModelJson.abi)
+    await mockRateModel.mock.rate.returns(0)
+    await mockRateModel.mock.effectiveScore.returns(255)
+    await mockRateModel.mock.fixedTermLoanAdjustment.returns(1000)
     const mockCreditOracle = await deployMockContract(owner, TrueFiCreditOracleJson.abi)
     await mockCreditOracle.mock.score.returns(255)
     await mockCreditOracle.mock.maxBorrowerLimit.withArgs(OWNER).returns(parseEth(100_000_000))
@@ -80,10 +80,10 @@ describe('FixedTermLoanAgency', () => {
     await stakingVault.initialize(stkTru.address, borrowingMutex.address, mockLineOfCreditAgency.address, AddressZero)
 
     ftlAgency = await deployContract(FixedTermLoanAgency__factory)
-    await ftlAgency.initialize(stkTru.address, poolFactory.address, INCH_ADDRESS, mockCreditOracle.address, mockCreditModel.address, borrowingMutex.address, loanFactory.address, stakingVault.address)
+    await ftlAgency.initialize(stkTru.address, poolFactory.address, INCH_ADDRESS, mockCreditOracle.address, mockRateModel.address, borrowingMutex.address, loanFactory.address, stakingVault.address)
     await ftlAgency.allowBorrower(await owner.getAddress())
 
-    await poolFactory.initialize(implementationReference.address, AddressZero, ftlAgency.address, AddressZero, AddressZero)
+    await poolFactory.initialize(implementationReference.address, ftlAgency.address, AddressZero, AddressZero)
 
     await poolFactory.allowToken(USDC_ADDRESS, true)
     usdc = Erc20Mock__factory.connect(USDC_ADDRESS, owner)
@@ -103,8 +103,8 @@ describe('FixedTermLoanAgency', () => {
     usdtLoanPool = TrueFiPool2__factory.connect(await poolFactory.pool(usdt.address), owner)
     await poolFactory.supportPool(usdtLoanPool.address)
 
-    await mockCreditModel.mock.borrowLimit.withArgs(tusdLoanPool.address, 255, parseEth(100_000_000), 0, 0).returns(parseEth(100_000_000))
-    await mockCreditModel.mock.borrowLimit.withArgs(usdtLoanPool.address, 255, parseEth(100_000_000), 0, 0).returns(parseEth(100_000_000))
+    await mockRateModel.mock.borrowLimit.withArgs(tusdLoanPool.address, 255, parseEth(100_000_000), 0, 0).returns(parseEth(100_000_000))
+    await mockRateModel.mock.borrowLimit.withArgs(usdtLoanPool.address, 255, parseEth(100_000_000), 0, 0).returns(parseEth(100_000_000))
 
     const loanTokenImplementation = await new LoanToken2__factory(owner).deploy()
     await loanFactory.initialize(ftlAgency.address, AddressZero, mockCreditOracle.address, borrowingMutex.address, AddressZero)

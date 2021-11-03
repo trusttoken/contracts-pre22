@@ -28,7 +28,7 @@ import {
   TrueFiCreditOracle__factory,
   TrueFiPool2,
   TrueFiPool2__factory,
-  CreditModel,
+  RateModel,
   MockTrueCurrency,
   StakingVault,
   BorrowingMutex__factory,
@@ -67,7 +67,7 @@ describe('FixedTermLoanAgency', () => {
   let usdc: MockUsdc
   let oneInch: Mock1InchV3
   let borrowingMutex: BorrowingMutex
-  let creditModel: CreditModel
+  let rateModel: RateModel
   let baseRateOracle: TimeAveragedBaseRateOracle
   let stakingVault: StakingVault
 
@@ -95,7 +95,7 @@ describe('FixedTermLoanAgency', () => {
       ftlAgency,
       creditOracle,
       borrowingMutex,
-      creditModel,
+      rateModel,
       standardBaseRateOracle: baseRateOracle,
       stakingVault,
     } = await setupTruefi2(owner, _provider, { oneInch: oneInch }))
@@ -116,12 +116,12 @@ describe('FixedTermLoanAgency', () => {
     await poolFactory.supportPool(pool2.address)
 
     counterfeitPool = await deployContract(owner, TrueFiPool2__factory)
-    await counterfeitPool.initialize(token1.address, AddressZero, ftlAgency.address, AddressZero, loanFactory.address, owner.address)
+    await counterfeitPool.initialize(token1.address, ftlAgency.address, AddressZero, loanFactory.address, owner.address)
 
     await pool1.setOracle(poolOracle.address)
     await pool2.setOracle(poolOracle.address)
-    await creditModel.setBaseRateOracle(pool1.address, baseRateOracle.address)
-    await creditModel.setBaseRateOracle(pool2.address, baseRateOracle.address)
+    await rateModel.setBaseRateOracle(pool1.address, baseRateOracle.address)
+    await rateModel.setBaseRateOracle(pool2.address, baseRateOracle.address)
 
     await ftlAgency.setFeePool(feePool.address)
     await ftlAgency.allowBorrower(borrower.address)
@@ -560,8 +560,8 @@ describe('FixedTermLoanAgency', () => {
 
   describe('rate', () => {
     it('returns correct rate', async () => {
-      const baseRate = await creditModel.rate(pool1.address, 255, parseEth(1e5))
-      const ftlAdjustment = await creditModel.fixedTermLoanAdjustment(YEAR)
+      const baseRate = await rateModel.rate(pool1.address, 255, parseEth(1e5))
+      const ftlAdjustment = await rateModel.fixedTermLoanAdjustment(YEAR)
       expect(await ftlAgency.rate(pool1.address, borrower.address, parseEth(1e5), YEAR))
         .to.eq(baseRate.add(ftlAdjustment))
     })
@@ -579,9 +579,7 @@ describe('FixedTermLoanAgency', () => {
 
   describe('Reclaiming', () => {
     const payBack = async (token: MockErc20Token, loan: LoanToken2) => {
-      const balance = await loan.balance()
-      const debt = await loan.debt()
-      await token.mint(loan.address, debt.sub(balance))
+      await token.mint(loan.address, await loan.unpaidDebt())
     }
 
     let loan: LoanToken2
@@ -597,8 +595,10 @@ describe('FixedTermLoanAgency', () => {
     })
 
     it('reverts if loan has not been previously funded', async () => {
+      enum Status { Withdrawn, Settled, Defaulted }
+
       const mockLoanToken = await deployMockContract(owner, LoanToken2Json.abi)
-      await mockLoanToken.mock.status.returns(3)
+      await mockLoanToken.mock.status.returns(Status.Settled)
       await mockLoanToken.mock.pool.returns(pool1.address)
       await expect(ftlAgency.reclaim(mockLoanToken.address, '0x'))
         .to.be.revertedWith('FixedTermLoanAgency: This loan has not been funded by the agency')
@@ -694,7 +694,7 @@ describe('FixedTermLoanAgency', () => {
         await oneInch.setOutputAmount(parseEth(25))
         await payBack(token1, newLoan1)
         await newLoan1.settle()
-        fee = (await newLoan1.debt()).sub(await newLoan1.amount()).div(10)
+        fee = (await newLoan1.interest()).div(10)
       })
 
       const encodeData = (fromToken: string, toToken: string, sender: string, receiver: string, amount: BigNumberish, flags = 0) => {

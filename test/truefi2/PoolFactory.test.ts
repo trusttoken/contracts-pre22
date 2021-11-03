@@ -15,16 +15,15 @@ import {
   Safu__factory,
   FixedTermLoanAgency,
   FixedTermLoanAgency__factory,
-  TestTrueLender,
-  TestTrueLender__factory,
   TrueFiPool2,
   TrueFiPool2__factory,
 } from 'contracts'
-import { solidity } from 'ethereum-waffle'
+import { solidity, deployMockContract } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
 import { beforeEachWithFixture } from 'utils/beforeEachWithFixture'
 import { AddressZero } from '@ethersproject/constants'
 import { parseEth, parseUSDC } from 'utils'
+import { MockERC20TokenJson } from 'build'
 
 use(solidity)
 
@@ -40,8 +39,6 @@ describe('PoolFactory', () => {
   let token2: MockErc20Token
   let token3: MockErc20Token
   let token4: MockErc20Token
-  let trueLenderInstance1: TestTrueLender
-  let trueLenderInstance2: TestTrueLender
   let ftlAgencyInstance1: FixedTermLoanAgency
   let ftlAgencyInstance2: FixedTermLoanAgency
   let loanFactory: LoanFactory2
@@ -56,15 +53,12 @@ describe('PoolFactory', () => {
     token2 = await new MockErc20Token__factory(owner).deploy()
     token3 = await new MockErc20Token__factory(owner).deploy()
     token4 = await new MockErc20Token__factory(owner).deploy()
-    trueLenderInstance1 = await new TestTrueLender__factory(owner).deploy()
-    trueLenderInstance2 = await new TestTrueLender__factory(owner).deploy()
     ftlAgencyInstance1 = await new FixedTermLoanAgency__factory(owner).deploy()
     ftlAgencyInstance2 = await new FixedTermLoanAgency__factory(owner).deploy()
     safu = await new Safu__factory(owner).deploy()
     loanFactory = await new LoanFactory2__factory(owner).deploy()
     await factory.initialize(
       implementationReference.address,
-      trueLenderInstance1.address,
       ftlAgencyInstance1.address,
       safu.address,
       loanFactory.address,
@@ -139,6 +133,14 @@ describe('PoolFactory', () => {
       pool = poolImplementation.attach(proxy.address)
     })
 
+    it('reverts if token of pool has decimal count greater than 36', async () => {
+      const otherToken = await deployMockContract(owner, MockERC20TokenJson.abi)
+      await otherToken.mock.decimals.returns(37)
+      await factory.allowToken(otherToken.address, true)
+      await expect(factory.createPool(otherToken.address))
+        .to.be.revertedWith('PoolFactory: Token must not have decimal count greater than 36')
+    })
+
     it('transfers proxy ownership', async () => {
       expect(await proxy.proxyOwner()).to.eq(owner.address)
     })
@@ -167,7 +169,7 @@ describe('PoolFactory', () => {
     })
 
     it('true lender is set correctly', async () => {
-      expect(await pool.lender()).to.eq(trueLenderInstance1.address)
+      expect(await pool.lender()).to.eq(AddressZero)
     })
 
     it('loan factory is set correctly', async () => {
@@ -255,6 +257,14 @@ describe('PoolFactory', () => {
       pool = poolImplementation.attach(proxy.address)
     })
 
+    it('reverts if token of pool has decimal count greater than 36', async () => {
+      const otherToken = await deployMockContract(owner, MockERC20TokenJson.abi)
+      await otherToken.mock.decimals.returns(37)
+      await factory.allowToken(otherToken.address, true)
+      await expect(factory.connect(borrower).createSingleBorrowerPool(otherToken.address, 'CompanyName', 'CN'))
+        .to.be.revertedWith('PoolFactory: Token must not have decimal count greater than 36')
+    })
+
     it('transfers proxy ownership', async () => {
       expect(await proxy.proxyOwner()).to.eq(owner.address)
     })
@@ -288,7 +298,7 @@ describe('PoolFactory', () => {
     })
 
     it('true lender is set correctly', async () => {
-      expect(await pool.lender()).to.eq(trueLenderInstance1.address)
+      expect(await pool.lender()).to.eq(AddressZero)
     })
 
     it('fixed term loan agency is set correctly', async () => {
@@ -521,26 +531,6 @@ describe('PoolFactory', () => {
       await expect(factory.setAllowAll(false))
         .to.emit(factory, 'AllowAllStatusChanged')
         .withArgs(false)
-    })
-  })
-
-  describe('setTrueLender', () => {
-    it('only owner can set trueLender', async () => {
-      await expect(factory.connect(otherWallet).setTrueLender(trueLenderInstance2.address))
-        .to.be.revertedWith('Ownable: caller is not the owner')
-      await expect(factory.connect(owner).setTrueLender(trueLenderInstance2.address))
-        .not.to.be.reverted
-    })
-
-    it('reverts when set to 0', async () => {
-      await expect(factory.setTrueLender(AddressZero))
-        .to.be.revertedWith('PoolFactory: TrueLender address cannot be set to 0')
-    })
-
-    it('sets new true lender contract', async () => {
-      expect(await factory.trueLender2()).to.eq(trueLenderInstance1.address)
-      await factory.connect(owner).setTrueLender(trueLenderInstance2.address)
-      expect(await factory.trueLender2()).to.eq(trueLenderInstance2.address)
     })
   })
 

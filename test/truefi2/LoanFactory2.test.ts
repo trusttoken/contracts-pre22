@@ -122,17 +122,16 @@ describe('LoanFactory2', () => {
 
     describe('deploys loan token contract', () => {
       it('has storage variables set properly', async () => {
-        enum Status { Awaiting, Funded, Withdrawn, Settled, Defaulted, Liquidated }
+        enum Status { Withdrawn, Settled, Defaulted, Liquidated }
 
         expect(await loanToken.pool()).to.eq(pool.address)
         expect(await loanToken.borrowingMutex()).to.eq(borrowingMutex.address)
         expect(await loanToken.borrower()).to.eq(borrower.address)
-        expect(await loanToken.ftlAgency()).to.eq(ftla.address)
-        expect(await loanToken.admin()).to.eq(owner.address)
         expect(await loanToken.loanFactory()).to.eq(loanFactory.address)
-        expect(await loanToken.amount()).to.eq(parseEth(1))
+        expect(await loanToken.principal()).to.equal(parseEth(1))
+        expect(await loanToken.interest()).to.equal(parseEth(1).mul(15).div(365).div(10))
+        expect(await loanToken.tokenRedeemed()).to.equal(0)
         expect(await loanToken.term()).to.eq(15 * DAY)
-        expect(await loanToken.apy()).to.eq(1000)
         expect(await loanToken.status()).to.eq(Status.Withdrawn)
       })
 

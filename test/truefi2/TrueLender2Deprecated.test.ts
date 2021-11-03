@@ -28,7 +28,7 @@ import {
   TestTrueLender__factory,
   TrueFiCreditOracle,
   TrueFiPool2,
-  TrueFiPool2__factory,
+  TestTrueFiPool2__factory,
   TestLegacyLoanToken2__factory,
 } from 'contracts'
 
@@ -40,7 +40,7 @@ import { BigNumber, BigNumberish, utils, Wallet } from 'ethers'
 
 use(solidity)
 
-describe('TrueLender2', () => {
+describe('TrueLender2Deprecated', () => {
   let owner: Wallet
   let borrower: Wallet
 
@@ -104,14 +104,15 @@ describe('TrueLender2', () => {
     await poolFactory.createPool(token1.address)
     await poolFactory.createPool(token2.address)
 
-    pool1 = TrueFiPool2__factory.connect(await poolFactory.pool(token1.address), owner)
-    pool2 = TrueFiPool2__factory.connect(await poolFactory.pool(token2.address), owner)
+    pool1 = TestTrueFiPool2__factory.connect(await poolFactory.pool(token1.address), owner)
+    pool2 = TestTrueFiPool2__factory.connect(await poolFactory.pool(token2.address), owner)
 
     await poolFactory.supportPool(pool1.address)
     await poolFactory.supportPool(pool2.address)
 
-    counterfeitPool = await deployContract(owner, TrueFiPool2__factory)
-    await counterfeitPool.initialize(token1.address, lender.address, AddressZero, AddressZero, loanFactory.address, owner.address)
+    counterfeitPool = await deployContract(owner, TestTrueFiPool2__factory)
+    await counterfeitPool.initialize(token1.address, AddressZero, AddressZero, loanFactory.address, owner.address)
+    await counterfeitPool.setLender(lender.address)
 
     await pool1.setOracle(poolOracle.address)
     await pool2.setOracle(poolOracle.address)
@@ -130,6 +131,9 @@ describe('TrueLender2', () => {
     await tru.approve(stkTru.address, parseTRU(15e6))
     await stkTru.stake(parseTRU(15e6))
     await timeTravel(1)
+
+    await pool1.setLender(lender.address)
+    await pool2.setLender(lender.address)
 
     loan1 = await createLegacyLoan(loanFactory, pool1, lender, owner, borrower, 100000, YEAR, 100)
 

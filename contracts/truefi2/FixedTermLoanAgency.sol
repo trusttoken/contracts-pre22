@@ -18,7 +18,7 @@ import {I1Inch3} from "./interface/I1Inch3.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {IERC20WithDecimals} from "./interface/IERC20WithDecimals.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
-import {ICreditModel} from "./interface/ICreditModel.sol";
+import {IRateModel} from "./interface/IRateModel.sol";
 import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
 import {IStakingVault} from "./interface/IStakingVault.sol";
 
@@ -81,7 +81,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
 
     uint8 public longTermLoanScoreThreshold;
 
-    ICreditModel public creditModel;
+    IRateModel public rateModel;
 
     // mutex ensuring there's only one running loan or credit line for borrower
     IBorrowingMutex public borrowingMutex;
@@ -183,7 +183,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
         IPoolFactory _poolFactory,
         I1Inch3 __1inch,
         ITrueFiCreditOracle _creditOracle,
-        ICreditModel _creditModel,
+        IRateModel _rateModel,
         IBorrowingMutex _borrowingMutex,
         ILoanFactory2 _loanFactory,
         IStakingVault _stakingVault
@@ -194,7 +194,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
         poolFactory = _poolFactory;
         _1inch = __1inch;
         creditOracle = _creditOracle;
-        creditModel = _creditModel;
+        rateModel = _rateModel;
         borrowingMutex = _borrowingMutex;
         loanFactory = _loanFactory;
         stakingVault = _stakingVault;
@@ -312,9 +312,9 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
     ) public view returns (uint256) {
         uint8 rawScore = creditOracle.score(borrower);
         uint256 stakedAmount = stakingVault.stakedAmount(borrower);
-        uint8 effectiveScore = creditModel.effectiveScore(rawScore, pool, stakedAmount, amount);
-        uint256 fixedTermLoanAdjustment = creditModel.fixedTermLoanAdjustment(term);
-        return creditModel.rate(pool, effectiveScore, amount).add(fixedTermLoanAdjustment);
+        uint8 effectiveScore = rateModel.effectiveScore(rawScore, pool, stakedAmount, amount);
+        uint256 fixedTermLoanAdjustment = rateModel.fixedTermLoanAdjustment(term);
+        return rateModel.rate(pool, effectiveScore, amount).add(fixedTermLoanAdjustment);
     }
 
     /**
@@ -369,10 +369,10 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
      * @return Theoretical value of all the loans funded by this strategy
      */
     function value(ITrueFiPool2 pool) external override view returns (uint256) {
-        ILoanToken2[] storage _loans = poolLoans[pool];
+        ILoanToken2[] memory _loans = poolLoans[pool];
         uint256 totalValue;
         for (uint256 index = 0; index < _loans.length; index++) {
-            totalValue = totalValue.add(_loans[index].value(_loans[index].balanceOf(address(this))));
+            totalValue = totalValue.add(_loans[index].currentValue(address(this)));
         }
         return totalValue;
     }
@@ -382,19 +382,22 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
      * @param loanToken Loan to reclaim capital from (must be previously funded)
      */
     function reclaim(ILoanToken2 loanToken, bytes calldata data) external {
-        ITrueFiPool2 pool = loanToken.pool();
         ILoanToken2.Status status = loanToken.status();
-        require(status >= ILoanToken2.Status.Settled, "FixedTermLoanAgency: LoanToken is not closed yet");
-
-        if (status != ILoanToken2.Status.Settled) {
+        require(
+            status == ILoanToken2.Status.Settled || status == ILoanToken2.Status.Defaulted,
+            "FixedTermLoanAgency: LoanToken is not closed yet"
+        );
+        if (status == ILoanToken2.Status.Defaulted) {
             require(msg.sender == owner(), "FixedTermLoanAgency: Only owner can reclaim from defaulted loan");
         }
 
         // find the token, repay loan and remove loan from loan array
+        ITrueFiPool2 pool = loanToken.pool();
         ILoanToken2[] storage _loans = poolLoans[pool];
-        for (uint256 index = 0; index < _loans.length; index++) {
+        uint256 loansLength = _loans.length;
+        for (uint256 index = 0; index < loansLength; index++) {
             if (_loans[index] == loanToken) {
-                _loans[index] = _loans[_loans.length - 1];
+                _loans[index] = _loans[loansLength - 1];
                 _loans.pop();
 
                 uint256 fundsReclaimed = _redeemAndRepay(loanToken, pool, data);
@@ -427,7 +430,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
     }
 
     /**
-     * @dev Get borrow limit for `borrower` in `pool` using credit model
+     * @dev Get borrow limit for `borrower` in `pool` using rate model
      * @param pool Pool to get borrow limit for
      * @param borrower Borrower to get borrow limit for
      * @return borrow limit for `borrower` in `pool`
@@ -435,7 +438,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
     function borrowLimit(ITrueFiPool2 pool, address borrower) public view returns (uint256) {
         uint8 poolDecimals = ITrueFiPool2WithDecimals(address(pool)).decimals();
         return
-            creditModel.borrowLimit(
+            rateModel.borrowLimit(
                 pool,
                 creditOracle.score(borrower),
                 creditOracle.maxBorrowerLimit(borrower),
@@ -456,7 +459,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
     ) internal returns (uint256) {
         // call redeem function on LoanToken
         uint256 balanceBefore = pool.token().balanceOf(address(this));
-        loanToken.redeem(loanToken.balanceOf(address(this)));
+        loanToken.redeem();
         uint256 balanceAfter = pool.token().balanceOf(address(this));
 
         // gets reclaimed amount and pays back to pool
@@ -484,7 +487,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
         ILoanToken2 loanToken,
         bytes calldata data
     ) internal returns (uint256) {
-        uint256 feeAmount = loanToken.debt().sub(loanToken.amount()).mul(fee).div(BASIS_RATIO);
+        uint256 feeAmount = loanToken.interest().mul(fee).div(BASIS_RATIO);
         IERC20WithDecimals token = IERC20WithDecimals(address(pool.token()));
         if (token == feeToken) {
             return feeAmount;
@@ -493,7 +496,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
             return 0;
         }
         (I1Inch3.SwapDescription memory swap, uint256 balanceDiff) = _1inch.exchange(data);
-        uint256 expectedDiff = pool.oracle().tokenToUsd(feeAmount).mul(10**feeToken.decimals()).div(1 ether);
+        uint256 expectedDiff = pool.oracle().tokenToUsd(feeAmount).mul(uint256(10)**feeToken.decimals()).div(1 ether);
 
         require(swap.srcToken == address(token), "FixedTermLoanAgency: Source token is not same as pool's token");
         require(swap.dstToken == address(feeToken), "FixedTermLoanAgency: Destination token is not fee token");
