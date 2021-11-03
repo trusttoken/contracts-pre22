@@ -123,6 +123,7 @@ jobs:
     steps:
       - attach_workspace:
           at: .
+      - run: export INFURA_PROJECT_ID=$INFURA_PROJECT_ID && export INFURA_PROJECT_SECRET=$INFURA_PROJECT_SECRET
       - run: yarn test:integration --config .mocharc.integration-ci.js
 
 workflows:
