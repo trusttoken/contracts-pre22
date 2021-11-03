@@ -30,16 +30,26 @@ describe.only('TrueFiPool2', () => {
   let implementationReference: ImplementationReference
 
   beforeEach(async () => {
+    console.log('test1');
     const poolFactory = await deployContract(PoolFactory__factory)
+    console.log('test2');
     const poolImplementation = await deployContract(TrueFiPool2__factory)
+    console.log('test3');
     implementationReference = await deployContract(ImplementationReference__factory, poolImplementation.address)
+    console.log('test4');
     const lender = await deployContract(TrueLender2__factory)
+    console.log('test5');
     await lender.initialize(AddressZero, poolFactory.address, AddressZero)
+    console.log('test6');
 
     await poolFactory.initialize(implementationReference.address, lender.address, AddressZero, AddressZero, AddressZero)
+    console.log('test7');
     await poolFactory.allowToken(USDC_ADDRESS, true)
+    console.log('test8');
     const usdc = Erc20Mock__factory.connect(USDC_ADDRESS, owner)
+    console.log('test9');
     await poolFactory.createPool(usdc.address)
+    console.log('test10');
   })
 
   it('tether flush', async () => {
