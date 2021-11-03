@@ -15,7 +15,7 @@ import { solidity } from 'ethereum-waffle'
 
 use(solidity)
 
-describe.only('TrueFiPool2', () => {
+describe('TrueFiPool2', () => {
   const USDC_ADDRESS = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
   const TFUSDT_ADDRESS = '0x6002b1dcb26e7b1aa797a17551c6f487923299d7'
   const TFUSDT_STRATEGY_ADDRESS = '0x8D162Caa649e981E2a0b0ba5908A77f2536B11A8'
@@ -30,26 +30,16 @@ describe.only('TrueFiPool2', () => {
   let implementationReference: ImplementationReference
 
   beforeEach(async () => {
-    console.log('test1');
     const poolFactory = await deployContract(PoolFactory__factory)
-    console.log('test2');
     const poolImplementation = await deployContract(TrueFiPool2__factory)
-    console.log('test3');
     implementationReference = await deployContract(ImplementationReference__factory, poolImplementation.address)
-    console.log('test4');
     const lender = await deployContract(TrueLender2__factory)
-    console.log('test5');
     await lender.initialize(AddressZero, poolFactory.address, AddressZero)
-    console.log('test6');
 
     await poolFactory.initialize(implementationReference.address, lender.address, AddressZero, AddressZero, AddressZero)
-    console.log('test7');
     await poolFactory.allowToken(USDC_ADDRESS, true)
-    console.log('test8');
     const usdc = Erc20Mock__factory.connect(USDC_ADDRESS, owner)
-    console.log('test9');
     await poolFactory.createPool(usdc.address)
-    console.log('test10');
   })
 
   it('tether flush', async () => {
