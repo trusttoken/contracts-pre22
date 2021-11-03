@@ -118,8 +118,8 @@ jobs:
     docker:
       - image: cimg/node:16.1.0
     environment:
-      INFURA_PROJECT_ID: ${INFURA_PROJECT_ID}
-      INFURA_PROJECT_SECRET: ${INFURA_PROJECT_SECRET}
+      INFURA_PROJECT_ID: "TESTTT"
+      INFURA_PROJECT_SECRET: "TESTTTTTTT"
     steps:
       - attach_workspace:
           at: .
@@ -158,6 +158,7 @@ workflows:
           requires:
             - build
       - integration:
+          context: main
           requires:
             - build
 
