@@ -118,13 +118,11 @@ jobs:
     docker:
       - image: cimg/node:16.1.0
     environment:
-      INFURA_PROJECT_ID: $INFURA_PROJECT_ID
-      INFURA_PROJECT_SECRET: $INFURA_PROJECT_SECRET
+      INFURA_PROJECT_ID: ${INFURA_PROJECT_ID}
+      INFURA_PROJECT_SECRET: ${INFURA_PROJECT_SECRET}
     steps:
       - attach_workspace:
           at: .
-      - run: echo 'export INFURA_PROJECT_ID=${INFURA_PROJECT_ID}' >> $BASH_ENV
-      - run: echo 'export INFURA_PROJECT_SECRET=${INFURA_PROJECT_SECRET}' >> $BASH_ENV
       - run: yarn test:integration --config .mocharc.integration-ci.js
 
 workflows:
