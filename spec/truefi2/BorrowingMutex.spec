@@ -1,6 +1,7 @@
 methods {
     isUnlocked(address) returns bool envfree
     isBanned(address) returns bool envfree
+    locker(address) returns address envfree
 }
 
 definition isReasonableAddress(address alice) returns bool = alice != 0 && alice != 1;
@@ -34,8 +35,49 @@ rule functionDoesNotBanUnlockedBorrower() {
         address lockee;
         lock(e, lockee, locker);
     } else {
-        sinvoke f(e, args);
+        f(e, args);
     }
 
-    assert !isBanned(borrower);
+    assert !isBanned(borrower), "Borrower's status changes from unlocked to banned directly";
+}
+
+rule functionDoesNotUnbanBorrower {
+    address borrower;
+    require isBanned(borrower);
+
+    method f;
+    env e;
+    require isReasonableEnv(e);
+    calldataarg args;
+    f(e, args);
+
+    assert isBanned(borrower), "Borrower gets unbanned";
+}
+
+rule onlyLockerCanBanBorrower {
+    address borrower;
+    address lockerAddress = anyReasonableAddress();
+    require locker(borrower) == lockerAddress;
+
+    method f;
+    env e;
+    require isReasonableEnv(e);
+    calldataarg args;
+    f(e, args);
+
+    assert isBanned(borrower) => e.msg.sender == lockerAddress, "Borrower gets banned by non-locker address";
+}
+
+rule onlyLockerCanUnlockBorrower {
+    address borrower;
+    address lockerAddress = anyReasonableAddress();
+    require locker(borrower) == lockerAddress;
+
+    method f;
+    env e;
+    require isReasonableEnv(e);
+    calldataarg args;
+    f(e, args);
+
+    assert isUnlocked(borrower) => e.msg.sender == lockerAddress, "Borrower gets unlocked by non-locker address";
 }
