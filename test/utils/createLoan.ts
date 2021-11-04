@@ -1,7 +1,7 @@
 import {
   DebtToken__factory,
   LoanFactory2,
-  LoanToken2__factory,
+  FixedTermLoan__factory,
   TestLegacyLoanToken2__factory,
   TestLoanFactory,
   TestTrueLender,
@@ -16,7 +16,7 @@ export const createLoan = async function (factory: LoanFactory2, creator: Wallet
   const loanTx = await factory.connect(fakeFTLA).createLoanToken(pool.address, creator.address, amount, duration, apy)
   await factory.setFixedTermLoanAgency(originalFTLA_address)
   const loanAddress = (await loanTx.wait()).events[1].args.loanToken
-  return new LoanToken2__factory(creator).attach(loanAddress)
+  return new FixedTermLoan__factory(creator).attach(loanAddress)
 }
 
 export const createDebtToken = async (loanFactory: LoanFactory2, creditAgency: Wallet, owner: Wallet, pool: TrueFiPool2, borrower: Wallet, debt: BigNumberish) => {

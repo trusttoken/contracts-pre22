@@ -1,5 +1,5 @@
 import {
-  LoanToken2,
+  FixedTermLoan,
   TestDeficiencyToken,
   TestDeficiencyToken__factory,
   TrueFiPool2,
@@ -17,7 +17,7 @@ describe('DeficiencyToken', () => {
   let owner: Wallet, friend: Wallet, stranger: Wallet
   let pool: TrueFiPool2
   let loanFactory: LoanFactory2
-  let loan: LoanToken2
+  let loan: FixedTermLoan
   let deficiency: TestDeficiencyToken
 
   beforeEachWithFixture(async (wallets, provider) => {

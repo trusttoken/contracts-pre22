@@ -14,7 +14,7 @@ import {
   BorrowingMutex,
   FixedTermLoanAgency,
   LoanFactory2,
-  LoanToken2,
+  FixedTermLoan,
   Mock1InchV3,
   Mock1InchV3__factory,
   MockErc20Token,
@@ -34,7 +34,7 @@ import {
   BorrowingMutex__factory,
 } from 'contracts'
 
-import { BorrowingMutexJson, LoanToken2Json, Mock1InchV3Json } from 'build'
+import { BorrowingMutexJson, FixedTermLoanJson, Mock1InchV3Json } from 'build'
 
 import { deployMockContract, solidity } from 'ethereum-waffle'
 import { AddressZero } from '@ethersproject/constants'
@@ -74,7 +74,7 @@ describe('FixedTermLoanAgency', () => {
   const YEAR = DAY * 365
 
   let timeTravel: (time: number) => void
-  let extractLoanTokenAddress: (pendingTx: Promise<ContractTransaction>) => Promise<LoanToken2>
+  let extractLoanTokenAddress: (pendingTx: Promise<ContractTransaction>) => Promise<FixedTermLoan>
 
   beforeEachWithFixture(async (wallets, _provider) => {
     ([owner, borrower, borrower2] = wallets)
@@ -578,11 +578,11 @@ describe('FixedTermLoanAgency', () => {
   })
 
   describe('Reclaiming', () => {
-    const payBack = async (token: MockErc20Token, loan: LoanToken2) => {
+    const payBack = async (token: MockErc20Token, loan: FixedTermLoan) => {
       await token.mint(loan.address, await loan.unpaidDebt())
     }
 
-    let loan: LoanToken2
+    let loan: FixedTermLoan
 
     beforeEach(async () => {
       loan = await extractLoanTokenAddress(ftlAgency.connect(borrower).borrow(pool1.address, 100000, YEAR, 1000))
@@ -597,7 +597,7 @@ describe('FixedTermLoanAgency', () => {
     it('reverts if loan has not been previously funded', async () => {
       enum Status { Withdrawn, Settled, Defaulted }
 
-      const mockLoanToken = await deployMockContract(owner, LoanToken2Json.abi)
+      const mockLoanToken = await deployMockContract(owner, FixedTermLoanJson.abi)
       await mockLoanToken.mock.status.returns(Status.Settled)
       await mockLoanToken.mock.pool.returns(pool1.address)
       await expect(ftlAgency.reclaim(mockLoanToken.address, '0x'))
@@ -636,8 +636,8 @@ describe('FixedTermLoanAgency', () => {
     })
 
     describe('Removes loan from array', () => {
-      let newLoan1: LoanToken2
-      let newLoan2: LoanToken2
+      let newLoan1: FixedTermLoan
+      let newLoan2: FixedTermLoan
 
       beforeEach(async () => {
         const mockMutex = await deployMockContract(owner, BorrowingMutexJson.abi)
@@ -678,7 +678,7 @@ describe('FixedTermLoanAgency', () => {
 
     describe('With fees', () => {
       let fee: BigNumber
-      let newLoan1: LoanToken2
+      let newLoan1: FixedTermLoan
       beforeEach(async () => {
         const mockMutex = await deployMockContract(owner, BorrowingMutexJson.abi)
         await ftlAgency.setBorrowingMutex(mockMutex.address)
