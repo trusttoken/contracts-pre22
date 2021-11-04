@@ -90,6 +90,8 @@ describe('TrueFiPool2', () => {
       borrowingMutex,
     } = await setupTruefi2(owner, provider, { lender: lender, loanFactory: loanFactory }))
 
+    await rateModel.setBorrowLimitConfig(40, 7500, 1500, 1500)
+
     poolStrategy1 = await deployContract(MockStrategy__factory, tusd.address, tusdPool.address)
     poolStrategy2 = await deployContract(MockStrategy__factory, tusd.address, tusdPool.address)
     badPoolStrategy = await deployContract(BadStrategy__factory, tusd.address, tusdPool.address)
