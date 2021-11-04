@@ -688,7 +688,7 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
         CreditScoreBucket storage bucket,
         uint8 bucketNumber,
         address borrower
-    ) internal returns (uint256 totalBorrowerInterest) {
+    ) internal returns (uint256) {
         if (bucketNumber == 0) {
             // new borrower, no previous interest
             return 0;
@@ -705,7 +705,7 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
         }
         // adjust total borrow & interest for bucket and delete in storage
         bucket.totalBorrowed = bucket.totalBorrowed.sub(borrowed[pool][borrower]);
-        totalBorrowerInterest = _totalBorrowerInterest(pool, bucket, borrower);
+        uint256 totalBorrowerInterest = _totalBorrowerInterest(pool, bucket, borrower);
         delete bucket.savedInterest[borrower];
 
         return totalBorrowerInterest;
