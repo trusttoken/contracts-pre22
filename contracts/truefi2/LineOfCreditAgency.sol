@@ -670,16 +670,11 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
         uint256 updatedBorrowAmount
     ) internal {
         // take out of old bucket
-        uint256 totalBorrowerInterest = oldEffectiveScore > 0
-            ? _takeOutOfBucket(pool, buckets[pool][oldEffectiveScore], oldEffectiveScore, borrower)
-            : 0;
+        uint256 totalBorrowerInterest = _takeOutOfBucket(pool, buckets[pool][oldEffectiveScore], oldEffectiveScore, borrower);
         // update borrow amount
         borrowed[pool][borrower] = updatedBorrowAmount;
-        CreditScoreBucket storage bucket = buckets[pool][newEffectiveScore];
         // put into new bucket
-        _putIntoBucket(pool, bucket, newEffectiveScore, borrower);
-        // save interest
-        bucket.savedInterest[borrower] = SavedInterest(totalBorrowerInterest, bucket.cumulativeInterestPerShare);
+        _putIntoBucket(pool, buckets[pool][newEffectiveScore], newEffectiveScore, borrower, totalBorrowerInterest);
     }
 
     /**
@@ -695,7 +690,12 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
         CreditScoreBucket storage bucket,
         uint8 bucketNumber,
         address borrower
-    ) internal returns (uint256 totalBorrowerInterest) {
+    ) internal returns (uint256) {
+        if (bucketNumber == 0) {
+            // new borrower, no previous interest
+            return 0;
+        }
+
         require(bucket.borrowersCount > 0, "LineOfCreditAgency: bucket is empty");
         // update bucket state
         pokeSingleBucket(pool, bucketNumber);
@@ -707,8 +707,10 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
         }
         // adjust total borrow & interest for bucket and delete in storage
         bucket.totalBorrowed = bucket.totalBorrowed.sub(borrowed[pool][borrower]);
-        totalBorrowerInterest = _totalBorrowerInterest(pool, bucket, borrower);
+        uint256 totalBorrowerInterest = _totalBorrowerInterest(pool, bucket, borrower);
         delete bucket.savedInterest[borrower];
+
+        return totalBorrowerInterest;
     }
 
     /**
@@ -722,7 +724,8 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
         ITrueFiPool2 pool,
         CreditScoreBucket storage bucket,
         uint8 bucketNumber,
-        address borrower
+        address borrower,
+        uint256 totalInterest
     ) internal {
         // update  bucket state
         pokeSingleBucket(pool, bucketNumber);
@@ -734,6 +737,8 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
         }
         // adjust total borrow in bucket
         bucket.totalBorrowed = bucket.totalBorrowed.add(borrowed[pool][borrower]);
+        // save interest
+        bucket.savedInterest[borrower] = SavedInterest(totalInterest, bucket.cumulativeInterestPerShare);
     }
 
     function _add16(uint16 a, uint16 b) private pure returns (uint16) {
