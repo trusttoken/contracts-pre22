@@ -6,6 +6,13 @@ methods {
 definition isReasonableAddress(address alice) returns bool = alice != 0 && alice != 1;
 definition isReasonableEnv(env e) returns bool = isReasonableAddress(e.msg.sender);
 
+function anyReasonableAddress() returns address {
+    address alice;
+    havoc alice;
+    require isReasonableAddress(alice);
+    return alice;
+}
+
 rule onePlusTwoEqualsThree(uint one, uint two) {
     require one == 1 && two == 2;
 
@@ -23,9 +30,8 @@ rule functionDoesNotBanUnlockedBorrower() {
     require isReasonableEnv(e);
     calldataarg args;
     if (f.selector == lock(address, address).selector) {
-        address locker;
+        address locker = anyReasonableAddress();
         address lockee;
-        require isReasonableAddress(locker);
         lock(e, lockee, locker);
     } else {
         sinvoke f(e, args);
