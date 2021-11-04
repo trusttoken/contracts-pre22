@@ -125,4 +125,35 @@ describe('Fixed-term loans flow', () => {
     expect(await tusd.balanceOf(pool.address)).to.eq(poolBalanceBefore.add(loanInterest))
     expect(await tusd.balanceOf(safu.address)).to.eq(safuBalanceBefore)
   })
+
+  it('from borrow to normal loan repayment', async () => {
+    const poolBalanceBefore = await tusd.balanceOf(pool.address)
+
+    // borrows 1 million tusd
+    const tx = ftlAgency.connect(borrower).borrow(pool.address, parseEth(1e6), 3 * MONTH, 10000)
+    const loan = await extractLoanTokenAddress(tx)
+
+    // month passes and borrower makes a repayment
+    await timeTravel(MONTH)
+    await tusd.connect(borrower).approve(loan.address, parseEth(5e5))
+    await loan.repay(borrower.address, parseEth(5e5))
+
+    // 2 more months pass, grace period starts
+    await timeTravel(2 * MONTH)
+
+    const loanInterest = await loan.interest()
+    const restToRepay = parseEth(5e5).add(loanInterest)
+
+    // after start of the grace period borrower repays rest of the debt
+    await timeTravel(DAY)
+    await tusd.connect(borrower).approve(loan.address, restToRepay)
+    await loan.repay(borrower.address, restToRepay)
+
+    enum Status { Withdrawn, Settled, Defaulted }
+    expect(await loan.status()).to.eq(Status.Settled)
+
+    await ftlAgency.reclaim(loan.address, '0x')
+
+    expect(await tusd.balanceOf(pool.address)).to.eq(poolBalanceBefore.add(loanInterest))
+  })
 })
