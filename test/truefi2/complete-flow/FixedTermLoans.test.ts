@@ -6,7 +6,7 @@ import {
   StkTruToken,
   TrueFiCreditOracle,
   TrueFiPool2,
-  LoanToken2,
+  FixedTermLoan,
   BorrowingMutex,
 } from 'contracts'
 import { expect, use } from 'chai'
@@ -43,7 +43,7 @@ describe('Fixed-term loans flow', () => {
   let borrowingMutex: BorrowingMutex
 
   let timeTravel: (time: number) => void
-  let extractLoanTokenAddress: (pendingTx: Promise<ContractTransaction>) => Promise<LoanToken2>
+  let extractLoanTokenAddress: (pendingTx: Promise<ContractTransaction>) => Promise<FixedTermLoan>
 
   beforeEachWithFixture(async (wallets, _provider) => {
     [owner, borrower, staker] = wallets

@@ -9,7 +9,7 @@ import {ERC20} from "../common/UpgradeableERC20.sol";
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {OneInchExchange} from "./libraries/OneInchExchange.sol";
 
-import {ILoanToken2} from "./interface/ILoanToken2.sol";
+import {IFixedTermLoan} from "./interface/IFixedTermLoan.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
 import {IStakingPool} from "../truefi/interface/IStakingPool.sol";
 import {IFixedTermLoanAgency} from "./interface/IFixedTermLoanAgency.sol";
@@ -50,7 +50,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
     // REMOVAL OR REORDER OF VARIABLES WILL RESULT
     // ========= IN STORAGE CORRUPTION ===========
 
-    mapping(ITrueFiPool2 => ILoanToken2[]) public poolLoans;
+    mapping(ITrueFiPool2 => IFixedTermLoan[]) public poolLoans;
 
     // maximum amount of loans agency can handle at once
     uint256 public maxLoans;
@@ -300,7 +300,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
      * @param pool pool address
      * @return result Array of loans currently funded
      */
-    function loans(ITrueFiPool2 pool) public view returns (ILoanToken2[] memory result) {
+    function loans(ITrueFiPool2 pool) public view returns (IFixedTermLoan[] memory result) {
         result = poolLoans[pool];
     }
 
@@ -353,7 +353,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
         uint256 apy = rate(pool, borrower, amount, term);
         require(apy <= _maxApy, "FixedTermLoanAgency: Calculated apy is higher than max apy");
 
-        ILoanToken2 loanToken = loanFactory.createLoanToken(pool, borrower, amount, term, apy);
+        IFixedTermLoan loanToken = loanFactory.createLoanToken(pool, borrower, amount, term, apy);
         borrowingMutex.lock(borrower, address(loanToken));
         poolLoans[pool].push(loanToken);
         pool.borrow(amount);
@@ -369,7 +369,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
      * @return Theoretical value of all the loans funded by this strategy
      */
     function value(ITrueFiPool2 pool) external override view returns (uint256) {
-        ILoanToken2[] memory _loans = poolLoans[pool];
+        IFixedTermLoan[] memory _loans = poolLoans[pool];
         uint256 totalValue;
         for (uint256 index = 0; index < _loans.length; index++) {
             totalValue = totalValue.add(_loans[index].currentValue(address(this)));
@@ -381,19 +381,19 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
      * @dev For settled loans, redeem LoanTokens for underlying funds
      * @param loanToken Loan to reclaim capital from (must be previously funded)
      */
-    function reclaim(ILoanToken2 loanToken, bytes calldata data) external {
-        ILoanToken2.Status status = loanToken.status();
+    function reclaim(IFixedTermLoan loanToken, bytes calldata data) external {
+        IFixedTermLoan.Status status = loanToken.status();
         require(
-            status == ILoanToken2.Status.Settled || status == ILoanToken2.Status.Defaulted,
+            status == IFixedTermLoan.Status.Settled || status == IFixedTermLoan.Status.Defaulted,
             "FixedTermLoanAgency: LoanToken is not closed yet"
         );
-        if (status == ILoanToken2.Status.Defaulted) {
+        if (status == IFixedTermLoan.Status.Defaulted) {
             require(msg.sender == owner(), "FixedTermLoanAgency: Only owner can reclaim from defaulted loan");
         }
 
         // find the token, repay loan and remove loan from loan array
         ITrueFiPool2 pool = loanToken.pool();
-        ILoanToken2[] storage _loans = poolLoans[pool];
+        IFixedTermLoan[] storage _loans = poolLoans[pool];
         uint256 loansLength = _loans.length;
         for (uint256 index = 0; index < loansLength; index++) {
             if (_loans[index] == loanToken) {
@@ -419,7 +419,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
      * @return Total amount borrowed for `borrower` in USD
      */
     function totalBorrowed(address borrower, uint8 decimals) public view returns (uint256) {
-        ILoanToken2 loan = ILoanToken2(borrowingMutex.locker(borrower));
+        IFixedTermLoan loan = IFixedTermLoan(borrowingMutex.locker(borrower));
         if (!loanFactory.isLoanToken(loan)) {
             return 0;
         }
@@ -453,7 +453,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
      * @param pool Pool from which the loan was funded
      */
     function _redeemAndRepay(
-        ILoanToken2 loanToken,
+        IFixedTermLoan loanToken,
         ITrueFiPool2 pool,
         bytes calldata data
     ) internal returns (uint256) {
@@ -484,7 +484,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
     /// @dev Swap `token` for `feeToken` on 1inch
     function _swapFee(
         ITrueFiPool2 pool,
-        ILoanToken2 loanToken,
+        IFixedTermLoan loanToken,
         bytes calldata data
     ) internal returns (uint256) {
         uint256 feeAmount = loanToken.interest().mul(fee).div(BASIS_RATIO);

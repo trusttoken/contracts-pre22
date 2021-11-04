@@ -11,8 +11,8 @@ import {
   ImplementationReference__factory,
   LoanFactory2,
   LoanFactory2__factory,
-  LoanToken2,
-  LoanToken2__factory,
+  FixedTermLoan,
+  FixedTermLoan__factory,
   MockUsdStableCoinOracle__factory,
   PoolFactory__factory,
   TrueFiPool2,
@@ -51,7 +51,7 @@ describe('FixedTermLoanAgency', () => {
   let tusd: Erc20Mock
   let usdc: Erc20Mock
   let usdt: Erc20Mock
-  let loan: LoanToken2
+  let loan: FixedTermLoan
   let borrowingMutex: BorrowingMutex
 
   beforeEach(async () => {
@@ -106,7 +106,7 @@ describe('FixedTermLoanAgency', () => {
     await mockRateModel.mock.borrowLimit.withArgs(tusdLoanPool.address, 255, parseEth(100_000_000), 0, 0).returns(parseEth(100_000_000))
     await mockRateModel.mock.borrowLimit.withArgs(usdtLoanPool.address, 255, parseEth(100_000_000), 0, 0).returns(parseEth(100_000_000))
 
-    const loanTokenImplementation = await new LoanToken2__factory(owner).deploy()
+    const loanTokenImplementation = await new FixedTermLoan__factory(owner).deploy()
     await loanFactory.initialize(ftlAgency.address, AddressZero, mockCreditOracle.address, borrowingMutex.address, AddressZero)
     await loanFactory.setLoanTokenImplementation(loanTokenImplementation.address)
     await borrowingMutex.allowLocker(ftlAgency.address, true)
