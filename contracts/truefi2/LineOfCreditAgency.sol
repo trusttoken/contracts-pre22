@@ -690,7 +690,7 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
         address borrower
     ) internal returns (uint256 totalBorrowerInterest) {
         if (bucketNumber == 0) {
-            // new borrower
+            // new borrower, no previous interest
             return 0;
         }
 
@@ -707,6 +707,8 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
         bucket.totalBorrowed = bucket.totalBorrowed.sub(borrowed[pool][borrower]);
         totalBorrowerInterest = _totalBorrowerInterest(pool, bucket, borrower);
         delete bucket.savedInterest[borrower];
+
+        return totalBorrowerInterest;
     }
 
     /**
