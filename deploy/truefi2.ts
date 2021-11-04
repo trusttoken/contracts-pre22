@@ -22,7 +22,6 @@ import {
   TestUSDTToken,
   TrueFiCreditOracle,
   TrueFiPool2,
-  TrueLender2,
 } from '../build/artifacts'
 import {
   TUSD, USDC, USDT, TRU, ONE_INCH_EXCHANGE, LOAN_INTEREST_FEE
@@ -50,7 +49,6 @@ deploy({}, (_, config) => {
   // New contract impls
   const safu_impl = contract(SAFU)
   const poolFactory_impl = contract(PoolFactory)
-  const trueLender2_impl = contract(TrueLender2)
   const ftlAgency_impl = contract(FixedTermLoanAgency)
   const liquidator2_impl = contract(Liquidator2)
   const loanFactory2_impl = contract(LoanFactory2)
@@ -60,7 +58,6 @@ deploy({}, (_, config) => {
   // New contract proxies
   const safu = proxy(safu_impl, () => { })
   const poolFactory = proxy(poolFactory_impl, () => { })
-  const trueLender2 = proxy(trueLender2_impl, () => { })
   const ftlAgency = proxy(ftlAgency_impl, () => { })
   const liquidator2 = proxy(liquidator2_impl, () => { })
   const loanFactory2 = proxy(loanFactory2_impl, () => { })
@@ -80,10 +77,7 @@ deploy({}, (_, config) => {
     safu.initialize(loanFactory2, liquidator2, oneInch)
   })
   runIf(poolFactory.isInitialized().not(), () => {
-    poolFactory.initialize(implementationReference, trueLender2, ftlAgency, safu, loanFactory2)
-  })
-  runIf(trueLender2.isInitialized().not(), () => {
-    trueLender2.initialize(stkTruToken, poolFactory, oneInch)
+    poolFactory.initialize(implementationReference, ftlAgency, safu, loanFactory2)
   })
   runIf(ftlAgency.isInitialized().not(), () => {
     ftlAgency.initialize(stkTruToken, poolFactory, oneInch, trueFiCreditOracle, AddressZero, borrowingMutex, loanFactory2, AddressZero)
@@ -117,14 +111,10 @@ deploy({}, (_, config) => {
   })
   const usdt_TrueFiPool2 = poolFactory.pool(usdt)
 
-  runIf(trueLender2.feePool().equals(AddressZero), () => {
-    trueLender2.setFeePool(usdc_TrueFiPool2)
-  })
   runIf(ftlAgency.feePool().equals(AddressZero), () => {
     ftlAgency.setFeePool(usdc_TrueFiPool2)
   })
   if (!isMainnet) {
-    trueLender2.setFee(LOAN_INTEREST_FEE)
     ftlAgency.setFee(LOAN_INTEREST_FEE)
   }
 })

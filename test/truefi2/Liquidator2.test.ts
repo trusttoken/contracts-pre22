@@ -106,6 +106,7 @@ describe('Liquidator2', () => {
       borrowingMutex,
     } = await setupTruefi2(owner, _provider, { lender, loanFactory }))
 
+    await usdcPool.setLender(lender.address)
     loan = await createLegacyLoan(loanFactory, usdcPool, lender, owner, borrower, parseUSDC(1000), YEAR, 1000)
     await usdc.mint(lender.address, parseUSDC(1000))
     await lender.fund(loan.address)

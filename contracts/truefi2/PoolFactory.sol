@@ -11,7 +11,7 @@ import {ImplementationReference} from "../proxy/ImplementationReference.sol";
 import {IFixedTermLoanAgency} from "./interface/IFixedTermLoanAgency.sol";
 import {IPoolFactory} from "./interface/IPoolFactory.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
-import {ITrueLender2} from "./interface/ITrueLender2.sol";
+import {ITrueLender2Deprecated} from "./deprecated/ITrueLender2Deprecated.sol";
 import {ISAFU} from "./interface/ISAFU.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
 
@@ -43,9 +43,9 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
 
     ImplementationReference public poolImplementationReference;
 
-    address public DEPRECATED__liquidationToken;
+    address private DEPRECATED__liquidationToken;
 
-    ITrueLender2 public trueLender2;
+    address private DEPRECATED__trueLender2;
 
     ISAFU public safu;
 
@@ -105,12 +105,6 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
      * @param status New status of allowAll
      */
     event AllowAllStatusChanged(bool status);
-
-    /**
-     * @dev Event to show that trueLender was changed
-     * @param trueLender2 New instance of ITrueLender2
-     */
-    event TrueLenderChanged(ITrueLender2 trueLender2);
 
     event FixedTermLoanAgencyChanged(IFixedTermLoanAgency ftlAgency);
 
@@ -172,7 +166,6 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
      */
     function initialize(
         ImplementationReference _poolImplementationReference,
-        ITrueLender2 _trueLender2,
         IFixedTermLoanAgency _ftlAgency,
         ISAFU _safu,
         ILoanFactory2 _loanFactory
@@ -180,7 +173,6 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
         UpgradeableClaimable.initialize(msg.sender);
 
         poolImplementationReference = _poolImplementationReference;
-        trueLender2 = _trueLender2;
         ftlAgency = _ftlAgency;
         safu = _safu;
         loanFactory = _loanFactory;
@@ -231,7 +223,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
         pool[token] = address(proxy);
         isPool[address(proxy)] = true;
 
-        ITrueFiPool2(address(proxy)).initialize(ERC20(token), trueLender2, ftlAgency, safu, loanFactory, this.owner());
+        ITrueFiPool2(address(proxy)).initialize(ERC20(token), ftlAgency, safu, loanFactory, this.owner());
 
         emit PoolCreated(token, address(proxy));
     }
@@ -256,7 +248,6 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
 
         ITrueFiPool2(address(proxy)).singleBorrowerInitialize(
             ERC20(token),
-            trueLender2,
             ftlAgency,
             safu,
             loanFactory,
@@ -337,12 +328,6 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
     function setAllowAll(bool status) external onlyOwner {
         allowAll = status;
         emit AllowAllStatusChanged(status);
-    }
-
-    function setTrueLender(ITrueLender2 _trueLender2) external onlyOwner {
-        require(address(_trueLender2) != address(0), "PoolFactory: TrueLender address cannot be set to 0");
-        trueLender2 = _trueLender2;
-        emit TrueLenderChanged(trueLender2);
     }
 
     function setFixedTermLoanAgency(IFixedTermLoanAgency _ftlAgency) external onlyOwner {

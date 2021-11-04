@@ -2,7 +2,7 @@
 pragma solidity 0.6.10;
 
 import {ERC20, IERC20} from "../../common/UpgradeableERC20.sol";
-import {ITrueLender2} from "../interface/ITrueLender2.sol";
+import {ITrueLender2Deprecated} from "../deprecated/ITrueLender2Deprecated.sol";
 import {IFixedTermLoanAgency} from "../interface/IFixedTermLoanAgency.sol";
 import {ILoanToken2Deprecated} from "../deprecated/ILoanToken2Deprecated.sol";
 import {IDebtToken} from "../interface/IDebtToken.sol";
@@ -13,7 +13,6 @@ import {ILoanFactory2} from "./ILoanFactory2.sol";
 interface ITrueFiPool2 is IERC20 {
     function initialize(
         ERC20 _token,
-        ITrueLender2 _lender,
         IFixedTermLoanAgency _ftlAgency,
         ISAFU safu,
         ILoanFactory2 _loanFactory,
@@ -22,7 +21,6 @@ interface ITrueFiPool2 is IERC20 {
 
     function singleBorrowerInitialize(
         ERC20 _token,
-        ITrueLender2 _lender,
         IFixedTermLoanAgency _ftlAgency,
         ISAFU safu,
         ILoanFactory2 _loanFactory,

@@ -28,9 +28,9 @@ import {
   TimeAveragedTruPriceOracle,
   TimeAveragedTruPriceOracle__factory,
   TrueFiCreditOracle__factory,
-  TrueFiPool2__factory,
-  TrueLender2,
-  TrueLender2__factory,
+  TestTrueFiPool2__factory,
+  TrueLender2Deprecated,
+  TrueLender2Deprecated__factory,
   TrueRatingAgencyV2,
   TrueRatingAgencyV2__factory,
 } from 'contracts'
@@ -58,7 +58,7 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
   const liquidator = await deployContract(Liquidator2__factory)
   const loanFactory: LoanFactory2 & TestLoanFactory = customDeployed?.loanFactory ? customDeployed.loanFactory : await deployContract(LoanFactory2__factory)
   const rater: TrueRatingAgencyV2 & TestTrueRatingAgencyV2 = customDeployed?.rater ? customDeployed.rater : await deployContract(TrueRatingAgencyV2__factory)
-  const lender: TrueLender2 & TestTrueLender = customDeployed?.lender ? customDeployed.lender : await deployContract(TrueLender2__factory)
+  const lender: TrueLender2Deprecated & TestTrueLender = customDeployed?.lender ? customDeployed.lender : await deployContract(TrueLender2Deprecated__factory)
   const ftlAgency = await deployContract(FixedTermLoanAgency__factory)
   const safu = await deployContract(Safu__factory)
   const rateModel = await deployContract(RateModel__factory)
@@ -67,7 +67,7 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
   const stakingVault = await deployContract(StakingVault__factory)
 
   const poolFactory = await deployContract(PoolFactory__factory)
-  const poolImplementation = await deployContract(TrueFiPool2__factory)
+  const poolImplementation = await deployContract(TestTrueFiPool2__factory)
   const implementationReference = await deployContract(ImplementationReference__factory, poolImplementation.address)
 
   const tru = await deployContract(MockTrueCurrency__factory)
@@ -101,7 +101,7 @@ export const setupTruefi2 = async (owner: Wallet, provider: MockProvider, custom
   await lender.initialize(stkTru.address, poolFactory.address, customDeployed?.oneInch ? customDeployed.oneInch.address : AddressZero)
   await ftlAgency.initialize(stkTru.address, poolFactory.address, customDeployed?.oneInch ? customDeployed.oneInch.address : AddressZero, creditOracle.address, rateModel.address, borrowingMutex.address, loanFactory.address, stakingVault.address)
   await safu.initialize(loanFactory.address, liquidator.address, customDeployed?.oneInch ? customDeployed.oneInch.address : AddressZero)
-  await poolFactory.initialize(implementationReference.address, lender.address, ftlAgency.address, safu.address, loanFactory.address)
+  await poolFactory.initialize(implementationReference.address, ftlAgency.address, safu.address, loanFactory.address)
   await rateModel.initialize(poolFactory.address, weeklyTruPriceOracle.address)
   await creditAgency.initialize(creditOracle.address, rateModel.address, borrowingMutex.address, poolFactory.address, loanFactory.address, stakingVault.address)
   await standardBaseRateOracle.initialize(mockSpotOracle.address, standardToken.address, DAY)
