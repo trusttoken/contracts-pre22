@@ -100,8 +100,9 @@ describe('Fixed-term loans flow', () => {
     const debtToken = (await extractDebtTokens(loanFactory, owner, tx))[0]
 
     // borrower pays part of unpaid debt to defaulted loan token
-    await tusd.connect(borrower).approve(loan.address, parseEth(5e5))
-    await loan.repay(borrower.address, parseEth(5e5))
+    // wouldn't be accounted as repayment so commented out
+    // await tusd.connect(borrower).approve(loan.address, parseEth(5e5))
+    // await loan.repay(borrower.address, parseEth(5e5))
 
     await ftlAgency.reclaim(loan.address, '0x')
 
@@ -117,11 +118,11 @@ describe('Fixed-term loans flow', () => {
     // safu redeems the debt
     await safu.redeem(debtToken.address)
 
+    // borrower stays banned even after full repayment of defaulted loan
+    expect(await borrowingMutex.locker(borrower.address)).to.eq('0x0000000000000000000000000000000000000001')
+
     const loanInterest = await loan.interest()
     expect(await tusd.balanceOf(pool.address)).to.eq(poolBalanceBefore.add(loanInterest))
     expect(await tusd.balanceOf(safu.address)).to.eq(safuBalanceBefore)
-
-    // borrower stays banned even after full repayment of defaulted loan
-    expect(await borrowingMutex.locker(borrower.address)).to.eq('0x0000000000000000000000000000000000000001')
   })
 })
