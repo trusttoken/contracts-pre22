@@ -10,6 +10,7 @@ import {
   TrueFiPool,
   TrueMultiFarm,
   TruSushiswapRewarder,
+  StkTruToken,
 } from '../build/artifacts'
 import {
   TRU, TRU_DECIMALS, SUSHI_MASTER_CHEF, SUSHI_REWARD_MULTIPLIER
@@ -32,7 +33,8 @@ deploy({}, (deployer, config) => {
   const trustToken = isMainnet
     ? TRU
     : contract(TestTrustToken)
-  let trueFiPool = proxy(contract(TrueFiPool), () => {})
+  let stkTruToken = proxy(contract(StkTruToken), () => { })
+  let trueFiPool = proxy(contract(TrueFiPool), () => { })
 
   // New contract impls
   const trueFiPool_LinearTrueDistributor_impl = contract('trueFiPool_LinearTrueDistributor', LinearTrueDistributor)
@@ -42,11 +44,11 @@ deploy({}, (deployer, config) => {
   const truSushiswapRewarder_impl = contract(TruSushiswapRewarder)
 
   // New contract proxies
-  const trueFiPool_LinearTrueDistributor = proxy(trueFiPool_LinearTrueDistributor_impl, () => {})
-  const trueFiPool_TrueFarm = proxy(trueFiPool_TrueFarm_impl, () => {})
-  const trueMultiFarm_LinearTrueDistributor = proxy(trueMultiFarm_LinearTrueDistributor_impl, () => {})
-  const trueMultiFarm = proxy(trueMultiFarm_impl, () => {})
-  const truSushiswapRewarder = proxy(truSushiswapRewarder_impl, () => {})
+  const trueFiPool_LinearTrueDistributor = proxy(trueFiPool_LinearTrueDistributor_impl, () => { })
+  const trueFiPool_TrueFarm = proxy(trueFiPool_TrueFarm_impl, () => { })
+  const trueMultiFarm_LinearTrueDistributor = proxy(trueMultiFarm_LinearTrueDistributor_impl, () => { })
+  const trueMultiFarm = proxy(trueMultiFarm_impl, () => { })
+  const truSushiswapRewarder = proxy(truSushiswapRewarder_impl, () => { })
 
   // New bare contracts
   const sushiTimelock = contract(SushiTimelock, [TIMELOCK_ADMIN, TIMELOCK_DELAY])
@@ -68,7 +70,7 @@ deploy({}, (deployer, config) => {
     trueMultiFarm_LinearTrueDistributor.setFarm(trueMultiFarm)
   })
   runIf(trueMultiFarm.isInitialized().not(), () => {
-    trueMultiFarm.initialize(trueMultiFarm_LinearTrueDistributor)
+    trueMultiFarm.initialize(trueMultiFarm_LinearTrueDistributor, stkTruToken)
   })
   runIf(truSushiswapRewarder.isInitialized().not(), () => {
     truSushiswapRewarder.initialize(SUSHI_REWARD_MULTIPLIER, trustToken, SUSHI_MASTER_CHEF)
