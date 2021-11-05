@@ -1323,13 +1323,13 @@ describe('LineOfCreditAgency', () => {
 
   describe('updateCreditScore', () => {
     beforeEach(async () => {
-      await creditOracle.setScore(borrower.address, 0)
+      await creditOracle.setScore(borrower.address, 1)
       await creditAgency.updateCreditScore(tusdPool.address, borrower.address)
       await creditOracle.setScore(borrower.address, 223)
     })
 
     it('updates borrower\'s credit score', async () => {
-      expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(0)
+      expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(1)
       await creditAgency.updateCreditScore(tusdPool.address, borrower.address)
       expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(223)
     })
@@ -1356,15 +1356,15 @@ describe('LineOfCreditAgency', () => {
 
   describe('updateAllCreditScores', () => {
     beforeEach(async () => {
-      await creditOracle.setScore(borrower.address, 0)
+      await creditOracle.setScore(borrower.address, 1)
       await creditAgency.updateAllCreditScores(borrower.address)
       await creditOracle.setScore(borrower.address, 223)
       await creditAgency.allowBorrower(borrower.address, true)
     })
 
     it('updates credit scores for 2 pools', async () => {
-      expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(0)
-      expect(await creditAgency.creditScore(usdcPool.address, borrower.address)).to.eq(0)
+      expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(1)
+      expect(await creditAgency.creditScore(usdcPool.address, borrower.address)).to.eq(1)
       await creditAgency.connect(borrower).borrow(tusdPool.address, 1)
       await creditAgency.connect(borrower).borrow(usdcPool.address, 1)
       await creditAgency.updateAllCreditScores(borrower.address)
@@ -1373,11 +1373,11 @@ describe('LineOfCreditAgency', () => {
     })
 
     it('does not update score for pools where nothing is borrowed', async () => {
-      expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(0)
-      expect(await creditAgency.creditScore(usdcPool.address, borrower.address)).to.eq(0)
+      expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(1)
+      expect(await creditAgency.creditScore(usdcPool.address, borrower.address)).to.eq(1)
       await creditAgency.connect(borrower).borrow(usdcPool.address, 1)
       await creditAgency.updateAllCreditScores(borrower.address)
-      expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(0)
+      expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(1)
       expect(await creditAgency.creditScore(usdcPool.address, borrower.address)).to.eq(223)
     })
   })

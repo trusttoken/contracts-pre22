@@ -122,12 +122,17 @@ describe('TrueFiCreditOracle', () => {
     })
   })
 
-  describe('set credit scores', () => {
+  describe('setScore', () => {
     it('only manager can set credit scores', async () => {
       await expect(oracle.connect(borrower).setScore(borrower.address, 1))
         .to.be.revertedWith('TrueFiCreditOracle: Caller is not the manager')
       await expect(oracle.connect(owner).setScore(borrower.address, 1))
         .to.be.revertedWith('TrueFiCreditOracle: Caller is not the manager')
+    })
+
+    it('credit score cannot be set to 0', async () => {
+      await expect(oracle.connect(manager).setScore(borrower.address, 0))
+        .to.be.revertedWith('TrueFiCreditOracle: Score cannot be set to 0')
     })
 
     it('credit score is properly set', async () => {
