@@ -729,6 +729,8 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
         address borrower,
         uint256 totalInterest
     ) internal {
+        require(bucketNumber > 0, "LineOfCreditAgency: Bucket of index 0 is not supported");
+
         // update  bucket state
         pokeSingleBucket(pool, bucketNumber);
         // increment count for this bucket
