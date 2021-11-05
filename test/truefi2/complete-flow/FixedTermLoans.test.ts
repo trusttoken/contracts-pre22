@@ -21,6 +21,7 @@ import {
   setupTruefi2,
   timeTravel as _timeTravel,
   extractLoanTokenAddress as _extractLoanTokenAddress,
+  AddressOne,
 } from 'utils'
 
 use(solidity)
@@ -114,7 +115,7 @@ describe('Fixed-term loans flow', () => {
     await safu.redeem(debtToken.address)
 
     // borrower stays banned even after full repayment of defaulted loan
-    expect(await borrowingMutex.locker(borrower.address)).to.eq('0x0000000000000000000000000000000000000001')
+    expect(await borrowingMutex.locker(borrower.address)).to.eq(AddressOne)
 
     const loanInterest = await loan.interest()
     expect(await tusd.balanceOf(pool.address)).to.eq(poolBalanceBefore.add(loanInterest))
