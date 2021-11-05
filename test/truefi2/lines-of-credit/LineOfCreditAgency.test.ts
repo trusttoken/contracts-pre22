@@ -1328,6 +1328,11 @@ describe('LineOfCreditAgency', () => {
       await creditOracle.setScore(borrower.address, 223)
     })
 
+    it('reverts if score hasn\'t been set', async () => {
+      await expect(creditAgency.updateCreditScore(tusdPool.address, borrower2.address))
+        .to.be.revertedWith('LineOfCreditAgency: Score is required to be set by CreditOracle')
+    })
+
     it('updates borrower\'s credit score', async () => {
       expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(1)
       await creditAgency.updateCreditScore(tusdPool.address, borrower.address)
