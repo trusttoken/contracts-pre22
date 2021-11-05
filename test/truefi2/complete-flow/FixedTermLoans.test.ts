@@ -99,11 +99,6 @@ describe('Fixed-term loans flow', () => {
     tx = loan.enterDefault()
     const debtToken = (await extractDebtTokens(loanFactory, owner, tx))[0]
 
-    // borrower pays part of unpaid debt to defaulted loan token
-    // wouldn't be accounted as repayment so commented out
-    // await tusd.connect(borrower).approve(loan.address, parseEth(5e5))
-    // await loan.repay(borrower.address, parseEth(5e5))
-
     await ftlAgency.reclaim(loan.address, '0x')
 
     const poolValueBefore = await pool.poolValue()
