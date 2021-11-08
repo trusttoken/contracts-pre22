@@ -21,32 +21,29 @@ import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
  *
  **/
 interface IDebtInstrument is IERC721 {
-    /// @dev The owner address lends tokens and withdraws repayments
-    function owner() external view returns (address);
-
     /// @dev The borrower address borrows and repays the loan
-    function borrower() external view returns (address);
+    function borrower(uint256 tokenId) external view returns (address);
 
     /// @dev The underlying token denominating the debt
-    function token() external view returns (address);
+    function token(uint256 tokenId) external view returns (address);
 
     /// @dev Principal debt amount
-    function principal() external view returns (uint256);
+    function principal(uint256 tokenId) external view returns (uint256);
 
     /// @dev Each debt has an expiration timestamp
-    function expiry() external view returns (uint256);
+    function expiry(uint256 tokenId) external view returns (uint256);
 
     /// @dev Borrower calls this function to borrow `amount` of tokens
-    function borrow(uint256 amount) external;
+    function borrow(uint256 tokenId, uint256 amount) external;
 
     /// @dev Borrower calls this function to repay `amount` of tokens
-    function repay(uint256 amount) external;
+    function repay(uint256 tokenId, uint256 amount) external;
 
     /// @dev Owner funds a loan for `amount` and increases principal
-    function fund(uint256 amount) external;
+    function fund(uint256 tokenId, uint256 amount) external;
 
     /// @dev Owner calls this function to withdraw `amount` of tokens
-    function withdraw(uint256 amount) external;
+    function withdraw(uint256 tokenId, uint256 amount) external;
 
     /// @dev Mint a new DebtInstrument
     function mint(
