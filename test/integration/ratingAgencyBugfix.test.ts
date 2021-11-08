@@ -10,7 +10,7 @@ describe('RatingAgency total rewards bug fix', () => {
   const corruptedLoan = '0x4fB2D8104706BEf93EeBEF8dbe549E53aDd5185F'
 
   const raterAddress = '0xfe3795f64a743d3b9a08f50c4115ec119ac9a9d1'
-  const provider = forkChain('https://eth-mainnet.alchemyapi.io/v2/Vc3xNXIWdxEbDOToa69DhWeyhgFVBDWl', [CONTRACTS_OWNER, raterAddress])
+  const provider = forkChain([CONTRACTS_OWNER, raterAddress])
   const owner = provider.getSigner(CONTRACTS_OWNER)
   const rater = provider.getSigner(raterAddress)
   const RATING_AGENCY_ADDRESS = '0x05461334340568075be35438b221a3a0d261fb6b'

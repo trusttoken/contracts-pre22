@@ -48,13 +48,13 @@ describe('Curve Yearn Pool Strategy', () => {
         await call()
         return
         // eslint-disable-next-line no-empty
-      } catch {}
+      } catch { }
     }
     throw new Error('Function has failed 3 times')
   }
 
   beforeEach(async () => {
-    provider = forkChain('https://eth-mainnet.alchemyapi.io/v2/Vc3xNXIWdxEbDOToa69DhWeyhgFVBDWl', [CONTRACTS_OWNER, USDC_HOLDER, ETHER_HOLDER], 13287798)
+    provider = forkChain([CONTRACTS_OWNER, USDC_HOLDER, ETHER_HOLDER], 13287798)
     owner = provider.getSigner(CONTRACTS_OWNER)
     holder = provider.getSigner(USDC_HOLDER)
     deployContract = setupDeploy(owner)
