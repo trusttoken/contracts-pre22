@@ -373,6 +373,7 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
      */
     function borrow(ITrueFiPool2 pool, uint256 amount) external onlyAllowedBorrowers {
         require(poolFactory.isSupportedPool(pool), "LineOfCreditAgency: The pool is not supported for borrowing");
+        require(amount > 0, "LineOfCreditAgency: Borrowed amount has to be greater than 0");
         require(
             creditOracle.status(msg.sender) == ITrueFiCreditOracle.Status.Eligible,
             "LineOfCreditAgency: Sender not eligible to borrow"

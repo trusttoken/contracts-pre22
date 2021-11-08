@@ -419,6 +419,11 @@ describe('LineOfCreditAgency', () => {
         .to.be.revertedWith('LineOfCreditAgency: Sender is not allowed to borrow')
     })
 
+    it('fails if borrowed amount is 0', async () => {
+      await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 0))
+        .to.be.revertedWith('LineOfCreditAgency: Borrowed amount has to be greater than 0')
+    })
+
     it('fails if borrower has credit score below required', async () => {
       await creditOracle.setScore(borrower.address, 191)
       await creditAgency.setMinCreditScore(192)
@@ -1279,9 +1284,11 @@ describe('LineOfCreditAgency', () => {
 
   describe('rate model integration', () => {
     beforeEach(async () => {
-      await setupBorrower(owner, 255, 0)
+      await setupBorrower(owner, 255, 1)
+      await tusd.connect(owner).approve(creditAgency.address, 1)
       await creditAgency.connect(owner).repayInFull(tusdPool.address)
-      await setupBorrower(borrower2, 255, 0)
+      await setupBorrower(borrower2, 255, 1)
+      await tusd.connect(borrower2).approve(creditAgency.address, 1)
       await creditAgency.connect(borrower2).repayInFull(tusdPool.address)
     })
 
