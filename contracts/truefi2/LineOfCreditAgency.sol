@@ -259,6 +259,8 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
     ) internal returns (uint8, uint8) {
         uint8 oldEffectiveScore = creditScore[pool][borrower];
         uint8 rawScore = creditOracle.score(borrower);
+        require(rawScore > 0, "LineOfCreditAgency: Score is required to be set by CreditOracle");
+
         uint256 stakedAmount = stakingVault.stakedAmount(borrower);
         uint8 newEffectiveScore = rateModel.effectiveScore(rawScore, pool, stakedAmount, borrowedAmount);
         creditScore[pool][borrower] = newEffectiveScore;
@@ -728,6 +730,8 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
         address borrower,
         uint256 totalInterest
     ) internal {
+        require(bucketNumber > 0, "LineOfCreditAgency: Bucket of index 0 is not supported");
+
         // update  bucket state
         pokeSingleBucket(pool, bucketNumber);
         // increment count for this bucket
