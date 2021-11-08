@@ -39,7 +39,7 @@ describe('TrueFiPool2', () => {
     await poolFactory.createPool(usdc.address)
   })
 
-  it('tether flush', async () => {
+  it('[skip ci] tether flush', async () => {
     const usdtPool = TrueFiPool2__factory.connect(TFUSDT_ADDRESS, powner)
     const proxy = OwnedProxyWithReference__factory.connect(TFUSDT_ADDRESS, powner)
     const strategyProxy = OwnedUpgradeabilityProxy__factory.connect(TFUSDT_STRATEGY_ADDRESS, powner)
