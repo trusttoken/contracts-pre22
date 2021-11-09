@@ -2,17 +2,15 @@
 pragma solidity 0.6.10;
 pragma experimental ABIEncoderV2;
 
-import {IDebtInstrument} from "./IDebtInstrument.sol";
-
 /**
- * @title Debt Instrument With Schedule
+ * @title Debt With Schedule
  * @notice TrueFi Debt Instrument with Payment Schedule
- * @dev This Debt Instrument stores an expected schedule of payment
+ * @dev An NFT which stores an expected schedule of payment
  * Calling the repay() function should store time and amount of payments
- * Minting the token should pass in a schedule which is an array
+ * An implementation should take in a schedule which is an array
  * of information about expected payment times and amounts
  **/
-interface IDebtInstrumentWithSchedule is IDebtInstrument {
+interface IDebtWithSchedule {
     // store payment and schedule data
     struct Payment {
         // time of payment
@@ -22,8 +20,8 @@ interface IDebtInstrumentWithSchedule is IDebtInstrument {
     }
 
     /// @dev Get expected schedule of payments
-    function schedule() external view returns (Payment[] memory);
+    function schedule(uint256 tokenId) external view returns (Payment[] memory);
 
     /// @dev Get history of actual payments
-    function payments() external view returns (Payment[] memory);
+    function payments(uint256 tokenId) external view returns (Payment[] memory);
 }
