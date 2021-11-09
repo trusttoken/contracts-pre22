@@ -60,6 +60,8 @@ contract FixedTermLoan is IFixedTermLoan, ERC20 {
 
     ILoanFactory2 public loanFactory;
 
+    IFixedTermLoanAgency public ftlAgency;
+
     /**
      * @dev Emitted when a FixedTermLoan is repaid by the borrower in underlying tokens
      * @param repayer Sender of tokens
@@ -125,6 +127,7 @@ contract FixedTermLoan is IFixedTermLoan, ERC20 {
         borrowingMutex = _mutex;
         creditOracle = _creditOracle;
         loanFactory = _loanFactory;
+        ftlAgency = _ftlAgency;
 
         _mint(address(_ftlAgency), debt());
     }
@@ -186,9 +189,6 @@ contract FixedTermLoan is IFixedTermLoan, ERC20 {
     function settle() public onlyWithdrawn {
         require(unpaidDebt() == 0, "FixedTermLoan: Loan must be fully repaid");
         status = Status.Settled;
-
-        borrowingMutex.unlock(borrower);
-
         emit Settled(_tokenBalance());
     }
 
@@ -221,6 +221,9 @@ contract FixedTermLoan is IFixedTermLoan, ERC20 {
         uint256 tokenRedeemAmount = loanRedeemAmount.mul(_tokenBalance()).div(_totalSupply);
         tokenRedeemed = tokenRedeemed.add(tokenRedeemAmount);
 
+        if (address(ftlAgency) == msg.sender && status == Status.Settled) {
+            borrowingMutex.unlock(borrower);
+        }
         _burn(msg.sender, loanRedeemAmount);
         token.safeTransfer(msg.sender, tokenRedeemAmount);
 

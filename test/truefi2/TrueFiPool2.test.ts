@@ -826,6 +826,7 @@ describe('TrueFiPool2', () => {
       loan = await extractLoanTokenAddress(tx, owner, loanFactory)
       await payBack(tusd, loan)
       await loan.settle()
+      await ftlAgency.reclaim(loan.address, '0x')
     })
 
     it('only lender, ftlAgency and creditAgency can repay to pool', async () => {
