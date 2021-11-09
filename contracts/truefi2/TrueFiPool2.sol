@@ -12,7 +12,7 @@ import {ITrueStrategy} from "./interface/ITrueStrategy.sol";
 import {ITrueFiPool2, ITrueFiPoolOracle} from "./interface/ITrueFiPool2.sol";
 import {ITrueLender2Deprecated} from "./deprecated/ITrueLender2Deprecated.sol";
 import {ILoanToken2Deprecated} from "./deprecated/ILoanToken2Deprecated.sol";
-import {ILoanToken2} from "./interface/ILoanToken2.sol";
+import {IFixedTermLoan} from "./interface/IFixedTermLoan.sol";
 import {IDebtToken} from "./interface/IDebtToken.sol";
 import {IPauseableContract} from "../common/interface/IPauseableContract.sol";
 import {ISAFU} from "./interface/ISAFU.sol";
@@ -677,7 +677,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      */
     function addDebt(IDebtToken debtToken, uint256 amount) external override {
         require(
-            msg.sender == address(creditAgency) || loanFactory.isLoanToken(ILoanToken2(msg.sender)),
+            msg.sender == address(creditAgency) || loanFactory.isLoanToken(IFixedTermLoan(msg.sender)),
             "TruePool: Only LineOfCreditAgency and Loans can add debtTokens"
         );
         debtValue = debtValue.add(amount);

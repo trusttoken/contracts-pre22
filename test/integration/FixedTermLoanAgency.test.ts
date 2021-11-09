@@ -11,8 +11,8 @@ import {
   ImplementationReference__factory,
   LoanFactory2,
   LoanFactory2__factory,
-  LoanToken2,
-  LoanToken2__factory,
+  FixedTermLoan,
+  FixedTermLoan__factory,
   MockUsdStableCoinOracle__factory,
   PoolFactory__factory,
   TrueFiPool2,
@@ -36,7 +36,7 @@ describe('FixedTermLoanAgency', () => {
   const TUSD_HOLDER = '0xf977814e90da44bfa03b6295a0616a897441acec'
   const USDT_HOLDER = '0x2faf487a4414fe77e2327f0bf4ae2a264a776ad2'
   const OWNER = '0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5'
-  const provider = forkChain('https://eth-mainnet.alchemyapi.io/v2/Vc3xNXIWdxEbDOToa69DhWeyhgFVBDWl', [OWNER, TUSD_HOLDER, USDT_HOLDER], 13289115)
+  const provider = forkChain([OWNER, TUSD_HOLDER, USDT_HOLDER], 13289115)
   const owner = provider.getSigner(OWNER)
   const tusdHolder = provider.getSigner(TUSD_HOLDER)
   const usdtHolder = provider.getSigner(USDT_HOLDER)
@@ -51,7 +51,7 @@ describe('FixedTermLoanAgency', () => {
   let tusd: Erc20Mock
   let usdc: Erc20Mock
   let usdt: Erc20Mock
-  let loan: LoanToken2
+  let loan: FixedTermLoan
   let borrowingMutex: BorrowingMutex
 
   beforeEach(async () => {
@@ -106,7 +106,7 @@ describe('FixedTermLoanAgency', () => {
     await mockRateModel.mock.borrowLimit.withArgs(tusdLoanPool.address, 255, parseEth(100_000_000), 0, 0).returns(parseEth(100_000_000))
     await mockRateModel.mock.borrowLimit.withArgs(usdtLoanPool.address, 255, parseEth(100_000_000), 0, 0).returns(parseEth(100_000_000))
 
-    const loanTokenImplementation = await new LoanToken2__factory(owner).deploy()
+    const loanTokenImplementation = await new FixedTermLoan__factory(owner).deploy()
     await loanFactory.initialize(ftlAgency.address, AddressZero, mockCreditOracle.address, borrowingMutex.address, AddressZero)
     await loanFactory.setLoanTokenImplementation(loanTokenImplementation.address)
     await borrowingMutex.allowLocker(ftlAgency.address, true)

@@ -7,7 +7,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import {ERC20} from "../common/UpgradeableERC20.sol";
 import {IERC20WithDecimals} from "./interface/IERC20WithDecimals.sol";
 import {IFixedTermLoanAgency} from "./interface/IFixedTermLoanAgency.sol";
-import {ILoanToken2} from "./interface/ILoanToken2.sol";
+import {IFixedTermLoan} from "./interface/IFixedTermLoan.sol";
 import {ITrueFiPool2} from "./interface/ITrueFiPool2.sol";
 import {IBorrowingMutex} from "./interface/IBorrowingMutex.sol";
 import {ILoanFactory2} from "./interface/ILoanFactory2.sol";
@@ -15,10 +15,10 @@ import {IDebtToken} from "./interface/IDebtToken.sol";
 import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
 
 /**
- * @title LoanToken V2
+ * @title FixedTermLoan
  * @dev A token which represents share of a debt obligation
  *
- * Each LoanToken has:
+ * Each Loan has:
  * - borrower address
  * - borrow principal
  * - loan term
@@ -28,9 +28,9 @@ import {ITrueFiCreditOracle} from "./interface/ITrueFiCreditOracle.sol";
  * Settled:     Loan has been paid back in full with interest
  * Defaulted:   Loan has not been paid back in full
  *
- * - This version of LoanToken only supports a single funder
+ * - This version of FixedTermLoan only supports a single funder
  */
-contract LoanToken2 is ILoanToken2, ERC20 {
+contract FixedTermLoan is IFixedTermLoan, ERC20 {
     using SafeMath for uint256;
     using SafeERC20 for IERC20WithDecimals;
     using SafeERC20 for IDebtToken;
@@ -61,7 +61,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     ILoanFactory2 public loanFactory;
 
     /**
-     * @dev Emitted when a LoanToken is repaid by the borrower in underlying tokens
+     * @dev Emitted when a FixedTermLoan is repaid by the borrower in underlying tokens
      * @param repayer Sender of tokens
      * @param repaidAmount Amount of token repaid
      */
@@ -81,9 +81,9 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     event Defaulted(IDebtToken debtToken, uint256 unpaidAmount);
 
     /**
-     * @dev Emitted when a LoanToken is redeemed for underlying tokens
+     * @dev Emitted when a loan is redeemed for underlying tokens
      * @param receiver Receiver of tokens
-     * @param loanBurnedAmount Amount of LoanTokens burned
+     * @param loanBurnedAmount Amount of tokens burned
      * @param tokenRedeemedAmount Amount of token received
      */
     event Redeemed(address receiver, uint256 loanBurnedAmount, uint256 tokenRedeemedAmount);
@@ -133,7 +133,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @dev Only when loan is Withdrawn
      */
     modifier onlyWithdrawn() {
-        require(status == Status.Withdrawn, "LoanToken2: Status is not Withdrawn");
+        require(status == Status.Withdrawn, "FixedTermLoan: Status is not Withdrawn");
         _;
     }
 
@@ -141,7 +141,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @dev Only when loan is Settled or Defaulted
      */
     modifier onlySettledOrDefaulted() {
-        require(status == Status.Settled || status == Status.Defaulted, "LoanToken2: Only after loan has been closed");
+        require(status == Status.Settled || status == Status.Defaulted, "FixedTermLoan: Only after loan has been closed");
         _;
     }
 
@@ -171,7 +171,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @param _amount amount of token to repay
      */
     function _repay(address _sender, uint256 _amount) private {
-        require(_amount <= unpaidDebt(), "LoanToken2: Repay amount more than unpaid debt");
+        require(_amount <= unpaidDebt(), "FixedTermLoan: Repay amount more than unpaid debt");
 
         token.safeTransferFrom(_sender, address(this), _amount);
         if (unpaidDebt() == 0) {
@@ -184,7 +184,7 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      * @dev Settle the loan after checking it has been repaid
      */
     function settle() public onlyWithdrawn {
-        require(unpaidDebt() == 0, "LoanToken2: Loan must be fully repaid");
+        require(unpaidDebt() == 0, "FixedTermLoan: Loan must be fully repaid");
         status = Status.Settled;
 
         borrowingMutex.unlock(borrower);
@@ -197,8 +197,8 @@ contract LoanToken2 is ILoanToken2, ERC20 {
      */
     function enterDefault() external onlyWithdrawn {
         uint256 _unpaidDebt = unpaidDebt();
-        require(_unpaidDebt > 0, "LoanToken2: Loan must not be fully repaid");
-        require(start.add(term).add(creditOracle.gracePeriod()) <= block.timestamp, "LoanToken2: Loan has not reached end of term");
+        require(_unpaidDebt > 0, "FixedTermLoan: Loan must not be fully repaid");
+        require(start.add(term).add(creditOracle.gracePeriod()) <= block.timestamp, "FixedTermLoan: Loan has not reached end of term");
         status = Status.Defaulted;
 
         debtToken = loanFactory.createDebtToken(pool, borrower, _unpaidDebt);
@@ -211,12 +211,12 @@ contract LoanToken2 is ILoanToken2, ERC20 {
     }
 
     /**
-     * @dev Redeem LoanToken balances for underlying token
+     * @dev Redeem FixedTermLoan balances for underlying token
      * Can only call this function after the loan is Closed
      */
     function redeem() external override onlySettledOrDefaulted {
         uint256 _totalSupply = totalSupply();
-        require(_totalSupply > 0, "LoanToken2: Total token supply should be greater than 0");
+        require(_totalSupply > 0, "FixedTermLoan: Total token supply should be greater than 0");
         uint256 loanRedeemAmount = balanceOf(msg.sender);
         uint256 tokenRedeemAmount = loanRedeemAmount.mul(_tokenBalance()).div(_totalSupply);
         tokenRedeemed = tokenRedeemed.add(tokenRedeemAmount);

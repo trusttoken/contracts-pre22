@@ -32,6 +32,6 @@ contract TestLoanFactory is LoanFactory2 {
     }
 
     function setIsLoanToken(address loanToken) external {
-        isLoanToken[ILoanToken2(loanToken)] = true;
+        isLoanToken[IFixedTermLoan(loanToken)] = true;
     }
 }

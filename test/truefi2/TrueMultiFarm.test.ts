@@ -1,6 +1,6 @@
 import { expect, use } from 'chai'
 import { MaxUint256 } from '@ethersproject/constants'
-import { Wallet, BigNumber, BigNumberish } from 'ethers'
+import { Wallet, BigNumber } from 'ethers'
 import { MockProvider, solidity } from 'ethereum-waffle'
 
 import {
@@ -11,6 +11,7 @@ import {
   expectScaledCloseTo,
   parseEth,
   parseTRU,
+  setupTruefi2,
 } from 'utils'
 
 import {
@@ -20,6 +21,8 @@ import {
   TrueMultiFarm__factory,
   TrueMultiFarm,
   LinearTrueDistributor__factory,
+  StkTruToken,
+  MockTrueCurrency,
 } from 'contracts'
 
 use(solidity)
@@ -30,7 +33,8 @@ describe('TrueMultiFarm', () => {
   let staker1: Wallet
   let staker2: Wallet
   let distributor: LinearTrueDistributor
-  let trustToken: MockErc20Token
+  let tru: MockTrueCurrency
+  let stkTru: StkTruToken
   let firstToken: MockErc20Token
   let secondToken: MockErc20Token
   let provider: MockProvider
@@ -43,8 +47,6 @@ describe('TrueMultiFarm', () => {
   const amount = BigNumber.from(1e11) // 1000 TRU = 100/day
   const txArgs = { gasLimit: 6_000_000 }
 
-  const fromTru = (amount: BigNumberish) => BigNumber.from(amount).mul(BigNumber.from(1e8))
-
   const totalStaked = async (token = firstToken) => {
     return farm.stakes(token.address)
   }
@@ -54,23 +56,27 @@ describe('TrueMultiFarm', () => {
     provider = _provider
     await provider.send('hardhat_reset', [])
 
-    trustToken = await new MockErc20Token__factory(owner).deploy()
+    ; ({
+      tru,
+      stkTru,
+    } = await setupTruefi2(owner, _provider))
+
     firstToken = await new MockErc20Token__factory(owner).deploy()
     secondToken = await new MockErc20Token__factory(owner).deploy()
     distributor = await new LinearTrueDistributor__factory(owner).deploy()
     const now = Math.floor(Date.now() / 1000)
     start = now + DAY
 
-    await distributor.initialize(start, DURATION, amount, trustToken.address, txArgs)
+    await distributor.initialize(start, DURATION, amount, tru.address, txArgs)
 
     farm = await new TrueMultiFarm__factory(owner).deploy()
     farm2 = await new TrueMultiFarm__factory(owner).deploy()
 
     await distributor.setFarm(farm.address, txArgs)
-    await farm.initialize(distributor.address, txArgs)
+    await farm.initialize(distributor.address, stkTru.address, txArgs)
     await farm.setShares([firstToken.address], [1], txArgs)
 
-    await trustToken.mint(distributor.address, amount, txArgs)
+    await tru.mint(distributor.address, amount, txArgs)
 
     await firstToken.mint(staker1.address, parseEth(1000), txArgs)
     await firstToken.mint(staker2.address, parseEth(1000), txArgs)
@@ -86,7 +92,7 @@ describe('TrueMultiFarm', () => {
   describe('initializer', () => {
     it('owner can withdraw funds', async () => {
       await distributor.empty()
-      expect(await trustToken.balanceOf(owner.address)).to.equal(amount)
+      expect(await tru.balanceOf(owner.address)).to.equal(amount)
     })
 
     it('owner can change farm with event', async () => {
@@ -95,7 +101,7 @@ describe('TrueMultiFarm', () => {
     })
 
     it('cannot init farm unless distributor is set to farm', async () => {
-      await expect(farm2.initialize(distributor.address))
+      await expect(farm2.initialize(distributor.address, stkTru.address))
         .to.be.revertedWith('TrueMultiFarm: Distributor farm is not set')
     })
   })
@@ -148,26 +154,26 @@ describe('TrueMultiFarm', () => {
         await farm.connect(staker1).stake(firstToken.address, parseEth(1000), txArgs)
         await timeTravel(provider, DAY)
         await farm.connect(staker1).claim([firstToken.address], txArgs)
-        expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(100)))
+        expect(expectScaledCloseTo((await stkTru.balanceOf(staker1.address)), parseTRU(100)))
       })
 
       it('yields rewards per staked tokens (using exit)', async () => {
         await farm.connect(staker1).stake(firstToken.address, parseEth(1000), txArgs)
         await timeTravel(provider, DAY)
         await farm.connect(staker1).exit([firstToken.address], txArgs)
-        expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(100)))
+        expect(expectScaledCloseTo((await stkTru.balanceOf(staker1.address)), parseTRU(100)))
       })
 
       it('estimate rewards correctly', async () => {
         await farm.connect(staker1).stake(firstToken.address, parseEth(1000), txArgs)
         await timeTravel(provider, DAY)
-        expect(expectScaledCloseTo((await farm.claimable(firstToken.address, staker1.address)), fromTru(100), 1000))
+        expect(expectScaledCloseTo((await farm.claimable(firstToken.address, staker1.address)), parseTRU(100), 1000))
         await timeTravel(provider, DAY)
-        expect(expectScaledCloseTo((await farm.claimable(firstToken.address, staker1.address)), fromTru(200), 1000))
+        expect(expectScaledCloseTo((await farm.claimable(firstToken.address, staker1.address)), parseTRU(200), 1000))
         await farm.connect(staker1).unstake(firstToken.address, 100, txArgs)
-        expect(expectScaledCloseTo((await farm.claimable(firstToken.address, staker1.address)), fromTru(200), 1000))
+        expect(expectScaledCloseTo((await farm.claimable(firstToken.address, staker1.address)), parseTRU(200), 1000))
         await farm.connect(staker1).claim([firstToken.address], txArgs)
-        expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(200), 1000))
+        expect(expectScaledCloseTo((await stkTru.balanceOf(staker1.address)), parseTRU(200), 1000))
       })
 
       it('rewards when stake increases', async () => {
@@ -177,7 +183,7 @@ describe('TrueMultiFarm', () => {
         await timeTravel(provider, DAY)
         await farm.connect(staker1).claim([firstToken.address], txArgs)
 
-        expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(200)))
+        expect(expectScaledCloseTo((await stkTru.balanceOf(staker1.address)), parseTRU(200)))
       })
 
       it('sending stake tokens to TrueMultiFarm does not affect calculations', async () => {
@@ -186,7 +192,7 @@ describe('TrueMultiFarm', () => {
         await timeTravel(provider, DAY)
         await farm.connect(staker1).claim([firstToken.address], txArgs)
 
-        expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(100)))
+        expect(expectScaledCloseTo((await stkTru.balanceOf(staker1.address)), parseTRU(100)))
       })
 
       it('staking claims pending rewards', async () => {
@@ -194,7 +200,7 @@ describe('TrueMultiFarm', () => {
         await timeTravel(provider, DAY)
         await farm.connect(staker1).stake(firstToken.address, parseEth(500), txArgs)
 
-        expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(100)))
+        expect(expectScaledCloseTo((await stkTru.balanceOf(staker1.address)), parseTRU(100)))
       })
 
       it('claiming sets claimable to 0', async () => {
@@ -224,38 +230,51 @@ describe('TrueMultiFarm', () => {
         await distributor.distribute(txArgs)
         await timeTravel(provider, DAY)
         await farm.connect(staker1).claim([firstToken.address], txArgs)
-        expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(200)))
+        expect(expectScaledCloseTo((await stkTru.balanceOf(staker1.address)), parseTRU(200)))
       })
 
       it('owner withdrawing distributes funds', async () => {
         await farm.connect(staker1).stake(firstToken.address, parseEth(500), txArgs)
-        expect(expectCloseTo((await trustToken.balanceOf(farm.address)), fromTru(0), 2e6))
+        expect(expectCloseTo((await tru.balanceOf(farm.address)), parseTRU(0), 2e6))
         await timeTravel(provider, DAY)
         await distributor.connect(owner).empty(txArgs)
-        expect(expectScaledCloseTo((await trustToken.balanceOf(farm.address)), fromTru(100)))
+        expect(expectScaledCloseTo((await tru.balanceOf(farm.address)), parseTRU(100)))
         await farm.connect(staker1).claim([firstToken.address], txArgs)
-        expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(100)))
-        expect(expectCloseTo((await trustToken.balanceOf(farm.address)), fromTru(0), 2e6))
+        expect(expectScaledCloseTo((await stkTru.balanceOf(staker1.address)), parseTRU(100)))
+        expect(expectCloseTo((await tru.balanceOf(farm.address)), parseTRU(0), 2e6))
       })
 
       it('changing farm distributes funds', async () => {
         await farm.connect(staker1).stake(firstToken.address, parseEth(500), txArgs)
-        expect(expectCloseTo((await trustToken.balanceOf(farm.address)), fromTru(0), 2e6))
+        expect(expectCloseTo((await tru.balanceOf(farm.address)), parseTRU(0), 2e6))
         await timeTravel(provider, DAY)
         await distributor.connect(owner).setFarm(farm2.address, txArgs)
-        expect(expectScaledCloseTo((await trustToken.balanceOf(farm.address)), fromTru(100)))
+        expect(expectScaledCloseTo((await tru.balanceOf(farm.address)), parseTRU(100)))
         await farm.connect(staker1).claim([firstToken.address], txArgs)
-        expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(100)))
-        expect(expectCloseTo((await trustToken.balanceOf(farm.address)), fromTru(0), 2e6))
+        expect(expectScaledCloseTo((await stkTru.balanceOf(staker1.address)), parseTRU(100)))
+        expect(expectCloseTo((await tru.balanceOf(farm.address)), parseTRU(0), 2e6))
       })
 
       it('can withdraw liquidity after all TRU is distributed', async () => {
         await farm.connect(staker1).stake(firstToken.address, parseEth(500), txArgs)
         await timeTravel(provider, DAY * REWARD_DAYS)
         await farm.connect(staker1).claim([firstToken.address], txArgs)
-        expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)), amount))
+        expect(expectScaledCloseTo((await stkTru.balanceOf(staker1.address)), amount))
         await timeTravel(provider, DAY)
         await farm.connect(staker1).unstake(firstToken.address, parseEth(500), txArgs)
+      })
+
+      it('scales withdrawn stkTru after slash', async () => {
+        await tru.mint(owner.address, parseTRU(1000))
+        await tru.approve(stkTru.address, parseTRU(1000))
+        await stkTru.stake(parseTRU(1000))
+        await stkTru.setLiquidator(owner.address)
+        await stkTru.withdraw(parseTRU(100))
+
+        await farm.connect(staker1).stake(firstToken.address, parseEth(500), txArgs)
+        await timeTravel(provider, DAY * REWARD_DAYS)
+        await farm.connect(staker1).claim([firstToken.address], txArgs)
+        expect(expectScaledCloseTo((await stkTru.balanceOf(staker1.address)), amount.mul(10).div(9)))
       })
     })
 
@@ -263,7 +282,7 @@ describe('TrueMultiFarm', () => {
       const dailyReward = amount.div(REWARD_DAYS)
 
       beforeEach(async () => {
-      // staker1 with 4/5 of stake
+        // staker1 with 4/5 of stake
         await farm.connect(staker1).stake(firstToken.address, parseEth(400), txArgs)
         // staker 2 has 1/5 of stake
         await farm.connect(staker2).stake(firstToken.address, parseEth(100), txArgs)
@@ -276,24 +295,24 @@ describe('TrueMultiFarm', () => {
         await farm.connect(staker1).claim([firstToken.address], txArgs)
         await farm.connect(staker2).claim([firstToken.address], txArgs)
 
-        expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)),
+        expect(expectScaledCloseTo((await stkTru.balanceOf(staker1.address)),
           dailyReward.mul(days).mul(4).div(5)))
-        expect(expectScaledCloseTo((await trustToken.balanceOf(staker2.address)),
+        expect(expectScaledCloseTo((await stkTru.balanceOf(staker2.address)),
           dailyReward.mul(days).mul(1).div(5)))
       })
 
       it('if additional funds are transferred to farm, they are also distributed accordingly to shares', async () => {
         const days = 1
-        const additionalReward = fromTru(100)
+        const additionalReward = parseTRU(100)
         const totalReward = dailyReward.add(additionalReward)
         await timeTravel(provider, DAY * days)
-        trustToken.mint(farm.address, additionalReward, txArgs)
+        tru.mint(farm.address, additionalReward, txArgs)
         await farm.connect(staker1).claim([firstToken.address], txArgs)
         await farm.connect(staker2).claim([firstToken.address], txArgs)
 
-        expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)),
+        expect(expectScaledCloseTo((await stkTru.balanceOf(staker1.address)),
           totalReward.mul(days).mul(4).div(5)))
-        expect(expectScaledCloseTo((await trustToken.balanceOf(staker2.address)),
+        expect(expectScaledCloseTo((await stkTru.balanceOf(staker2.address)),
           totalReward.mul(days).mul(1).div(5)))
       })
 
@@ -310,8 +329,8 @@ describe('TrueMultiFarm', () => {
         const staker2Reward = dailyReward.mul(days).mul(1).div(5).add(
           dailyReward.mul(days).mul(1).div(2))
 
-        expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)), staker1Reward))
-        expect(expectScaledCloseTo((await trustToken.balanceOf(staker2.address)), staker2Reward))
+        expect(expectScaledCloseTo((await stkTru.balanceOf(staker1.address)), staker1Reward))
+        expect(expectScaledCloseTo((await stkTru.balanceOf(staker2.address)), staker2Reward))
       })
     })
   })
@@ -393,7 +412,7 @@ describe('TrueMultiFarm', () => {
 
         await timeTravel(provider, DAY)
         await farm.connect(staker1).claim([firstToken.address, secondToken.address], txArgs)
-        expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(100)))
+        expect(expectScaledCloseTo((await stkTru.balanceOf(staker1.address)), parseTRU(100)))
       })
 
       it('yields rewards per staked tokens (using single claims)', async () => {
@@ -402,10 +421,10 @@ describe('TrueMultiFarm', () => {
 
         await timeTravel(provider, DAY)
         await farm.connect(staker1).claim([firstToken.address], txArgs)
-        expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(25)))
+        expect(expectScaledCloseTo((await stkTru.balanceOf(staker1.address)), parseTRU(25)))
 
         await farm.connect(staker1).claim([secondToken.address], txArgs)
-        expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(100)))
+        expect(expectScaledCloseTo((await stkTru.balanceOf(staker1.address)), parseTRU(100)))
       })
 
       it('yields rewards per staked tokens (using exit)', async () => {
@@ -414,9 +433,9 @@ describe('TrueMultiFarm', () => {
 
         await timeTravel(provider, DAY)
         await farm.connect(staker1).exit([secondToken.address], txArgs)
-        expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(75)))
+        expect(expectScaledCloseTo((await stkTru.balanceOf(staker1.address)), parseTRU(75)))
         await farm.connect(staker1).exit([firstToken.address], txArgs)
-        expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(100)))
+        expect(expectScaledCloseTo((await stkTru.balanceOf(staker1.address)), parseTRU(100)))
       })
 
       it('estimate rewards correctly', async () => {
@@ -424,20 +443,20 @@ describe('TrueMultiFarm', () => {
         await farm.connect(staker1).stake(secondToken.address, parseEth(1000), txArgs)
 
         await timeTravel(provider, DAY)
-        expect(expectScaledCloseTo((await farm.claimable(firstToken.address, staker1.address)), fromTru(25), 1000))
-        expect(expectScaledCloseTo((await farm.claimable(secondToken.address, staker1.address)), fromTru(75), 1000))
+        expect(expectScaledCloseTo((await farm.claimable(firstToken.address, staker1.address)), parseTRU(25), 1000))
+        expect(expectScaledCloseTo((await farm.claimable(secondToken.address, staker1.address)), parseTRU(75), 1000))
 
         await timeTravel(provider, DAY)
-        expect(expectScaledCloseTo((await farm.claimable(firstToken.address, staker1.address)), fromTru(50), 1000))
-        expect(expectScaledCloseTo((await farm.claimable(secondToken.address, staker1.address)), fromTru(150), 1000))
+        expect(expectScaledCloseTo((await farm.claimable(firstToken.address, staker1.address)), parseTRU(50), 1000))
+        expect(expectScaledCloseTo((await farm.claimable(secondToken.address, staker1.address)), parseTRU(150), 1000))
 
         await farm.connect(staker1).unstake(firstToken.address, 100, txArgs)
 
-        expect(expectScaledCloseTo((await farm.claimable(firstToken.address, staker1.address)), fromTru(50), 1000))
-        expect(expectScaledCloseTo((await farm.claimable(secondToken.address, staker1.address)), fromTru(150), 1000))
+        expect(expectScaledCloseTo((await farm.claimable(firstToken.address, staker1.address)), parseTRU(50), 1000))
+        expect(expectScaledCloseTo((await farm.claimable(secondToken.address, staker1.address)), parseTRU(150), 1000))
 
         await farm.connect(staker1).claim([firstToken.address, secondToken.address], txArgs)
-        expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(200), 1000))
+        expect(expectScaledCloseTo((await stkTru.balanceOf(staker1.address)), parseTRU(200), 1000))
       })
 
       it('rewards when stake increases', async () => {
@@ -451,7 +470,7 @@ describe('TrueMultiFarm', () => {
         await timeTravel(provider, DAY)
         await farm.connect(staker1).claim([firstToken.address, secondToken.address], txArgs)
 
-        expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(200)))
+        expect(expectScaledCloseTo((await stkTru.balanceOf(staker1.address)), parseTRU(200)))
       })
 
       it('sending stake tokens to TrueMultiFarm does not affect calculations', async () => {
@@ -460,7 +479,7 @@ describe('TrueMultiFarm', () => {
         await timeTravel(provider, DAY)
         await farm.connect(staker1).claim([secondToken.address], txArgs)
 
-        expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(75)))
+        expect(expectScaledCloseTo((await stkTru.balanceOf(staker1.address)), parseTRU(75)))
       })
 
       it('staking claims pending rewards', async () => {
@@ -469,10 +488,10 @@ describe('TrueMultiFarm', () => {
         await timeTravel(provider, DAY)
 
         await farm.connect(staker1).stake(firstToken.address, parseEth(500), txArgs)
-        expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(25)))
+        expect(expectScaledCloseTo((await stkTru.balanceOf(staker1.address)), parseTRU(25)))
 
         await farm.connect(staker1).stake(secondToken.address, parseEth(500), txArgs)
-        expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(100)))
+        expect(expectScaledCloseTo((await stkTru.balanceOf(staker1.address)), parseTRU(100)))
       })
 
       it('claiming sets claimable to 0', async () => {
@@ -506,21 +525,21 @@ describe('TrueMultiFarm', () => {
         await distributor.distribute(txArgs)
         await timeTravel(provider, DAY)
         await farm.connect(staker1).claim([firstToken.address, secondToken.address], txArgs)
-        expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(200)))
+        expect(expectScaledCloseTo((await stkTru.balanceOf(staker1.address)), parseTRU(200)))
       })
 
       it('owner withdrawing distributes funds', async () => {
         await farm.connect(staker1).stake(firstToken.address, parseEth(500), txArgs)
         await farm.connect(staker1).stake(secondToken.address, parseEth(500), txArgs)
-        expect(expectCloseTo((await trustToken.balanceOf(farm.address)), fromTru(0), 2e6))
+        expect(expectCloseTo((await tru.balanceOf(farm.address)), parseTRU(0), 2e6))
 
         await timeTravel(provider, DAY)
         await distributor.connect(owner).empty(txArgs)
-        expect(expectScaledCloseTo((await trustToken.balanceOf(farm.address)), fromTru(100)))
+        expect(expectScaledCloseTo((await tru.balanceOf(farm.address)), parseTRU(100)))
 
         await farm.connect(staker1).claim([firstToken.address, secondToken.address], txArgs)
-        expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(100)))
-        expect(expectCloseTo((await trustToken.balanceOf(farm.address)), fromTru(0), 2e6))
+        expect(expectScaledCloseTo((await stkTru.balanceOf(staker1.address)), parseTRU(100)))
+        expect(expectCloseTo((await tru.balanceOf(farm.address)), parseTRU(0), 2e6))
 
         await timeTravel(provider, DAY)
         expect(await farm.claimable(firstToken.address, staker1.address)).to.equal(0)
@@ -530,14 +549,14 @@ describe('TrueMultiFarm', () => {
       it('changing farm distributes funds', async () => {
         await farm.connect(staker1).stake(firstToken.address, parseEth(500), txArgs)
         await farm.connect(staker1).stake(secondToken.address, parseEth(500), txArgs)
-        expect(expectCloseTo((await trustToken.balanceOf(farm.address)), fromTru(0), 2e6))
+        expect(expectCloseTo((await tru.balanceOf(farm.address)), parseTRU(0), 2e6))
 
         await timeTravel(provider, DAY)
         await distributor.connect(owner).setFarm(farm2.address, txArgs)
-        expect(expectScaledCloseTo((await trustToken.balanceOf(farm.address)), fromTru(100)))
+        expect(expectScaledCloseTo((await tru.balanceOf(farm.address)), parseTRU(100)))
         await farm.connect(staker1).claim([firstToken.address, secondToken.address], txArgs)
-        expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)), fromTru(100)))
-        expect(expectCloseTo((await trustToken.balanceOf(farm.address)), fromTru(0), 2e6))
+        expect(expectScaledCloseTo((await stkTru.balanceOf(staker1.address)), parseTRU(100)))
+        expect(expectCloseTo((await tru.balanceOf(farm.address)), parseTRU(0), 2e6))
 
         await timeTravel(provider, DAY)
         expect(await farm.claimable(firstToken.address, staker1.address)).to.equal(0)
@@ -548,7 +567,7 @@ describe('TrueMultiFarm', () => {
         await farm.connect(staker1).stake(firstToken.address, parseEth(500), txArgs)
         await timeTravel(provider, DAY * REWARD_DAYS)
         await farm.connect(staker1).claim([firstToken.address], txArgs)
-        expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)), amount.div(4)))
+        expect(expectScaledCloseTo((await stkTru.balanceOf(staker1.address)), amount.div(4)))
         await timeTravel(provider, DAY)
         await farm.connect(staker1).unstake(firstToken.address, parseEth(500), txArgs)
       })
@@ -574,32 +593,32 @@ describe('TrueMultiFarm', () => {
         await farm.connect(staker2).claim([firstToken.address], txArgs)
 
         // 1st token has 1/4 of shares
-        expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)),
+        expect(expectScaledCloseTo((await stkTru.balanceOf(staker1.address)),
           dailyReward.mul(days).mul(4).div(5).div(4)))
-        expect(expectScaledCloseTo((await trustToken.balanceOf(staker2.address)),
+        expect(expectScaledCloseTo((await stkTru.balanceOf(staker2.address)),
           dailyReward.mul(days).mul(1).div(5).div(4)))
 
         await farm.connect(staker1).claim([secondToken.address], txArgs)
         await farm.connect(staker2).claim([secondToken.address], txArgs)
 
-        expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)),
+        expect(expectScaledCloseTo((await stkTru.balanceOf(staker1.address)),
           dailyReward.mul(days).mul(4).div(5)))
-        expect(expectScaledCloseTo((await trustToken.balanceOf(staker2.address)),
+        expect(expectScaledCloseTo((await stkTru.balanceOf(staker2.address)),
           dailyReward.mul(days).mul(1).div(5)))
       })
 
       it('if additional funds are transferred to farm, they are also distributed accordingly to shares', async () => {
         const days = 1
-        const additionalReward = fromTru(100)
+        const additionalReward = parseTRU(100)
         const totalReward = dailyReward.add(additionalReward)
         await timeTravel(provider, DAY * days)
-        trustToken.mint(farm.address, additionalReward, txArgs)
+        tru.mint(farm.address, additionalReward, txArgs)
         await farm.connect(staker1).claim([firstToken.address, secondToken.address], txArgs)
         await farm.connect(staker2).claim([firstToken.address, secondToken.address], txArgs)
 
-        expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)),
+        expect(expectScaledCloseTo((await stkTru.balanceOf(staker1.address)),
           totalReward.mul(days).mul(4).div(5)))
-        expect(expectScaledCloseTo((await trustToken.balanceOf(staker2.address)),
+        expect(expectScaledCloseTo((await stkTru.balanceOf(staker2.address)),
           totalReward.mul(days).mul(1).div(5)))
       })
 
@@ -617,8 +636,8 @@ describe('TrueMultiFarm', () => {
         const staker2Reward = dailyReward.mul(days).mul(1).div(5).add(
           dailyReward.mul(days).mul(1).div(2))
 
-        expect(expectScaledCloseTo((await trustToken.balanceOf(staker1.address)), staker1Reward))
-        expect(expectScaledCloseTo((await trustToken.balanceOf(staker2.address)), staker2Reward))
+        expect(expectScaledCloseTo((await stkTru.balanceOf(staker1.address)), staker1Reward))
+        expect(expectScaledCloseTo((await stkTru.balanceOf(staker2.address)), staker2Reward))
       })
     })
 
@@ -640,34 +659,34 @@ describe('TrueMultiFarm', () => {
 
       it('shares change is handled properly', async () => {
         await timeTravel(provider, DAY)
-        expectScaledCloseTo(await farm.claimable(firstToken.address, staker1.address), fromTru(25))
-        expectScaledCloseTo(await farm.claimable(secondToken.address, staker1.address), fromTru(75))
+        expectScaledCloseTo(await farm.claimable(firstToken.address, staker1.address), parseTRU(25))
+        expectScaledCloseTo(await farm.claimable(secondToken.address, staker1.address), parseTRU(75))
 
         await farm.setShares([firstToken.address, secondToken.address], [2, 2], txArgs)
-        expectScaledCloseTo(await farm.claimable(firstToken.address, staker1.address), fromTru(25))
-        expectScaledCloseTo(await farm.claimable(secondToken.address, staker1.address), fromTru(75))
+        expectScaledCloseTo(await farm.claimable(firstToken.address, staker1.address), parseTRU(25))
+        expectScaledCloseTo(await farm.claimable(secondToken.address, staker1.address), parseTRU(75))
 
         await timeTravel(provider, DAY)
-        expectScaledCloseTo(await farm.claimable(firstToken.address, staker1.address), fromTru(75))
-        expectScaledCloseTo(await farm.claimable(secondToken.address, staker1.address), fromTru(125))
+        expectScaledCloseTo(await farm.claimable(firstToken.address, staker1.address), parseTRU(75))
+        expectScaledCloseTo(await farm.claimable(secondToken.address, staker1.address), parseTRU(125))
       })
 
       it('claiming works when shares are changing', async () => {
         await timeTravel(provider, DAY)
-        expectScaledCloseTo(await farm.claimable(firstToken.address, staker1.address), fromTru(25))
-        expectScaledCloseTo(await farm.claimable(secondToken.address, staker1.address), fromTru(75))
+        expectScaledCloseTo(await farm.claimable(firstToken.address, staker1.address), parseTRU(25))
+        expectScaledCloseTo(await farm.claimable(secondToken.address, staker1.address), parseTRU(75))
 
         await farm.connect(staker1).claim([secondToken.address])
-        expectScaledCloseTo(await farm.claimable(firstToken.address, staker1.address), fromTru(25))
-        expectCloseTo(await farm.claimable(secondToken.address, staker1.address), fromTru(0), parseTRU(0.02).toNumber())
+        expectScaledCloseTo(await farm.claimable(firstToken.address, staker1.address), parseTRU(25))
+        expectCloseTo(await farm.claimable(secondToken.address, staker1.address), parseTRU(0), parseTRU(0.02).toNumber())
 
         await farm.setShares([firstToken.address, secondToken.address], [2, 2], txArgs)
-        expectScaledCloseTo(await farm.claimable(firstToken.address, staker1.address), fromTru(25))
-        expectCloseTo(await farm.claimable(secondToken.address, staker1.address), fromTru(0), parseTRU(0.02).toNumber())
+        expectScaledCloseTo(await farm.claimable(firstToken.address, staker1.address), parseTRU(25))
+        expectCloseTo(await farm.claimable(secondToken.address, staker1.address), parseTRU(0), parseTRU(0.02).toNumber())
 
         await timeTravel(provider, DAY)
-        expectScaledCloseTo(await farm.claimable(firstToken.address, staker1.address), fromTru(75))
-        expectScaledCloseTo(await farm.claimable(secondToken.address, staker1.address), fromTru(50))
+        expectScaledCloseTo(await farm.claimable(firstToken.address, staker1.address), parseTRU(75))
+        expectScaledCloseTo(await farm.claimable(secondToken.address, staker1.address), parseTRU(50))
       })
 
       it('calculates rewards correctly after new farm was added', async () => {
@@ -679,14 +698,14 @@ describe('TrueMultiFarm', () => {
         await farm.setShares([thirdToken.address], [6], txArgs)
         await farm.connect(staker1).stake(thirdToken.address, parseEth(500), txArgs)
 
-        expectScaledCloseTo(await farm.claimable(firstToken.address, staker1.address), fromTru(25))
-        expectScaledCloseTo(await farm.claimable(secondToken.address, staker1.address), fromTru(75))
-        expectCloseTo(await farm.claimable(thirdToken.address, staker1.address), fromTru(0), parseTRU(0.02).toNumber())
+        expectScaledCloseTo(await farm.claimable(firstToken.address, staker1.address), parseTRU(25))
+        expectScaledCloseTo(await farm.claimable(secondToken.address, staker1.address), parseTRU(75))
+        expectCloseTo(await farm.claimable(thirdToken.address, staker1.address), parseTRU(0), parseTRU(0.02).toNumber())
 
         await timeTravel(provider, DAY)
-        expectScaledCloseTo(await farm.claimable(firstToken.address, staker1.address), fromTru(35))
-        expectScaledCloseTo(await farm.claimable(secondToken.address, staker1.address), fromTru(105))
-        expectScaledCloseTo(await farm.claimable(thirdToken.address, staker1.address), fromTru(60))
+        expectScaledCloseTo(await farm.claimable(firstToken.address, staker1.address), parseTRU(35))
+        expectScaledCloseTo(await farm.claimable(secondToken.address, staker1.address), parseTRU(105))
+        expectScaledCloseTo(await farm.claimable(thirdToken.address, staker1.address), parseTRU(60))
       })
 
       it('works for complex cases', async () => {
@@ -698,41 +717,41 @@ describe('TrueMultiFarm', () => {
         await farm.setShares([thirdToken.address], [6], txArgs)
         await farm.connect(staker1).stake(thirdToken.address, parseEth(500), txArgs)
 
-        expectScaledCloseTo(await farm.claimable(firstToken.address, staker1.address), fromTru(25))
-        expectScaledCloseTo(await farm.claimable(secondToken.address, staker1.address), fromTru(75))
-        expectCloseTo(await farm.claimable(thirdToken.address, staker1.address), fromTru(0), parseTRU(0.02).toNumber())
+        expectScaledCloseTo(await farm.claimable(firstToken.address, staker1.address), parseTRU(25))
+        expectScaledCloseTo(await farm.claimable(secondToken.address, staker1.address), parseTRU(75))
+        expectCloseTo(await farm.claimable(thirdToken.address, staker1.address), parseTRU(0), parseTRU(0.02).toNumber())
 
         await timeTravel(provider, DAY)
         await farm.connect(staker1).claim([secondToken.address])
-        expectScaledCloseTo(await farm.claimable(firstToken.address, staker1.address), fromTru(35))
-        expectCloseTo(await farm.claimable(secondToken.address, staker1.address), fromTru(0), parseTRU(0.02).toNumber())
-        expectScaledCloseTo(await farm.claimable(thirdToken.address, staker1.address), fromTru(60))
+        expectScaledCloseTo(await farm.claimable(firstToken.address, staker1.address), parseTRU(35))
+        expectCloseTo(await farm.claimable(secondToken.address, staker1.address), parseTRU(0), parseTRU(0.02).toNumber())
+        expectScaledCloseTo(await farm.claimable(thirdToken.address, staker1.address), parseTRU(60))
 
         await farm.connect(staker1).unstake(firstToken.address, parseEth(500))
         await timeTravel(provider, DAY)
-        expectScaledCloseTo(await farm.claimable(firstToken.address, staker1.address), fromTru(35))
-        expectScaledCloseTo(await farm.claimable(secondToken.address, staker1.address), fromTru(30))
-        expectScaledCloseTo(await farm.claimable(thirdToken.address, staker1.address), fromTru(120))
+        expectScaledCloseTo(await farm.claimable(firstToken.address, staker1.address), parseTRU(35))
+        expectScaledCloseTo(await farm.claimable(secondToken.address, staker1.address), parseTRU(30))
+        expectScaledCloseTo(await farm.claimable(thirdToken.address, staker1.address), parseTRU(120))
 
         await farm.connect(staker1).claim([firstToken.address, secondToken.address])
-        expectCloseTo(await farm.claimable(firstToken.address, staker1.address), fromTru(0), parseTRU(0.02).toNumber())
-        expectCloseTo(await farm.claimable(secondToken.address, staker1.address), fromTru(0), parseTRU(0.02).toNumber())
-        expectScaledCloseTo(await farm.claimable(thirdToken.address, staker1.address), fromTru(120))
+        expectCloseTo(await farm.claimable(firstToken.address, staker1.address), parseTRU(0), parseTRU(0.02).toNumber())
+        expectCloseTo(await farm.claimable(secondToken.address, staker1.address), parseTRU(0), parseTRU(0.02).toNumber())
+        expectScaledCloseTo(await farm.claimable(thirdToken.address, staker1.address), parseTRU(120))
 
         await farm.connect(staker2).stake(secondToken.address, parseEth(1000))
         await timeTravel(provider, DAY)
-        expectCloseTo(await farm.claimable(firstToken.address, staker1.address), fromTru(0), parseTRU(0.02).toNumber())
-        expectScaledCloseTo(await farm.claimable(secondToken.address, staker1.address), fromTru(10))
-        expectScaledCloseTo(await farm.claimable(thirdToken.address, staker1.address), fromTru(180))
-        expectScaledCloseTo(await farm.claimable(secondToken.address, staker2.address), fromTru(20))
+        expectCloseTo(await farm.claimable(firstToken.address, staker1.address), parseTRU(0), parseTRU(0.02).toNumber())
+        expectScaledCloseTo(await farm.claimable(secondToken.address, staker1.address), parseTRU(10))
+        expectScaledCloseTo(await farm.claimable(thirdToken.address, staker1.address), parseTRU(180))
+        expectScaledCloseTo(await farm.claimable(secondToken.address, staker2.address), parseTRU(20))
 
         await farm.setShares([firstToken.address, secondToken.address, thirdToken.address], [0, 3, 1], txArgs)
 
         await timeTravel(provider, DAY)
-        expectCloseTo(await farm.claimable(firstToken.address, staker1.address), fromTru(0), parseTRU(0.02).toNumber())
-        expectScaledCloseTo(await farm.claimable(secondToken.address, staker1.address), fromTru(35))
-        expectScaledCloseTo(await farm.claimable(thirdToken.address, staker1.address), fromTru(205))
-        expectScaledCloseTo(await farm.claimable(secondToken.address, staker2.address), fromTru(70))
+        expectCloseTo(await farm.claimable(firstToken.address, staker1.address), parseTRU(0), parseTRU(0.02).toNumber())
+        expectScaledCloseTo(await farm.claimable(secondToken.address, staker1.address), parseTRU(35))
+        expectScaledCloseTo(await farm.claimable(thirdToken.address, staker1.address), parseTRU(205))
+        expectScaledCloseTo(await farm.claimable(secondToken.address, staker2.address), parseTRU(70))
       })
     })
   })

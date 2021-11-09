@@ -14,8 +14,8 @@ import {
   LoanFactory2__factory,
   TrueFiCreditOracle,
   TrueFiCreditOracle__factory,
-  LoanToken2,
-  LoanToken2__factory,
+  FixedTermLoan,
+  FixedTermLoan__factory,
   MockTrueCurrency,
   TestLoanToken__factory,
   LineOfCreditAgency,
@@ -46,7 +46,7 @@ describe('LoanFactory2', () => {
     const tx = await loanFactory.connect(ftla).createLoanToken(pool.address, borrower.address, amount, term, apy)
     const creationEvent = (await tx.wait()).events[1]
     const { loanToken } = creationEvent.args
-    return LoanToken2__factory.connect(loanToken, owner)
+    return FixedTermLoan__factory.connect(loanToken, owner)
   }
 
   const createDebtToken = async (pool: TrueFiPool2, borrower: Wallet, debt: BigNumberish) => {
@@ -91,7 +91,7 @@ describe('LoanFactory2', () => {
   })
 
   describe('createLoanToken', () => {
-    let loanToken: LoanToken2
+    let loanToken: FixedTermLoan
 
     beforeEach(async () => {
       loanToken = await createLoanToken(pool, borrower, parseEth(1), 15 * DAY, 1000)
@@ -249,9 +249,9 @@ describe('LoanFactory2', () => {
   })
 
   describe('setLoanTokenImplementation', () => {
-    let implementation: LoanToken2
+    let implementation: FixedTermLoan
     beforeEach(async () => {
-      implementation = await new LoanToken2__factory(owner).deploy()
+      implementation = await new FixedTermLoan__factory(owner).deploy()
     })
 
     it('only admin can call', async () => {
