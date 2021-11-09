@@ -826,7 +826,6 @@ describe('TrueFiPool2', () => {
       loan = await extractLoanTokenAddress(tx, owner, loanFactory)
       await payBack(tusd, loan)
       await loan.settle()
-      await ftlAgency.reclaim(loan.address, '0x')
     })
 
     it('only lender, ftlAgency and creditAgency can repay to pool', async () => {
@@ -835,6 +834,7 @@ describe('TrueFiPool2', () => {
     })
 
     it('lender can repay', async () => {
+      await ftlAgency.reclaim(loan.address, '0x')
       await tusdPool.setLender(lender.address)
       const legacyLoan = await createLegacyLoan(loanFactory, tusdPool, lender, owner, borrower, 500000, DAY, 1000)
       await borrowingMutex.lock(borrower.address, legacyLoan.address)
