@@ -73,17 +73,18 @@ contract StakingVault is IStakingVault, UpgradeableClaimable {
         emit Unstaked(msg.sender, amount);
     }
 
-    function slash(address borrower) external override {
+    function slash(address borrower) external override returns (uint256) {
         require(msg.sender == address(liquidator), "StakingVault: Caller is not the liquidator");
         uint256 slashedAmount = stakedAmount[borrower];
         if (slashedAmount == 0) {
-            return;
+            return 0;
         }
         require(borrowingMutex.isBanned(borrower), "StakingVault: Borrower has to be banned");
 
         stakedAmount[borrower] = 0;
         stakedToken.safeTransfer(msg.sender, slashedAmount);
         emit Slashed(borrower, slashedAmount);
+        return slashedAmount;
     }
 
     function canUnstake(address borrower, uint256 amount) public view returns (bool) {

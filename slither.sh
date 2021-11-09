@@ -3,7 +3,7 @@
 CONTRACTS=(
   'GovernorAlpha'
   'LoanFactory2'
-  'LoanToken2'
+  'FixedTermLoan'
   'StkTruToken'
   'TrueRatingAgencyV2'
   'TrustToken'

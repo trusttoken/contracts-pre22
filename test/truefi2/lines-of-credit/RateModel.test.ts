@@ -94,7 +94,7 @@ describe('RateModel', () => {
     })
 
     it('sets borrow limit config', async () => {
-      expect(await rateModel.borrowLimitConfig()).to.deep.eq([40, 7500, 1500, 1500])
+      expect(await rateModel.borrowLimitConfig()).to.deep.eq([40, 7500, 1500, 1000])
     })
 
     it('sets staking config', async () => {
@@ -545,6 +545,7 @@ describe('RateModel', () => {
       await mockPool2.mock.oracle.returns(oracle2.address)
       await mockFactory.supportPool(mockPool.address)
       await mockFactory.supportPool(mockPool2.address)
+      await rateModel.setBorrowLimitConfig(40, 7500, 1500, 1500)
     })
 
     describe('works for pool with 18 decimal places', () => {

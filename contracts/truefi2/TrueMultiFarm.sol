@@ -8,6 +8,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import {UpgradeableClaimable} from "../common/UpgradeableClaimable.sol";
 import {ITrueDistributor} from "../truefi/interface/ITrueDistributor.sol";
 import {ITrueMultiFarm} from "./interface/ITrueMultiFarm.sol";
+import {IStkTruToken} from "../governance/interface/IStkTruToken.sol";
 
 /**
  * @title TrueMultiFarm
@@ -21,6 +22,7 @@ import {ITrueMultiFarm} from "./interface/ITrueMultiFarm.sol";
 contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
+    using SafeERC20 for IStkTruToken;
     uint256 private constant PRECISION = 1e30;
 
     struct Stakes {
@@ -48,7 +50,7 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
     // REMOVAL OR REORDER OF VARIABLES WILL RESULT
     // ========= IN STORAGE CORRUPTION ===========
 
-    IERC20 public rewardToken;
+    IERC20 public tru;
     ITrueDistributor public override trueDistributor;
 
     mapping(IERC20 => Stakes) public stakes;
@@ -58,6 +60,8 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
     Stakes public shares;
     // Total rewards per farm
     Rewards public farmRewards;
+
+    IStkTruToken public stkTru;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -92,7 +96,7 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
     }
 
     /**
-     * @dev Is there any reward allocatiion for given token
+     * @dev Is there any reward allocation for given token
      */
     modifier hasShares(IERC20 token) {
         require(shares.staked[address(token)] > 0, "TrueMultiFarm: This token has no shares");
@@ -111,11 +115,13 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
      * The distributor contract calculates how much TRU rewards this contract
      * gets, and stores TRU for distribution.
      * @param _trueDistributor Distributor contract
+     * @param _stkTru Staked TrueFi token
      */
-    function initialize(ITrueDistributor _trueDistributor) public initializer {
+    function initialize(ITrueDistributor _trueDistributor, IStkTruToken _stkTru) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
         trueDistributor = _trueDistributor;
-        rewardToken = _trueDistributor.trustToken();
+        tru = _trueDistributor.trustToken();
+        stkTru = _stkTru;
         require(trueDistributor.farm() == address(this), "TrueMultiFarm: Distributor farm is not set");
     }
 
@@ -232,7 +238,9 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
         stakerRewards[token].claimableReward[msg.sender] = 0;
         farmRewards.claimableReward[address(token)] = farmRewards.claimableReward[address(token)].sub(rewardToClaim);
 
-        rewardToken.safeTransfer(msg.sender, rewardToClaim);
+        tru.safeApprove(address(stkTru), rewardToClaim);
+        stkTru.stake(rewardToClaim);
+        stkTru.safeTransfer(msg.sender, stkTru.balanceOf(address(this)));
         emit Claim(token, msg.sender, rewardToClaim);
     }
 
@@ -268,9 +276,7 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
         uint256 pending = trueDistributor.farm() == address(this) ? trueDistributor.nextDistribution() : 0;
 
         // calculate new total rewards ever received by farm
-        uint256 newTotalRewards = rewardToken.balanceOf(address(this)).add(pending).add(farmRewards.totalClaimedRewards).mul(
-            PRECISION
-        );
+        uint256 newTotalRewards = tru.balanceOf(address(this)).add(pending).add(farmRewards.totalClaimedRewards).mul(PRECISION);
         // calculate new rewards that were received since previous distribution
         uint256 totalBlockReward = newTotalRewards.sub(farmRewards.totalRewards);
 
@@ -307,7 +313,7 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
      */
     function _updateCumulativeRewardPerShare() internal {
         // calculate new total rewards ever received by farm
-        uint256 newTotalRewards = rewardToken.balanceOf(address(this)).add(farmRewards.totalClaimedRewards).mul(PRECISION);
+        uint256 newTotalRewards = tru.balanceOf(address(this)).add(farmRewards.totalClaimedRewards).mul(PRECISION);
         // calculate new rewards that were received since previous distribution
         uint256 rewardSinceLastUpdate = newTotalRewards.sub(farmRewards.totalRewards);
         // update info about total farm rewards

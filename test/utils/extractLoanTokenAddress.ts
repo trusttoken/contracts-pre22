@@ -2,14 +2,14 @@ import { ContractTransaction, Signer } from 'ethers'
 import {
   DebtToken__factory,
   LoanFactory2,
-  LoanToken2__factory,
+  FixedTermLoan__factory,
 } from 'contracts'
 
 export async function extractLoanTokenAddress (pendingTx: Promise<ContractTransaction>, owner: Signer, loanFactory: LoanFactory2) {
   const tx = await pendingTx
   const receipt = await tx.wait()
   const iface = loanFactory.interface
-  return LoanToken2__factory.connect(receipt.events
+  return FixedTermLoan__factory.connect(receipt.events
     .filter(({ address }) => address === loanFactory.address)
     .map((e) => iface.parseLog(e))
     .find(({ eventFragment }) => eventFragment.name === 'LoanTokenCreated')

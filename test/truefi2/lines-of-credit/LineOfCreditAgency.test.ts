@@ -370,20 +370,23 @@ describe('LineOfCreditAgency', () => {
     })
 
     it('borrow amount is limited by total TVL', async () => {
+      // increase single pool limit coefficient to not be constrained by it
+      await rateModel.setBorrowLimitConfig(40, 7500, 1500, 3000)
+
       await usdcPool.liquidExit(parseUSDC(19e6))
       const maxTVLLimit = (await poolFactory.supportedPoolsTVL()).mul(15).div(100)
       expect(await creditAgency.borrowLimit(tusdPool.address, borrower.address)).to.equal(maxTVLLimit.mul(8051).div(10000))
     })
 
     it('borrow amount is limited by a single pool value', async () => {
-      expect(await creditAgency.borrowLimit(usdcPool.address, borrower.address)).to.equal(parseEth(2e7).mul(15).div(100))
+      expect(await creditAgency.borrowLimit(usdcPool.address, borrower.address)).to.equal(parseEth(2e7).mul(10).div(100))
     })
 
     it('cannot borrow more than 15% of a single pool in total', async () => {
       const expectLimitCloseTo = async (expectedAmount: BigNumber) =>
         expect(expectedAmount.sub(await creditAgency.borrowLimit(usdcPool.address, borrower.address))).to.be.lte(parseEth(1))
-      await expectLimitCloseTo(parseEth(3e6))
-      await creditAgency.connect(borrower).borrow(usdcPool.address, parseUSDC(2e6))
+      await expectLimitCloseTo(parseEth(2e6))
+      await creditAgency.connect(borrower).borrow(usdcPool.address, parseUSDC(1e6))
       await expectLimitCloseTo(parseEth(1e6))
       await creditAgency.connect(borrower).borrow(usdcPool.address, parseUSDC(5e5))
       await expectLimitCloseTo(parseEth(5e5))
@@ -414,6 +417,11 @@ describe('LineOfCreditAgency', () => {
       await creditAgency.allowBorrower(borrower.address, false)
       await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000))
         .to.be.revertedWith('LineOfCreditAgency: Sender is not allowed to borrow')
+    })
+
+    it('fails if borrowed amount is 0', async () => {
+      await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 0))
+        .to.be.revertedWith('LineOfCreditAgency: Borrowed amount has to be greater than 0')
     })
 
     it('fails if borrower has credit score below required', async () => {
@@ -1276,9 +1284,11 @@ describe('LineOfCreditAgency', () => {
 
   describe('rate model integration', () => {
     beforeEach(async () => {
-      await setupBorrower(owner, 255, 0)
+      await setupBorrower(owner, 255, 1)
+      await tusd.connect(owner).approve(creditAgency.address, 1)
       await creditAgency.connect(owner).repayInFull(tusdPool.address)
-      await setupBorrower(borrower2, 255, 0)
+      await setupBorrower(borrower2, 255, 1)
+      await tusd.connect(borrower2).approve(creditAgency.address, 1)
       await creditAgency.connect(borrower2).repayInFull(tusdPool.address)
     })
 
@@ -1320,13 +1330,18 @@ describe('LineOfCreditAgency', () => {
 
   describe('updateCreditScore', () => {
     beforeEach(async () => {
-      await creditOracle.setScore(borrower.address, 0)
+      await creditOracle.setScore(borrower.address, 1)
       await creditAgency.updateCreditScore(tusdPool.address, borrower.address)
       await creditOracle.setScore(borrower.address, 223)
     })
 
+    it('reverts if score hasn\'t been set', async () => {
+      await expect(creditAgency.updateCreditScore(tusdPool.address, borrower2.address))
+        .to.be.revertedWith('LineOfCreditAgency: Score is required to be set by CreditOracle')
+    })
+
     it('updates borrower\'s credit score', async () => {
-      expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(0)
+      expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(1)
       await creditAgency.updateCreditScore(tusdPool.address, borrower.address)
       expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(223)
     })
@@ -1353,16 +1368,26 @@ describe('LineOfCreditAgency', () => {
 
   describe('updateAllCreditScores', () => {
     beforeEach(async () => {
-      await creditOracle.setScore(borrower.address, 0)
-      await creditAgency.updateAllCreditScores(borrower.address)
       await creditOracle.setScore(borrower.address, 223)
+      await creditAgency.allowBorrower(borrower.address, true)
     })
 
     it('updates credit scores for 2 pools', async () => {
       expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(0)
       expect(await creditAgency.creditScore(usdcPool.address, borrower.address)).to.eq(0)
+      await creditAgency.connect(borrower).borrow(tusdPool.address, 1)
+      await creditAgency.connect(borrower).borrow(usdcPool.address, 1)
       await creditAgency.updateAllCreditScores(borrower.address)
       expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(223)
+      expect(await creditAgency.creditScore(usdcPool.address, borrower.address)).to.eq(223)
+    })
+
+    it('does not update score for pools where nothing is borrowed', async () => {
+      expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(0)
+      expect(await creditAgency.creditScore(usdcPool.address, borrower.address)).to.eq(0)
+      await creditAgency.connect(borrower).borrow(usdcPool.address, 1)
+      await creditAgency.updateAllCreditScores(borrower.address)
+      expect(await creditAgency.creditScore(tusdPool.address, borrower.address)).to.eq(0)
       expect(await creditAgency.creditScore(usdcPool.address, borrower.address)).to.eq(223)
     })
   })

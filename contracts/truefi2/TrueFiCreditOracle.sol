@@ -113,6 +113,8 @@ contract TrueFiCreditOracle is ITrueFiCreditOracle, UpgradeableClaimable {
      * Scores are stored as uint8 allowing scores of 0-255
      */
     function setScore(address account, uint8 newScore) public onlyManager {
+        require(newScore > 0, "TrueFiCreditOracle: Score cannot be set to 0");
+
         _setEligibleUntilTime(account, Math.max(eligibleUntilTime[account], block.timestamp.add(creditUpdatePeriod)));
         score[account] = newScore;
         emit ScoreChanged(account, newScore);

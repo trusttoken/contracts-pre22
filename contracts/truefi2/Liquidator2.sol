@@ -196,8 +196,8 @@ contract Liquidator2 is ILiquidator2, UpgradeableClaimable {
         stkTru.withdraw(withdrawnTru);
 
         address borrower = debts[0].borrower();
-        withdrawnTru = withdrawnTru.add(stakingVault.stakedAmount(borrower));
-        stakingVault.slash(borrower);
+        uint256 slashedAmount = stakingVault.slash(borrower);
+        withdrawnTru = withdrawnTru.add(slashedAmount);
 
         tru.safeTransfer(SAFU, withdrawnTru);
         emit Liquidated(debts, totalDefaultedValue, withdrawnTru);

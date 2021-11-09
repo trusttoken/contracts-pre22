@@ -4,7 +4,7 @@ pragma solidity 0.6.10;
 import {IERC20WithDecimals} from "./IERC20WithDecimals.sol";
 
 interface IStakingVault {
-    function slash(address borrower) external;
+    function slash(address borrower) external returns (uint256);
 
     function stakedAmount(address borrower) external view returns (uint256);
 
