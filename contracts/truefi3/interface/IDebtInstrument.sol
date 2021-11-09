@@ -25,7 +25,7 @@ interface IDebtInstrument is IERC721 {
     function borrower(uint256 tokenId) external view returns (address);
 
     /// @dev The underlying token denominating the debt
-    function token(uint256 tokenId) external view returns (address);
+    function token(uint256 tokenId) external view returns (IERC20);
 
     /// @dev Principal debt amount
     function principal(uint256 tokenId) external view returns (uint256);
