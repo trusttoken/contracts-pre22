@@ -93,17 +93,19 @@ contract SAFU is ISAFU, UpgradeableClaimable {
         pool.liquidateLegacyLoan(loan);
         uint256 owedToPool = loan.debt().mul(tokenBalance(loan)).div(loan.totalSupply());
         uint256 safuTokenBalance = tokenBalance(token);
-
-        uint256 deficit = 0;
         uint256 toTransfer = owedToPool;
+        DeficiencyToken _legacyDeficiencyToken;
+        uint256 deficit;
+
         if (owedToPool > safuTokenBalance) {
             deficit = owedToPool.sub(safuTokenBalance);
             toTransfer = safuTokenBalance;
-            legacyDeficiencyToken[loan] = new DeficiencyToken(IDebtToken(address(loan)), deficit);
+            _legacyDeficiencyToken = new DeficiencyToken(IDebtToken(address(loan)), deficit);
+            legacyDeficiencyToken[loan] = _legacyDeficiencyToken;
             poolDeficit[address(pool)] = poolDeficit[address(pool)].add(deficit);
         }
         token.safeTransfer(address(pool), toTransfer);
-        emit Liquidated(IDebtToken(address(loan)), toTransfer, legacyDeficiencyToken[loan], deficit);
+        emit Liquidated(IDebtToken(address(loan)), toTransfer, _legacyDeficiencyToken, deficit);
     }
 
     /**
@@ -127,17 +129,19 @@ contract SAFU is ISAFU, UpgradeableClaimable {
             pool.liquidateDebt(debts[i]);
             uint256 owedToPool = debts[i].debt().mul(tokenBalance(debts[i])).div(debts[i].totalSupply());
             uint256 safuTokenBalance = tokenBalance(token);
-            uint256 deficit;
             uint256 toTransfer = owedToPool;
+            DeficiencyToken _deficiencyToken;
+            uint256 deficit;
 
             if (owedToPool > safuTokenBalance) {
                 deficit = owedToPool.sub(safuTokenBalance);
                 toTransfer = safuTokenBalance;
-                deficiencyToken[debts[i]] = new DeficiencyToken(debts[i], deficit);
+                _deficiencyToken = new DeficiencyToken(debts[i], deficit);
+                deficiencyToken[debts[i]] = _deficiencyToken;
                 poolDeficit[address(pool)] = poolDeficit[address(pool)].add(deficit);
             }
             token.safeTransfer(address(pool), toTransfer);
-            emit Liquidated(debts[i], toTransfer, deficiencyToken[debts[i]], deficit);
+            emit Liquidated(debts[i], toTransfer, _deficiencyToken, deficit);
         }
     }
 
