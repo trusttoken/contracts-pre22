@@ -1,8 +1,9 @@
 import { expect, use } from 'chai'
 import { solidity } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
+import { AddressZero } from '@ethersproject/constants'
 
-import { beforeEachWithFixture, ZERO_ADDRESS } from 'utils'
+import { beforeEachWithFixture } from 'utils'
 
 import {
   OwnedProxyWithReference__factory,
@@ -39,7 +40,7 @@ describe('OwnedProxyWithReference', () => {
     })
 
     it('owner can transfer proxy ownership ', async () => {
-      expect(await proxy.pendingProxyOwner()).to.equal(ZERO_ADDRESS)
+      expect(await proxy.pendingProxyOwner()).to.equal(AddressZero)
       await proxy.transferProxyOwnership(anotherWallet.address)
 
       expect(await proxy.pendingProxyOwner()).to.equal(anotherWallet.address)
@@ -64,7 +65,7 @@ describe('OwnedProxyWithReference', () => {
     })
 
     it('zero address cannot be pending owner ', async () => {
-      await expect(proxy.transferProxyOwnership(ZERO_ADDRESS))
+      await expect(proxy.transferProxyOwnership(AddressZero))
         .to.be.reverted
     })
 
