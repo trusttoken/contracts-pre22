@@ -262,7 +262,7 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
         require(rawScore > 0, "LineOfCreditAgency: Score is required to be set by CreditOracle");
 
         uint256 stakedAmount = stakingVault.stakedAmount(borrower);
-        uint8 newEffectiveScore = rateModel.effectiveScore(rawScore, pool, stakedAmount, borrowedAmount);
+        uint8 newEffectiveScore = rateModel.effectiveScore(pool, rawScore, stakedAmount, borrowedAmount);
         creditScore[pool][borrower] = newEffectiveScore;
         return (oldEffectiveScore, newEffectiveScore);
     }
