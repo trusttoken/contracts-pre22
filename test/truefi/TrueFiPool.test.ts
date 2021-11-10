@@ -567,7 +567,7 @@ describe('TrueFiPool', () => {
       await loan.withdraw(borrower.address)
       await timeTravel(provider, DAY * 7)
       await loan.enterDefault()
-      await safu.liquidate([loan.address])
+      await safu.liquidate(borrower.address)
     }
 
     it('liquid exit after liquidation returns correct amount of tokens', async () => {

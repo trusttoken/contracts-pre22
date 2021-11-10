@@ -110,9 +110,11 @@ contract SAFU is ISAFU, UpgradeableClaimable {
      * @dev Liquidates defaulted debts, withdraws a portion of tru from staking pool
      * then tries to cover the debts with own funds, to compensate TrueFiPool
      * If SAFU does not have enough funds, deficit is saved to be redeemed later
-     * @param debts Loans to be liquidated
+     * @param borrower Borrower who's loans are to be liquidated
      */
-    function liquidate(IDebtToken[] calldata debts) external onlyOwner {
+    function liquidate(address borrower) external onlyOwner {
+        IDebtToken[] memory debts = loanFactory.debtTokens(borrower);
+        require(debts.length > 0, "SAFU: Borrower does not have any defaulted debts");
         for (uint256 i = 0; i < debts.length; i++) {
             require(loanFactory.isDebtToken(debts[i]), "SAFU: Unknown debt");
             require(!debts[i].isLiquidated(), "SAFU: Debt must not be liquidated");
