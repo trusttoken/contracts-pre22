@@ -308,14 +308,18 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
      * @param borrower Borrower to get borrow limit for
      * @return borrow limit for `borrower` in `pool`
      */
-    function borrowLimit(ITrueFiPool2 pool, address borrower) public view returns (uint256) {
+    function borrowLimit(
+        ITrueFiPool2 pool,
+        address borrower,
+        uint256 _totalBorrowed
+    ) public view returns (uint256) {
         return
             rateModel.borrowLimit(
                 pool,
                 creditOracle.score(borrower),
                 creditOracle.maxBorrowerLimit(borrower),
                 stakingVault.stakedAmount(borrower),
-                totalBorrowed(borrower)
+                _totalBorrowed
             );
     }
 
@@ -383,11 +387,12 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
         require(!_hasOverdueInterest(pool, msg.sender), "LineOfCreditAgency: Sender has overdue interest in this pool");
         uint8 rawScore = creditOracle.score(msg.sender);
         require(rawScore >= minCreditScore, "LineOfCreditAgency: Borrower has credit score below minimum");
+        uint256 _totalBorrowed = totalBorrowed(msg.sender);
         require(
-            pool.oracle().tokenToUsd(amount) <= borrowLimit(pool, msg.sender),
+            pool.oracle().tokenToUsd(amount) <= borrowLimit(pool, msg.sender, _totalBorrowed),
             "LineOfCreditAgency: Borrow amount cannot exceed borrow limit"
         );
-        if (totalBorrowed(msg.sender) == 0) {
+        if (_totalBorrowed == 0) {
             borrowingMutex.lock(msg.sender, address(this));
         }
         require(
