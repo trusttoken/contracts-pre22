@@ -100,7 +100,7 @@ contract SAFU is ISAFU, UpgradeableClaimable {
             deficit = owedToPool.sub(safuTokenBalance);
             toTransfer = safuTokenBalance;
             legacyDeficiencyToken[loan] = new DeficiencyToken(IDebtToken(address(loan)), deficit);
-            poolDeficit[address(loan.pool())] = poolDeficit[address(loan.pool())].add(deficit);
+            poolDeficit[address(pool)] = poolDeficit[address(pool)].add(deficit);
         }
         token.safeTransfer(address(pool), toTransfer);
         emit Liquidated(IDebtToken(address(loan)), toTransfer, legacyDeficiencyToken[loan], deficit);
@@ -134,7 +134,7 @@ contract SAFU is ISAFU, UpgradeableClaimable {
                 deficit = owedToPool.sub(safuTokenBalance);
                 toTransfer = safuTokenBalance;
                 deficiencyToken[debts[i]] = new DeficiencyToken(debts[i], deficit);
-                poolDeficit[address(debts[i].pool())] = poolDeficit[address(debts[i].pool())].add(deficit);
+                poolDeficit[address(pool)] = poolDeficit[address(pool)].add(deficit);
             }
             token.safeTransfer(address(pool), toTransfer);
             emit Liquidated(debts[i], toTransfer, deficiencyToken[debts[i]], deficit);
