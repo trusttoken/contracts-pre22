@@ -26,6 +26,7 @@ import {
   timeTravel as _timeTravel,
   updateRateOracle,
   YEAR,
+  AddressOne,
 } from 'utils'
 import { setUtilization as _setUtilization } from 'utils/setUtilization'
 import { expect, use } from 'chai'
@@ -1167,7 +1168,7 @@ describe('LineOfCreditAgency', () => {
       it('bans borrower in borrowing mutex', async () => {
         await creditAgency.enterDefault(borrower.address)
         expect(await borrowingMutex.locker(borrower.address))
-          .to.equal('0x0000000000000000000000000000000000000001')
+          .to.equal(AddressOne)
       })
     })
   })

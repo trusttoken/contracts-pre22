@@ -2,7 +2,7 @@ import { expect, use } from 'chai'
 import { solidity } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
 import { setupDeploy } from 'scripts/utils'
-import { beforeEachWithFixture } from 'utils'
+import { beforeEachWithFixture, AddressOne } from 'utils'
 import {
   BorrowingMutex,
   BorrowingMutex__factory,
@@ -69,7 +69,7 @@ describe('BorrowingMutex', () => {
       expect(await mutex.isBanned(borrower.address)).to.be.false
       await mutex.connect(locker).lock(borrower.address, locker.address)
       await mutex.connect(locker).ban(borrower.address)
-      expect(await mutex.locker(borrower.address)).to.eq('0x0000000000000000000000000000000000000001')
+      expect(await mutex.locker(borrower.address)).to.eq(AddressOne)
       expect(await mutex.isUnlocked(borrower.address)).to.be.false
       expect(await mutex.isBanned(borrower.address)).to.be.true
     })
