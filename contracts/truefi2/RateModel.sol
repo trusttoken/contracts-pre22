@@ -319,6 +319,9 @@ contract RateModel is IRateModel, UpgradeableClaimable {
         uint256 stakedAmount,
         uint256 borrowedAmount
     ) public override view returns (uint8) {
+        if (stakedAmount == 0) {
+            return score;
+        }
         uint16 effectiveScorePower = stakingConfig.effectiveScorePower;
         uint256 creditScoreAdjustment = uint256(MAX_CREDIT_SCORE - score)
             .mul(conservativeStakedRatio(pool, stakedAmount, borrowedAmount)**effectiveScorePower)
