@@ -184,6 +184,10 @@ describe('LoanFactory2', () => {
       it('marks deployed contract as debt token', async () => {
         expect(await loanFactory.isDebtToken(debtToken.address)).to.be.true
       })
+
+      it('adds debt token to debtTokens mapping', async () => {
+        expect(await loanFactory.debtTokens(borrower.address)).to.deep.equal([debtToken.address])
+      })
     })
   })
 
