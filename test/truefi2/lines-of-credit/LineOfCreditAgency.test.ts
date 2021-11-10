@@ -400,6 +400,7 @@ describe('LineOfCreditAgency', () => {
     it('borrow limit is 0 if credit limit is below the borrowed amount', async () => {
       await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(100))
       await creditAgency.connect(borrower).borrow(usdcPool.address, parseUSDC(80))
+      totalBorrowed = await creditAgency.totalBorrowed(borrower.address)
       expect(await creditAgency.borrowLimit(usdcPool.address, borrower.address, totalBorrowed)).to.be.gt(0)
       await creditOracle.setMaxBorrowerLimit(borrower.address, parseEth(95))
       expect(await creditAgency.borrowLimit(usdcPool.address, borrower.address, totalBorrowed)).to.equal(0)
