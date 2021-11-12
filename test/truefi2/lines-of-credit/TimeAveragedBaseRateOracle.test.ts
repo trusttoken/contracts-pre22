@@ -1,6 +1,6 @@
 import { expect, use } from 'chai'
 import { solidity, deployMockContract, MockContract, MockProvider } from 'ethereum-waffle'
-import { Wallet } from 'ethers'
+import { BigNumber, Wallet } from 'ethers'
 import { setupDeploy } from 'scripts/utils'
 import { DAY, timeTravel, timeTravelTo, updateRateOracle } from 'utils'
 import { beforeEachWithFixture } from 'utils/beforeEachWithFixture'
@@ -129,7 +129,7 @@ describe('TimeAveragedBaseRateOracle', () => {
       expect(runningTotals[1]).to.eq(8640000)
       await updateBufferRightAfterCooldown(timeBaseRateOracle)
       ;[runningTotals] = await timeBaseRateOracle.getTotalsBuffer()
-      expect(runningTotals[1]).to.eq(77760000)
+      expect(runningTotals[1]).to.be.closeTo(BigNumber.from(77760000), 200)
     })
   })
 
