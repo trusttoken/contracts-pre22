@@ -4,7 +4,7 @@ contract A {
     uint256 public a;
     string public name;
 
-    function foo() public {
+    function foo(string memory _name) public {
         name = _name;
     }
 }
