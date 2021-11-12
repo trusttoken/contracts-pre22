@@ -5787,11 +5787,6 @@ ganache-core@^2.13.0, ganache-core@^2.13.2:
     ethereumjs-wallet "0.6.5"
     web3 "1.2.11"
 
-ganache-time-traveler@^1.0.14:
-  version "1.0.15"
-  resolved "https://registry.yarnpkg.com/ganache-time-traveler/-/ganache-time-traveler-1.0.15.tgz#07c575abeb1e110903b76a2181e18598066617e9"
-  integrity sha512-3yoSbvvqSRA13w/SrNGy5tniwdwuRSAMrltGaOZAoqjnhpWkbVlGOVkdiEA/69dN4ZTArwJr1lWpiPzwqTWNCA==
-
 get-caller-file@^1.0.1:
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/get-caller-file/-/get-caller-file-1.0.3.tgz#f978fa4c90d1dfe7ff2d6beda2a515e713bdcf4a"
