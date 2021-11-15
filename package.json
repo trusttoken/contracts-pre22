@@ -79,7 +79,6 @@
     "eslint-plugin-no-only-tests": "^2.6.0",
     "ethereum-mars": "^0.1.7",
     "ethers": "5.0.18",
-    "ganache-time-traveler": "^1.0.14",
     "hardhat": "^2.2.0",
     "hardhat-typechain": "^0.3.5",
     "openzeppelin-solidity": "^2.4.0",

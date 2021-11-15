@@ -101,7 +101,7 @@ describe('TimeAveragedTruPriceOracle', () => {
       expect(runningTotals[1]).to.eq(8640000)
       await updateBufferRightAfterCooldown(timeBaseRateOracle)
       ;[runningTotals] = await timeBaseRateOracle.getTotalsBuffer()
-      expect(runningTotals[1]).to.eq(77760000)
+      expect(runningTotals[1]).to.be.closeTo(BigNumber.from(77760000), 200)
     })
   })
 
