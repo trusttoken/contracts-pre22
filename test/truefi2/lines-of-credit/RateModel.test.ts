@@ -474,7 +474,7 @@ describe('RateModel', () => {
           [31, 120],
         ].map(([score, effectiveScore]) =>
           it(`staking ${staked} TRU increases score from ${score} to ${effectiveScore}`, async () => {
-            expect(await rateModel.effectiveScore(score, mockPool.address, parseTRU(staked), parseEth(borrowedAmount))).to.eq(effectiveScore)
+            expect(await rateModel.effectiveScore(mockPool.address, score, parseTRU(staked), parseEth(borrowedAmount))).to.eq(effectiveScore)
           }))
       })
 
@@ -496,15 +496,15 @@ describe('RateModel', () => {
           [31, 66],
         ].map(([score, effectiveScore]) =>
           it(`staking ${staked} TRU increases score from ${score} to ${effectiveScore}`, async () => {
-            expect(await rateModel.effectiveScore(score, mockPool.address, parseTRU(staked), parseEth(borrowedAmount))).to.eq(effectiveScore)
+            expect(await rateModel.effectiveScore(mockPool.address, score, parseTRU(staked), parseEth(borrowedAmount))).to.eq(effectiveScore)
           }))
       })
 
       it('doesn\'t depend on pool decimal count', async () => {
         await mockPool.mock.decimals.returns(6)
-        expect(await rateModel.effectiveScore(191, mockPool.address, parseTRU(staked), parseEth(250))).to.eq(216)
+        expect(await rateModel.effectiveScore(mockPool.address, 191, parseTRU(staked), parseEth(250))).to.eq(216)
         await mockPool.mock.decimals.returns(18)
-        expect(await rateModel.effectiveScore(191, mockPool.address, parseTRU(staked), parseEth(250))).to.eq(216)
+        expect(await rateModel.effectiveScore(mockPool.address, 191, parseTRU(staked), parseEth(250))).to.eq(216)
       })
 
       describe('amount of staked affects score', async () => {
@@ -520,7 +520,7 @@ describe('RateModel', () => {
           [10 ** 10, 64],
         ].map(([staked, expectedScoreChange]) =>
           it(`when borrowed $${borrowed} staking ${staked} TRU increases score by ${expectedScoreChange}`, async () => {
-            const effectiveScore = await rateModel.effectiveScore(191, mockPool.address, parseTRU(staked), parseEth(borrowed))
+            const effectiveScore = await rateModel.effectiveScore(mockPool.address, 191, parseTRU(staked), parseEth(borrowed))
             const scoreChange = effectiveScore - 191
             expect(scoreChange).to.eq(expectedScoreChange)
           }),

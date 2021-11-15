@@ -314,8 +314,8 @@ contract RateModel is IRateModel, UpgradeableClaimable {
     }
 
     function effectiveScore(
-        uint8 score,
         ITrueFiPool2 pool,
+        uint8 score,
         uint256 stakedAmount,
         uint256 borrowedAmount
     ) public override view returns (uint8) {
