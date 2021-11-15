@@ -110,7 +110,7 @@ contract SAFU is ISAFU, UpgradeableClaimable {
      * @dev Liquidates defaulted debts, withdraws a portion of tru from staking pool
      * then tries to cover the debts with own funds, to compensate TrueFiPool
      * If SAFU does not have enough funds, deficit is saved to be redeemed later
-     * @param borrower Borrower who's loans are to be liquidated
+     * @param borrower Borrower whose loans are to be liquidated
      */
     function liquidate(address borrower) external onlyOwner {
         IDebtToken[] memory debts = loanFactory.debtTokens(borrower);
