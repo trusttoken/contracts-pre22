@@ -97,6 +97,7 @@ describe('Lines Of Credit flow', () => {
 
     const poolValueBefore = await pool.poolValue()
     await safu.liquidate(borrower.address)
+    await safu.compensate(borrower.address)
     expect(await pool.poolValue()).to.eq(poolValueBefore)
 
     // borrower repays the debt
