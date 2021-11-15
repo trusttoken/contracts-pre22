@@ -162,7 +162,8 @@ describe('StakingVault', () => {
         await poolToken.approve(pool.address, parseEth(1e7))
         await pool.join(parseEth(1e7))
         await creditAgency.allowBorrower(borrower.address, true)
-        const borrowLimit = await creditAgency.borrowLimit(pool.address, borrower.address)
+        const totalBorrowed = await creditAgency.totalBorrowed(borrower.address)
+        const borrowLimit = await creditAgency.borrowLimit(pool.address, borrower.address, totalBorrowed)
         await creditAgency.connect(borrower).borrow(pool.address, borrowLimit.sub(parseEth(5)))
       })
 
