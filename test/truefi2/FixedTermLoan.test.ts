@@ -350,15 +350,6 @@ describe('FixedTermLoan', () => {
         await expect(loanToken.redeem()).to.be.revertedWith('FixedTermLoan: Total token supply should be greater than 0')
       })
     })
-
-    it('unlocks the mutex', async () => {
-      await token.mint(loanToken.address, parseEth(1100))
-      expect(await borrowingMutex.isUnlocked(borrower.address)).to.be.false
-      await loanToken.settle()
-      expect(await borrowingMutex.isUnlocked(borrower.address)).to.be.false
-      await loanToken.redeem()
-      expect(await borrowingMutex.isUnlocked(borrower.address)).to.be.true
-    })
   })
 
   describe('Debt calculation', () => {

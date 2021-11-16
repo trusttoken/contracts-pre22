@@ -469,8 +469,8 @@ describe('FixedTermLoanAgency', () => {
       })
 
       it('locks borrowing mutex', async () => {
-        const loan = await extractLoanTokenAddress(borrow(borrower, pool1, 100000, YEAR))
-        expect(await borrowingMutex.locker(borrower.address)).to.equal(loan.address)
+        await borrow(borrower, pool1, 100000, YEAR)
+        expect(await borrowingMutex.locker(borrower.address)).to.equal(ftlAgency.address)
       })
 
       it('can increase max borrow limit after staking TRU', async () => {
@@ -643,6 +643,15 @@ describe('FixedTermLoanAgency', () => {
       await ftlAgency.reclaim(loan.address, '0x')
       await expect(ftlAgency.connect(borrower).borrow(pool1.address, 100000, DAY, 1000))
         .not.to.be.reverted
+    })
+
+    it('unlocks the mutex', async () => {
+      await payBack(token1, loan)
+      expect(await borrowingMutex.isUnlocked(borrower.address)).to.be.false
+      await loan.settle()
+      expect(await borrowingMutex.isUnlocked(borrower.address)).to.be.false
+      await ftlAgency.reclaim(loan.address, '0x')
+      expect(await borrowingMutex.isUnlocked(borrower.address)).to.be.true
     })
 
     describe('Removes loan from array', () => {

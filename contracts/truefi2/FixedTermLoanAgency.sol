@@ -92,6 +92,8 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
 
     IStakingVault public stakingVault;
 
+    mapping(address => IFixedTermLoan[]) public borrowerLoans;
+
     // ======= STORAGE DECLARATION END ============
 
     /**
@@ -354,7 +356,8 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
         require(apy <= _maxApy, "FixedTermLoanAgency: Calculated apy is higher than max apy");
 
         IFixedTermLoan loanToken = loanFactory.createLoanToken(pool, borrower, amount, term, apy);
-        borrowingMutex.lock(borrower, address(loanToken));
+        borrowerLoans[borrower].push(loanToken);
+        borrowingMutex.lock(borrower, address(this));
         poolLoans[pool].push(loanToken);
         pool.borrow(amount);
         pool.token().safeTransfer(borrower, amount);
@@ -399,6 +402,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
             if (_loans[index] == loanToken) {
                 _loans[index] = _loans[loansLength - 1];
                 _loans.pop();
+                borrowerLoans[loanToken.borrower()].pop();
 
                 uint256 fundsReclaimed = _redeemAndRepay(loanToken, pool, data);
                 emit Reclaimed(address(pool), address(loanToken), fundsReclaimed);
@@ -419,14 +423,19 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
      * @return Total amount borrowed for `borrower` in USD
      */
     function totalBorrowed(address borrower, uint8 decimals) public view returns (uint256) {
-        IFixedTermLoan loan = IFixedTermLoan(borrowingMutex.locker(borrower));
-        if (!loanFactory.isLoanToken(loan)) {
+        IFixedTermLoan _loan;
+        if (borrowerLoans[borrower].length > 0) {
+            _loan = borrowerLoans[borrower][0];
+        } else {
             return 0;
         }
-        uint256 borrowed = loan.debt();
+        if (!loanFactory.isLoanToken(_loan)) {
+            return 0;
+        }
+        uint256 borrowed = _loan.debt();
         uint256 resultPrecision = uint256(10)**decimals;
 
-        return loan.pool().oracle().tokenToUsd(borrowed).mul(resultPrecision).div(1 ether);
+        return _loan.pool().oracle().tokenToUsd(borrowed).mul(resultPrecision).div(1 ether);
     }
 
     /**
@@ -445,6 +454,11 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
                 stakingVault.stakedAmount(borrower),
                 totalBorrowed(borrower, poolDecimals)
             );
+    }
+
+    function banBorrower(address borrower) external override {
+        require(loanFactory.isLoanToken(IFixedTermLoan(msg.sender)), "");
+        borrowingMutex.ban(borrower);
     }
 
     /**
@@ -470,6 +484,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
             // swap fee for feeToken
             feeAmount = _swapFee(pool, loanToken, data);
         }
+        borrowingMutex.unlock(loanToken.borrower());
 
         pool.token().safeApprove(address(pool), fundsReclaimed.sub(feeAmount));
         pool.repay(fundsReclaimed.sub(feeAmount));

@@ -11,6 +11,8 @@ interface IFixedTermLoan is IERC20 {
 
     function status() external view returns (Status);
 
+    function borrower() external view returns (address);
+
     function interest() external view returns (uint256);
 
     function debt() external view returns (uint256);

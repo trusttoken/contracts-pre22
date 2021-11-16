@@ -39,7 +39,7 @@ contract FixedTermLoan is IFixedTermLoan, ERC20 {
 
     Status public override status;
 
-    address public borrower;
+    address public override borrower;
 
     uint256 public principal;
     uint256 public override interest;
@@ -204,8 +204,7 @@ contract FixedTermLoan is IFixedTermLoan, ERC20 {
         debtToken = loanFactory.createDebtToken(pool, borrower, _unpaidDebt);
         debtToken.safeApprove(address(pool), _unpaidDebt);
         pool.addDebt(debtToken, _unpaidDebt);
-
-        borrowingMutex.ban(borrower);
+        ftlAgency.banBorrower(borrower);
 
         emit Defaulted(debtToken, _unpaidDebt);
     }
@@ -221,9 +220,6 @@ contract FixedTermLoan is IFixedTermLoan, ERC20 {
         uint256 tokenRedeemAmount = loanRedeemAmount.mul(_tokenBalance()).div(_totalSupply);
         tokenRedeemed = tokenRedeemed.add(tokenRedeemAmount);
 
-        if (address(ftlAgency) == msg.sender && status == Status.Settled) {
-            borrowingMutex.unlock(borrower);
-        }
         _burn(msg.sender, loanRedeemAmount);
         token.safeTransfer(msg.sender, tokenRedeemAmount);
 
