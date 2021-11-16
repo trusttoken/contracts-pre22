@@ -5,4 +5,3 @@ certoraRun contracts/truefi2/FixedTermLoan.sol \
   --link FixedTermLoan:token=ERC20 \
   --short_output \
   --optimistic_loop
-  
