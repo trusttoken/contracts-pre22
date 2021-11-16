@@ -24,7 +24,8 @@ describe('TrueFiPool2', () => {
   const OWNER = '0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5'
   const PROXY_OWNER = '0x16cea306506c387713c70b9c1205fd5ac997e78e'
   const CONFIG_GNOSIS_SAFE = '0xf0aE09d3ABdF3641e2eB4cD45cf56873296a02CB'
-  const provider = forkChain([OWNER, PROXY_OWNER, CONFIG_GNOSIS_SAFE, TRU_HOLDER, ETH_HOLDER])
+  const BUSD_HOLDER = '0xf977814e90da44bfa03b6295a0616a897441acec'
+  const provider = forkChain([OWNER, PROXY_OWNER, CONFIG_GNOSIS_SAFE, TRU_HOLDER, ETH_HOLDER, BUSD_HOLDER])
   const owner = provider.getSigner(OWNER)
   const powner = provider.getSigner(PROXY_OWNER)
   const configGnosis = provider.getSigner(CONFIG_GNOSIS_SAFE)
@@ -54,5 +55,22 @@ describe('TrueFiPool2', () => {
     await holder.sendTransaction({ value: parseEth(100), to: CONFIG_GNOSIS_SAFE })
 
     await expect(usdtPool.connect(configGnosis).flush(10000000)).not.to.be.reverted
+  })
+
+  it('tfBUSD flow', async () => {
+    const BUSD = '0x4Fabb145d64652a948d72533023f6E7A623C7C53'
+    const holder = provider.getSigner(BUSD_HOLDER)
+    const tfBUSD = '0x1Ed460D149D48FA7d91703bf4890F97220C09437'
+    const busd = Erc20Mock__factory.connect(BUSD, holder)
+    const pool = TrueFiPool2__factory.connect(tfBUSD, holder)
+    const amount = parseEth(100)
+
+    await busd.approve(pool.address, amount)
+
+    await pool.join(amount)
+    expect(await pool.poolValue()).to.equal(amount)
+
+    await pool.liquidExit(amount)
+    expect(await pool.poolValue()).to.equal(0)
   })
 })
