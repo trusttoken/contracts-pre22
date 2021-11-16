@@ -303,6 +303,10 @@
     "config_GnosisSafe": {
       "txHash": "0xcd99bbfb3ffb39fe9324dfc9b066c50c05063fac2c87cc8456dbfd508893f992",
       "address": "0xf0aE09d3ABdF3641e2eB4cD45cf56873296a02CB"
+    },
+    "chainlinkTruBusdOracle": {
+      "txHash": "0x033fdfe090f475f758238e4a449166f82e2fc5f22e049f2dd35be94cd17fd958",
+      "address": "0x93f2edf37F368c088DCC4Ad3b9F74F6F7b359a8b"
     }
   }
 }
