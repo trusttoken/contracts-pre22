@@ -63,7 +63,7 @@ main() {
     local certora_solc_args="$(get_certora_solc_args)"
 
     for file in $(find spec -path '*/scripts/*.sh'); do
-        # bash "$file"
+        bash "$file"
 
         # TODO Update all scripts to config files.
         # Pass in these variables so we can standardize calls to certoraRun
