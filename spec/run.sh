@@ -3,10 +3,15 @@ set -eu
 
 extract_json() {
     local json_file="$1"
-    local key="$2"
+    local keys="$2"
 
-    local python_command="import json,sys;obj=json.load(sys.stdin);print(obj['${key}'])"
-    python3 -c "${python_command}" < "${json_file}"
+    python3 <<EOF
+import json,sys
+obj=json.load(open("${json_file}", 'r'))
+for key in "${keys}".split('.'):
+    obj=obj[key]
+print(obj)
+EOF
 }
 
 extract_version() {
@@ -44,9 +49,9 @@ setup_certora() {
 
 get_certora_solc_args() {
     echo "Getting solc args for Certora..." >&2
-    # TODO extract these from .waffle.json
-    local certora_solc_args="['--optimize', '--optimize-runs', '200']"
+    local optimizer_runs="$(extract_json .waffle.json compilerOptions.optimizer.runs)"
 
+    local certora_solc_args="['--optimize', '--optimize-runs', '${optimizer_runs}']"
     echo "Found solc args for Certora: ${certora_solc_args}" >&2
     echo "${certora_solc_args}"
 }
@@ -68,11 +73,11 @@ main() {
 
         set -x
         : certoraRun "${dependencyFiles}" \
-            --verify "${contract}:${specFile}" \
             --optimistic_loop \
             --rule_sanity \
             --short_output \
-            --solc_args "${certora_solc_args}"
+            --solc_args "${certora_solc_args}" \
+            --verify "${contract}:${specFile}"
         set +x
     done
 }
