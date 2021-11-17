@@ -42,12 +42,38 @@ setup_certora() {
     fi
 }
 
+get_certora_solc_args() {
+    echo "Getting solc args for Certora..." >&2
+    # TODO extract these from .waffle.json
+    local certora_solc_args="['--optimize', '--optimize-runs', '200']"
+
+    echo "Found solc args for Certora: ${certora_solc_args}" >&2
+    echo "${certora_solc_args}"
+}
+
 main() {
     setup_solc
     setup_certora
 
+    local certora_solc_args="$(get_certora_solc_args)"
+
     for file in $(find spec -path '*/scripts/*.sh'); do
-        bash "$file"
+        # bash "$file"
+
+        # TODO Update all scripts to config files.
+        # Pass in these variables so we can standardize calls to certoraRun
+        local dependencyFiles="contracts/truefi2/BorrowingMutex.sol"
+        local contract="BorrowingMutex"
+        local specFile="spec/truefi2/BorrowingMutex.spec"
+
+        set -x
+        : certoraRun "${dependencyFiles}" \
+            --verify "${contract}:${specFile}" \
+            --optimistic_loop \
+            --rule_sanity \
+            --short_output \
+            --solc_args "${certora_solc_args}"
+        set +x
     done
 }
 
