@@ -70,7 +70,6 @@ rule onlyLockerCanUnlockBorrower(method f) {
     address lockerAddress = anyReasonableAddress();
     require locker(borrower) == lockerAddress;
 
-    method f;
     env e;
     require isReasonableEnv(e);
     calldataarg args;
