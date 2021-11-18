@@ -268,6 +268,10 @@
       "txHash": "0xd3b0cf2ac7331e9fb5e5c4ade75ac7fad427502f5e4a6858adee960306340e11",
       "address": "0xfA15a30EDa728E3cDc628BA7c703039543C8e42f"
     },
+    "busd_TrueFiPool2_proxy": {
+      "txHash": "0x0bf265379c93e8c8cfe088cd794cf3e2b9f3cbb0d811377aba9793b7c63ab19f",
+      "address": "0x1Ed460D149D48FA7d91703bf4890F97220C09437"
+    },
     "tusd_TrueFiPool2_proxy": {
       "txHash": "0x8493d3f3d6d8415e7f9c9c64e37d5b6ea1bd2130c10c606b7e9ba0fecbb7ed8e",
       "address": "0x97cE06c3e3D027715b2d6C22e67D5096000072E5"
@@ -299,6 +303,10 @@
     "config_GnosisSafe": {
       "txHash": "0xcd99bbfb3ffb39fe9324dfc9b066c50c05063fac2c87cc8456dbfd508893f992",
       "address": "0xf0aE09d3ABdF3641e2eB4cD45cf56873296a02CB"
+    },
+    "chainlinkTruBusdOracle": {
+      "txHash": "0x033fdfe090f475f758238e4a449166f82e2fc5f22e049f2dd35be94cd17fd958",
+      "address": "0x93f2edf37F368c088DCC4Ad3b9F74F6F7b359a8b"
     }
   }
 }
