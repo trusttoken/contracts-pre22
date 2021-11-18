@@ -34,6 +34,8 @@ rule functionDoesNotBanUnlockedBorrower() {
         address locker = anyReasonableAddress();
         address lockee;
         lock(e, lockee, locker);
+    } else if (f.isFallback) {
+        f@withrevert(e,args);
     } else {
         f(e, args);
     }
@@ -49,7 +51,11 @@ rule functionDoesNotUnbanBorrower {
     env e;
     require isReasonableEnv(e);
     calldataarg args;
-    f(e, args);
+    if (f.isFallback) {
+        f@withrevert(e, args);
+    } else {
+        f(e, args);
+    }
 
     assert isBanned(borrower), "Borrower gets unbanned";
 }
@@ -63,7 +69,11 @@ rule onlyLockerCanBanBorrower {
     env e;
     require isReasonableEnv(e);
     calldataarg args;
-    f(e, args);
+    if (f.isFallback) {
+        f@withrevert(e, args);
+    } else {
+        f(e, args);
+    }
 
     assert isBanned(borrower) => e.msg.sender == lockerAddress, "Borrower gets banned by non-locker address";
 }
@@ -77,7 +87,11 @@ rule onlyLockerCanUnlockBorrower {
     env e;
     require isReasonableEnv(e);
     calldataarg args;
-    f(e, args);
+    if (f.isFallback) {
+        f@withrevert(e, args);
+    } else {
+        f(e, args);
+    }
 
     assert isUnlocked(borrower) => e.msg.sender == lockerAddress, "Borrower gets unlocked by non-locker address";
 }
