@@ -357,7 +357,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
 
         IFixedTermLoan loanToken = loanFactory.createLoanToken(pool, borrower, amount, term, apy);
         borrowerLoans[borrower].push(loanToken);
-        borrowingMutex.lock(borrower, address(this));
+        borrowingMutex.lock(borrower);
         poolLoans[pool].push(loanToken);
         pool.borrow(amount);
         pool.token().safeTransfer(borrower, amount);

@@ -25,7 +25,7 @@ contract BorrowingMutex is IBorrowingMutex, UpgradeableClaimable {
 
     event BorrowerLocked(address borrower, address locker);
 
-    event BorrowerUnlocked(address borrower, address locker);
+    event BorrowerUnlocked(address borrower);
 
     event BorrowerBanned(address borrower);
 
@@ -48,21 +48,20 @@ contract BorrowingMutex is IBorrowingMutex, UpgradeableClaimable {
         emit LockerAllowed(_locker, isAllowed);
     }
 
-    function ban(address borrower) external override onlyLocker(borrower) {
-        locker[borrower] = BANNED;
-        emit BorrowerBanned(borrower);
-    }
-
-    function lock(address borrower, address _locker) external override onlyAllowedToLock {
+    function lock(address borrower) external override onlyAllowedToLock {
         require(isUnlocked(borrower), "BorrowingMutex: Borrower is already locked");
-        locker[borrower] = _locker;
-        emit BorrowerLocked(borrower, _locker);
+        locker[borrower] = msg.sender;
+        emit BorrowerLocked(borrower, msg.sender);
     }
 
     function unlock(address borrower) external override onlyLocker(borrower) {
-        address _locker = locker[borrower];
         locker[borrower] = UNLOCKED;
-        emit BorrowerUnlocked(borrower, _locker);
+        emit BorrowerUnlocked(borrower);
+    }
+
+    function ban(address borrower) external override onlyLocker(borrower) {
+        locker[borrower] = BANNED;
+        emit BorrowerBanned(borrower);
     }
 
     function isUnlocked(address borrower) public override view returns (bool) {

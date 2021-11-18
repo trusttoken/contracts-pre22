@@ -12,16 +12,16 @@ contract MockBorrowingMutex is IBorrowingMutex, UpgradeableClaimable {
         UpgradeableClaimable.initialize(msg.sender);
     }
 
-    function ban(address borrower) external override {
-        locker[borrower] = address(1);
-    }
-
-    function lock(address borrower, address _locker) external override {
-        locker[borrower] = _locker;
+    function lock(address borrower) external override {
+        locker[borrower] = msg.sender;
     }
 
     function unlock(address borrower) external override {
         locker[borrower] = address(0);
+    }
+
+    function ban(address borrower) external override {
+        locker[borrower] = address(1);
     }
 
     function isUnlocked(address borrower) public override view returns (bool) {

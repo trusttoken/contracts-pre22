@@ -393,7 +393,7 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
             "LineOfCreditAgency: Borrow amount cannot exceed borrow limit"
         );
         if (_totalBorrowed == 0) {
-            borrowingMutex.lock(msg.sender, address(this));
+            borrowingMutex.lock(msg.sender);
         }
         require(
             borrowingMutex.locker(msg.sender) == address(this),
