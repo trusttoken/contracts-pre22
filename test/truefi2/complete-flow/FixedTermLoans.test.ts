@@ -103,7 +103,7 @@ describe('Fixed-term loans flow', () => {
     await ftlAgency.reclaim(loan.address, '0x')
 
     const poolValueBefore = await pool.poolValue()
-    await safu.liquidate([debtToken.address])
+    await safu.liquidate(borrower.address)
     expect(await pool.poolValue()).to.eq(poolValueBefore)
 
     // borrower repays the debt

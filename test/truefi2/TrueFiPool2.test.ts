@@ -375,7 +375,7 @@ describe('TrueFiPool2', () => {
       await timeTravel(DAY * 4)
       await loan.enterDefault()
       debt = await loan.debtToken()
-      await safu.liquidate([debt])
+      await safu.liquidate(borrower.address)
     })
 
     describe('deficitValue', () => {
@@ -475,8 +475,7 @@ describe('TrueFiPool2', () => {
         await timeTravel(DAY * 4)
         await loan.enterDefault()
         expect(await tusdPool.poolValue()).to.equal(joinAmount.add(136))
-        const debt = await loan.debtToken()
-        await safu.liquidate([debt])
+        await safu.liquidate(borrower.address)
 
         expect(await tusdPool.deficitValue()).to.eq(500136)
         expect(await tusdPool.poolValue()).to.equal(joinAmount.add(136))

@@ -57,6 +57,9 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
 
     mapping(IFixedTermLoan => bool) public override isLoanToken;
 
+    // @dev Track debt tokens for a specific borrower
+    mapping(address => IDebtToken[]) private _debtTokens;
+
     // ======= STORAGE DECLARATION END ============
 
     /**
@@ -158,6 +161,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         DebtToken newToken = DebtToken(Clones.clone(dtImplementationAddress));
         newToken.initialize(_pool, msg.sender, _borrower, liquidator, _debt);
         isDebtToken[newToken] = true;
+        _debtTokens[_borrower].push(newToken);
 
         emit DebtTokenCreated(newToken);
         return newToken;
@@ -197,5 +201,9 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         require(address(_ftlAgency) != address(0), "LoanFactory: Cannot set fixed term loan agency to zero address");
         ftlAgency = _ftlAgency;
         emit FixedTermLoanAgencyChanged(_ftlAgency);
+    }
+
+    function debtTokens(address borrower) external override view returns (IDebtToken[] memory) {
+        return _debtTokens[borrower];
     }
 }
