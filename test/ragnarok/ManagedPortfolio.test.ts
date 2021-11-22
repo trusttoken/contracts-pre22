@@ -9,16 +9,18 @@ import {
   MockUsdc,
   MockUsdc__factory,
 } from 'contracts'
+import { describe } from 'mocha'
 
 import { beforeEachWithFixture, parseUSDC } from 'utils'
 
-describe('Issuing a loan', () => {
+describe('ManagedPortfolio', () => {
   let portfolio: ManagedPortfolio
   let portfolioAsLender: ManagedPortfolio
   let bulletLoans: BulletLoans
 
   let token: MockUsdc
   let tokenAsLender: MockUsdc
+  let tokenAsBorrower: MockUsdc
 
   let portfolioOwner: Wallet
   let lender: Wallet
@@ -36,17 +38,19 @@ describe('Issuing a loan', () => {
 
     portfolioAsLender = portfolio.connect(lender)
     tokenAsLender = token.connect(lender)
+    tokenAsBorrower = token.connect(borrower)
+
     await token.mint(lender.address, parseUSDC(10))
   })
 
-  it('joining a portfolio', async () => {
+  it('join', async () => {
     await tokenAsLender.approve(portfolio.address, parseUSDC(10))
     await portfolioAsLender.join(parseUSDC(10))
 
     expect(await token.balanceOf(portfolio.address)).to.eq(parseUSDC(10))
   })
 
-  describe('creating bullet loan ', () => {
+  describe('createBulletLoan', () => {
     it('transfers funds to the borrower', async () => {
       await joinPortfolio(10)
       await portfolio.createBulletLoan(0, borrower.address, parseUSDC(5), parseUSDC(6))
@@ -56,19 +60,22 @@ describe('Issuing a loan', () => {
 
     it('emits a proper event', async () => {
       await joinPortfolio(10)
+
       await expect(portfolio.createBulletLoan(0, borrower.address, parseUSDC(5), parseUSDC(6)))
         .to.emit(portfolio, 'BulletLoanCreated')
         .withArgs(0)
     })
 
-    it('portfolio owns loan NFT', async () => {
+    it('mints an NFT', async () => {
       await joinPortfolio(10)
+
       await portfolio.createBulletLoan(0, borrower.address, parseUSDC(5), parseUSDC(6))
+
       expect(await bulletLoans.ownerOf(0)).to.equal(portfolio.address)
     })
   })
 
-  it('withdrawal sends tokens back to the lender', async () => {
+  it('withdraw sends tokens back to the lender', async () => {
     await joinPortfolio(10)
 
     await portfolioAsLender.withdraw(parseUSDC(5))
@@ -76,7 +83,7 @@ describe('Issuing a loan', () => {
     expect(await token.balanceOf(lender.address)).to.eq(parseUSDC(5))
   })
 
-  async function joinPortfolio (amount: number) {
+  async function joinPortfolio(amount: number) {
     await tokenAsLender.approve(portfolio.address, parseUSDC(amount))
     await portfolioAsLender.join(parseUSDC(amount))
   }
