@@ -203,7 +203,7 @@ contract LoanFactory2 is ILoanFactory2, Initializable {
         emit FixedTermLoanAgencyChanged(_ftlAgency);
     }
 
-    function debtTokens(address borrower) external override view returns (IDebtToken[] memory) {
+    function debtTokens(address borrower) external view override returns (IDebtToken[] memory) {
         return _debtTokens[borrower];
     }
 }
