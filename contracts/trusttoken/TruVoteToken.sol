@@ -59,7 +59,7 @@ abstract contract TruVoteToken is ERC20, IVoteToken {
      * @param account Account to get voting power for
      * @return Voting power for an account
      */
-    function getCurrentVotes(address account) public virtual override view returns (uint96) {
+    function getCurrentVotes(address account) public view virtual override returns (uint96) {
         uint32 nCheckpoints = numCheckpoints[account];
         return nCheckpoints > 0 ? checkpoints[account][nCheckpoints - 1].votes : 0;
     }
@@ -70,7 +70,7 @@ abstract contract TruVoteToken is ERC20, IVoteToken {
      * @param blockNumber Block to get voting power at
      * @return Voting power for an account at specific block
      */
-    function getPriorVotes(address account, uint256 blockNumber) public virtual override view returns (uint96) {
+    function getPriorVotes(address account, uint256 blockNumber) public view virtual override returns (uint96) {
         require(blockNumber < block.number, "TrustToken::getPriorVotes: not yet determined");
 
         uint32 nCheckpoints = numCheckpoints[account];
@@ -120,7 +120,7 @@ abstract contract TruVoteToken is ERC20, IVoteToken {
         _moveDelegates(currentDelegate, delegatee, delegatorBalance);
     }
 
-    function _balanceOf(address account) internal virtual view returns (uint256) {
+    function _balanceOf(address account) internal view virtual returns (uint256) {
         return balanceOf[account];
     }
 

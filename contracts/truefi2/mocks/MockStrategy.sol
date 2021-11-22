@@ -26,7 +26,7 @@ contract MockStrategy is ITrueStrategy {
         token.transfer(pool, token.balanceOf(address(this)));
     }
 
-    function value() external override view returns (uint256) {
+    function value() external view override returns (uint256) {
         return token.balanceOf(address(this));
     }
 }

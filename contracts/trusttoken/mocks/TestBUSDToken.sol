@@ -14,15 +14,15 @@ contract TestBUSDToken is ERC20 {
         _burn(msg.sender, _value);
     }
 
-    function decimals() public override pure returns (uint8) {
+    function decimals() public pure override returns (uint8) {
         return DECIMALS;
     }
 
-    function name() public override pure returns (string memory) {
+    function name() public pure override returns (string memory) {
         return "Binance USD";
     }
 
-    function symbol() public override pure returns (string memory) {
+    function symbol() public pure override returns (string memory) {
         return "BUSD";
     }
 }

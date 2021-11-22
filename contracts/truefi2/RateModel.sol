@@ -209,7 +209,7 @@ contract RateModel is IRateModel, UpgradeableClaimable {
         ITrueFiPool2 pool,
         uint8 score,
         uint256 afterAmountLent
-    ) external override view returns (uint256) {
+    ) external view override returns (uint256) {
         return combinedRate(poolBasicRate(pool, afterAmountLent), creditScoreAdjustmentRate(score));
     }
 
@@ -219,7 +219,7 @@ contract RateModel is IRateModel, UpgradeableClaimable {
      * @param afterAmountLent Requested amount to borrow
      * @return Interest rate for `pool` adjusted for utilization and `amount` borrowed
      */
-    function poolBasicRate(ITrueFiPool2 pool, uint256 afterAmountLent) public override view returns (uint256) {
+    function poolBasicRate(ITrueFiPool2 pool, uint256 afterAmountLent) public view override returns (uint256) {
         return min(riskPremium.add(securedRate(pool)).add(utilizationAdjustmentRate(pool, afterAmountLent)), MAX_RATE_CAP);
     }
 
@@ -228,7 +228,7 @@ contract RateModel is IRateModel, UpgradeableClaimable {
      * @param pool Pool to get secured rate for
      * @return Secured rate for `pool` as given by Oracle
      */
-    function securedRate(ITrueFiPool2 pool) public override view returns (uint256) {
+    function securedRate(ITrueFiPool2 pool) public view override returns (uint256) {
         return baseRateOracle[pool].getWeeklyAPY();
     }
 
@@ -238,7 +238,7 @@ contract RateModel is IRateModel, UpgradeableClaimable {
      * @param __creditScoreAdjustmentRate credit score adjustment
      * @return sum of addends capped by MAX_RATE_CAP
      */
-    function combinedRate(uint256 partialRate, uint256 __creditScoreAdjustmentRate) public override pure returns (uint256) {
+    function combinedRate(uint256 partialRate, uint256 __creditScoreAdjustmentRate) public pure override returns (uint256) {
         return min(partialRate.add(__creditScoreAdjustmentRate), MAX_RATE_CAP);
     }
 
@@ -247,7 +247,7 @@ contract RateModel is IRateModel, UpgradeableClaimable {
      * @param score Score to get adjustment for
      * @return Rate adjustment for credit score capped at MAX_RATE_CAP
      */
-    function creditScoreAdjustmentRate(uint8 score) public override view returns (uint256) {
+    function creditScoreAdjustmentRate(uint8 score) public view override returns (uint256) {
         if (score == 0) {
             return MAX_RATE_CAP; // Cap rate by 500%
         }
@@ -261,7 +261,7 @@ contract RateModel is IRateModel, UpgradeableClaimable {
      * @param pool Pool to get pro forma adjustment rate for
      * @return Utilization adjusted rate for `pool` after borrowing `amount`
      */
-    function utilizationAdjustmentRate(ITrueFiPool2 pool, uint256 afterAmountLent) public override view returns (uint256) {
+    function utilizationAdjustmentRate(ITrueFiPool2 pool, uint256 afterAmountLent) public view override returns (uint256) {
         uint256 liquidRatio = pool.liquidRatio(afterAmountLent);
         if (liquidRatio == 0) {
             // if utilization is at 100 %
@@ -278,7 +278,7 @@ contract RateModel is IRateModel, UpgradeableClaimable {
      * @param term Term of loan
      * @return Rate adjustment based on loan term
      */
-    function fixedTermLoanAdjustment(uint256 term) public override view returns (uint256) {
+    function fixedTermLoanAdjustment(uint256 term) public view override returns (uint256) {
         return term.div(30 days).mul(fixedTermLoanAdjustmentCoefficient);
     }
 
@@ -288,7 +288,7 @@ contract RateModel is IRateModel, UpgradeableClaimable {
      * @param score Score to get limit adjustment for
      * @return Borrow limit adjusted based on `score`
      */
-    function borrowLimitAdjustment(uint8 score) public override view returns (uint256) {
+    function borrowLimitAdjustment(uint8 score) public view override returns (uint256) {
         int128 f64x64Score = TrueFiFixed64x64.fromUInt(uint256(score));
         int128 f64x64LimitAdjustmentPower = TrueFiFixed64x64.fromUInt(uint256(borrowLimitConfig.limitAdjustmentPower));
         return ((f64x64Score / MAX_CREDIT_SCORE).fixed64x64Pow(f64x64LimitAdjustmentPower / BASIS_POINTS) * BASIS_POINTS).toUInt();
@@ -318,7 +318,7 @@ contract RateModel is IRateModel, UpgradeableClaimable {
         uint8 score,
         uint256 stakedAmount,
         uint256 borrowedAmount
-    ) public override view returns (uint8) {
+    ) public view override returns (uint8) {
         if (stakedAmount == 0) {
             return score;
         }
@@ -344,7 +344,7 @@ contract RateModel is IRateModel, UpgradeableClaimable {
         uint256 maxBorrowerLimit,
         uint256 stakedTru,
         uint256 totalBorrowedInUsd
-    ) public override view returns (uint256) {
+    ) public view override returns (uint256) {
         if (score < borrowLimitConfig.scoreFloor) {
             return 0;
         }
@@ -357,7 +357,7 @@ contract RateModel is IRateModel, UpgradeableClaimable {
         uint256 maxBorrowerLimit,
         uint256 stakedTru,
         uint256 totalBorrowedInUsd
-    ) public override view returns (bool) {
+    ) public view override returns (bool) {
         return poolBorrowMax(pool, score, maxBorrowerLimit, stakedTru) < totalBorrowedInUsd;
     }
 

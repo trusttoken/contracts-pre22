@@ -38,7 +38,7 @@ contract DeficiencyToken is IDeficiencyToken, ERC20 {
         _burn(account, amount);
     }
 
-    function version() external override pure returns (uint8) {
+    function version() external pure override returns (uint8) {
         return 0;
     }
 }

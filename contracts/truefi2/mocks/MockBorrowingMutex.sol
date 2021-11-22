@@ -24,11 +24,11 @@ contract MockBorrowingMutex is IBorrowingMutex, UpgradeableClaimable {
         locker[borrower] = address(0);
     }
 
-    function isUnlocked(address borrower) public override view returns (bool) {
+    function isUnlocked(address borrower) public view override returns (bool) {
         return locker[borrower] == address(0);
     }
 
-    function isBanned(address borrower) public override view returns (bool) {
+    function isBanned(address borrower) public view override returns (bool) {
         return locker[borrower] == address(1);
     }
 }

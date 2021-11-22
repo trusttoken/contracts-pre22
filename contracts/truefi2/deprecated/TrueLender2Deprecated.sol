@@ -153,7 +153,7 @@ contract TrueLender2Deprecated is ITrueLender2Deprecated, UpgradeableClaimable {
      * @param pool pool address
      * @return Theoretical value of all the loans funded by this strategy
      */
-    function value(ITrueFiPool2 pool) external override view returns (uint256) {
+    function value(ITrueFiPool2 pool) external view override returns (uint256) {
         ILoanToken2Deprecated[] storage _loans = poolLoans[pool];
         uint256 totalValue;
         for (uint256 index = 0; index < _loans.length; index++) {

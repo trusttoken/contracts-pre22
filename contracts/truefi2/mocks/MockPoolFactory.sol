@@ -9,11 +9,11 @@ contract MockPoolFactory is IPoolFactory {
     using SafeMath for uint256;
     ITrueFiPool2[] public supportedPools;
 
-    function getSupportedPools() external override view returns (ITrueFiPool2[] memory) {
+    function getSupportedPools() external view override returns (ITrueFiPool2[] memory) {
         return supportedPools;
     }
 
-    function isSupportedPool(ITrueFiPool2 pool) external override view returns (bool) {
+    function isSupportedPool(ITrueFiPool2 pool) external view override returns (bool) {
         return address(pool) != address(0);
     }
 
@@ -21,7 +21,7 @@ contract MockPoolFactory is IPoolFactory {
         supportedPools.push(_pool);
     }
 
-    function supportedPoolsTVL() public override view returns (uint256) {
+    function supportedPoolsTVL() public view override returns (uint256) {
         uint256 tvl;
         for (uint256 i = 0; i < supportedPools.length; i++) {
             tvl = tvl.add(supportedPools[i].oracle().tokenToUsd(supportedPools[i].poolValue()));

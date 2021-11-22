@@ -353,7 +353,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      * @dev Number of decimals for user-facing representations.
      * Delegates to the underlying pool token.
      */
-    function decimals() public override view returns (uint8) {
+    function decimals() public view override returns (uint8) {
         return token.decimals();
     }
 
@@ -384,7 +384,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      * "virtual price" of entire pool - LoanTokens, UnderlyingTokens, strategy value
      * @return pool value denominated in underlying token
      */
-    function poolValue() public override view returns (uint256) {
+    function poolValue() public view override returns (uint256) {
         // this assumes defaulted loans are worth their full value
         return liquidValue().add(loansValue()).add(deficitValue()).add(creditValue()).add(debtValue);
     }
@@ -707,7 +707,7 @@ contract TrueFiPool2 is ITrueFiPool2, IPauseableContract, ERC20, UpgradeableClai
      * @param afterAmountLent Amount of asset being lent
      * @return Calculated ratio in basis points
      */
-    function liquidRatio(uint256 afterAmountLent) external override view returns (uint256) {
+    function liquidRatio(uint256 afterAmountLent) external view override returns (uint256) {
         uint256 _poolValue = poolValue();
         if (_poolValue == 0) {
             return 0;

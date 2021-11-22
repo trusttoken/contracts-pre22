@@ -178,7 +178,7 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
      * because it cannot be converted to pool tokens automatically
      * @return Value of pool in USD
      */
-    function value() external override view returns (uint256) {
+    function value() external view override returns (uint256) {
         return yTokenValue();
     }
 

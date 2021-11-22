@@ -422,7 +422,7 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
      * @param blockNumber Block to get prior votes at
      * @return prior voting power for account and block
      */
-    function getPriorVotes(address account, uint256 blockNumber) public override view returns (uint96) {
+    function getPriorVotes(address account, uint256 blockNumber) public view override returns (uint96) {
         uint96 votes = super.getPriorVotes(account, blockNumber);
         return safe96(stakeSupply.mul(votes).div(totalSupply), "StkTruToken: uint96 overflow");
     }
@@ -433,12 +433,12 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
      * @param account Account to get current voting power for
      * @return voting power for account
      */
-    function getCurrentVotes(address account) public override view returns (uint96) {
+    function getCurrentVotes(address account) public view override returns (uint96) {
         uint96 votes = super.getCurrentVotes(account);
         return safe96(stakeSupply.mul(votes).div(totalSupply), "StkTruToken: uint96 overflow");
     }
 
-    function decimals() public override pure returns (uint8) {
+    function decimals() public pure override returns (uint8) {
         return 8;
     }
 
@@ -446,11 +446,11 @@ contract StkTruToken is VoteToken, StkClaimableContract, IPauseableContract, Ree
         return 8;
     }
 
-    function name() public override pure returns (string memory) {
+    function name() public pure override returns (string memory) {
         return "Staked TrueFi";
     }
 
-    function symbol() public override pure returns (string memory) {
+    function symbol() public pure override returns (string memory) {
         return "stkTRU";
     }
 

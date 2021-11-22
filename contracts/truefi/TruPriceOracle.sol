@@ -35,7 +35,7 @@ contract TruPriceOracle is ITruPriceOracle {
      * @param amount Amount in USD
      * @return TRU value of USD input
      */
-    function usdToTru(uint256 amount) external override view returns (uint256) {
+    function usdToTru(uint256 amount) external view override returns (uint256) {
         return amount.div(safeUint(getLatestPrice())).div(100);
     }
 
@@ -45,7 +45,7 @@ contract TruPriceOracle is ITruPriceOracle {
      * @param amount Amount in TRU
      * @return USD value of TRU input
      */
-    function truToUsd(uint256 amount) external override view returns (uint256) {
+    function truToUsd(uint256 amount) external view override returns (uint256) {
         return amount.mul(safeUint(getLatestPrice())).mul(100);
     }
 
