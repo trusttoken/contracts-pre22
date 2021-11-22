@@ -28,13 +28,28 @@ module.exports = {
     target: 'ethers-v5',
   },
   solidity: {
-    version: '0.6.10',
-    settings: {
-      optimizer: {
-        enabled: true,
-        runs: 20000,
-      },
-    },
+    compilers: [{
+      version: '0.6.10',
+      settings: {
+        optimizer: {
+          enabled: true,
+          runs: 20000,
+        },
+      }
+    }, {
+      version: '0.8.10',
+      settings: {
+        optimizer: {
+          enabled: true,
+          runs: 20000,
+        },
+      }
+    }],
+    overrides: {
+      'contracts/ragnarok/**/*': {
+        version: '0.8.10'
+      }
+    }
   },
   mocha: {
     ...mocharc,
