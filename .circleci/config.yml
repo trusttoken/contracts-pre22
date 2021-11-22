@@ -100,6 +100,13 @@ jobs:
       - attach_workspace:
           at: .
       - run: yarn test:lines-of-credit
+  test-ragnarok:
+    docker:
+      - image: cimg/node:16.1.0
+    steps:
+      - attach_workspace:
+          at: .
+      - run: yarn test:ragnarok
   test-complete-flow:
     docker:
       - image: cimg/node:16.1.0
@@ -149,6 +156,9 @@ workflows:
           requires:
             - build
       - test-others:
+          requires:
+            - build
+      - test-ragnarok:
           requires:
             - build
       - deploy:
