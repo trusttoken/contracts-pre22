@@ -171,7 +171,7 @@ describe('SAFU', () => {
           await stakingVault.connect(borrower).stake(parseTRU(100))
 
           await borrowingMutex.allowLocker(owner.address, true)
-          await borrowingMutex.lock(borrower.address, owner.address)
+          await borrowingMutex.lock(borrower.address)
           await borrowingMutex.ban(borrower.address)
 
           await safu.liquidate([debt.address])
@@ -338,7 +338,7 @@ describe('SAFU', () => {
           await stakingVault.connect(borrower).stake(parseTRU(100))
 
           await borrowingMutex.allowLocker(owner.address, true)
-          await borrowingMutex.lock(borrower.address, owner.address)
+          await borrowingMutex.lock(borrower.address)
           await borrowingMutex.ban(borrower.address)
 
           await safu.liquidate([debt.address])

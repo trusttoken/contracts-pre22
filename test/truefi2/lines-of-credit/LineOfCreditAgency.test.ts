@@ -462,7 +462,7 @@ describe('LineOfCreditAgency', () => {
 
     it('fails if borrower mutex is already locked', async () => {
       await borrowingMutex.allowLocker(owner.address, true)
-      await borrowingMutex.lock(borrower.address, owner.address)
+      await borrowingMutex.lock(borrower.address)
 
       await expect(creditAgency.connect(borrower).borrow(tusdPool.address, 1000))
         .to.be.revertedWith('BorrowingMutex: Borrower is already locked')
@@ -479,7 +479,7 @@ describe('LineOfCreditAgency', () => {
 
       await faultyCreditAgency.connect(borrower).borrow(tusdPool.address, 1000)
       await faultyBorrowingMutex.unlock(borrower.address)
-      await faultyBorrowingMutex.lock(borrower.address, owner.address)
+      await faultyBorrowingMutex.lock(borrower.address)
 
       await expect(faultyCreditAgency.connect(borrower).borrow(tusdPool.address, 1000))
         .to.be.revertedWith('LineOfCreditAgency: Borrower cannot open two simultaneous debt positions')

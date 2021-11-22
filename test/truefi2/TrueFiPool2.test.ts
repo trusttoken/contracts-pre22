@@ -837,7 +837,7 @@ describe('TrueFiPool2', () => {
       await ftlAgency.reclaim(loan.address, '0x')
       await tusdPool.setLender(lender.address)
       const legacyLoan = await createLegacyLoan(loanFactory, tusdPool, lender, owner, borrower, 500000, DAY, 1000)
-      await borrowingMutex.lock(borrower.address, legacyLoan.address)
+      await borrowingMutex.lock(borrower.address)
       await tusd.mint(lender.address, 500000)
       await lender.connect(borrower).fund(legacyLoan.address)
       await timeTravel(DAY)

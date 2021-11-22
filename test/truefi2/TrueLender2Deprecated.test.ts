@@ -239,7 +239,7 @@ describe('TrueLender2Deprecated', () => {
       const debt = await loan.debt()
       await token.mint(loan.address, debt.sub(balance))
       await borrowingMutex.allowLocker(owner.address, true)
-      await borrowingMutex.lock(borrower.address, loan1.address)
+      await borrowingMutex.lock(borrower.address)
     }
 
     beforeEach(async () => {

@@ -96,7 +96,7 @@ describe('FixedTermLoan', () => {
     )
     const { blockNumber } = await tx.wait()
     creationTimestamp = (await provider.getBlock(blockNumber)).timestamp
-    await borrowingMutex.lock(borrower.address, loanToken.address)
+    await borrowingMutex.lock(borrower.address)
 
     await loanFactory.setIsLoanToken(loanToken.address)
     await token.transfer(borrower.address, parseEth(1000))

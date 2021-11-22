@@ -98,12 +98,12 @@ describe('StakingVault', () => {
       await expect(stakingVault.connect(borrower).stake(parseTRU(50)))
         .not.to.be.reverted
 
-      await borrowingMutex.lock(borrower.address, owner.address)
+      await borrowingMutex.lock(borrower.address)
       await expect(stakingVault.connect(borrower).stake(parseTRU(100)))
         .to.be.revertedWith('StakingVault: Borrower can only stake when they\'re unlocked or have a line of credit')
 
       await borrowingMutex.unlock(borrower.address)
-      await borrowingMutex.lock(borrower.address, creditAgency.address)
+      await borrowingMutex.lock(borrower.address)
       await expect(stakingVault.connect(borrower).stake(parseTRU(50)))
         .not.to.be.reverted
     })
@@ -150,7 +150,7 @@ describe('StakingVault', () => {
     })
 
     it('is false when locked but not by credit agency', async () => {
-      await borrowingMutex.lock(borrower.address, owner.address)
+      await borrowingMutex.lock(borrower.address)
       expect(await stakingVault.canUnstake(borrower.address, parseTRU(100))).to.be.false
     })
 
@@ -202,7 +202,7 @@ describe('StakingVault', () => {
     })
 
     it('cannot unstake if mutex is locked', async () => {
-      await borrowingMutex.lock(borrower.address, owner.address)
+      await borrowingMutex.lock(borrower.address)
       await expect(stakingVault.connect(borrower).unstake(parseTRU(101)))
         .to.be.revertedWith('StakingVault: Cannot unstake')
     })
@@ -228,7 +228,7 @@ describe('StakingVault', () => {
     beforeEach(async () => {
       await stakingVault.connect(borrower).stake(parseTRU(100))
       debtToken = await createDebtToken(loanFactory, owner, owner, pool, borrower, parseUSDC(1000))
-      await borrowingMutex.lock(borrower.address, owner.address)
+      await borrowingMutex.lock(borrower.address)
     })
 
     describe('reverts if', () => {

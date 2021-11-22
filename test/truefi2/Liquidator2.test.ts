@@ -339,7 +339,7 @@ describe('Liquidator2', () => {
         await fakeLoan.initialize(usdcPool.address, borrowingMutex.address, borrower.address, borrower.address, owner.address, liquidator.address, creditOracle.address, parseUSDC(1000), YEAR, 1000)
         await usdc.connect(borrower).approve(fakeLoan.address, parseUSDC(1000))
         await fakeLoan.connect(borrower).fund()
-        await borrowingMutex.lock(borrower.address, await fakeLoan.address)
+        await borrowingMutex.lock(borrower.address)
         await timeTravel(defaultedLoanCloseTime)
         await fakeLoan.enterDefault()
 
@@ -481,7 +481,7 @@ describe('Liquidator2', () => {
         await tru.connect(borrower).approve(stakingVault.address, parseTRU(100))
         await stakingVault.connect(borrower).stake(parseTRU(100))
         await borrowingMutex.allowLocker(owner.address, true)
-        await borrowingMutex.lock(borrower.address, owner.address)
+        await borrowingMutex.lock(borrower.address)
         await borrowingMutex.ban(borrower.address)
         await liquidator.connect(assurance).liquidate([debtToken1.address])
         expect(await tru.balanceOf(assurance.address)).to.equal(parseTRU(100))

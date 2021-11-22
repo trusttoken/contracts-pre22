@@ -428,7 +428,7 @@ describe('FixedTermLoanAgency', () => {
 
       it('taking new loans is locked by mutex', async () => {
         await borrowingMutex.allowLocker(owner.address, true)
-        await borrowingMutex.lock(borrower.address, owner.address)
+        await borrowingMutex.lock(borrower.address)
         await expect(borrow(borrower, pool1, 100000, YEAR))
           .to.be.revertedWith('FixedTermLoanAgency: There is an ongoing loan or credit line')
       })

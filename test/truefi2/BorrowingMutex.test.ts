@@ -58,7 +58,7 @@ describe('BorrowingMutex', () => {
     })
 
     it('fails if banner is not the locker', async () => {
-      await mutex.connect(locker).lock(borrower.address, locker.address)
+      await mutex.connect(locker).lock(borrower.address)
 
       await expect(mutex.connect(owner).ban(borrower.address))
         .to.be.revertedWith('BorrowingMutex: Only locker is allowed')
@@ -67,7 +67,7 @@ describe('BorrowingMutex', () => {
     it('changes locker', async () => {
       expect(await mutex.isUnlocked(borrower.address)).to.be.true
       expect(await mutex.isBanned(borrower.address)).to.be.false
-      await mutex.connect(locker).lock(borrower.address, locker.address)
+      await mutex.connect(locker).lock(borrower.address)
       await mutex.connect(locker).ban(borrower.address)
       expect(await mutex.locker(borrower.address)).to.eq(AddressOne)
       expect(await mutex.isUnlocked(borrower.address)).to.be.false
@@ -75,7 +75,7 @@ describe('BorrowingMutex', () => {
     })
 
     it('emits event', async () => {
-      await mutex.connect(locker).lock(borrower.address, locker.address)
+      await mutex.connect(locker).lock(borrower.address)
       await expect(mutex.connect(locker).ban(borrower.address))
         .to.emit(mutex, 'BorrowerBanned')
         .withArgs(borrower.address)
@@ -84,33 +84,33 @@ describe('BorrowingMutex', () => {
 
   describe('lock', () => {
     it('sender not in isAllowedToLock', async () => {
-      await expect(mutex.connect(owner).lock(borrower.address, owner.address))
+      await expect(mutex.connect(owner).lock(borrower.address))
         .to.be.revertedWith('BorrowingMutex: Sender is not allowed to lock borrowers')
 
-      await expect(mutex.connect(locker).lock(borrower.address, owner.address))
+      await expect(mutex.connect(locker).lock(borrower.address))
         .not.to.be.reverted
     })
 
     it('cannot lock already locked borrower', async () => {
       await mutex.allowLocker(owner.address, true)
-      await mutex.connect(locker).lock(borrower.address, owner.address)
+      await mutex.connect(locker).lock(borrower.address)
 
-      await expect(mutex.connect(owner).lock(borrower.address, owner.address))
+      await expect(mutex.connect(owner).lock(borrower.address))
         .to.be.revertedWith('BorrowingMutex: Borrower is already locked')
 
-      await expect(mutex.connect(locker).lock(borrower.address, owner.address))
+      await expect(mutex.connect(locker).lock(borrower.address))
         .to.be.revertedWith('BorrowingMutex: Borrower is already locked')
     })
 
     it('changes locker', async () => {
       expect(await mutex.isUnlocked(borrower.address)).to.be.true
-      await mutex.connect(locker).lock(borrower.address, owner.address)
+      await mutex.connect(locker).lock(borrower.address)
       expect(await mutex.locker(borrower.address)).to.eq(owner.address)
       expect(await mutex.isUnlocked(borrower.address)).to.be.false
     })
 
     it('emits event', async () => {
-      await expect(mutex.connect(locker).lock(borrower.address, owner.address))
+      await expect(mutex.connect(locker).lock(borrower.address))
         .to.emit(mutex, 'BorrowerLocked')
         .withArgs(borrower.address, owner.address)
     })
@@ -118,7 +118,7 @@ describe('BorrowingMutex', () => {
 
   describe('unlock', () => {
     beforeEach(async () => {
-      await mutex.connect(locker).lock(borrower.address, owner.address)
+      await mutex.connect(locker).lock(borrower.address)
     })
 
     it('reverts if other caller tries to unlock', async () => {
