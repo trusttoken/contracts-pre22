@@ -32,16 +32,16 @@ contract ManagedPortfolio is IERC721Receiver {
         uint256 repaymentAmount
     ) public {
         underlyingToken.transfer(borrower, principalAmount);
-        uint256 loanId = bulletLoans.mintLoan();
+        uint256 loanId = bulletLoans.createLoan(underlyingToken);
         emit BulletLoanCreated(loanId);
     }
 
     function onERC721Received(
-        address operator,
-        address from,
-        uint256 tokenId,
-        bytes calldata data
-    ) external override pure returns (bytes4) {
+        address,
+        address,
+        uint256,
+        bytes calldata
+    ) external pure override returns (bytes4) {
         return IERC721Receiver.onERC721Received.selector;
     }
 }
