@@ -18,9 +18,9 @@ abstract contract ChainlinkTruOracle is ITrueFiPoolOracle {
         truPriceFeed = AggregatorV3Interface(0x26929b85fE284EeAB939831002e1928183a10fb1);
     }
 
-    function token() public virtual override view returns (IERC20WithDecimals);
+    function token() public view virtual override returns (IERC20WithDecimals);
 
-    function tokenToUsd(uint256 tokenAmount) public virtual override view returns (uint256);
+    function tokenToUsd(uint256 tokenAmount) public view virtual override returns (uint256);
 
     /**
      * @dev return the latest price for TRU/USD with 8 decimals places
@@ -38,7 +38,7 @@ abstract contract ChainlinkTruOracle is ITrueFiPoolOracle {
      * @param tokenAmount Amount in USDC
      * @return TRU value of USDC input
      */
-    function tokenToTru(uint256 tokenAmount) external override view returns (uint256) {
+    function tokenToTru(uint256 tokenAmount) external view override returns (uint256) {
         uint256 tokenValue = tokenToUsd(tokenAmount);
         return tokenValue.div(getLatestTruPrice()).div(100);
     }
@@ -48,7 +48,7 @@ abstract contract ChainlinkTruOracle is ITrueFiPoolOracle {
      * @param truAmount Amount in TRU
      * @return USD value of TRU input
      */
-    function truToToken(uint256 truAmount) external override view returns (uint256) {
+    function truToToken(uint256 truAmount) external view override returns (uint256) {
         uint256 decimals = token().decimals();
         uint256 tokenPrice = tokenToUsd(10**decimals); // 18 dec places
         uint256 truInUsd = truAmount.mul(getLatestTruPrice()); // 16 dec places

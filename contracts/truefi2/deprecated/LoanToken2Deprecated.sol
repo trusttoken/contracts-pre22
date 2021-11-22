@@ -240,8 +240,8 @@ contract LoanToken2Deprecated is ILoanToken2, ERC20 {
      */
     function getParameters()
         external
-        override
         view
+        override
         returns (
             uint256,
             uint256,
@@ -257,7 +257,7 @@ contract LoanToken2Deprecated is ILoanToken2, ERC20 {
      * @param _balance number of LoanTokens to get value for
      * @return coupon value of _balance LoanTokens in tokens
      */
-    function value(uint256 _balance) external override view returns (uint256) {
+    function value(uint256 _balance) external view override returns (uint256) {
         if (_balance == 0) {
             return 0;
         }
@@ -404,7 +404,7 @@ contract LoanToken2Deprecated is ILoanToken2, ERC20 {
      * Funds stored on the contract's address plus funds already redeemed by lenders
      * @return Uint256 representing what value was already repaid
      */
-    function repaid() external override view onlyAfterWithdraw returns (uint256) {
+    function repaid() external view override onlyAfterWithdraw returns (uint256) {
         return _balance().add(redeemed);
     }
 
@@ -412,7 +412,7 @@ contract LoanToken2Deprecated is ILoanToken2, ERC20 {
      * @dev Check whether an ongoing loan has been repaid in full
      * @return true if and only if this loan has been repaid
      */
-    function isRepaid() public override view onlyOngoing returns (bool) {
+    function isRepaid() public view override onlyOngoing returns (bool) {
         return _balance() >= debt;
     }
 
@@ -420,7 +420,7 @@ contract LoanToken2Deprecated is ILoanToken2, ERC20 {
      * @dev Public currency token balance function
      * @return token balance of this contract
      */
-    function balance() external override view returns (uint256) {
+    function balance() external view override returns (uint256) {
         return _balance();
     }
 
@@ -446,7 +446,7 @@ contract LoanToken2Deprecated is ILoanToken2, ERC20 {
      * @dev get profit for this loan
      * @return profit for this loan
      */
-    function profit() external override view returns (uint256) {
+    function profit() external view override returns (uint256) {
         return debt.sub(amount);
     }
 
@@ -464,7 +464,7 @@ contract LoanToken2Deprecated is ILoanToken2, ERC20 {
         return super._transfer(sender, recipient, _amount);
     }
 
-    function version() external override pure returns (uint8) {
+    function version() external pure override returns (uint8) {
         return 4;
     }
 }

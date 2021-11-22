@@ -61,7 +61,7 @@ contract MockDelegateERC20 is ERC20 {
     /**
      * @dev Returns the name of the token.
      */
-    function name() public virtual override pure returns (string memory) {
+    function name() public pure virtual override returns (string memory) {
         return "DelegateERC20";
     }
 
@@ -69,7 +69,7 @@ contract MockDelegateERC20 is ERC20 {
      * @dev Returns the symbol of the token, usually a shorter version of the
      * name.
      */
-    function symbol() public virtual override pure returns (string memory) {
+    function symbol() public pure virtual override returns (string memory) {
         return "DERC20";
     }
 
@@ -94,7 +94,7 @@ contract MockDelegateERC20 is ERC20 {
         }
     }
 
-    function balanceOf(address who) public override view returns (uint256) {
+    function balanceOf(address who) public view override returns (uint256) {
         if (address(delegate) == address(0)) {
             return super.balanceOf(who);
         } else {
@@ -110,7 +110,7 @@ contract MockDelegateERC20 is ERC20 {
         }
     }
 
-    function allowance(address _owner, address spender) public virtual override view returns (uint256) {
+    function allowance(address _owner, address spender) public view virtual override returns (uint256) {
         if (address(delegate) == address(0)) {
             return super.allowance(_owner, spender);
         } else {
@@ -118,7 +118,7 @@ contract MockDelegateERC20 is ERC20 {
         }
     }
 
-    function totalSupply() public override view returns (uint256) {
+    function totalSupply() public view override returns (uint256) {
         if (address(delegate) == address(0)) {
             return super.totalSupply();
         } else {

@@ -232,7 +232,7 @@ contract LoanToken is ILoanToken, ERC20 {
      * @dev Return true if this contract is a LoanToken
      * @return True if this contract is a LoanToken
      */
-    function isLoanToken() external override pure returns (bool) {
+    function isLoanToken() external pure override returns (bool) {
         return true;
     }
 
@@ -242,8 +242,8 @@ contract LoanToken is ILoanToken, ERC20 {
      */
     function getParameters()
         external
-        override
         view
+        override
         returns (
             uint256,
             uint256,
@@ -259,7 +259,7 @@ contract LoanToken is ILoanToken, ERC20 {
      * @param _balance number of LoanTokens to get value for
      * @return coupon value of _balance LoanTokens in currencyTokens
      */
-    function value(uint256 _balance) external override view returns (uint256) {
+    function value(uint256 _balance) external view override returns (uint256) {
         if (_balance == 0) {
             return 0;
         }
@@ -406,7 +406,7 @@ contract LoanToken is ILoanToken, ERC20 {
      * Funds stored on the contract's address plus funds already redeemed by lenders
      * @return Uint256 representing what value was already repaid
      */
-    function repaid() external override view onlyAfterWithdraw returns (uint256) {
+    function repaid() external view override onlyAfterWithdraw returns (uint256) {
         return _balance().add(redeemed);
     }
 
@@ -414,7 +414,7 @@ contract LoanToken is ILoanToken, ERC20 {
      * @dev Check whether an ongoing loan has been repaid in full
      * @return true if and only if this loan has been repaid
      */
-    function isRepaid() public override view onlyOngoing returns (bool) {
+    function isRepaid() public view override onlyOngoing returns (bool) {
         return _balance() >= debt;
     }
 
@@ -422,7 +422,7 @@ contract LoanToken is ILoanToken, ERC20 {
      * @dev Public currency token balance function
      * @return currencyToken balance of this contract
      */
-    function balance() external override view returns (uint256) {
+    function balance() external view override returns (uint256) {
         return _balance();
     }
 
@@ -438,7 +438,7 @@ contract LoanToken is ILoanToken, ERC20 {
      * @dev Calculate amount borrowed minus fee
      * @return Amount minus fees
      */
-    function receivedAmount() public override view returns (uint256) {
+    function receivedAmount() public view override returns (uint256) {
         return amount.sub(amount.mul(borrowerFee).div(10000));
     }
 
@@ -456,7 +456,7 @@ contract LoanToken is ILoanToken, ERC20 {
      * @dev get profit for this loan
      * @return profit for this loan
      */
-    function profit() external override view returns (uint256) {
+    function profit() external view override returns (uint256) {
         return debt.sub(amount);
     }
 
@@ -474,7 +474,7 @@ contract LoanToken is ILoanToken, ERC20 {
         return super._transfer(sender, recipient, _amount);
     }
 
-    function version() external virtual override pure returns (uint8) {
+    function version() external pure virtual override returns (uint8) {
         return 3;
     }
 }

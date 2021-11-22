@@ -265,7 +265,8 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
         // return claimable reward for this account
         return
             stakerRewards[token].claimableReward[account].add(
-                stakes[token].staked[account]
+                stakes[token]
+                    .staked[account]
                     .mul(nextcumulativeRewardPerToken.sub(stakerRewards[token].previousCumulatedRewardPerToken[account]))
                     .div(PRECISION)
             );
@@ -285,7 +286,8 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
             cumulativeRewardPerShare = cumulativeRewardPerShare.add(totalBlockReward.div(shares.totalStaked));
         }
 
-        uint256 newReward = shares.staked[address(token)]
+        uint256 newReward = shares
+            .staked[address(token)]
             .mul(cumulativeRewardPerShare.sub(farmRewards.previousCumulatedRewardPerToken[address(token)]))
             .div(PRECISION);
 
@@ -352,7 +354,8 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
             return;
         }
         // claimableReward += staked(token) * (cumulativeRewardPerShare - previousCumulatedRewardPerShare(token))
-        uint256 newReward = shares.staked[address(token)]
+        uint256 newReward = shares
+            .staked[address(token)]
             .mul(farmRewards.cumulativeRewardPerToken.sub(farmRewards.previousCumulatedRewardPerToken[address(token)]))
             .div(PRECISION);
 
@@ -391,10 +394,11 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
     function _updateClaimableRewardsForStaker(IERC20 token) internal {
         // increase claimable reward for sender by amount staked by the staker times the growth of cumulativeRewardPerToken since last update
         stakerRewards[token].claimableReward[msg.sender] = stakerRewards[token].claimableReward[msg.sender].add(
-            stakes[token].staked[msg.sender]
+            stakes[token]
+                .staked[msg.sender]
                 .mul(
-                stakerRewards[token].cumulativeRewardPerToken.sub(stakerRewards[token].previousCumulatedRewardPerToken[msg.sender])
-            )
+                    stakerRewards[token].cumulativeRewardPerToken.sub(stakerRewards[token].previousCumulatedRewardPerToken[msg.sender])
+                )
                 .div(PRECISION)
         );
 

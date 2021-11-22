@@ -99,7 +99,7 @@ contract TrueFiCreditOracle is ITrueFiCreditOracle, UpgradeableClaimable {
      * @param account Account to get borrow status for
      * @return Borrow status for `account`
      */
-    function status(address account) external override view returns (Status) {
+    function status(address account) external view override returns (Status) {
         if (block.timestamp < eligibleUntilTime[account]) {
             return Status.Eligible;
         } else if (block.timestamp.sub(gracePeriod) < eligibleUntilTime[account]) {

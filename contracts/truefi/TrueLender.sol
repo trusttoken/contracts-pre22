@@ -367,7 +367,7 @@ contract TrueLender is ITrueLender, Ownable {
      * There should never be too many loans in the pool to run out of gas
      * @return Theoretical value of all the loans funded by this strategy
      */
-    function value() external override view returns (uint256) {
+    function value() external view override returns (uint256) {
         uint256 totalValue;
         for (uint256 index = 0; index < _loans.length; index++) {
             totalValue = totalValue.add(loanValue(_loans[index]));

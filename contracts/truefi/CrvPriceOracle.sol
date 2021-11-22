@@ -40,7 +40,7 @@ contract CrvPriceOracle is ICrvPriceOracle {
      * @param amount Amount in USD
      * @return CRV value of USD input
      */
-    function usdToCrv(uint256 amount) external override view returns (uint256) {
+    function usdToCrv(uint256 amount) external view override returns (uint256) {
         return amount.mul(1e18).div(getLatestPrice());
     }
 
@@ -49,7 +49,7 @@ contract CrvPriceOracle is ICrvPriceOracle {
      * @param amount Amount in CRV
      * @return USD value of CRV input
      */
-    function crvToUsd(uint256 amount) external override view returns (uint256) {
+    function crvToUsd(uint256 amount) external view override returns (uint256) {
         return amount.mul(getLatestPrice()).div(1e18);
     }
 

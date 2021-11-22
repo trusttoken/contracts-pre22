@@ -2,7 +2,11 @@
 pragma solidity 0.6.10;
 
 interface ITrueFiCreditOracle {
-    enum Status {Eligible, OnHold, Ineligible}
+    enum Status {
+        Eligible,
+        OnHold,
+        Ineligible
+    }
 
     function status(address account) external view returns (Status);
 

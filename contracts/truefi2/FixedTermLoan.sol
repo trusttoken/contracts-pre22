@@ -230,7 +230,7 @@ contract FixedTermLoan is IFixedTermLoan, ERC20 {
         emit Redeemed(msg.sender, loanRedeemAmount, tokenRedeemAmount);
     }
 
-    function debt() public override view returns (uint256) {
+    function debt() public view override returns (uint256) {
         return principal.add(interest);
     }
 
@@ -255,7 +255,7 @@ contract FixedTermLoan is IFixedTermLoan, ERC20 {
      * - the loan will be paid back on time, with interest
      * @return current value of holder's loan in tokens
      */
-    function currentValue(address holder) external override view returns (uint256) {
+    function currentValue(address holder) external view override returns (uint256) {
         uint256 holderLoanBalance = balanceOf(holder);
         uint256 duration = block.timestamp.sub(start);
         if (status == Status.Withdrawn && duration < term) {
@@ -268,7 +268,7 @@ contract FixedTermLoan is IFixedTermLoan, ERC20 {
         return holderLoanBalance;
     }
 
-    function decimals() public override view returns (uint8) {
+    function decimals() public view override returns (uint8) {
         return uint8(token.decimals());
     }
 }

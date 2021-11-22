@@ -80,10 +80,20 @@ contract Pauser is UpgradeableClaimable {
     }
 
     // @notice Possible pausing mechanisms
-    enum PausingMethod {Status, Proxy, Reference}
+    enum PausingMethod {
+        Status,
+        Proxy,
+        Reference
+    }
 
     // @notice Possible states that a request may be in
-    enum RequestState {Active, Succeeded, Defeated, Expired, Executed}
+    enum RequestState {
+        Active,
+        Succeeded,
+        Defeated,
+        Expired,
+        Executed
+    }
 
     // @notice An event emitted when a request has been executed in the Timelock
     event RequestExecuted(uint256 id);
