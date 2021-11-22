@@ -20,7 +20,6 @@ describe('ManagedPortfolio', () => {
 
   let token: MockUsdc
   let tokenAsLender: MockUsdc
-  let tokenAsBorrower: MockUsdc
 
   let portfolioOwner: Wallet
   let lender: Wallet
@@ -38,7 +37,6 @@ describe('ManagedPortfolio', () => {
 
     portfolioAsLender = portfolio.connect(lender)
     tokenAsLender = token.connect(lender)
-    tokenAsBorrower = token.connect(borrower)
 
     await token.mint(lender.address, parseUSDC(10))
   })
@@ -83,7 +81,7 @@ describe('ManagedPortfolio', () => {
     expect(await token.balanceOf(lender.address)).to.eq(parseUSDC(5))
   })
 
-  async function joinPortfolio(amount: number) {
+  async function joinPortfolio (amount: number) {
     await tokenAsLender.approve(portfolio.address, parseUSDC(amount))
     await portfolioAsLender.join(parseUSDC(amount))
   }
