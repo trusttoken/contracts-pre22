@@ -30,9 +30,11 @@ async function avalanche () {
   const token = TrueUsd__factory.connect('0x1C20E891Bab6b1727d14Da358FAe2984Ed9B59EB', wallet)
   const tokenProxy = OwnedUpgradeabilityProxy__factory.connect('0x1C20E891Bab6b1727d14Da358FAe2984Ed9B59EB', wallet)
 
-  await deployController(wallet)
-
-  // await setIsMintRatifier('0x083B59F244f8BAcbc79282Cdd623686324C962AC', 1, controller)
+  // deploy, upgrade, set ratifiers
+  controller = await deployController(wallet)
+  await upgradeController(proxy, controller.address)
+  await setIsMintRatifier('0x083B59F244f8BAcbc79282Cdd623686324C962AC', 1, controller)
+  await setIsMintRatifier('0xb47DeA8731Fd846065294771Ab68B3Ee1FC6E880', 1, controller)
 
   console.log('\nlogging information about Avalanche TUSD...')
 
@@ -59,7 +61,7 @@ async function deployController(wallet) {
 }
 
 // upgrade proxy
-async function upgradeController(newImplementation, proxy) {
+async function upgradeController(proxy, newImplementation) {
   await waitForTx(proxy.upgradeTo(newImplementation))
   console.log('upgraded proxy to: ', newImplementation.address)
 }
