@@ -152,7 +152,7 @@ abstract contract TimeLockedToken is TruVoteToken, ClaimableContract {
         return balanceOf[account].sub(lockedBalance(account));
     }
 
-    function _balanceOf(address account) internal override view returns (uint256) {
+    function _balanceOf(address account) internal view override returns (uint256) {
         return unlockedBalance(account);
     }
 

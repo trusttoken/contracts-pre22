@@ -74,7 +74,7 @@ contract TruSushiswapRewarder is ISushiswapRewarder, UpgradeableClaimable {
         uint256, /* pid */
         address, /* user */
         uint256 sushiAmount
-    ) external override view returns (IERC20[] memory rewardTokens, uint256[] memory rewardAmounts) {
+    ) external view override returns (IERC20[] memory rewardTokens, uint256[] memory rewardAmounts) {
         IERC20[] memory _rewardTokens = new IERC20[](1);
         _rewardTokens[0] = (trustToken);
         uint256[] memory _rewardAmounts = new uint256[](1);
@@ -82,7 +82,7 @@ contract TruSushiswapRewarder is ISushiswapRewarder, UpgradeableClaimable {
         return (_rewardTokens, _rewardAmounts);
     }
 
-    modifier onlyMCV2 {
+    modifier onlyMCV2() {
         require(msg.sender == MASTERCHEF_V2, "Only MCV2 can call this function.");
         _;
     }

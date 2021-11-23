@@ -12,7 +12,7 @@ contract TrueAUD is TrueCurrencyWithGasRefund {
     uint8 constant DECIMALS = 18;
     uint8 constant ROUNDING = 2;
 
-    function decimals() public override pure returns (uint8) {
+    function decimals() public pure override returns (uint8) {
         return DECIMALS;
     }
 
@@ -20,11 +20,11 @@ contract TrueAUD is TrueCurrencyWithGasRefund {
         return ROUNDING;
     }
 
-    function name() public override pure returns (string memory) {
+    function name() public pure override returns (string memory) {
         return "TrueAUD";
     }
 
-    function symbol() public override pure returns (string memory) {
+    function symbol() public pure override returns (string memory) {
         return "TAUD";
     }
 }

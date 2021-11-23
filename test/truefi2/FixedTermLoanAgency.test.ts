@@ -635,6 +635,16 @@ describe('FixedTermLoanAgency', () => {
         .withArgs(pool1.address, loan.address, 108000)
     })
 
+    it('prevents opening a new loan before reclaiming', async () => {
+      await payBack(token1, loan)
+      await loan.settle()
+      await expect(ftlAgency.connect(borrower).borrow(pool1.address, 100000, DAY, 1000))
+        .to.be.revertedWith('FixedTermLoanAgency: There is an ongoing loan or credit line')
+      await ftlAgency.reclaim(loan.address, '0x')
+      await expect(ftlAgency.connect(borrower).borrow(pool1.address, 100000, DAY, 1000))
+        .not.to.be.reverted
+    })
+
     describe('Removes loan from array', () => {
       let newLoan1: FixedTermLoan
       let newLoan2: FixedTermLoan

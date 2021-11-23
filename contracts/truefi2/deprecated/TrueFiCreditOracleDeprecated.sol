@@ -29,7 +29,7 @@ contract TrueFiCreditOracleDeprecated is ITrueFiCreditOracleDeprecated, Upgradea
      * @dev Get score for `account`
      * Scores are stored as uint8 allowing scores of 0-255
      */
-    function getScore(address account) public override view returns (uint8) {
+    function getScore(address account) public view override returns (uint8) {
         return score[account];
     }
 

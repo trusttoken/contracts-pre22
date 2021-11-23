@@ -42,7 +42,15 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
     using SafeMath for uint256;
     using SafeERC20 for IBurnableERC20;
 
-    enum LoanStatus {Void, Pending, Retracted, Running, Settled, Defaulted, Liquidated}
+    enum LoanStatus {
+        Void,
+        Pending,
+        Retracted,
+        Running,
+        Settled,
+        Defaulted,
+        Liquidated
+    }
 
     struct Loan {
         address creator;
@@ -187,8 +195,8 @@ contract TrueRatingAgencyV2 is ITrueRatingAgencyV2, Ownable {
      */
     function getResults(address id)
         external
-        override
         view
+        override
         returns (
             uint256,
             uint256,

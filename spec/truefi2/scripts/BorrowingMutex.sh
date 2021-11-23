@@ -1,2 +1,3 @@
 certoraRun contracts/truefi2/BorrowingMutex.sol \
-  --verify BorrowingMutex:spec/truefi2/BorrowingMutex.spec
+  --verify BorrowingMutex:spec/truefi2/BorrowingMutex.spec \
+  --rule_sanity

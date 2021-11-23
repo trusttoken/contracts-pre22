@@ -1,9 +1,9 @@
 import { expect, use } from 'chai'
 import { MockProvider, solidity } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
+import { AddressZero } from '@ethersproject/constants'
 
 import { toTrustToken } from 'scripts/utils'
-import { ZERO_ADDRESS } from './../../utils'
 
 import {
   expectScaledCloseTo,
@@ -54,7 +54,7 @@ describe('LinearTrueDistributor', () => {
     })
 
     it('reverts if new address is zero', async () => {
-      await expect(distributor.setFarm(ZERO_ADDRESS)).to.be.revertedWith('LinearTrueDistributor: Farm address can\'t be the zero address')
+      await expect(distributor.setFarm(AddressZero)).to.be.revertedWith('LinearTrueDistributor: Farm address can\'t be the zero address')
     })
 
     it('emits event when farm is set', async () => {

@@ -36,7 +36,13 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
     using SafeERC20 for ERC20;
     using SafeMath for uint256;
 
-    enum DefaultReason {NotAllowed, Ineligible, BelowMinScore, InterestOverdue, BorrowLimitExceeded}
+    enum DefaultReason {
+        NotAllowed,
+        Ineligible,
+        BelowMinScore,
+        InterestOverdue,
+        BorrowLimitExceeded
+    }
 
     /// @dev credit scores are uint8
     uint8 constant MAX_CREDIT_SCORE = 255;
@@ -262,7 +268,7 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
         require(rawScore > 0, "LineOfCreditAgency: Score is required to be set by CreditOracle");
 
         uint256 stakedAmount = stakingVault.stakedAmount(borrower);
-        uint8 newEffectiveScore = rateModel.effectiveScore(rawScore, pool, stakedAmount, borrowedAmount);
+        uint8 newEffectiveScore = rateModel.effectiveScore(pool, rawScore, stakedAmount, borrowedAmount);
         creditScore[pool][borrower] = newEffectiveScore;
         return (oldEffectiveScore, newEffectiveScore);
     }
@@ -308,14 +314,18 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
      * @param borrower Borrower to get borrow limit for
      * @return borrow limit for `borrower` in `pool`
      */
-    function borrowLimit(ITrueFiPool2 pool, address borrower) public view returns (uint256) {
+    function borrowLimit(
+        ITrueFiPool2 pool,
+        address borrower,
+        uint256 _totalBorrowed
+    ) public view returns (uint256) {
         return
             rateModel.borrowLimit(
                 pool,
                 creditOracle.score(borrower),
                 creditOracle.maxBorrowerLimit(borrower),
                 stakingVault.stakedAmount(borrower),
-                totalBorrowed(borrower)
+                _totalBorrowed
             );
     }
 
@@ -333,7 +343,7 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
     /**
      * @dev Returns false iff borrower will stay over borrow limit in all pools when `stakedAmount` is staked
      */
-    function isOverProFormaLimit(address borrower, uint256 stakedAmount) external override view returns (bool) {
+    function isOverProFormaLimit(address borrower, uint256 stakedAmount) external view override returns (bool) {
         ITrueFiPool2[] memory pools = poolFactory.getSupportedPools();
         uint256 _totalBorrowed = totalBorrowed(borrower);
         uint8 _score = creditOracle.score(borrower);
@@ -383,11 +393,12 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
         require(!_hasOverdueInterest(pool, msg.sender), "LineOfCreditAgency: Sender has overdue interest in this pool");
         uint8 rawScore = creditOracle.score(msg.sender);
         require(rawScore >= minCreditScore, "LineOfCreditAgency: Borrower has credit score below minimum");
+        uint256 _totalBorrowed = totalBorrowed(msg.sender);
         require(
-            pool.oracle().tokenToUsd(amount) <= borrowLimit(pool, msg.sender),
+            pool.oracle().tokenToUsd(amount) <= borrowLimit(pool, msg.sender, _totalBorrowed),
             "LineOfCreditAgency: Borrow amount cannot exceed borrow limit"
         );
-        if (totalBorrowed(msg.sender) == 0) {
+        if (_totalBorrowed == 0) {
             borrowingMutex.lock(msg.sender, address(this));
         }
         require(
@@ -621,7 +632,7 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
      * @param pool Pool to get USD value for
      * @return USD value of credit lines for pool
      */
-    function poolCreditValue(ITrueFiPool2 pool) external override view returns (uint256) {
+    function poolCreditValue(ITrueFiPool2 pool) external view override returns (uint256) {
         uint256 bitMap = usedBucketsBitmap;
         CreditScoreBucket[256] storage creditScoreBuckets = buckets[pool];
         uint256 timeNow = block.timestamp;

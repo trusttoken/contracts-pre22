@@ -2,7 +2,14 @@ import { expect, use } from 'chai'
 import { MockProvider, solidity } from 'ethereum-waffle'
 import { BigNumberish, Wallet } from 'ethers'
 
-import { beforeEachWithFixture, expectScaledCloseTo, extractDebtTokens, parseEth, timeTravel } from 'utils'
+import {
+  beforeEachWithFixture,
+  expectScaledCloseTo,
+  extractDebtTokens,
+  parseEth,
+  timeTravel,
+  AddressOne,
+} from 'utils'
 
 import {
   BorrowingMutex,
@@ -90,6 +97,7 @@ describe('FixedTermLoan', () => {
     const { blockNumber } = await tx.wait()
     creationTimestamp = (await provider.getBlock(blockNumber)).timestamp
     await borrowingMutex.lock(borrower.address, loanToken.address)
+
     await loanFactory.setIsLoanToken(loanToken.address)
     await token.transfer(borrower.address, parseEth(1000))
   })
@@ -115,6 +123,7 @@ describe('FixedTermLoan', () => {
       expect(await loanToken.creditOracle()).to.equal(creditOracle.address)
       expect(await loanToken.loanFactory()).to.equal(loanFactory.address)
       expect(await loanToken.debtToken()).to.equal(AddressZero)
+      expect(await loanToken.ftlAgency()).to.equal(lender.address)
     })
 
     it('sets borrowers debt', async () => {
@@ -152,13 +161,6 @@ describe('FixedTermLoan', () => {
       await token.mint(loanToken.address, parseEth(1100))
       await loanToken.settle()
       expect(await loanToken.status()).to.equal(LoanTokenStatus.Settled)
-    })
-
-    it('unlocks the mutex', async () => {
-      await token.mint(loanToken.address, parseEth(1100))
-      expect(await borrowingMutex.isUnlocked(borrower.address)).to.be.false
-      await loanToken.settle()
-      expect(await borrowingMutex.isUnlocked(borrower.address)).to.be.true
     })
   })
 
@@ -204,7 +206,7 @@ describe('FixedTermLoan', () => {
       expect(await borrowingMutex.isUnlocked(borrower.address)).to.be.false
       await loanToken.enterDefault()
       expect(await borrowingMutex.isUnlocked(borrower.address)).to.be.false
-      expect(await borrowingMutex.locker(borrower.address)).to.equal('0x0000000000000000000000000000000000000001')
+      expect(await borrowingMutex.locker(borrower.address)).to.equal(AddressOne)
     })
 
     it('mints new DebtTokens and transfers them to the pool', async () => {
@@ -297,6 +299,7 @@ describe('FixedTermLoan', () => {
       await timeTravel(provider, defaultedLoanCloseTime)
       await payback(borrower, parseEth(1000))
       await loanToken.enterDefault()
+
       await expect(loanToken.redeem()).to.emit(loanToken, 'Redeemed').withArgs(lender.address, parseEth(1100), parseEth(1000))
     })
 
@@ -346,6 +349,15 @@ describe('FixedTermLoan', () => {
         await payback(borrower, parseEth(100))
         await expect(loanToken.redeem()).to.be.revertedWith('FixedTermLoan: Total token supply should be greater than 0')
       })
+    })
+
+    it('unlocks the mutex', async () => {
+      await token.mint(loanToken.address, parseEth(1100))
+      expect(await borrowingMutex.isUnlocked(borrower.address)).to.be.false
+      await loanToken.settle()
+      expect(await borrowingMutex.isUnlocked(borrower.address)).to.be.false
+      await loanToken.redeem()
+      expect(await borrowingMutex.isUnlocked(borrower.address)).to.be.true
     })
   })
 

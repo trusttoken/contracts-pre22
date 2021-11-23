@@ -4,6 +4,7 @@ import { AddressZero } from '@ethersproject/constants'
 
 import {
   BorrowingMutex,
+  ChainlinkTruBusdOracle,
   ChainlinkTruTusdOracle,
   ChainlinkTruUsdcOracle,
   ChainlinkTruUsdtOracle,
@@ -17,6 +18,7 @@ import {
   PoolFactory,
   SAFU,
   StkTruToken,
+  TestBUSDToken,
   TestTrustToken,
   TestUSDCToken,
   TestUSDTToken,
@@ -24,7 +26,7 @@ import {
   TrueFiPool2,
 } from '../build/artifacts'
 import {
-  TUSD, USDC, USDT, TRU, ONE_INCH_EXCHANGE, LOAN_INTEREST_FEE
+  BUSD, TUSD, USDC, USDT, TRU, ONE_INCH_EXCHANGE, LOAN_INTEREST_FEE
 } from './config.json'
 
 deploy({}, (_, config) => {
@@ -32,6 +34,9 @@ deploy({}, (_, config) => {
   const isMainnet = config.network === 'mainnet'
 
   // Existing contracts
+  const busd = isMainnet
+    ? BUSD
+    : contract(TestBUSDToken)
   const tusd = isMainnet
     ? TUSD
     : contract(MockTrueUSD)
@@ -67,6 +72,7 @@ deploy({}, (_, config) => {
   // New bare contracts
   const trueFiPool2 = contract(TrueFiPool2)
   const implementationReference = contract(ImplementationReference, [trueFiPool2])
+  const chainlinkTruBusdOracle = contract(ChainlinkTruBusdOracle)
   const chainlinkTruTusdOracle = contract(ChainlinkTruTusdOracle)
   const chainlinkTruUsdcOracle = contract(ChainlinkTruUsdcOracle)
   const chainlinkTruUsdtOracle = contract(ChainlinkTruUsdtOracle)
@@ -95,6 +101,11 @@ deploy({}, (_, config) => {
     borrowingMutex.initialize()
   })
 
+  runIf(poolFactory.pool(busd).equals(AddressZero), () => {
+    poolFactory.allowToken(busd, true)
+    poolFactory.createPool(busd)
+  })
+  const busd_TrueFiPool2 = poolFactory.pool(busd)
   runIf(poolFactory.pool(tusd).equals(AddressZero), () => {
     poolFactory.allowToken(tusd, true)
     poolFactory.createPool(tusd)

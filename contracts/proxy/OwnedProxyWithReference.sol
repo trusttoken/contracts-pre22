@@ -176,12 +176,12 @@ contract OwnedProxyWithReference {
             returndatacopy(ptr, 0, returndatasize())
 
             switch result
-                case 0 {
-                    revert(ptr, returndatasize())
-                }
-                default {
-                    return(ptr, returndatasize())
-                }
+            case 0 {
+                revert(ptr, returndatasize())
+            }
+            default {
+                return(ptr, returndatasize())
+            }
         }
     }
 

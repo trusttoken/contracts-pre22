@@ -32,7 +32,7 @@ contract BadStrategy is ITrueStrategy {
         token.transfer(pool, withError(amount));
     }
 
-    function value() external override view returns (uint256) {
+    function value() external view override returns (uint256) {
         return token.balanceOf(address(this));
     }
 

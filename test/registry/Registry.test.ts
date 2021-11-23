@@ -1,6 +1,7 @@
 import { expect, use } from 'chai'
 import { MockProvider, solidity } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
+import { AddressZero } from '@ethersproject/constants'
 import { keccak256 } from '@ethersproject/keccak256'
 import { formatBytes32String } from '@ethersproject/strings'
 import { parseEther } from '@ethersproject/units'
@@ -8,7 +9,6 @@ import { parseEther } from '@ethersproject/units'
 import {
   beforeEachWithFixture,
   writeAttributeFor,
-  ZERO_ADDRESS,
 } from 'utils'
 
 import {
@@ -92,9 +92,9 @@ describe('Registry', () => {
     it('sets only desired attribute', async () => {
       await registry.setAttribute(anotherWallet.address, prop1, 3, notes)
       const attribute = await registry.getAttribute(anotherWallet.address, prop2)
-      expect(attribute[0]).to.equal(ZERO_ADDRESS)
+      expect(attribute[0]).to.equal(AddressZero)
       expect(attribute[1]).to.equal('0x0000000000000000000000000000000000000000000000000000000000000000')
-      expect(attribute[2]).to.equal(ZERO_ADDRESS)
+      expect(attribute[2]).to.equal(AddressZero)
 
       const hasAttribute = await registry.hasAttribute(anotherWallet.address, prop2)
       expect(hasAttribute).to.equal(false)

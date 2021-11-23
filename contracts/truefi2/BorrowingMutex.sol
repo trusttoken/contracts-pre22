@@ -65,11 +65,11 @@ contract BorrowingMutex is IBorrowingMutex, UpgradeableClaimable {
         emit BorrowerUnlocked(borrower, _locker);
     }
 
-    function isUnlocked(address borrower) public override view returns (bool) {
+    function isUnlocked(address borrower) public view override returns (bool) {
         return locker[borrower] == UNLOCKED;
     }
 
-    function isBanned(address borrower) public override view returns (bool) {
+    function isBanned(address borrower) public view override returns (bool) {
         return locker[borrower] == BANNED;
     }
 }

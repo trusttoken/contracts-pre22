@@ -10,19 +10,19 @@ contract MockTrueFiPoolOracle is ITrueFiPoolOracle {
         _token = __token;
     }
 
-    function token() external override view returns (IERC20WithDecimals) {
+    function token() external view override returns (IERC20WithDecimals) {
         return _token;
     }
 
-    function tokenToTru(uint256 tokenAmount) external override view returns (uint256) {
+    function tokenToTru(uint256 tokenAmount) external view override returns (uint256) {
         return (tokenAmount * 4 * 10**8) / 10**_token.decimals();
     }
 
-    function truToToken(uint256 truAmount) external override view returns (uint256) {
+    function truToToken(uint256 truAmount) external view override returns (uint256) {
         return (truAmount * 1e10) / 4 / 10**(18 - _token.decimals());
     }
 
-    function tokenToUsd(uint256 tokenAmount) external override view returns (uint256) {
+    function tokenToUsd(uint256 tokenAmount) external view override returns (uint256) {
         return tokenAmount * 10**(18 - _token.decimals());
     }
 }

@@ -375,7 +375,8 @@ describe('TrueFiPool2', () => {
       await timeTravel(DAY * 4)
       await loan.enterDefault()
       debt = await loan.debtToken()
-      await safu.liquidate([debt])
+      await safu.liquidate(borrower.address)
+      await safu.compensate(borrower.address)
     })
 
     describe('deficitValue', () => {
@@ -475,8 +476,8 @@ describe('TrueFiPool2', () => {
         await timeTravel(DAY * 4)
         await loan.enterDefault()
         expect(await tusdPool.poolValue()).to.equal(joinAmount.add(136))
-        const debt = await loan.debtToken()
-        await safu.liquidate([debt])
+        await safu.liquidate(borrower.address)
+        await safu.compensate(borrower.address)
 
         expect(await tusdPool.deficitValue()).to.eq(500136)
         expect(await tusdPool.poolValue()).to.equal(joinAmount.add(136))
@@ -834,6 +835,7 @@ describe('TrueFiPool2', () => {
     })
 
     it('lender can repay', async () => {
+      await ftlAgency.reclaim(loan.address, '0x')
       await tusdPool.setLender(lender.address)
       const legacyLoan = await createLegacyLoan(loanFactory, tusdPool, lender, owner, borrower, 500000, DAY, 1000)
       await borrowingMutex.lock(borrower.address, legacyLoan.address)

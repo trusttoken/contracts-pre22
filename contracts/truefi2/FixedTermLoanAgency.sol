@@ -312,7 +312,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
     ) public view returns (uint256) {
         uint8 rawScore = creditOracle.score(borrower);
         uint256 stakedAmount = stakingVault.stakedAmount(borrower);
-        uint8 effectiveScore = rateModel.effectiveScore(rawScore, pool, stakedAmount, amount);
+        uint8 effectiveScore = rateModel.effectiveScore(pool, rawScore, stakedAmount, amount);
         uint256 fixedTermLoanAdjustment = rateModel.fixedTermLoanAdjustment(term);
         return rateModel.rate(pool, effectiveScore, amount).add(fixedTermLoanAdjustment);
     }
@@ -368,7 +368,7 @@ contract FixedTermLoanAgency is IFixedTermLoanAgency, UpgradeableClaimable {
      * @param pool pool address
      * @return Theoretical value of all the loans funded by this strategy
      */
-    function value(ITrueFiPool2 pool) external override view returns (uint256) {
+    function value(ITrueFiPool2 pool) external view override returns (uint256) {
         IFixedTermLoan[] memory _loans = poolLoans[pool];
         uint256 totalValue;
         for (uint256 index = 0; index < _loans.length; index++) {
