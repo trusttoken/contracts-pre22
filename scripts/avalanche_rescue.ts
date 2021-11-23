@@ -4,7 +4,7 @@
 import { ethers, providers } from 'ethers'
 
 import {
-  TokenController__factory,
+  AvalancheTokenController__factory,
   OwnedUpgradeabilityProxy__factory,
   TrueUsd__factory,
 } from '../build'
@@ -22,7 +22,7 @@ async function avalancheRescue () {
   const provider = new providers.JsonRpcProvider('https://api.avax.network/ext/bc/C/rpc', network)
   const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider)
 
-  const controller = TokenController__factory.connect('0xc3a247acE92A6A36FB69F70873A85fB8a66aDC1c', wallet)
+  const controller = AvalancheTokenController__factory.connect('0xc3a247acE92A6A36FB69F70873A85fB8a66aDC1c', wallet)
   const proxy = OwnedUpgradeabilityProxy__factory.connect('0xc3a247acE92A6A36FB69F70873A85fB8a66aDC1c', wallet)
   const token = TrueUsd__factory.connect('0x1C20E891Bab6b1727d14Da358FAe2984Ed9B59EB', wallet)
   const tokenProxy = OwnedUpgradeabilityProxy__factory.connect('0x1C20E891Bab6b1727d14Da358FAe2984Ed9B59EB', wallet)
@@ -33,6 +33,9 @@ async function avalancheRescue () {
   // await (await tokenProxy.transferProxyOwnership('0xf6E2Da7D82ee49f76CE652bc0BeB546Cbe0Ea521', txnArgs)).wait()
   // await(await tokenProxy.claimProxyOwnership(txnArgs)).wait()
   // await(await controller.transferTrueCurrencyProxyOwnership('0xf6E2Da7D82ee49f76CE652bc0BeB546Cbe0Ea521', txnArgs)).wait()
+
+  console.log('ratifier: ', await controller.isMintRatifier('0x083B59F244f8BAcbc79282Cdd623686324C962AC'))
+  console.log('registryAdmin: ', await controller.registryAdmin())
 
   console.log('\ncontroller 0xc3a247acE92A6A36FB69F70873A85fB8a66aDC1c\n')
   console.log('mintKey', await controller.mintKey())

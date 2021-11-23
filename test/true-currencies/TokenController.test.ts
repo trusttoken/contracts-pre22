@@ -629,14 +629,18 @@ describe('TokenController', () => {
       await controller.transferMintKey(mintKey.address)
     })
 
-    it('only registry admin and owner can set mint pauser', async () => {
+    it('only owner can set mint pauser', async () => {
       await expect(avaController.connect(thirdWallet).setIsMintPauser(thirdWallet.address, true))
-        .to.be.revertedWith('TokenController: Must be registry admin or owner')
+        .to.be.revertedWith('TokenController: Only Owner')
+        await expect(avaController.connect(registryAdmin).setIsMintPauser(thirdWallet.address, true))
+        .to.be.revertedWith('TokenController: Only Owner')
     })
 
-    it('only registry admin and owner can set mint ratufuer', async () => {
+    it('only owner can set mint ratifier', async () => {
       await expect(avaController.connect(thirdWallet).setIsMintRatifier(thirdWallet.address, true))
-        .to.be.revertedWith('TokenController: Must be registry admin or owner')
+        .to.be.revertedWith('TokenController: Only Owner')
+        await expect(avaController.connect(registryAdmin).setIsMintRatifier(thirdWallet.address, true))
+        .to.be.revertedWith('TokenController: Only Owner')
     })
 
     it('only mint pauser can pause mints', async () => {
