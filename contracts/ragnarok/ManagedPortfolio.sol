@@ -22,9 +22,22 @@ contract ManagedPortfolio is IERC721Receiver, ERC20 {
         bulletLoans = _bulletLoans;
     }
 
-    function join(uint256 amount) external {
-        underlyingToken.transferFrom(msg.sender, address(this), amount);
-        _mint(msg.sender, (amount * 10**decimals()) / (10**underlyingToken.decimals()));
+    function join(uint256 depositAmount) external {
+        _mint(msg.sender, getAmountToMint(depositAmount));
+        underlyingToken.transferFrom(msg.sender, address(this), depositAmount);
+    }
+
+    function getAmountToMint(uint256 amount) public view returns (uint256) {
+        uint256 _totalSupply = totalSupply();
+        if (_totalSupply == 0) {
+            return (amount * 10**decimals()) / (10**underlyingToken.decimals());
+        } else {
+            return amount * _totalSupply / value();
+        }
+    }
+
+    function value() public view returns (uint256) {
+        return underlyingToken.balanceOf(address(this));
     }
 
     function withdraw(uint256 amount) external {
