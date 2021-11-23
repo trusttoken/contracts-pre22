@@ -11,7 +11,7 @@ import {
 } from 'contracts'
 import { describe } from 'mocha'
 
-import { beforeEachWithFixture, parseUSDC } from 'utils'
+import { beforeEachWithFixture, parseEth, parseUSDC } from 'utils'
 
 describe('ManagedPortfolio', () => {
   let portfolio: ManagedPortfolio
@@ -23,10 +23,13 @@ describe('ManagedPortfolio', () => {
 
   let portfolioOwner: Wallet
   let lender: Wallet
+  let lender2: Wallet
   let borrower: Wallet
 
+  const parseShares = parseEth
+
   beforeEachWithFixture(async (wallets) => {
-    [portfolioOwner, lender, borrower] = wallets
+    [portfolioOwner, lender, lender2, borrower] = wallets
 
     token = await new MockUsdc__factory(portfolioOwner).deploy()
     bulletLoans = await new BulletLoans__factory(portfolioOwner).deploy()
@@ -39,13 +42,31 @@ describe('ManagedPortfolio', () => {
     tokenAsLender = token.connect(lender)
 
     await token.mint(lender.address, parseUSDC(10))
+    await token.mint(lender2.address, parseUSDC(10))
   })
 
-  it('join', async () => {
-    await tokenAsLender.approve(portfolio.address, parseUSDC(10))
-    await portfolioAsLender.join(parseUSDC(10))
+  describe('join', () => {
+    it('transfers tokens to portfolio', async () => {
+      await tokenAsLender.approve(portfolio.address, parseUSDC(10))
+      await portfolioAsLender.join(parseUSDC(10))
 
-    expect(await token.balanceOf(portfolio.address)).to.eq(parseUSDC(10))
+      expect(await token.balanceOf(portfolio.address)).to.eq(parseUSDC(10))
+    })
+
+    it('issues portfolio share tokens', async () => {
+      await joinPortfolio(10, lender)
+
+      expect(await portfolio.balanceOf(lender.address)).to.eq(parseShares(10))
+    })
+
+    it('issues tokens for the second lender', async () => {
+      await joinPortfolio(10, lender)
+      await portfolio.createBulletLoan(0, borrower.address, parseUSDC(5), parseUSDC(6))
+
+      await joinPortfolio(10, lender2)
+
+      expect(await portfolio.balanceOf(lender2.address)).to.eq(parseShares(10))
+    })
   })
 
   describe('createBulletLoan', () => {
@@ -81,8 +102,8 @@ describe('ManagedPortfolio', () => {
     expect(await token.balanceOf(lender.address)).to.eq(parseUSDC(5))
   })
 
-  async function joinPortfolio (amount: number) {
-    await tokenAsLender.approve(portfolio.address, parseUSDC(amount))
-    await portfolioAsLender.join(parseUSDC(amount))
+  async function joinPortfolio(amount: number, wallet: Wallet = lender) {
+    await token.connect(wallet).approve(portfolio.address, parseUSDC(amount))
+    await portfolio.connect(wallet).join(parseUSDC(amount))
   }
 })
