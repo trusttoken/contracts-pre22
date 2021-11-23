@@ -28,7 +28,7 @@ contract ManagedPortfolio is IERC721Receiver, ERC20 {
         endDate = block.timestamp + _duration;
     }
 
-    function join(uint256 depositAmount) external {
+    function deposit(uint256 depositAmount) external {
         require(block.timestamp < endDate, "ManagedPortfolio: Cannot deposit after portfolio end date");
 
         _mint(msg.sender, getAmountToMint(depositAmount));

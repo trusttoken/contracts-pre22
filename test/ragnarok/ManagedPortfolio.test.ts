@@ -69,56 +69,56 @@ describe('ManagedPortfolio', () => {
     })
   })
 
-  describe('join', () => {
+  describe('deposit', () => {
     it('lender cannot deposit after portfolio endDate', async () => {
       timeTravel(provider, YEAR + DAY)
       await tokenAsLender.approve(portfolio.address, parseUSDC(10))
-      await expect(portfolioAsLender.join(parseUSDC(10))).to.be.revertedWith('ManagedPortfolio: Cannot deposit after portfolio end date')
+      await expect(portfolioAsLender.deposit(parseUSDC(10))).to.be.revertedWith('ManagedPortfolio: Cannot deposit after portfolio end date')
     })
 
     it('transfers tokens to portfolio', async () => {
       await tokenAsLender.approve(portfolio.address, parseUSDC(10))
-      await portfolioAsLender.join(parseUSDC(10))
+      await portfolioAsLender.deposit(parseUSDC(10))
 
       expect(await token.balanceOf(portfolio.address)).to.equal(parseUSDC(10))
     })
 
     it('issues portfolio share tokens', async () => {
-      await joinPortfolio(10, lender)
+      await depositIntoPortfolio(10, lender)
 
       expect(await portfolio.balanceOf(lender.address)).to.equal(parseShares(10))
     })
 
     it('issues tokens for the second lender', async () => {
-      await joinPortfolio(10, lender)
+      await depositIntoPortfolio(10, lender)
       await portfolio.createBulletLoan(0, borrower.address, parseUSDC(5), parseUSDC(6))
 
-      await joinPortfolio(10, lender2)
+      await depositIntoPortfolio(10, lender2)
 
       expect(await portfolio.balanceOf(lender2.address)).to.equal(parseShares(20))
     })
 
     it('issues correct shares after pool value grows', async () => {
-      await joinPortfolio(10, lender)
+      await depositIntoPortfolio(10, lender)
       await token.mint(portfolio.address, parseUSDC(5))
 
-      await joinPortfolio(10, lender2)
+      await depositIntoPortfolio(10, lender2)
 
       expect(await portfolio.balanceOf(lender.address)).to.equal(parseShares(10))
       expect(await portfolio.balanceOf(lender2.address)).to.equal(parseShares(10).mul(10).div(15))
     })
 
     it('issues fewer shares per token deposited after the pool value grows', async () => {
-      await joinPortfolio(10, lender)
-      await joinPortfolio(30, lender2)
+      await depositIntoPortfolio(10, lender)
+      await depositIntoPortfolio(30, lender2)
       expect(await portfolio.balanceOf(lender.address)).to.equal(parseShares(10))
       expect(await portfolio.balanceOf(lender2.address)).to.equal(parseShares(30))
 
       await token.mint(portfolio.address, parseUSDC(40)) // Doubles the pool value
 
-      await joinPortfolio(10, lender)
-      await joinPortfolio(20, lender2)
-      await joinPortfolio(20, lender3)
+      await depositIntoPortfolio(10, lender)
+      await depositIntoPortfolio(20, lender2)
+      await depositIntoPortfolio(20, lender3)
       expect(await portfolio.balanceOf(lender.address)).to.equal(parseShares(10 + 5))
       expect(await portfolio.balanceOf(lender2.address)).to.equal(parseShares(30 + 10))
       expect(await portfolio.balanceOf(lender3.address)).to.equal(parseShares(10))
@@ -127,14 +127,14 @@ describe('ManagedPortfolio', () => {
 
   describe('createBulletLoan', () => {
     it('transfers funds to the borrower', async () => {
-      await joinPortfolio(10)
+      await depositIntoPortfolio(10)
       await portfolio.createBulletLoan(0, borrower.address, parseUSDC(5), parseUSDC(6))
 
       expect(await token.balanceOf(borrower.address)).to.equal(parseUSDC(5))
     })
 
     it('emits a proper event', async () => {
-      await joinPortfolio(10)
+      await depositIntoPortfolio(10)
 
       await expect(portfolio.createBulletLoan(0, borrower.address, parseUSDC(5), parseUSDC(6)))
         .to.emit(portfolio, 'BulletLoanCreated')
@@ -142,7 +142,7 @@ describe('ManagedPortfolio', () => {
     })
 
     it('mints an NFT', async () => {
-      await joinPortfolio(10)
+      await depositIntoPortfolio(10)
 
       await portfolio.createBulletLoan(0, borrower.address, parseUSDC(5), parseUSDC(6))
 
@@ -150,29 +150,29 @@ describe('ManagedPortfolio', () => {
     })
 
     it('cannot create a loan after portfolio endDate', async () => {
-      await joinPortfolio(10)
+      await depositIntoPortfolio(10)
       await timeTravel(provider, YEAR);
       await expect(portfolio.createBulletLoan(0, borrower.address, parseUSDC(5), parseUSDC(6)))
         .to.be.revertedWith("ManagedPortfolio: Portfolio end date is in the past")
     })
 
     it('cannot create a loan with the endDate greater than Portfolio endDate', async () => {
-      await joinPortfolio(10)
+      await depositIntoPortfolio(10)
       await expect(portfolio.createBulletLoan(YEAR - GRACE_PERIOD + 1, borrower.address, parseUSDC(5), parseUSDC(6)))
         .to.be.revertedWith("ManagedPortfolio: Loan end date is greater than Portfolio end date")
     })
   })
 
   it('withdraw sends tokens back to the lender', async () => {
-    await joinPortfolio(100)
+    await depositIntoPortfolio(100)
 
     await portfolioAsLender.withdraw(parseUSDC(50))
 
     expect(await token.balanceOf(lender.address)).to.equal(parseUSDC(50))
   })
 
-  async function joinPortfolio(amount: number, wallet: Wallet = lender) {
+  async function depositIntoPortfolio(amount: number, wallet: Wallet = lender) {
     await token.connect(wallet).approve(portfolio.address, parseUSDC(amount))
-    await portfolio.connect(wallet).join(parseUSDC(amount))
+    await portfolio.connect(wallet).deposit(parseUSDC(amount))
   }
 })
