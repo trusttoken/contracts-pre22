@@ -3,6 +3,8 @@ pragma solidity 0.8.10;
 import {ERC721} from "@openzeppelin/contracts4/token/ERC721/ERC721.sol";
 import {IERC20} from "@openzeppelin/contracts4/token/ERC20/IERC20.sol";
 
+uint256 constant GRACE_PERIOD = 1 days;
+
 contract BulletLoans is ERC721 {
     uint256 nextId;
     IERC20 underlyingToken;

@@ -11,9 +11,12 @@ import {
 } from 'contracts'
 import { describe } from 'mocha'
 
-import { beforeEachWithFixture, parseEth, parseUSDC } from 'utils'
+import { beforeEachWithFixture, parseEth, parseUSDC, DAY, YEAR, timeTravel } from 'utils'
+import { MockProvider } from '@ethereum-waffle/provider'
 
 describe('ManagedPortfolio', () => {
+  let provider: MockProvider
+
   let portfolio: ManagedPortfolio
   let portfolioAsLender: ManagedPortfolio
   let bulletLoans: BulletLoans
@@ -27,16 +30,19 @@ describe('ManagedPortfolio', () => {
   let lender3: Wallet
   let borrower: Wallet
 
+  const GRACE_PERIOD = DAY
   const parseShares = parseEth
 
-  beforeEachWithFixture(async (wallets) => {
+  beforeEachWithFixture(async (wallets, _provider) => {
     [portfolioOwner, lender, lender2, lender3, borrower] = wallets
+    provider = _provider
 
     token = await new MockUsdc__factory(portfolioOwner).deploy()
     bulletLoans = await new BulletLoans__factory(portfolioOwner).deploy()
     portfolio = await new ManagedPortfolio__factory(portfolioOwner).deploy(
       token.address,
       bulletLoans.address,
+      YEAR
     )
 
     portfolioAsLender = portfolio.connect(lender)
@@ -47,7 +53,29 @@ describe('ManagedPortfolio', () => {
     await token.mint(lender3.address, parseUSDC(100))
   })
 
+  describe('constructor parameters', () => {
+    it('sets underlyingToken', async () => {
+      expect(await portfolio.underlyingToken()).to.equal(token.address)
+    })
+
+    it('sets bulletLoans', async () => {
+      expect(await portfolio.bulletLoans()).to.equal(bulletLoans.address)
+    })
+
+    it('sets endDate', async () => {
+      const deployTx = await portfolio.deployTransaction.wait()
+      const creationTimestamp = (await provider.getBlock(deployTx.blockHash)).timestamp
+      expect(await portfolio.endDate()).to.equal(creationTimestamp + YEAR)
+    })
+  })
+
   describe('join', () => {
+    it('lender cannot deposit after portfolio endDate', async () => {
+      timeTravel(provider, YEAR + DAY)
+      await tokenAsLender.approve(portfolio.address, parseUSDC(10))
+      await expect(portfolioAsLender.join(parseUSDC(10))).to.be.revertedWith('ManagedPortfolio: Cannot deposit after portfolio end date')
+    })
+
     it('transfers tokens to portfolio', async () => {
       await tokenAsLender.approve(portfolio.address, parseUSDC(10))
       await portfolioAsLender.join(parseUSDC(10))
@@ -85,7 +113,7 @@ describe('ManagedPortfolio', () => {
       await joinPortfolio(30, lender2)
       expect(await portfolio.balanceOf(lender.address)).to.equal(parseShares(10))
       expect(await portfolio.balanceOf(lender2.address)).to.equal(parseShares(30))
-      
+
       await token.mint(portfolio.address, parseUSDC(40)) // Doubles the pool value
 
       await joinPortfolio(10, lender)
@@ -119,6 +147,19 @@ describe('ManagedPortfolio', () => {
       await portfolio.createBulletLoan(0, borrower.address, parseUSDC(5), parseUSDC(6))
 
       expect(await bulletLoans.ownerOf(0)).to.equal(portfolio.address)
+    })
+
+    it('cannot create a loan after portfolio endDate', async () => {
+      await joinPortfolio(10)
+      await timeTravel(provider, YEAR);
+      await expect(portfolio.createBulletLoan(0, borrower.address, parseUSDC(5), parseUSDC(6)))
+        .to.be.revertedWith("ManagedPortfolio: Portfolio end date is in the past")
+    })
+
+    it('cannot create a loan with the endDate greater than Portfolio endDate', async () => {
+      await joinPortfolio(10)
+      await expect(portfolio.createBulletLoan(YEAR - GRACE_PERIOD + 1, borrower.address, parseUSDC(5), parseUSDC(6)))
+        .to.be.revertedWith("ManagedPortfolio: Loan end date is greater than Portfolio end date")
     })
   })
 
