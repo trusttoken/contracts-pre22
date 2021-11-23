@@ -125,6 +125,26 @@ describe('ManagedPortfolio', () => {
     })
   })
 
+  describe('withdraw', () => {
+    it('withdraw sends tokens back to the lender', async () => {
+      await depositIntoPortfolio(100)
+      
+      await portfolioAsLender.withdraw(parseShares(50))
+      
+      expect(await token.balanceOf(lender.address)).to.equal(parseUSDC(50))
+    })
+
+    it('withdraw burns proper amount of pool tokens', async () => {
+      await depositIntoPortfolio(100)
+      
+      expect(await portfolio.totalSupply()).to.equal(parseShares(100))
+      await portfolioAsLender.withdraw(parseShares(50))
+      
+      expect(await portfolio.balanceOf(lender.address)).to.equal(parseShares(50))
+      expect(await portfolio.totalSupply()).to.equal(parseShares(50))
+    })
+  })
+
   describe('createBulletLoan', () => {
     it('transfers funds to the borrower', async () => {
       await depositIntoPortfolio(10)
@@ -161,14 +181,6 @@ describe('ManagedPortfolio', () => {
       await expect(portfolio.createBulletLoan(YEAR - GRACE_PERIOD + 1, borrower.address, parseUSDC(5), parseUSDC(6)))
         .to.be.revertedWith("ManagedPortfolio: Loan end date is greater than Portfolio end date")
     })
-  })
-
-  it('withdraw sends tokens back to the lender', async () => {
-    await depositIntoPortfolio(100)
-
-    await portfolioAsLender.withdraw(parseUSDC(50))
-
-    expect(await token.balanceOf(lender.address)).to.equal(parseUSDC(50))
   })
 
   async function depositIntoPortfolio(amount: number, wallet: Wallet = lender) {

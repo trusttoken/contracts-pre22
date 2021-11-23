@@ -48,8 +48,11 @@ contract ManagedPortfolio is IERC721Receiver, ERC20 {
         return underlyingToken.balanceOf(address(this));
     }
 
-    function withdraw(uint256 amount) external {
-        underlyingToken.transfer(msg.sender, amount);
+    function withdraw(uint256 sharesAmount) external returns (uint256) {
+        uint256 amountToWithdraw =  sharesAmount * value() / totalSupply();
+        _burn(msg.sender, sharesAmount);
+        underlyingToken.transfer(msg.sender, amountToWithdraw);
+        return amountToWithdraw;
     }
 
     function createBulletLoan(
