@@ -59,7 +59,7 @@ contract ArbitraryDistributor is IArbitraryDistributor, Ownable {
     /**
      * @dev Only beneficiary can receive TRU
      */
-    modifier onlyBeneficiary {
+    modifier onlyBeneficiary() {
         // prettier-ignore
         require(msg.sender == beneficiary || beneficiaries[msg.sender],
             "ArbitraryDistributor: Only beneficiary can receive tokens");

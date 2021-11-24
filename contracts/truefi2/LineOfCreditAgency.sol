@@ -36,7 +36,13 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
     using SafeERC20 for ERC20;
     using SafeMath for uint256;
 
-    enum DefaultReason {NotAllowed, Ineligible, BelowMinScore, InterestOverdue, BorrowLimitExceeded}
+    enum DefaultReason {
+        NotAllowed,
+        Ineligible,
+        BelowMinScore,
+        InterestOverdue,
+        BorrowLimitExceeded
+    }
 
     /// @dev credit scores are uint8
     uint8 constant MAX_CREDIT_SCORE = 255;
@@ -337,7 +343,7 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
     /**
      * @dev Returns false iff borrower will stay over borrow limit in all pools when `stakedAmount` is staked
      */
-    function isOverProFormaLimit(address borrower, uint256 stakedAmount) external override view returns (bool) {
+    function isOverProFormaLimit(address borrower, uint256 stakedAmount) external view override returns (bool) {
         ITrueFiPool2[] memory pools = poolFactory.getSupportedPools();
         uint256 _totalBorrowed = totalBorrowed(borrower);
         uint8 _score = creditOracle.score(borrower);
@@ -626,7 +632,7 @@ contract LineOfCreditAgency is UpgradeableClaimable, ILineOfCreditAgency {
      * @param pool Pool to get USD value for
      * @return USD value of credit lines for pool
      */
-    function poolCreditValue(ITrueFiPool2 pool) external override view returns (uint256) {
+    function poolCreditValue(ITrueFiPool2 pool) external view override returns (uint256) {
         uint256 bitMap = usedBucketsBitmap;
         CreditScoreBucket[256] storage creditScoreBuckets = buckets[pool];
         uint256 timeNow = block.timestamp;

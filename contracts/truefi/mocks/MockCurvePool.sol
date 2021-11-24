@@ -14,7 +14,7 @@ contract MockCurve is ICurve {
     uint256 public sharePrice = 1e18;
     using SafeMath for uint256;
 
-    function calc_token_amount(uint256[4] memory amounts, bool) external override view returns (uint256) {
+    function calc_token_amount(uint256[4] memory amounts, bool) external view override returns (uint256) {
         return (amounts[3] * 1e18) / sharePrice;
     }
 
@@ -22,7 +22,7 @@ contract MockCurve is ICurve {
         sharePrice = price;
     }
 
-    function get_virtual_price() external override view returns (uint256) {
+    function get_virtual_price() external view override returns (uint256) {
         // burn ~300,000 of gas for testing
         burn300kGas();
         return sharePrice;
@@ -74,7 +74,7 @@ contract MockCurvePool is ICurvePool, Initializable {
         poolToken.transfer(msg.sender, (_token_amount * _curve.sharePrice()) / 1e18);
     }
 
-    function calc_withdraw_one_coin(uint256, int128) external override view returns (uint256) {
+    function calc_withdraw_one_coin(uint256, int128) external view override returns (uint256) {
         return _curve.sharePrice();
     }
 
@@ -82,15 +82,15 @@ contract MockCurvePool is ICurvePool, Initializable {
         _curve.set_withdraw_price(price);
     }
 
-    function token() external override view returns (IERC20) {
+    function token() external view override returns (IERC20) {
         return IERC20(address(cToken));
     }
 
-    function curve() external override view returns (ICurve) {
+    function curve() external view override returns (ICurve) {
         return _curve;
     }
 
-    function coins(int128) external override view returns (IYToken) {
+    function coins(int128) external view override returns (IYToken) {
         return IYToken(address(ytoken));
     }
 }

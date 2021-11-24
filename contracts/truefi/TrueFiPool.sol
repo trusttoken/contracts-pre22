@@ -236,7 +236,7 @@ contract TrueFiPool is ITrueFiPool, IPauseableContract, ERC20, ReentrancyGuard, 
      * @dev get currency token address
      * @return currency token address
      */
-    function currencyToken() public override view returns (IERC20) {
+    function currencyToken() public view override returns (IERC20) {
         return token;
     }
 

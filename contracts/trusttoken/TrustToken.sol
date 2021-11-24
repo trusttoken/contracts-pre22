@@ -52,7 +52,7 @@ contract TrustToken is TimeLockedToken {
         _burn(msg.sender, amount);
     }
 
-    function decimals() public override pure returns (uint8) {
+    function decimals() public pure override returns (uint8) {
         return 8;
     }
 
@@ -60,11 +60,11 @@ contract TrustToken is TimeLockedToken {
         return 8;
     }
 
-    function name() public override pure returns (string memory) {
+    function name() public pure override returns (string memory) {
         return "TrueFi";
     }
 
-    function symbol() public override pure returns (string memory) {
+    function symbol() public pure override returns (string memory) {
         return "TRU";
     }
 }

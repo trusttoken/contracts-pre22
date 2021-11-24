@@ -26,4 +26,6 @@ interface ILoanFactory2 {
     function isLoanToken(IFixedTermLoan) external view returns (bool);
 
     function isDebtToken(IDebtToken) external view returns (bool);
+
+    function debtTokens(address) external view returns (IDebtToken[] memory);
 }

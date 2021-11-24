@@ -3,8 +3,8 @@ pragma solidity 0.6.10;
 
 import {ERC20} from "../common/ERC20.sol";
 
-contract TestUSDTToken is ERC20 {
-    uint8 constant DECIMALS = 6;
+contract TestBUSDToken is ERC20 {
+    uint8 constant DECIMALS = 18;
 
     function mint(address _to, uint256 _value) public {
         _mint(_to, _value);
@@ -19,10 +19,10 @@ contract TestUSDTToken is ERC20 {
     }
 
     function name() public pure override returns (string memory) {
-        return "USD Tether";
+        return "Binance USD";
     }
 
     function symbol() public pure override returns (string memory) {
-        return "USDT";
+        return "BUSD";
     }
 }

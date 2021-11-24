@@ -64,7 +64,7 @@ contract TimeAveragedTruPriceOracle is ITruPriceOracle, UpgradeableClaimable {
     }
 
     /// @dev Get buffer size for this oracle
-    function bufferSize() public virtual pure returns (uint16) {
+    function bufferSize() public pure virtual returns (uint16) {
         return BUFFER_SIZE;
     }
 
@@ -170,7 +170,7 @@ contract TimeAveragedTruPriceOracle is ITruPriceOracle, UpgradeableClaimable {
     }
 
     /// @dev TRU to USD with 18 decimals
-    function truToUsd(uint256 tokenAmount) external override view returns (uint256) {
+    function truToUsd(uint256 tokenAmount) external view override returns (uint256) {
         // 10^8 * 10^8 * 10^2 = 10^18
         return tokenAmount.mul(getWeeklyPrice()).mul(100);
     }

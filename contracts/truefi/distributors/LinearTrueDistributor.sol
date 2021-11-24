@@ -118,7 +118,7 @@ contract LinearTrueDistributor is ITrueDistributor, Ownable {
      * @dev Calculate next distribution amount
      * @return amount of tokens for next distribution
      */
-    function nextDistribution() public override view returns (uint256) {
+    function nextDistribution() public view override returns (uint256) {
         // return 0 if before distribution or farm is not set
         if (block.timestamp < distributionStart || farm == address(0)) {
             return 0;

@@ -3,15 +3,15 @@ pragma solidity 0.6.10;
 
 import {ChainlinkTruOracle, IERC20WithDecimals} from "./ChainlinkTruOracle.sol";
 
-contract ChainlinkTruUsdtOracle is ChainlinkTruOracle {
+contract ChainlinkTruBusdOracle is ChainlinkTruOracle {
     function token() public view override returns (IERC20WithDecimals) {
-        return IERC20WithDecimals(0xdAC17F958D2ee523a2206206994597C13D831ec7);
+        return IERC20WithDecimals(0x4Fabb145d64652a948d72533023f6E7A623C7C53);
     }
 
     /*
-     * @dev assume price is always 1USD, convert 6 decimal places to 18
+     * @dev assume price is always 1USD, convert 18 decimal places to 18
      */
     function tokenToUsd(uint256 tokenAmount) public view override returns (uint256) {
-        return tokenAmount.mul(1e12);
+        return tokenAmount;
     }
 }

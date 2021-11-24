@@ -123,7 +123,7 @@ contract DebtToken is IDebtToken, ERC20 {
      * Funds stored on the contract's address plus funds already redeemed by lenders
      * @return Uint256 representing what value was already repaid
      */
-    function repaid() public override view returns (uint256) {
+    function repaid() public view override returns (uint256) {
         return _balance().add(redeemed);
     }
 
@@ -131,19 +131,19 @@ contract DebtToken is IDebtToken, ERC20 {
      * @dev Public currency token balance function
      * @return token balance of this contract
      */
-    function balance() external override view returns (uint256) {
+    function balance() external view override returns (uint256) {
         return _balance();
     }
 
-    function token() public override view returns (ERC20) {
+    function token() public view override returns (ERC20) {
         return pool.token();
     }
 
-    function decimals() public override view returns (uint8) {
+    function decimals() public view override returns (uint8) {
         return token().decimals();
     }
 
-    function version() external override pure returns (uint8) {
+    function version() external pure override returns (uint8) {
         return 1;
     }
 

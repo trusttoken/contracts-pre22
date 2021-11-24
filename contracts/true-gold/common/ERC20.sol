@@ -42,13 +42,13 @@ abstract contract ERC20 is ProxyStorage, IERC20 {
     /**
      * @dev Returns the name of the token.
      */
-    function name() public virtual pure returns (string memory);
+    function name() public pure virtual returns (string memory);
 
     /**
      * @dev Returns the symbol of the token, usually a shorter version of the
      * name.
      */
-    function symbol() public virtual pure returns (string memory);
+    function symbol() public pure virtual returns (string memory);
 
     /**
      * @dev Returns the number of decimals used to get its user representation.
@@ -59,19 +59,19 @@ abstract contract ERC20 is ProxyStorage, IERC20 {
      * no way affects any of the arithmetic of the contract, including
      * {IERC20-balanceOf} and {IERC20-transfer}.
      */
-    function decimals() public virtual pure returns (uint8);
+    function decimals() public pure virtual returns (uint8);
 
     /**
      * @dev See {IERC20-totalSupply}.
      */
-    function totalSupply() public override view returns (uint256) {
+    function totalSupply() public view override returns (uint256) {
         return _totalSupply;
     }
 
     /**
      * @dev See {IERC20-balanceOf}.
      */
-    function balanceOf(address account) public override view returns (uint256) {
+    function balanceOf(address account) public view override returns (uint256) {
         return _balances[account];
     }
 
@@ -91,7 +91,7 @@ abstract contract ERC20 is ProxyStorage, IERC20 {
     /**
      * @dev See {IERC20-allowance}.
      */
-    function allowance(address owner, address spender) public virtual override view returns (uint256) {
+    function allowance(address owner, address spender) public view virtual override returns (uint256) {
         return _allowances[owner][spender];
     }
 

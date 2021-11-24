@@ -279,7 +279,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
         emit BorrowerWhitelistStatusChanged(borrower, status);
     }
 
-    function isSupportedPool(ITrueFiPool2 _pool) external override view returns (bool) {
+    function isSupportedPool(ITrueFiPool2 _pool) external view override returns (bool) {
         for (uint256 i = 0; i < supportedPools.length; i++) {
             if (supportedPools[i] == _pool) {
                 return true;
@@ -288,7 +288,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
         return false;
     }
 
-    function getSupportedPools() external override view returns (ITrueFiPool2[] memory) {
+    function getSupportedPools() external view override returns (ITrueFiPool2[] memory) {
         return supportedPools;
     }
 
@@ -352,7 +352,7 @@ contract PoolFactory is IPoolFactory, UpgradeableClaimable {
      * @dev Calculate total TVL in USD
      * @return _tvl TVL for all supported pools
      */
-    function supportedPoolsTVL() public override view returns (uint256) {
+    function supportedPoolsTVL() public view override returns (uint256) {
         uint256 tvl;
         for (uint256 i = 0; i < supportedPools.length; i++) {
             tvl = tvl.add(supportedPools[i].oracle().tokenToUsd(supportedPools[i].poolValue()));

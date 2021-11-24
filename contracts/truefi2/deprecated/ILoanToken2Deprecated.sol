@@ -5,7 +5,14 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ITrueFiPool2} from "../interface/ITrueFiPool2.sol";
 
 interface ILoanToken2Deprecated is IERC20 {
-    enum Status {Awaiting, Funded, Withdrawn, Settled, Defaulted, Liquidated}
+    enum Status {
+        Awaiting,
+        Funded,
+        Withdrawn,
+        Settled,
+        Defaulted,
+        Liquidated
+    }
 
     function borrower() external view returns (address);
 

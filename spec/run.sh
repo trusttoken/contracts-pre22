@@ -45,6 +45,12 @@ setup_certora() {
         echo "Updating Certora version to ${latest_version}..." >&2
         pip3 install certora-cli --upgrade
     fi
+
+    if [[ -z "${CERTORAKEY}" ]]; then
+        echo "CERTORAKEY environment variable is empty." >&2
+        exit 1
+    fi
+    echo "Found CERTORAKEY environment variable." >&2
 }
 
 get_certora_solc_args() {

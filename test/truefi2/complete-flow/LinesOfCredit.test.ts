@@ -96,7 +96,8 @@ describe('Lines Of Credit flow', () => {
     const debtToken = (await extractDebtTokens(loanFactory, owner, creditAgency.enterDefault(borrower.address)))[0]
 
     const poolValueBefore = await pool.poolValue()
-    await safu.liquidate([debtToken.address])
+    await safu.liquidate(borrower.address)
+    await safu.compensate(borrower.address)
     expect(await pool.poolValue()).to.eq(poolValueBefore)
 
     // borrower repays the debt
