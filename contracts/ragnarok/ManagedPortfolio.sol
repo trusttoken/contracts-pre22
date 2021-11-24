@@ -13,12 +13,6 @@ interface IERC20WithDecimals is IERC20 {
 }
 
 contract ManagedPortfolio is IERC721Receiver, ERC20, Ownable {
-    enum Status {
-        Open,
-        Frozen,
-        Closed
-    }
-
     IERC20WithDecimals public underlyingToken;
     BulletLoans public bulletLoans;
     uint256 public endDate;
@@ -62,6 +56,7 @@ contract ManagedPortfolio is IERC721Receiver, ERC20, Ownable {
     }
 
     function withdraw(uint256 sharesAmount) external returns (uint256) {
+        require(isClosed(), "ManagedPortfolio: Cannot withdraw when Portfolio is not closed");
         uint256 liquidFunds = underlyingToken.balanceOf(address(this));
         uint256 amountToWithdraw = (sharesAmount * liquidFunds) / totalSupply();
         _burn(msg.sender, sharesAmount);
@@ -73,7 +68,7 @@ contract ManagedPortfolio is IERC721Receiver, ERC20, Ownable {
         uint256 loanDuration,
         address borrower,
         uint256 principalAmount,
-        uint256 repaymentAmount
+        uint256 // repaymentAmount
     ) public {
         require(block.timestamp < endDate, "ManagedPortfolio: Portfolio end date is in the past");
         require(
@@ -84,6 +79,10 @@ contract ManagedPortfolio is IERC721Receiver, ERC20, Ownable {
         underlyingToken.transfer(borrower, principalAmount);
         uint256 loanId = bulletLoans.createLoan(underlyingToken);
         emit BulletLoanCreated(loanId);
+    }
+
+    function isClosed() public view returns (bool) {
+        return block.timestamp > endDate;
     }
 
     function onERC721Received(
