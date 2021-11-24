@@ -135,7 +135,7 @@ describe('ManagedPortfolio', () => {
       await depositIntoPortfolio(100)
 
       await expect(portfolioAsLender.withdraw(parseShares(50)))
-        .to.be.revertedWith("ManagedPortfolio: Cannot withdraw when Portfolio is not closed")
+        .to.be.revertedWith('ManagedPortfolio: Cannot withdraw when Portfolio is not closed')
     })
 
     it('sends tokens back to the lender', async () => {
@@ -209,15 +209,15 @@ describe('ManagedPortfolio', () => {
 
     it('cannot create a loan after portfolio endDate', async () => {
       await depositIntoPortfolio(10)
-      await timeTravel(provider, YEAR);
+      await timeTravel(provider, YEAR)
       await expect(portfolio.createBulletLoan(0, borrower.address, parseUSDC(5), parseUSDC(6)))
-        .to.be.revertedWith("ManagedPortfolio: Portfolio end date is in the past")
+        .to.be.revertedWith('ManagedPortfolio: Portfolio end date is in the past')
     })
 
     it('cannot create a loan with the endDate greater than Portfolio endDate', async () => {
       await depositIntoPortfolio(10)
       await expect(portfolio.createBulletLoan(YEAR - GRACE_PERIOD + 1, borrower.address, parseUSDC(5), parseUSDC(6)))
-        .to.be.revertedWith("ManagedPortfolio: Loan end date is greater than Portfolio end date")
+        .to.be.revertedWith('ManagedPortfolio: Loan end date is greater than Portfolio end date')
     })
   })
 
@@ -234,7 +234,7 @@ describe('ManagedPortfolio', () => {
     })
   })
 
-  async function depositIntoPortfolio(amount: number, wallet: Wallet = lender) {
+  const depositIntoPortfolio = async (amount: number, wallet: Wallet = lender) => {
     await token.connect(wallet).approve(portfolio.address, parseUSDC(amount))
     await portfolio.connect(wallet).deposit(parseUSDC(amount))
   }
