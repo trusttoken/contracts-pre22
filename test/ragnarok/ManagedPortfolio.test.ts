@@ -67,6 +67,10 @@ describe('ManagedPortfolio', () => {
       const creationTimestamp = (await provider.getBlock(deployTx.blockHash)).timestamp
       expect(await portfolio.endDate()).to.equal(creationTimestamp + YEAR)
     })
+
+    it('sets owner', async () => {
+      expect(await portfolio.owner()).to.equal(portfolioOwner.address)
+    })
   })
 
   describe('deposit', () => {
@@ -128,30 +132,31 @@ describe('ManagedPortfolio', () => {
   describe('withdraw', () => {
     it('cannot withdraw when portfolio is not closed', async () => {
       await depositIntoPortfolio(100)
-      
-      await expect(portfolioAsLender.withdraw(parseShares(50))).to.be.revertedWith("ManagedPortfolio: Cannot withdraw when Portfolio is not closed.")
+
+      await expect(portfolioAsLender.withdraw(parseShares(50)))
+        .to.be.revertedWith("ManagedPortfolio: Cannot withdraw when Portfolio is not closed.")
     })
 
     it('sends tokens back to the lender', async () => {
       await depositIntoPortfolio(100)
-      
+
       await portfolioAsLender.withdraw(parseShares(50))
-      
+
       expect(await token.balanceOf(lender.address)).to.equal(parseUSDC(50))
     })
 
     it('burns proper amount of pool tokens', async () => {
       await depositIntoPortfolio(100)
-      
+
       expect(await portfolio.totalSupply()).to.equal(parseShares(100))
       await portfolioAsLender.withdraw(parseShares(50))
-      
+
       expect(await portfolio.balanceOf(lender.address)).to.equal(parseShares(50))
       expect(await portfolio.totalSupply()).to.equal(parseShares(50))
     })
 
     it('sends correct number of tokens back to lender after portfolio value has grown', async () => {
-      await depositIntoPortfolio(100) 
+      await depositIntoPortfolio(100)
       await token.mint(portfolio.address, parseUSDC(100)) // Double the pool value
       await portfolioAsLender.withdraw(parseShares(50))
       expect(await token.balanceOf(lender.address)).to.equal(parseUSDC(100))
@@ -160,7 +165,7 @@ describe('ManagedPortfolio', () => {
     })
 
     it('sends correct number of tokens back to two lenders', async () => {
-      await depositIntoPortfolio(100) 
+      await depositIntoPortfolio(100)
       await depositIntoPortfolio(100, lender2)
       await token.mint(portfolio.address, parseUSDC(100))
       await portfolioAsLender.withdraw(parseShares(50))
