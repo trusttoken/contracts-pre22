@@ -1,8 +1,8 @@
 import { Wallet } from 'ethers'
 import { BulletLoans, BulletLoans__factory, MockUsdc, MockUsdc__factory } from 'contracts'
 import { parseUSDC } from 'utils'
-import { beforeEachWithFixture } from 'utils/beforeEachWithFixture'
 import { expect } from 'chai'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 
 describe('BulletLoans', () => {
   let bulletLoans: BulletLoans
