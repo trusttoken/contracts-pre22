@@ -68,7 +68,7 @@ contract ManagedPortfolio is IERC721Receiver, ERC20, Ownable {
         address borrower,
         uint256 principalAmount,
         uint256 repaymentAmount
-    ) public {
+    ) public onlyOwner {
         require(block.timestamp < endDate, "ManagedPortfolio: Portfolio end date is in the past");
         require(
             block.timestamp + loanDuration + GRACE_PERIOD <= endDate,

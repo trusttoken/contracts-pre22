@@ -55,6 +55,10 @@ describe('ManagedPortfolio', () => {
   })
 
   describe('constructor parameters', () => {
+    it('sets owner', async () => {
+      expect(await portfolio.owner()).to.equal(portfolioOwner.address)
+    })
+
     it('sets underlyingToken', async () => {
       expect(await portfolio.underlyingToken()).to.equal(token.address)
     })
@@ -67,10 +71,6 @@ describe('ManagedPortfolio', () => {
       const deployTx = await portfolio.deployTransaction.wait()
       const creationTimestamp = (await provider.getBlock(deployTx.blockHash)).timestamp
       expect(await portfolio.endDate()).to.equal(creationTimestamp + YEAR)
-    })
-
-    it('sets owner', async () => {
-      expect(await portfolio.owner()).to.equal(portfolioOwner.address)
     })
   })
 
@@ -131,13 +131,6 @@ describe('ManagedPortfolio', () => {
   })
 
   describe('withdraw', () => {
-    it('cannot withdraw when portfolio is not closed', async () => {
-      await depositIntoPortfolio(100)
-
-      await expect(portfolioAsLender.withdraw(parseShares(50)))
-        .to.be.revertedWith('ManagedPortfolio: Cannot withdraw when Portfolio is not closed.')
-    })
-
     it('sends tokens back to the lender', async () => {
       await depositIntoPortfolio(100)
 
@@ -212,9 +205,15 @@ describe('ManagedPortfolio', () => {
       await expect(portfolio.createBulletLoan(YEAR - GRACE_PERIOD + 1, borrower.address, parseUSDC(5), parseUSDC(6)))
         .to.be.revertedWith('ManagedPortfolio: Loan end date is greater than Portfolio end date')
     })
+
+    it('only manager can create a loan', async () => {
+      await depositIntoPortfolio(10)
+      await expect(portfolio.connect(borrower).createBulletLoan(YEAR - GRACE_PERIOD + 1, borrower.address, parseUSDC(5), parseUSDC(6)))
+        .to.be.revertedWith('Ownable: caller is not the owner')
+    })
   })
 
-  async function depositIntoPortfolio (amount: number, wallet: Wallet = lender) {
+  async function depositIntoPortfolio(amount: number, wallet: Wallet = lender) {
     await token.connect(wallet).approve(portfolio.address, parseUSDC(amount))
     await portfolio.connect(wallet).deposit(parseUSDC(amount))
   }
