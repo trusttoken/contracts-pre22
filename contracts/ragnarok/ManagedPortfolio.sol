@@ -5,13 +5,14 @@ import {IERC20} from "@openzeppelin/contracts4/token/ERC20/IERC20.sol";
 import {ERC20} from "@openzeppelin/contracts4/token/ERC20/ERC20.sol";
 import {IERC721} from "@openzeppelin/contracts4/token/ERC721/IERC721.sol";
 import {IERC721Receiver} from "@openzeppelin/contracts4/token/ERC721/IERC721Receiver.sol";
+import {Ownable} from "@openzeppelin/contracts4/access/Ownable.sol";
 import {BulletLoans, GRACE_PERIOD} from "./BulletLoans.sol";
 
 interface IERC20WithDecimals is IERC20 {
     function decimals() external view returns (uint256);
 }
 
-contract ManagedPortfolio is IERC721Receiver, ERC20 {
+contract ManagedPortfolio is IERC721Receiver, ERC20, Ownable {
     enum Status {
         Open,
         Frozen,
@@ -28,8 +29,7 @@ contract ManagedPortfolio is IERC721Receiver, ERC20 {
         IERC20WithDecimals _underlyingToken,
         BulletLoans _bulletLoans,
         uint256 _duration
-    ) ERC20("ManagerPortfolio", "MPS") {
-        _owner = msg.sender;
+    ) ERC20("ManagerPortfolio", "MPS") Ownable() {
         underlyingToken = _underlyingToken;
         bulletLoans = _bulletLoans;
         endDate = block.timestamp + _duration;
@@ -57,7 +57,7 @@ contract ManagedPortfolio is IERC721Receiver, ERC20 {
 
     function withdraw(uint256 sharesAmount) external returns (uint256) {
         uint256 liquidFunds = underlyingToken.balanceOf(address(this));
-        uint256 amountToWithdraw =  sharesAmount * liquidFunds / totalSupply();
+        uint256 amountToWithdraw = (sharesAmount * liquidFunds) / totalSupply();
         _burn(msg.sender, sharesAmount);
         underlyingToken.transfer(msg.sender, amountToWithdraw);
         return amountToWithdraw;
