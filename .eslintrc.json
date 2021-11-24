@@ -93,7 +93,10 @@
       "error",
       "^(err|error)$"
     ],
-    "indent": ["error", 2],
+    "indent": [
+      "error",
+      2
+    ],
     "key-spacing": [
       "error",
       {
@@ -128,7 +131,12 @@
       }
     ],
     "new-parens": "error",
-    "no-only-tests/no-only-tests": ["error", {"fix": true}],
+    "no-only-tests/no-only-tests": [
+      "error",
+      {
+        "fix": true
+      }
+    ],
     "no-array-constructor": "error",
     "no-async-promise-executor": "error",
     "no-caller": "error",
@@ -264,10 +272,22 @@
     "no-unreachable": "error",
     "no-unsafe-finally": "error",
     "no-unsafe-negation": "error",
-    "no-unused-vars": [2, {"vars": "all", "args": "after-used"}],
-    "no-restricted-imports": ["error", {
-      "patterns": ["original-works-core/src", "original-works-core/dist"]
-    }],
+    "no-unused-vars": [
+      2,
+      {
+        "vars": "all",
+        "args": "after-used"
+      }
+    ],
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          "original-works-core/src",
+          "original-works-core/dist"
+        ]
+      }
+    ],
     "no-use-before-define": [
       "error",
       {

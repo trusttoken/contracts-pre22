@@ -15,6 +15,12 @@
     "max-states-count": "off",
     "reason-string": "off",
     "const-name-snakecase": "off",
-    "avoid-tx-origin": "off"
+    "avoid-tx-origin": "off",
+    "func-visibility": [
+      "warn",
+      {
+        "ignoreConstructors": true
+      }
+    ]
   }
 }

@@ -131,9 +131,17 @@ describe('ManagedPortfolio', () => {
   })
 
   describe('withdraw', () => {
+    it('cannot withdraw when portfolio is not closed', async () => {
+      await depositIntoPortfolio(100)
+
+      await expect(portfolioAsLender.withdraw(parseShares(50)))
+        .to.be.revertedWith('ManagedPortfolio: Cannot withdraw when Portfolio is not closed')
+    })
+
     it('sends tokens back to the lender', async () => {
       await depositIntoPortfolio(100)
 
+      await timeTravel(provider, YEAR + DAY)
       await portfolioAsLender.withdraw(parseShares(50))
 
       expect(await token.balanceOf(lender.address)).to.equal(parseUSDC(50))
@@ -143,6 +151,8 @@ describe('ManagedPortfolio', () => {
       await depositIntoPortfolio(100)
 
       expect(await portfolio.totalSupply()).to.equal(parseShares(100))
+
+      await timeTravel(provider, YEAR + DAY)
       await portfolioAsLender.withdraw(parseShares(50))
 
       expect(await portfolio.balanceOf(lender.address)).to.equal(parseShares(50))
@@ -152,6 +162,8 @@ describe('ManagedPortfolio', () => {
     it('sends correct number of tokens back to lender after portfolio value has grown', async () => {
       await depositIntoPortfolio(100)
       await token.mint(portfolio.address, parseUSDC(100)) // Double the pool value
+
+      await timeTravel(provider, YEAR + DAY)
       await portfolioAsLender.withdraw(parseShares(50))
       expect(await token.balanceOf(lender.address)).to.equal(parseUSDC(100))
       await portfolioAsLender.withdraw(parseShares(50))
@@ -162,6 +174,8 @@ describe('ManagedPortfolio', () => {
       await depositIntoPortfolio(100)
       await depositIntoPortfolio(100, lender2)
       await token.mint(portfolio.address, parseUSDC(100))
+
+      await timeTravel(provider, YEAR + DAY)
       await portfolioAsLender.withdraw(parseShares(50))
       expect(await token.balanceOf(lender.address)).to.equal(parseUSDC(75))
       await portfolio.connect(lender2).withdraw(parseShares(50))
@@ -213,7 +227,20 @@ describe('ManagedPortfolio', () => {
     })
   })
 
-  async function depositIntoPortfolio(amount: number, wallet: Wallet = lender) {
+  describe('isClosed', () => {
+    it('returns false if end date has not elapsed', async () => {
+      expect(await portfolio.isClosed()).to.be.false
+      await timeTravel(provider, YEAR - DAY)
+      expect(await portfolio.isClosed()).to.be.false
+    })
+
+    it('returns true if end date has elapsed', async () => {
+      await timeTravel(provider, YEAR + DAY)
+      expect(await portfolio.isClosed()).to.be.true
+    })
+  })
+
+  const depositIntoPortfolio = async (amount: number, wallet: Wallet = lender) => {
     await token.connect(wallet).approve(portfolio.address, parseUSDC(amount))
     await portfolio.connect(wallet).deposit(parseUSDC(amount))
   }
