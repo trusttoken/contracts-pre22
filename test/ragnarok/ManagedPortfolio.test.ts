@@ -44,7 +44,7 @@ describe('ManagedPortfolio', () => {
       token.address,
       bulletLoans.address,
       YEAR,
-      parseUSDC(10**7)
+      parseUSDC(1e7)
     )
 
     portfolioAsLender = portfolio.connect(lender)
