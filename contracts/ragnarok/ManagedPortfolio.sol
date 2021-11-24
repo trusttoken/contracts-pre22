@@ -26,6 +26,8 @@ contract ManagedPortfolio is IERC721Receiver, ERC20, Ownable {
 
     event BulletLoanCreated(uint256 id);
 
+    event ManagerFeeChanged(BP newManagerFee);
+
     constructor(
         IERC20WithDecimals _underlyingToken,
         BulletLoans _bulletLoans,
@@ -49,6 +51,13 @@ contract ManagedPortfolio is IERC721Receiver, ERC20, Ownable {
 
         _mint(msg.sender, getAmountToMint(depositAmount));
         underlyingToken.transferFrom(msg.sender, address(this), depositAmount);
+    }
+
+    function setManagerFee(BP _managerFee) external {
+        require(msg.sender == manager, "ManagedPortfolio: Only manager can set manager fee");
+
+        managerFee = _managerFee;
+        emit ManagerFeeChanged(_managerFee);
     }
 
     function getAmountToMint(uint256 amount) public view returns (uint256) {

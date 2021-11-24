@@ -15,6 +15,8 @@ import { parseEth, parseUSDC, DAY, YEAR, timeTravel } from 'utils'
 import { MockProvider } from '@ethereum-waffle/provider'
 import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 
+const TEN_PERCENT = 1000
+
 describe('ManagedPortfolio', () => {
   let provider: MockProvider
 
@@ -46,7 +48,7 @@ describe('ManagedPortfolio', () => {
       bulletLoans.address,
       YEAR,
       parseUSDC(1e7),
-      1000,
+      TEN_PERCENT,
       manager.address,
     )
 
@@ -76,9 +78,43 @@ describe('ManagedPortfolio', () => {
       const creationTimestamp = (await provider.getBlock(deployTx.blockHash)).timestamp
       expect(await portfolio.endDate()).to.equal(creationTimestamp + YEAR)
     })
+
+    it('sets owner', async () => {
+      expect(await portfolio.owner()).to.equal(portfolioOwner.address)
+    })
+
+    it('manager fee', async () => {
+      expect(await portfolio.managerFee()).to.equal(TEN_PERCENT)
+    })
+
+    it('manager', async () => {
+      expect(await portfolio.manager()).to.equal(manager.address)
+    })
+  })
+
+  describe('setManagerFee', () => {
+    it('sets the manager fee', async () => {
+      await portfolio.connect(manager).setManagerFee(2000)
+      expect(await portfolio.managerFee()).to.equal(2000)
+    })
+
+    it('emits a ManagerFeeSet event', async () => {
+      await expect(portfolio.connect(manager).setManagerFee(2000))
+        .to.emit(portfolio, 'ManagerFeeChanged').withArgs(2000)
+    })
+
+    it('only manager can set fees', async () => {
+      await expect(portfolio.connect(lender).setManagerFee(2000)).to.be.revertedWith(
+        'ManagedPortfolio: Only manager can set manager fee',
+      )
+    })
   })
 
   describe('deposit', () => {
+    beforeEach(async () => {
+      await portfolio.connect(manager).setManagerFee(0)
+    })
+
     it('lender cannot deposit after portfolio endDate', async () => {
       await timeTravel(provider, YEAR + DAY)
       await tokenAsLender.approve(portfolio.address, parseUSDC(10))
@@ -141,6 +177,10 @@ describe('ManagedPortfolio', () => {
   })
 
   describe('withdraw', () => {
+    beforeEach(async () => {
+      await portfolio.connect(manager).setManagerFee(0)
+    })
+
     it('cannot withdraw when portfolio is not closed', async () => {
       await depositIntoPortfolio(100)
 
