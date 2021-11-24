@@ -18,13 +18,14 @@ import {
   TrueFiPool2,
   TrueFiPool2__factory,
 } from 'contracts'
-import { DAY, extractLoanTokenAddress, MAX_APY, parseEth } from 'utils'
+import { DAY, MAX_APY, parseEth } from 'utils'
 import { expect, use } from 'chai'
 import { deployMockContract, solidity } from 'ethereum-waffle'
 import { utils, Wallet } from 'ethers'
 import { TrueFiCreditOracleJson, RateModelJson, LineOfCreditAgencyJson } from 'build'
 import { AddressZero } from '@ethersproject/constants'
 import { mock1Inch_TL2 } from './data'
+import { extractLoanTokenAddress } from 'utils/extractLoanTokenAddress'
 
 use(solidity)
 

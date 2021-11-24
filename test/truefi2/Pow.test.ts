@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { beforeEachWithFixture } from 'utils'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 import { PowTest__factory, PowTest } from 'contracts'
 import { BigNumber } from 'ethers'
 

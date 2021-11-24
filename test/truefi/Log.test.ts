@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { beforeEachWithFixture } from 'utils'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 import { MockLog, MockLog__factory } from 'contracts'
 
 describe('Log', () => {

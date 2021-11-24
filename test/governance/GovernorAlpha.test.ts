@@ -1,6 +1,7 @@
 import { expect, use } from 'chai'
 import { BigNumber, ContractTransaction, providers, utils, Wallet } from 'ethers'
-import { beforeEachWithFixture, parseTRU, skipBlocksWithProvider, timeTravel } from 'utils'
+import { parseTRU, skipBlocksWithProvider, timeTravel } from 'utils'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 import { AddressZero } from '@ethersproject/constants'
 import { solidity } from 'ethereum-waffle'
 

@@ -3,7 +3,7 @@ import { solidity, deployMockContract, MockContract, MockProvider } from 'ethere
 import { BigNumber, Wallet } from 'ethers'
 import { setupDeploy } from 'scripts/utils'
 import { DAY, timeTravel, timeTravelTo, updateRateOracle } from 'utils'
-import { beforeEachWithFixture } from 'utils/beforeEachWithFixture'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 
 import {
   TimeAveragedBaseRateOracle,

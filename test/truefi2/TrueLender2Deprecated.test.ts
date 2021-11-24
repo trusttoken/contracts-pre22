@@ -1,14 +1,14 @@
 import { expect, use } from 'chai'
 import {
-  beforeEachWithFixture,
-  createLegacyLoan,
   DAY,
   parseEth,
   parseTRU,
   parseUSDC,
-  setupTruefi2,
   timeTravel as _timeTravel,
 } from 'utils'
+import { createLegacyLoan } from 'fixtures/createLoan'
+import { setupTruefi2 } from 'fixtures/setupTruefi2'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 import { deployContract } from 'scripts/utils/deployContract'
 import {
   BorrowingMutex,

@@ -16,18 +16,18 @@ import {
   TrueFiPool2,
 } from 'contracts'
 import {
-  beforeEachWithFixture,
   DAY,
   expectScaledCloseTo,
   extractDebtTokens,
   parseEth, parseTRU,
   parseUSDC,
-  setupTruefi2,
   timeTravel as _timeTravel,
   updateRateOracle,
   YEAR,
   AddressOne,
 } from 'utils'
+import { setupTruefi2 } from 'fixtures/setupTruefi2'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 import { setUtilization as _setUtilization } from 'utils/setUtilization'
 import { expect, use } from 'chai'
 import { AddressZero } from '@ethersproject/constants'

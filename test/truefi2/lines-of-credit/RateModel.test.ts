@@ -2,7 +2,6 @@ import { expect, use } from 'chai'
 import { Wallet } from 'ethers'
 
 import {
-  beforeEachWithFixture,
   DAY,
   parseEth,
   parseTRU,
@@ -11,6 +10,7 @@ import {
   timeTravelTo,
   updateRateOracle,
 } from 'utils'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 import { setupDeploy } from 'scripts/utils'
 
 import {

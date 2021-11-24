@@ -35,10 +35,10 @@ import {
   TrueRatingAgencyV2__factory,
 } from 'contracts'
 import { Wallet } from 'ethers'
-import { parseTRU, timeTravelTo, YEAR } from '.'
+import { parseTRU, timeTravelTo, YEAR } from 'utils'
 import { deployMockContract, MockProvider } from 'ethereum-waffle'
 import { AggregatorV3InterfaceJson, SpotBaseRateOracleJson } from 'build'
-import { DAY } from './constants'
+import { DAY } from 'utils/constants'
 
 const weeklyFillOracles = async (tusdOracle: TimeAveragedBaseRateOracle, usdcOracle: TimeAveragedBaseRateOracle, weeklyTruOracle: TimeAveragedTruPriceOracle, provider: MockProvider) => {
   for (let i = 0; i < 7; i++) {

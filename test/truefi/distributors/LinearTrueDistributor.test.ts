@@ -7,10 +7,10 @@ import { toTrustToken } from 'scripts/utils'
 
 import {
   expectScaledCloseTo,
-  beforeEachWithFixture,
   timeTravel,
   timeTravelTo,
 } from 'utils'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 
 import {
   LinearTrueDistributor,

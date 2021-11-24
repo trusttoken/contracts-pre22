@@ -30,16 +30,15 @@ import { solidity } from 'ethereum-waffle'
 import { BigNumberish, Wallet } from 'ethers'
 import { setupDeploy } from 'scripts/utils'
 import {
-  beforeEachWithFixture,
-  createDebtToken as _createDebtToken,
-  createLegacyLoan,
   DAY,
   parseEth,
   parseTRU,
   parseUSDC,
-  setupTruefi2,
   timeTravel as _timeTravel,
 } from 'utils'
+import { createDebtToken as _createDebtToken, createLegacyLoan } from 'fixtures/createLoan'
+import { setupTruefi2 } from 'fixtures/setupTruefi2'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 import { AddressZero } from '@ethersproject/constants'
 
 use(solidity)

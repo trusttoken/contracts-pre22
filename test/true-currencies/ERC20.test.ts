@@ -3,7 +3,8 @@ import { solidity } from 'ethereum-waffle'
 import { expect, use } from 'chai'
 
 import { initialSupply, trueCurrency } from 'fixtures/trueCurrency'
-import { loadFixture, toAddress, WalletOrAddress } from 'utils'
+import { toAddress, WalletOrAddress } from 'utils'
+import { loadFixture } from 'fixtures/beforeEachWithFixture'
 
 import { TrueCurrency } from 'contracts'
 

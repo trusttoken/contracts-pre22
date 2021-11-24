@@ -2,7 +2,7 @@ import { expect, use } from 'chai'
 import { solidity, deployMockContract, MockContract, MockProvider } from 'ethereum-waffle'
 import { BigNumber, Wallet } from 'ethers'
 import { DAY, parseEth, parseTRU, timeTravel, timeTravelTo, updateRateOracle } from 'utils'
-import { beforeEachWithFixture } from 'utils/beforeEachWithFixture'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 
 import {
   TimeAveragedTruPriceOracle,

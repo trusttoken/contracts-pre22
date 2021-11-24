@@ -3,13 +3,13 @@ import { MockProvider, solidity } from 'ethereum-waffle'
 import { BigNumberish, Wallet } from 'ethers'
 
 import {
-  beforeEachWithFixture,
   expectScaledCloseTo,
   extractDebtTokens,
   parseEth,
   timeTravel,
   AddressOne,
 } from 'utils'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 
 import {
   BorrowingMutex,

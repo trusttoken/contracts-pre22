@@ -1,5 +1,6 @@
 import { expect, use } from 'chai'
-import { beforeEachWithFixture, parseEth } from 'utils'
+import { parseEth } from 'utils'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 import {
   MockCrvPriceOracle,
   MockCrvPriceOracle__factory,

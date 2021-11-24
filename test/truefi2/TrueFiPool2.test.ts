@@ -26,18 +26,18 @@ import { MockProvider, solidity } from 'ethereum-waffle'
 import { BigNumber, Wallet } from 'ethers'
 import { AddressZero } from '@ethersproject/constants'
 import {
-  beforeEachWithFixture,
-  createLegacyLoan,
   parseEth,
   setUtilization as _setUtilization,
-  extractLoanTokenAddress,
   DAY,
   expectScaledCloseTo,
-  setupTruefi2,
   timeTravel as _timeTravel,
   YEAR,
 } from 'utils'
+import { createLegacyLoan } from 'fixtures/createLoan'
+import { setupTruefi2 } from 'fixtures/setupTruefi2'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 import { Deployer, setupDeploy } from 'scripts/utils'
+import { extractLoanTokenAddress } from 'utils/extractLoanTokenAddress'
 
 use(solidity)
 

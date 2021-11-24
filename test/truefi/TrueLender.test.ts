@@ -3,12 +3,12 @@ import { deployMockContract, MockContract, solidity } from 'ethereum-waffle'
 import { Contract, Wallet, BigNumber, providers } from 'ethers'
 import { AddressZero, MaxUint256 } from '@ethersproject/constants'
 import {
-  beforeEachWithFixture,
   timeTravel,
   expectScaledCloseTo,
   parseEth,
   parseTRU,
 } from 'utils'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 
 import {
   MockTrueLender,

@@ -5,13 +5,13 @@ import { solidity } from 'ethereum-waffle'
 import { setupDeploy } from 'scripts/utils'
 
 import {
-  beforeEachWithFixture,
   parseTRU,
   timeTravel,
   timeTravelTo,
   toAddress,
   WalletOrAddress,
 } from 'utils'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 
 import {
   TrustToken__factory,

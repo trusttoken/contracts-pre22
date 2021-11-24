@@ -5,7 +5,7 @@ import { expect, use } from 'chai'
 import { initialSupply, trueCurrency } from 'fixtures/trueCurrency'
 
 import { TrueCurrency } from 'contracts'
-import { loadFixture } from 'utils'
+import { loadFixture } from 'fixtures/beforeEachWithFixture'
 
 use(solidity)
 
