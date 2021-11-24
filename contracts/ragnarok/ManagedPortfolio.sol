@@ -22,21 +22,28 @@ contract ManagedPortfolio is IERC721Receiver, ERC20, Ownable {
     IERC20WithDecimals public underlyingToken;
     BulletLoans public bulletLoans;
     uint256 public endDate;
+    uint256 public maxSize;
+    uint256 private totalDeposited;
 
     event BulletLoanCreated(uint256 id);
 
     constructor(
         IERC20WithDecimals _underlyingToken,
         BulletLoans _bulletLoans,
-        uint256 _duration
+        uint256 _duration,
+        uint256 _maxSize
     ) ERC20("ManagerPortfolio", "MPS") Ownable() {
         underlyingToken = _underlyingToken;
         bulletLoans = _bulletLoans;
         endDate = block.timestamp + _duration;
+        maxSize = _maxSize;
     }
 
     function deposit(uint256 depositAmount) external {
+        require(totalDeposited + depositAmount <= maxSize, "ManagedPortfolio: Portfolio is full");
         require(block.timestamp < endDate, "ManagedPortfolio: Cannot deposit after portfolio end date");
+
+        totalDeposited += depositAmount;
 
         _mint(msg.sender, getAmountToMint(depositAmount));
         underlyingToken.transferFrom(msg.sender, address(this), depositAmount);
@@ -87,5 +94,9 @@ contract ManagedPortfolio is IERC721Receiver, ERC20, Ownable {
         bytes calldata
     ) external pure override returns (bytes4) {
         return IERC721Receiver.onERC721Received.selector;
+    }
+
+    function setMaxSize(uint256 _maxSize) external {
+        maxSize = _maxSize;
     }
 }

@@ -44,6 +44,7 @@ describe('ManagedPortfolio', () => {
       token.address,
       bulletLoans.address,
       YEAR,
+      parseUSDC(10000000)
     )
 
     portfolioAsLender = portfolio.connect(lender)
@@ -211,6 +212,33 @@ describe('ManagedPortfolio', () => {
       await depositIntoPortfolio(10)
       await expect(portfolio.createBulletLoan(YEAR - GRACE_PERIOD + 1, borrower.address, parseUSDC(5), parseUSDC(6)))
         .to.be.revertedWith('ManagedPortfolio: Loan end date is greater than Portfolio end date')
+    })
+  })
+
+  describe('maxSize',() => {
+    it('prevents deposit if total after deposit > maxSize', async () => {
+      await portfolio.setMaxSize(0)
+      return expect(depositIntoPortfolio(10, lender)).to.be.revertedWith('ManagedPortfolio: Portfolio is full')
+    })
+
+    it('allows deposit if total after deposit = maxSize', async () => {
+      await portfolio.setMaxSize(parseUSDC(100))
+      await expect(depositIntoPortfolio(100, lender)).to.not.be.reverted
+    })
+
+    it('allows multiple deposits until total after deposit > maxSize', async () => {
+      await portfolio.setMaxSize(parseUSDC(100))
+      await expect(depositIntoPortfolio(50, lender)).to.not.be.reverted
+      await expect(depositIntoPortfolio(50, lender2)).to.not.be.reverted
+      await expect(depositIntoPortfolio(50, lender)).to.be.revertedWith('ManagedPortfolio: Portfolio is full')
+    })
+
+    it('allows deposits after a loan is issued', async () => {
+      await portfolio.setMaxSize(parseUSDC(110))
+      await depositIntoPortfolio(100)
+      await portfolio.createBulletLoan(0, borrower.address, parseUSDC(100), parseUSDC(106))
+
+      await expect(depositIntoPortfolio(100, lender)).to.be.revertedWith('ManagedPortfolio: Portfolio is full')
     })
   })
 
