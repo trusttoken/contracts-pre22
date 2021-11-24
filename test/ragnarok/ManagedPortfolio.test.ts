@@ -132,13 +132,6 @@ describe('ManagedPortfolio', () => {
   })
 
   describe('withdraw', () => {
-    it('cannot withdraw when portfolio is not closed', async () => {
-      await depositIntoPortfolio(100)
-
-      await expect(portfolioAsLender.withdraw(parseShares(50)))
-        .to.be.revertedWith('ManagedPortfolio: Cannot withdraw when Portfolio is not closed.')
-    })
-
     it('sends tokens back to the lender', async () => {
       await depositIntoPortfolio(100)
 
@@ -239,6 +232,11 @@ describe('ManagedPortfolio', () => {
       await portfolio.createBulletLoan(0, borrower.address, parseUSDC(100), parseUSDC(106))
 
       await expect(depositIntoPortfolio(100, lender)).to.be.revertedWith('ManagedPortfolio: Portfolio is full')
+    })
+
+    it('only owner is allowed to change maxSize', async () => {
+      await expect(portfolio.connect(lender).setMaxSize(0)).to.be.revertedWith('Ownable: caller is not the owner')
+      await expect(portfolio.connect(portfolioOwner).setMaxSize(0)).to.not.be.reverted
     })
   })
 

@@ -96,7 +96,7 @@ contract ManagedPortfolio is IERC721Receiver, ERC20, Ownable {
         return IERC721Receiver.onERC721Received.selector;
     }
 
-    function setMaxSize(uint256 _maxSize) external {
+    function setMaxSize(uint256 _maxSize) external onlyOwner {
         maxSize = _maxSize;
     }
 }
