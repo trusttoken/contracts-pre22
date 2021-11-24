@@ -126,6 +126,12 @@ describe('ManagedPortfolio', () => {
   })
 
   describe('withdraw', () => {
+    it('cannot withdraw when portfolio is not closed', async () => {
+      await depositIntoPortfolio(100)
+      
+      await expect(portfolioAsLender.withdraw(parseShares(50))).to.be.revertedWith("ManagedPortfolio: Cannot withdraw when Portfolio is not closed.")
+    })
+
     it('sends tokens back to the lender', async () => {
       await depositIntoPortfolio(100)
       

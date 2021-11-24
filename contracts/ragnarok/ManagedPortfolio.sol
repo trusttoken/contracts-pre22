@@ -12,6 +12,12 @@ interface IERC20WithDecimals is IERC20 {
 }
 
 contract ManagedPortfolio is IERC721Receiver, ERC20 {
+    enum Status {
+        Open,
+        Frozen,
+        Closed
+    }
+
     IERC20WithDecimals public underlyingToken;
     BulletLoans public bulletLoans;
     uint256 public endDate;
@@ -23,6 +29,7 @@ contract ManagedPortfolio is IERC721Receiver, ERC20 {
         BulletLoans _bulletLoans,
         uint256 _duration
     ) ERC20("ManagerPortfolio", "MPS") {
+        _owner = msg.sender;
         underlyingToken = _underlyingToken;
         bulletLoans = _bulletLoans;
         endDate = block.timestamp + _duration;
