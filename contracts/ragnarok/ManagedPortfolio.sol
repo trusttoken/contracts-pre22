@@ -74,6 +74,10 @@ contract ManagedPortfolio is IERC721Receiver, ERC20, Ownable {
         emit BulletLoanCreated(loanId);
     }
 
+    function isClosed() public view returns (bool) {
+        return block.timestamp > endDate;
+    }
+
     function onERC721Received(
         address,
         address,

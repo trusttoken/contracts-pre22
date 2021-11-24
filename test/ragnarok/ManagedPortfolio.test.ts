@@ -213,6 +213,19 @@ describe('ManagedPortfolio', () => {
     })
   })
 
+  describe('isClosed', () => {
+    it('returns false if end date has not elapsed', async () => {
+      expect(await portfolio.isClosed()).to.be.false
+      await timeTravel(provider, YEAR - DAY)
+      expect(await portfolio.isClosed()).to.be.false
+    })
+
+    it('returns true if end date has elapsed', async () => {
+      await timeTravel(provider, YEAR + DAY)
+      expect(await portfolio.isClosed()).to.be.true
+    })
+  })
+
   async function depositIntoPortfolio(amount: number, wallet: Wallet = lender) {
     await token.connect(wallet).approve(portfolio.address, parseUSDC(amount))
     await portfolio.connect(wallet).deposit(parseUSDC(amount))
