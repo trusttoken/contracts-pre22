@@ -44,7 +44,7 @@ describe('ManagedPortfolio', () => {
       token.address,
       bulletLoans.address,
       YEAR,
-      parseUSDC(1e7)
+      parseUSDC(1e7),
     )
 
     portfolioAsLender = portfolio.connect(lender)
@@ -228,7 +228,7 @@ describe('ManagedPortfolio', () => {
     })
   })
 
-  describe('maxSize',() => {
+  describe('maxSize', () => {
     it('prevents deposit if total after deposit > maxSize', async () => {
       await portfolio.setMaxSize(0)
       return expect(depositIntoPortfolio(10, lender)).to.be.revertedWith('ManagedPortfolio: Portfolio is full')
