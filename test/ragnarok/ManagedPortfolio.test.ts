@@ -30,12 +30,13 @@ describe('ManagedPortfolio', () => {
   let lender2: Wallet
   let lender3: Wallet
   let borrower: Wallet
+  let manager: Wallet
 
   const GRACE_PERIOD = DAY
   const parseShares = parseEth
 
   beforeEachWithFixture(async (wallets, _provider) => {
-    [portfolioOwner, lender, lender2, lender3, borrower] = wallets
+    [portfolioOwner, lender, lender2, lender3, borrower, manager] = wallets
     provider = _provider
 
     token = await new MockUsdc__factory(portfolioOwner).deploy()
@@ -45,6 +46,8 @@ describe('ManagedPortfolio', () => {
       bulletLoans.address,
       YEAR,
       parseUSDC(1e7),
+      1000,
+      manager.address,
     )
 
     portfolioAsLender = portfolio.connect(lender)
@@ -77,7 +80,7 @@ describe('ManagedPortfolio', () => {
 
   describe('deposit', () => {
     it('lender cannot deposit after portfolio endDate', async () => {
-      timeTravel(provider, YEAR + DAY)
+      await timeTravel(provider, YEAR + DAY)
       await tokenAsLender.approve(portfolio.address, parseUSDC(10))
       await expect(portfolioAsLender.deposit(parseUSDC(10))).to.be.revertedWith('ManagedPortfolio: Cannot deposit after portfolio end date')
     })
@@ -231,6 +234,13 @@ describe('ManagedPortfolio', () => {
       await depositIntoPortfolio(10)
       await expect(portfolio.connect(borrower).createBulletLoan(YEAR - GRACE_PERIOD + 1, borrower.address, parseUSDC(5), parseUSDC(6)))
         .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+
+    it('transfers manager fee to the manager', async () => {
+      await depositIntoPortfolio(10)
+      await portfolio.createBulletLoan(0, borrower.address, parseUSDC(5), parseUSDC(6))
+
+      expect(await token.balanceOf(manager.address)).to.equal(parseUSDC(0.5))
     })
   })
 

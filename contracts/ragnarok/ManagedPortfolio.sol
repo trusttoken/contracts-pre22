@@ -7,17 +7,22 @@ import {IERC721} from "@openzeppelin/contracts4/token/ERC721/IERC721.sol";
 import {IERC721Receiver} from "@openzeppelin/contracts4/token/ERC721/IERC721Receiver.sol";
 import {Ownable} from "@openzeppelin/contracts4/access/Ownable.sol";
 import {BulletLoans, GRACE_PERIOD} from "./BulletLoans.sol";
+import {BIP, BIPMath} from "./types/BIP.sol";
 
 interface IERC20WithDecimals is IERC20 {
     function decimals() external view returns (uint256);
 }
 
 contract ManagedPortfolio is IERC721Receiver, ERC20, Ownable {
+    using BIPMath for BIP;
+
     IERC20WithDecimals public underlyingToken;
     BulletLoans public bulletLoans;
     uint256 public endDate;
     uint256 public maxSize;
     uint256 public totalDeposited;
+    BIP public managerFee;
+    address public manager;
 
     event BulletLoanCreated(uint256 id);
 
@@ -25,12 +30,16 @@ contract ManagedPortfolio is IERC721Receiver, ERC20, Ownable {
         IERC20WithDecimals _underlyingToken,
         BulletLoans _bulletLoans,
         uint256 _duration,
-        uint256 _maxSize
-    ) ERC20("ManagerPortfolio", "MPS") Ownable() {
+        uint256 _maxSize,
+        BIP _managerFee,
+        address _manager
+    ) ERC20("ManagerPortfolio", "MPS") {
         underlyingToken = _underlyingToken;
         bulletLoans = _bulletLoans;
         endDate = block.timestamp + _duration;
         maxSize = _maxSize;
+        managerFee = _managerFee;
+        manager = _manager;
     }
 
     function deposit(uint256 depositAmount) external {
@@ -75,8 +84,9 @@ contract ManagedPortfolio is IERC721Receiver, ERC20, Ownable {
             block.timestamp + loanDuration + GRACE_PERIOD <= endDate,
             "ManagedPortfolio: Loan end date is greater than Portfolio end date"
         );
-
+        uint256 managersPart = managerFee.mul(principalAmount);
         underlyingToken.transfer(borrower, principalAmount);
+        underlyingToken.transfer(manager, managersPart);
         uint256 loanId = bulletLoans.createLoan(underlyingToken);
         emit BulletLoanCreated(loanId);
     }
