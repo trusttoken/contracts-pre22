@@ -1,3 +1,4 @@
+/* eslint-disable */
 /**
  * PRIVATE_KEY={private_key} ts-node scripts/avalanche_script.ts
  */
@@ -31,10 +32,10 @@ async function avalanche () {
   const tokenProxy = OwnedUpgradeabilityProxy__factory.connect('0x1C20E891Bab6b1727d14Da358FAe2984Ed9B59EB', wallet)
 
   // deploy, upgrade, set ratifiers
-  // controller = await deployController(wallet)
-  // await upgradeController(proxy, controller.address)
-  // await setIsMintRatifier('0x083B59F244f8BAcbc79282Cdd623686324C962AC', 1, controller)
-  // await setIsMintRatifier('0xb47DeA8731Fd846065294771Ab68B3Ee1FC6E880', 1, controller)
+  controller = await deployController(wallet)
+  await upgradeController(proxy, controller.address)
+  await setIsMintRatifier('0x083B59F244f8BAcbc79282Cdd623686324C962AC', 1, controller)
+  await setIsMintRatifier('0xb47DeA8731Fd846065294771Ab68B3Ee1FC6E880', 1, controller)
 
   await logData(controller, proxy, token, tokenProxy)
 
