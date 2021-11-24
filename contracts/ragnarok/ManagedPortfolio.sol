@@ -23,7 +23,7 @@ contract ManagedPortfolio is IERC721Receiver, ERC20, Ownable {
     BulletLoans public bulletLoans;
     uint256 public endDate;
     uint256 public maxSize;
-    uint256 private totalDeposited;
+    uint256 public totalDeposited;
 
     event BulletLoanCreated(uint256 id);
 

@@ -129,6 +129,12 @@ describe('ManagedPortfolio', () => {
       expect(await portfolio.balanceOf(lender2.address)).to.equal(parseShares(30 + 10))
       expect(await portfolio.balanceOf(lender3.address)).to.equal(parseShares(10))
     })
+
+    it('causes totalDeposited to increase', async () => {
+      expect(await portfolio.totalDeposited()).to.equal(parseUSDC(0))
+      await depositIntoPortfolio(10, lender)
+      expect(await portfolio.totalDeposited()).to.equal(parseUSDC(10))
+    })
   })
 
   describe('withdraw', () => {
