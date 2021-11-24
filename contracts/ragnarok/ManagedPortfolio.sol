@@ -50,6 +50,7 @@ contract ManagedPortfolio is IERC721Receiver, ERC20, Ownable {
     }
 
     function withdraw(uint256 sharesAmount) external returns (uint256) {
+        require(isClosed(), "ManagedPortfolio: Cannot withdraw when Portfolio is not closed");
         uint256 liquidFunds = underlyingToken.balanceOf(address(this));
         uint256 amountToWithdraw = (sharesAmount * liquidFunds) / totalSupply();
         _burn(msg.sender, sharesAmount);
