@@ -18,7 +18,6 @@ import {
 import {
   DAY,
   expectScaledCloseTo,
-  extractDebtTokens,
   parseEth, parseTRU,
   parseUSDC,
   timeTravel as _timeTravel,
@@ -26,6 +25,7 @@ import {
   YEAR,
   AddressOne,
 } from 'utils'
+import { extractDebtTokens } from 'utils/extractLoanTokenAddress'
 import { setupTruefi2 } from 'fixtures/setupTruefi2'
 import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 import { setUtilization as _setUtilization } from 'utils/setUtilization'

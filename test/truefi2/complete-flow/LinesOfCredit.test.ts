@@ -12,11 +12,11 @@ import { MockProvider, solidity } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
 import {
   DAY,
-  extractDebtTokens,
   parseEth,
   parseTRU,
   timeTravel as _timeTravel,
 } from 'utils'
+import { extractDebtTokens } from 'utils/extractLoanTokenAddress'
 import { setupTruefi2 } from 'fixtures/setupTruefi2'
 import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 

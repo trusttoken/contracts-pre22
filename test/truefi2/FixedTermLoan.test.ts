@@ -4,7 +4,6 @@ import { BigNumberish, Wallet } from 'ethers'
 
 import {
   expectScaledCloseTo,
-  extractDebtTokens,
   parseEth,
   timeTravel,
   AddressOne,
@@ -31,6 +30,7 @@ import {
 import { deployContract } from 'scripts/utils/deployContract'
 import { AddressZero } from '@ethersproject/constants'
 import { formatEther } from '@ethersproject/units'
+import { extractDebtTokens } from 'utils/extractLoanTokenAddress'
 
 use(solidity)
 

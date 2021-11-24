@@ -4,9 +4,9 @@ import {
   parseEth,
   parseUSDC,
   timeTravel as _timeTravel,
-  extractLoanTokenAddress as _extractLoanTokenAddress,
   parseTRU,
 } from 'utils'
+import { extractLoanTokenAddress as _extractLoanTokenAddress } from 'utils/extractLoanTokenAddress'
 import { setupTruefi2 } from 'fixtures/setupTruefi2'
 import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 import { deployContract } from 'scripts/utils/deployContract'
