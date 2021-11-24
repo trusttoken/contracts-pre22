@@ -126,7 +126,7 @@ describe('ManagedPortfolio', () => {
   })
 
   describe('withdraw', () => {
-    it('withdraw sends tokens back to the lender', async () => {
+    it('sends tokens back to the lender', async () => {
       await depositIntoPortfolio(100)
       
       await portfolioAsLender.withdraw(parseShares(50))
@@ -134,7 +134,7 @@ describe('ManagedPortfolio', () => {
       expect(await token.balanceOf(lender.address)).to.equal(parseUSDC(50))
     })
 
-    it('withdraw burns proper amount of pool tokens', async () => {
+    it('burns proper amount of pool tokens', async () => {
       await depositIntoPortfolio(100)
       
       expect(await portfolio.totalSupply()).to.equal(parseShares(100))
@@ -142,6 +142,25 @@ describe('ManagedPortfolio', () => {
       
       expect(await portfolio.balanceOf(lender.address)).to.equal(parseShares(50))
       expect(await portfolio.totalSupply()).to.equal(parseShares(50))
+    })
+
+    it('sends correct number of tokens back to lender after portfolio value has grown', async () => {
+      await depositIntoPortfolio(100) 
+      await token.mint(portfolio.address, parseUSDC(100)) // Double the pool value
+      await portfolioAsLender.withdraw(parseShares(50))
+      expect(await token.balanceOf(lender.address)).to.equal(parseUSDC(100))
+      await portfolioAsLender.withdraw(parseShares(50))
+      expect(await token.balanceOf(lender.address)).to.equal(parseUSDC(200))
+    })
+
+    it('sends correct number of tokens back to two lenders', async () => {
+      await depositIntoPortfolio(100) 
+      await depositIntoPortfolio(100, lender2)
+      await token.mint(portfolio.address, parseUSDC(100))
+      await portfolioAsLender.withdraw(parseShares(50))
+      expect(await token.balanceOf(lender.address)).to.equal(parseUSDC(75))
+      await portfolio.connect(lender2).withdraw(parseShares(50))
+      expect(await token.balanceOf(lender.address)).to.equal(parseUSDC(75))
     })
   })
 
