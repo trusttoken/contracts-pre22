@@ -1,5 +1,6 @@
 import { expect, use } from 'chai'
-import { beforeEachWithFixture, timeTravel } from 'utils'
+import { timeTravel } from 'utils'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 import { utils, Wallet } from 'ethers'
 import { deployContract } from 'scripts/utils/deployContract'
 import {

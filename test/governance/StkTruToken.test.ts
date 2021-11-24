@@ -6,7 +6,6 @@ import { AddressZero, MaxUint256 } from '@ethersproject/constants'
 import { setupDeploy } from 'scripts/utils'
 
 import {
-  beforeEachWithFixture,
   DAY,
   expectCloseTo,
   expectScaledCloseTo,
@@ -15,6 +14,7 @@ import {
   timeTravel,
   timeTravelTo,
 } from 'utils'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 
 import {
   LinearTrueDistributor, LinearTrueDistributor__factory,

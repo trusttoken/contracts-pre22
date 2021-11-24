@@ -4,11 +4,11 @@ import { BigNumber, ContractTransaction, Wallet, BigNumberish } from 'ethers'
 import { formatEther } from '@ethersproject/units'
 
 import {
-  beforeEachWithFixture,
   timeTravel,
   expectScaledCloseTo,
   parseEth,
 } from 'utils'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 
 import {
   LoanToken,

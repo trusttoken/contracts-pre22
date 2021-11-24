@@ -4,15 +4,15 @@ import { Wallet, BigNumber } from 'ethers'
 import { MockProvider, solidity } from 'ethereum-waffle'
 
 import {
-  beforeEachWithFixture,
   timeTravel,
   timeTravelTo,
   expectCloseTo,
   expectScaledCloseTo,
   parseEth,
   parseTRU,
-  setupTruefi2,
 } from 'utils'
+import { setupTruefi2 } from 'fixtures/setupTruefi2'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 
 import {
   MockErc20Token,

@@ -11,8 +11,9 @@ import {
 } from 'contracts'
 import { describe } from 'mocha'
 
-import { beforeEachWithFixture, parseEth, parseUSDC, DAY, YEAR, timeTravel } from 'utils'
+import { parseEth, parseUSDC, DAY, YEAR, timeTravel } from 'utils'
 import { MockProvider } from '@ethereum-waffle/provider'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 
 describe('ManagedPortfolio', () => {
   let provider: MockProvider
@@ -42,7 +43,7 @@ describe('ManagedPortfolio', () => {
     portfolio = await new ManagedPortfolio__factory(portfolioOwner).deploy(
       token.address,
       bulletLoans.address,
-      YEAR
+      YEAR,
     )
 
     portfolioAsLender = portfolio.connect(lender)

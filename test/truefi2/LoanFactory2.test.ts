@@ -1,7 +1,10 @@
 import { expect, use } from 'chai'
 import { BigNumberish, Wallet } from 'ethers'
 
-import { beforeEachWithFixture, DAY, parseEth, setupTruefi2, createDebtToken as _createDebtToken } from 'utils'
+import { DAY, parseEth } from 'utils'
+import { createDebtToken as _createDebtToken } from 'fixtures/createLoan'
+import { setupTruefi2 } from 'fixtures/setupTruefi2'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 
 import {
   BorrowingMutex,
@@ -183,6 +186,10 @@ describe('LoanFactory2', () => {
 
       it('marks deployed contract as debt token', async () => {
         expect(await loanFactory.isDebtToken(debtToken.address)).to.be.true
+      })
+
+      it('adds debt token to debtTokens mapping', async () => {
+        expect(await loanFactory.debtTokens(borrower.address)).to.deep.equal([debtToken.address])
       })
     })
   })

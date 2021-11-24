@@ -26,18 +26,18 @@ import { MockProvider, solidity } from 'ethereum-waffle'
 import { BigNumber, Wallet } from 'ethers'
 import { AddressZero } from '@ethersproject/constants'
 import {
-  beforeEachWithFixture,
-  createLegacyLoan,
   parseEth,
   setUtilization as _setUtilization,
-  extractLoanTokenAddress,
   DAY,
   expectScaledCloseTo,
-  setupTruefi2,
   timeTravel as _timeTravel,
   YEAR,
 } from 'utils'
+import { createLegacyLoan } from 'fixtures/createLoan'
+import { setupTruefi2 } from 'fixtures/setupTruefi2'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 import { Deployer, setupDeploy } from 'scripts/utils'
+import { extractLoanTokenAddress } from 'utils/extractLoanTokenAddress'
 
 use(solidity)
 
@@ -375,7 +375,8 @@ describe('TrueFiPool2', () => {
       await timeTravel(DAY * 4)
       await loan.enterDefault()
       debt = await loan.debtToken()
-      await safu.liquidate([debt])
+      await safu.liquidate(borrower.address)
+      await safu.compensate(borrower.address)
     })
 
     describe('deficitValue', () => {
@@ -475,8 +476,8 @@ describe('TrueFiPool2', () => {
         await timeTravel(DAY * 4)
         await loan.enterDefault()
         expect(await tusdPool.poolValue()).to.equal(joinAmount.add(136))
-        const debt = await loan.debtToken()
-        await safu.liquidate([debt])
+        await safu.liquidate(borrower.address)
+        await safu.compensate(borrower.address)
 
         expect(await tusdPool.deficitValue()).to.eq(500136)
         expect(await tusdPool.poolValue()).to.equal(joinAmount.add(136))

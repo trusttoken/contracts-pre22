@@ -20,7 +20,7 @@ import {
 } from 'contracts'
 import { solidity, deployMockContract } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
-import { beforeEachWithFixture } from 'utils/beforeEachWithFixture'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 import { AddressZero } from '@ethersproject/constants'
 import { parseEth, parseUSDC } from 'utils'
 import { MockERC20TokenJson } from 'build'

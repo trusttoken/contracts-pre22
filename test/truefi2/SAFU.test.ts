@@ -1,16 +1,14 @@
 import { expect } from 'chai'
 import {
-  beforeEachWithFixture,
-  createLoan,
   DAY,
   parseTRU,
   parseUSDC,
   parseEth,
-  setupTruefi2,
   timeTravel as _timeTravel,
-  createDebtToken as _createDebtToken,
-  createLegacyLoan,
 } from 'utils'
+import { createLoan, createDebtToken as _createDebtToken, createLegacyLoan } from 'fixtures/createLoan'
+import { setupTruefi2 } from 'fixtures/setupTruefi2'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 import { setupDeploy } from 'scripts/utils'
 import { BigNumberish, utils, Wallet } from 'ethers'
 import { AddressZero } from '@ethersproject/constants'
@@ -135,49 +133,58 @@ describe('SAFU', () => {
   describe('liquidate', () => {
     describe('reverts if', () => {
       it('not called by the owner', async () => {
-        await expect(safu.connect(borrower).liquidate([debt.address]))
+        await expect(safu.connect(borrower).liquidate(borrower.address))
           .to.be.revertedWith('Ownable: caller is not the owner')
       })
 
-      it('debt is not created by factory', async () => {
-        const strangerDebt = await new DebtToken__factory(owner).deploy()
-        await strangerDebt.initialize(pool.address, owner.address, owner.address, owner.address, defaultAmount)
-        await expect(safu.liquidate([strangerDebt.address]))
-          .to.be.revertedWith('SAFU: Unknown debt')
+      it('borrower does not have any debts', async () => {
+        await expect(safu.liquidate(owner.address))
+          .to.be.revertedWith('SAFU: Borrower does not have any defaulted debts')
       })
 
       it('debt has already been liquidated', async () => {
-        await safu.liquidate([debt.address])
-        await expect(safu.liquidate([debt.address]))
+        await safu.liquidate(borrower.address)
+        await expect(safu.liquidate(borrower.address))
           .to.be.revertedWith('SAFU: Debt must not be liquidated')
       })
     })
 
-    describe('Handles debt tokens', () => {
-      it('transfers DebtTokens to the SAFU', async () => {
-        await safu.liquidate([debt.address])
-        await expect(await debt.balanceOf(safu.address)).to.equal(defaultAmount)
+    describe('Slashes staked tru from StakingVault', () => {
+      it('works with no tru staked', async () => {
+        await safu.liquidate(borrower.address)
+        expect(await tru.balanceOf(safu.address)).to.equal(0)
       })
 
-      describe('Slashes staked tru from StakingVault', () => {
-        it('works with no tru staked', async () => {
-          await safu.liquidate([debt.address])
-          expect(await tru.balanceOf(safu.address)).to.equal(0)
-        })
+      it('works with tru staked', async () => {
+        await tru.mint(borrower.address, parseTRU(100))
+        await tru.connect(borrower).approve(stakingVault.address, parseTRU(100))
+        await stakingVault.connect(borrower).stake(parseTRU(100))
 
-        it('works with tru staked', async () => {
-          await tru.mint(borrower.address, parseTRU(100))
-          await tru.connect(borrower).approve(stakingVault.address, parseTRU(100))
-          await stakingVault.connect(borrower).stake(parseTRU(100))
+        await borrowingMutex.allowLocker(owner.address, true)
+        await borrowingMutex.lock(borrower.address, owner.address)
+        await borrowingMutex.ban(borrower.address)
 
-          await borrowingMutex.allowLocker(owner.address, true)
-          await borrowingMutex.lock(borrower.address, owner.address)
-          await borrowingMutex.ban(borrower.address)
-
-          await safu.liquidate([debt.address])
-          expect(await tru.balanceOf(safu.address)).to.eq(parseTRU(100))
-        })
+        await safu.liquidate(borrower.address)
+        expect(await tru.balanceOf(safu.address)).to.eq(parseTRU(100))
       })
+    })
+
+    it('marks all debts as liquidated', async () => {
+      await safu.liquidate(borrower.address)
+      expect(await debt.isLiquidated()).to.be.true
+    })
+  })
+
+  describe('compensate', () => {
+    it('reverts if debt not liquidated', async () => {
+      await expect(safu.compensate(borrower.address))
+        .to.be.revertedWith('SAFU: Debt not liquidated yet')
+    })
+
+    it('transfers DebtTokens to the SAFU', async () => {
+      await safu.liquidate(borrower.address)
+      await safu.compensate(borrower.address)
+      await expect(await debt.balanceOf(safu.address)).to.equal(defaultAmount)
     })
 
     const createSupportedPool = async (poolFactory: PoolFactory): Promise<[TrueFiPool2, MockErc20Token]> => {
@@ -202,27 +209,32 @@ describe('SAFU', () => {
         })
 
         it('takes funds from safu', async () => {
-          await expect(() => safu.liquidate([debt.address]))
+          await safu.liquidate(borrower.address)
+          await expect(() => safu.compensate(borrower.address))
             .to.changeTokenBalance(token, safu, defaultAmount.mul(-1))
         })
 
         it('transfers funds to the pool', async () => {
-          await expect(() => safu.liquidate([debt.address]))
+          await safu.liquidate(borrower.address)
+          await expect(() => safu.compensate(borrower.address))
             .to.changeTokenBalance(token, pool, defaultAmount)
         })
 
         it('sets deficiencyToken', async () => {
-          await safu.liquidate([debt.address])
+          await safu.liquidate(borrower.address)
+          await safu.compensate(borrower.address)
           expect(await safu.deficiencyToken(debt.address)).to.eq(AddressZero)
         })
 
         it('increases pool deficit', async () => {
-          await safu.liquidate([debt.address])
+          await safu.liquidate(borrower.address)
+          await safu.compensate(borrower.address)
           expect(await safu.poolDeficit(pool.address)).to.eq(0)
         })
 
         it('emits event', async () => {
-          await expect(safu.liquidate([debt.address]))
+          await safu.liquidate(borrower.address)
+          await expect(safu.compensate(borrower.address))
             .to.emit(safu, 'Liquidated')
             .withArgs(debt.address, defaultAmount, AddressZero, 0)
         })
@@ -230,6 +242,7 @@ describe('SAFU', () => {
         it('handles multiple debt tokens', async () => {
           const [pool2, token2] = await createSupportedPool(poolFactory)
           await token2.mint(safu.address, defaultAmount)
+          await token.mint(safu.address, defaultAmount)
 
           await loanFactory.setCreditAgency(owner.address)
           await pool.setCreditAgency(owner.address)
@@ -243,7 +256,9 @@ describe('SAFU', () => {
           await debtToken2.approve(pool2.address, defaultAmount.mul(1).div(4))
           await pool2.addDebt(debtToken2.address, defaultAmount.mul(1).div(4))
 
-          await safu.liquidate([debtToken1.address, debtToken2.address])
+          await safu.liquidate(borrower.address)
+          await safu.compensate(borrower.address)
+
           expect(await safu.poolDeficit(pool.address)).to.eq(0)
           expect(await safu.poolDeficit(pool2.address)).to.eq(0)
           expect(await token.balanceOf(safu.address)).to.eq(defaultAmount.div(4))
@@ -257,28 +272,33 @@ describe('SAFU', () => {
         })
 
         it('takes funds from safu', async () => {
-          await expect(() => safu.liquidate([debt.address]))
+          await safu.liquidate(borrower.address)
+          await expect(() => safu.compensate(borrower.address))
             .to.changeTokenBalance(token, safu, defaultAmount.div(2).mul(-1))
         })
 
         it('transfers funds to the pool', async () => {
-          await expect(() => safu.liquidate([debt.address]))
+          await safu.liquidate(borrower.address)
+          await expect(() => safu.compensate(borrower.address))
             .to.changeTokenBalance(token, pool, defaultAmount.div(2))
         })
 
         it('sets deficiencyToken', async () => {
-          const tx = await safu.liquidate([debt.address])
-          const deficiencyToken = (await tx.wait()).events[8].args.deficiencyToken
+          await safu.liquidate(borrower.address)
+          const tx = await safu.compensate(borrower.address)
+          const deficiencyToken = (await tx.wait()).events[3].args.deficiencyToken
           expect(await safu.deficiencyToken(debt.address)).to.eq(deficiencyToken)
         })
 
         it('increases pool deficit', async () => {
-          await safu.liquidate([debt.address])
+          await safu.liquidate(borrower.address)
+          await safu.compensate(borrower.address)
           expect(await safu.poolDeficit(pool.address)).to.eq(defaultAmount.div(2))
         })
 
         it('emits event', async () => {
-          const tx = await safu.liquidate([debt.address])
+          await safu.liquidate(borrower.address)
+          const tx = await safu.compensate(borrower.address)
           await expect(tx)
             .to.emit(safu, 'Liquidated')
             .withArgs(debt.address, defaultAmount.div(2), await safu.deficiencyToken(debt.address), defaultAmount.div(2))
@@ -287,6 +307,7 @@ describe('SAFU', () => {
         it('handles multiple debt tokens', async () => {
           const [pool2, token2] = await createSupportedPool(poolFactory)
           await token2.mint(safu.address, defaultAmount.div(2))
+          await token.mint(safu.address, defaultAmount)
 
           await loanFactory.setCreditAgency(owner.address)
           await pool.setCreditAgency(owner.address)
@@ -300,7 +321,8 @@ describe('SAFU', () => {
           await debtToken2.approve(pool2.address, defaultAmount)
           await pool2.addDebt(debtToken2.address, defaultAmount)
 
-          await safu.liquidate([debtToken1.address, debtToken2.address])
+          await safu.liquidate(borrower.address)
+          await safu.compensate(borrower.address)
           expect(await safu.poolDeficit(pool.address)).to.eq(defaultAmount.div(4))
           expect(await safu.poolDeficit(pool2.address)).to.eq(defaultAmount.div(2))
           expect(await token.balanceOf(safu.address)).to.eq(0)
@@ -312,21 +334,21 @@ describe('SAFU', () => {
     describe('Slashes tru', () => {
       describe('Debt not repaid at all', () => {
         it('0 tru in staking pool balance', async () => {
-          await safu.liquidate([debt.address])
+          await safu.liquidate(borrower.address)
           expect(await tru.balanceOf(safu.address)).to.eq(0)
         })
 
         it('returns max fetch share to assurance', async () => {
           await stkTru.stake(parseTRU(1e3))
 
-          await safu.liquidate([debt.address])
+          await safu.liquidate(borrower.address)
           expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(1e2))
         })
 
         it('returns defaulted value', async () => {
           await stkTru.stake(parseTRU(1e7))
 
-          await safu.liquidate([debt.address])
+          await safu.liquidate(borrower.address)
           expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(4400))
         })
 
@@ -341,7 +363,7 @@ describe('SAFU', () => {
           await borrowingMutex.lock(borrower.address, owner.address)
           await borrowingMutex.ban(borrower.address)
 
-          await safu.liquidate([debt.address])
+          await safu.liquidate(borrower.address)
           expect(await tru.balanceOf(safu.address)).to.eq(parseTRU(2e2))
         })
       })
@@ -352,21 +374,21 @@ describe('SAFU', () => {
         })
 
         it('0 tru in staking pool balance', async () => {
-          await safu.liquidate([debt.address])
+          await safu.liquidate(borrower.address)
           expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(0))
         })
 
         it('returns max fetch share to assurance', async () => {
           await stkTru.stake(parseTRU(1e3))
 
-          await safu.liquidate([debt.address])
+          await safu.liquidate(borrower.address)
           expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(100))
         })
 
         it('returns defaulted value', async () => {
           await stkTru.stake(parseTRU(1e7))
 
-          await safu.liquidate([debt.address])
+          await safu.liquidate(borrower.address)
           expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(22e2))
         })
       })
@@ -386,14 +408,14 @@ describe('SAFU', () => {
         it('returns max fetch share to assurance', async () => {
           await stkTru.stake(parseTRU(4400 * 15))
 
-          await safu.liquidate([debt.address, debt2.address])
+          await safu.liquidate(borrower.address)
           expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(4400 * 15 / 10))
         })
 
         it('returns defaulted value', async () => {
           await stkTru.stake(parseTRU(1e7))
 
-          await safu.liquidate([debt.address, debt2.address])
+          await safu.liquidate(borrower.address)
           expect(await tru.balanceOf(safu.address)).to.equal(parseTRU(4400 * 2))
         })
       })
@@ -403,7 +425,8 @@ describe('SAFU', () => {
   describe('reclaim', () => {
     beforeEach(async () => {
       await token.mint(safu.address, defaultAmount.div(2))
-      await safu.liquidate([debt.address])
+      await safu.liquidate(borrower.address)
+      await safu.compensate(borrower.address)
     })
 
     describe('reverts if', () => {
@@ -482,7 +505,8 @@ describe('SAFU', () => {
   describe('redeem', () => {
     describe('reverts if', () => {
       it('caller is not manager', async () => {
-        await safu.liquidate([debt.address])
+        await safu.liquidate(borrower.address)
+        await safu.compensate(borrower.address)
         await expect(safu.connect(borrower).redeem(debt.address))
           .to.be.revertedWith('Ownable: caller is not the owner')
       })
@@ -496,25 +520,29 @@ describe('SAFU', () => {
     })
 
     it('burns debt tokens', async () => {
-      await safu.liquidate([debt.address])
+      await safu.liquidate(borrower.address)
+      await safu.compensate(borrower.address)
       await token.mint(debt.address, defaultAmount)
       await expect(() => safu.redeem(debt.address)).changeTokenBalance(debt, safu, defaultAmount.mul(-1))
     })
 
     it('redeems default value', async () => {
-      await safu.liquidate([debt.address])
+      await safu.liquidate(borrower.address)
+      await safu.compensate(borrower.address)
       await token.mint(debt.address, defaultAmount)
       await expect(() => safu.redeem(debt.address)).changeTokenBalance(token, safu, defaultAmount)
     })
 
     it('redeems all available tokens', async () => {
-      await safu.liquidate([debt.address])
+      await safu.liquidate(borrower.address)
+      await safu.compensate(borrower.address)
       await token.mint(debt.address, defaultAmount.mul(2))
       await expect(() => safu.redeem(debt.address)).changeTokenBalance(token, safu, defaultAmount.mul(2))
     })
 
     it('emits a proper event', async () => {
-      await safu.liquidate([debt.address])
+      await safu.liquidate(borrower.address)
+      await safu.compensate(borrower.address)
       await token.mint(debt.address, defaultAmount.mul(2))
 
       await expect(safu.redeem(debt.address))

@@ -3,7 +3,7 @@ import { solidity } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
 import { AddressZero } from '@ethersproject/constants'
 
-import { beforeEachWithFixture } from 'utils'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 
 import {
   OwnedUpgradeabilityProxy__factory,

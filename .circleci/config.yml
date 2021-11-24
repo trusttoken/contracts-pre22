@@ -66,6 +66,13 @@ jobs:
       - attach_workspace:
           at: .
       - run: yarn lint
+  verify:
+    docker:
+      - image: circleci/python:3-node
+    steps:
+      - attach_workspace:
+          at: .
+      - run: yarn verify
   test-others:
     docker:
       - image: cimg/node:16.1.0
@@ -141,6 +148,10 @@ workflows:
           requires:
             - setup
       - slither:
+          requires:
+            - setup
+      - verify:
+          context: main
           requires:
             - setup
       - test-truefi:

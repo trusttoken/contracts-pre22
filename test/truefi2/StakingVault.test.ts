@@ -2,13 +2,13 @@ import { expect, use } from 'chai'
 import { solidity } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
 import {
-  beforeEachWithFixture,
   parseEth,
   parseTRU,
-  setupTruefi2,
-  createDebtToken,
   parseUSDC,
 } from 'utils'
+import { createDebtToken } from 'fixtures/createLoan'
+import { setupTruefi2 } from 'fixtures/setupTruefi2'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 import {
   BorrowingMutex,
   StakingVault,

@@ -2,7 +2,7 @@ import { expect, use } from 'chai'
 import { solidity } from 'ethereum-waffle'
 import { waffle } from 'hardhat'
 
-import { beforeEachWithFixture } from 'utils'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 
 import {
   MockTrueCurrencyWithAutosweep__factory,
