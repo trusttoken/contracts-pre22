@@ -44,7 +44,7 @@ describe('ManagedPortfolio', () => {
       token.address,
       bulletLoans.address,
       YEAR,
-      parseUSDC(10000000)
+      parseUSDC(10**7)
     )
 
     portfolioAsLender = portfolio.connect(lender)
@@ -216,27 +216,27 @@ describe('ManagedPortfolio', () => {
 
     it('allows deposit if total after deposit = maxSize', async () => {
       await portfolio.setMaxSize(parseUSDC(100))
-      await expect(depositIntoPortfolio(100, lender)).to.not.be.reverted
+      await expect(depositIntoPortfolio(100, lender)).not.to.be.reverted
     })
 
     it('allows multiple deposits until total after deposit > maxSize', async () => {
       await portfolio.setMaxSize(parseUSDC(100))
-      await expect(depositIntoPortfolio(50, lender)).to.not.be.reverted
-      await expect(depositIntoPortfolio(50, lender2)).to.not.be.reverted
+      await expect(depositIntoPortfolio(50, lender)).not.to.be.reverted
+      await expect(depositIntoPortfolio(50, lender2)).not.to.be.reverted
       await expect(depositIntoPortfolio(50, lender)).to.be.revertedWith('ManagedPortfolio: Portfolio is full')
     })
 
-    it('allows deposits after a loan is issued', async () => {
+    it('whether portfolio is full depends on total amount deposited, not amount of underlying token', async () => {
       await portfolio.setMaxSize(parseUSDC(110))
       await depositIntoPortfolio(100)
-      await portfolio.createBulletLoan(0, borrower.address, parseUSDC(100), parseUSDC(106))
+      await portfolio.createBulletLoan(DAY * 30, borrower.address, parseUSDC(100), parseUSDC(106))
 
       await expect(depositIntoPortfolio(100, lender)).to.be.revertedWith('ManagedPortfolio: Portfolio is full')
     })
 
     it('only owner is allowed to change maxSize', async () => {
       await expect(portfolio.connect(lender).setMaxSize(0)).to.be.revertedWith('Ownable: caller is not the owner')
-      await expect(portfolio.connect(portfolioOwner).setMaxSize(0)).to.not.be.reverted
+      await expect(portfolio.connect(portfolioOwner).setMaxSize(0)).not.to.be.reverted
     })
   })
 

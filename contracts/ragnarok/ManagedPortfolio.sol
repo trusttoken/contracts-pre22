@@ -40,10 +40,9 @@ contract ManagedPortfolio is IERC721Receiver, ERC20, Ownable {
     }
 
     function deposit(uint256 depositAmount) external {
-        require(totalDeposited + depositAmount <= maxSize, "ManagedPortfolio: Portfolio is full");
-        require(block.timestamp < endDate, "ManagedPortfolio: Cannot deposit after portfolio end date");
-
         totalDeposited += depositAmount;
+        require(totalDeposited <= maxSize, "ManagedPortfolio: Portfolio is full");
+        require(block.timestamp < endDate, "ManagedPortfolio: Cannot deposit after portfolio end date");
 
         _mint(msg.sender, getAmountToMint(depositAmount));
         underlyingToken.transferFrom(msg.sender, address(this), depositAmount);
