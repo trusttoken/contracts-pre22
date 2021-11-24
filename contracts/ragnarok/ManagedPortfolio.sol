@@ -49,7 +49,8 @@ contract ManagedPortfolio is IERC721Receiver, ERC20 {
     }
 
     function withdraw(uint256 sharesAmount) external returns (uint256) {
-        uint256 amountToWithdraw =  sharesAmount * value() / totalSupply();
+        uint256 liquidFunds = underlyingToken.balanceOf(address(this));
+        uint256 amountToWithdraw =  sharesAmount * liquidFunds / totalSupply();
         _burn(msg.sender, sharesAmount);
         underlyingToken.transfer(msg.sender, amountToWithdraw);
         return amountToWithdraw;
