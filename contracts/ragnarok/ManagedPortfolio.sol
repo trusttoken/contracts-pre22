@@ -22,6 +22,7 @@ contract ManagedPortfolio is IERC721Receiver, ERC20, Ownable {
     IERC20WithDecimals public underlyingToken;
     BulletLoans public bulletLoans;
     uint256 public endDate;
+    Status public status;
 
     event BulletLoanCreated(uint256 id);
 
@@ -33,6 +34,7 @@ contract ManagedPortfolio is IERC721Receiver, ERC20, Ownable {
         underlyingToken = _underlyingToken;
         bulletLoans = _bulletLoans;
         endDate = block.timestamp + _duration;
+        status = Status.Open;
     }
 
     function deposit(uint256 depositAmount) external {
@@ -55,7 +57,12 @@ contract ManagedPortfolio is IERC721Receiver, ERC20, Ownable {
         return underlyingToken.balanceOf(address(this));
     }
 
+    function updateStatus(Status _status) public onlyOwner {
+        status = _status;
+    }
+
     function withdraw(uint256 sharesAmount) external returns (uint256) {
+        require(status == Status.Closed);
         uint256 liquidFunds = underlyingToken.balanceOf(address(this));
         uint256 amountToWithdraw = (sharesAmount * liquidFunds) / totalSupply();
         _burn(msg.sender, sharesAmount);

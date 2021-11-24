@@ -33,6 +33,12 @@ describe('ManagedPortfolio', () => {
   const GRACE_PERIOD = DAY
   const parseShares = parseEth
 
+  enum Status {
+    Open,
+    Frozen,
+    Closed
+  }
+
   beforeEachWithFixture(async (wallets, _provider) => {
     [portfolioOwner, lender, lender2, lender3, borrower] = wallets
     provider = _provider
@@ -71,6 +77,18 @@ describe('ManagedPortfolio', () => {
     it('sets owner', async () => {
       expect(await portfolio.owner()).to.equal(portfolioOwner.address)
     })
+
+    it('sets status to open', async () => {
+      expect(await portfolio.status()).to.equal(Status.Open);
+    })
+  })
+
+  describe('updateStatus', () => {
+    it('only owner can update status', async () => {
+    })
+
+    it('updates status correctly', async () => {
+      
   })
 
   describe('deposit', () => {
