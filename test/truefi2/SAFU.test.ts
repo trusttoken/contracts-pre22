@@ -1,16 +1,14 @@
 import { expect } from 'chai'
 import {
-  beforeEachWithFixture,
-  createLoan,
   DAY,
   parseTRU,
   parseUSDC,
   parseEth,
-  setupTruefi2,
   timeTravel as _timeTravel,
-  createDebtToken as _createDebtToken,
-  createLegacyLoan,
 } from 'utils'
+import { createLoan, createDebtToken as _createDebtToken, createLegacyLoan } from 'fixtures/createLoan'
+import { setupTruefi2 } from 'fixtures/setupTruefi2'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 import { setupDeploy } from 'scripts/utils'
 import { BigNumberish, utils, Wallet } from 'ethers'
 import { AddressZero } from '@ethersproject/constants'

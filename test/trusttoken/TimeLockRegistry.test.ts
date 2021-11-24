@@ -9,10 +9,8 @@ import {
   setupDeploy,
 } from 'scripts/utils'
 
-import {
-  expectEvent,
-  beforeEachWithFixture,
-} from 'test/utils'
+import { expectEvent } from 'test/utils'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 
 import {
   TrustToken__factory,

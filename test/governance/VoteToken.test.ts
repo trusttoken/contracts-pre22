@@ -4,7 +4,8 @@ import { solidity } from 'ethereum-waffle'
 
 import { setupDeploy } from 'scripts/utils'
 
-import { beforeEachWithFixture, parseTRU, skipBlocksWithProvider, timeTravel, timeTravelTo } from 'utils'
+import { parseTRU, skipBlocksWithProvider, timeTravel, timeTravelTo } from 'utils'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 
 import { TrustToken, TrustToken__factory } from 'contracts'
 

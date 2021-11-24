@@ -6,10 +6,8 @@ import { keccak256 } from '@ethersproject/keccak256'
 import { formatBytes32String } from '@ethersproject/strings'
 import { parseEther } from '@ethersproject/units'
 
-import {
-  beforeEachWithFixture,
-  writeAttributeFor,
-} from 'utils'
+import { writeAttributeFor } from 'utils'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 
 import {
   RegistryMock,

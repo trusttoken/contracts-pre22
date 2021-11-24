@@ -3,7 +3,7 @@ import { expect, use } from 'chai'
 
 import { setupDeploy } from 'scripts/utils'
 
-import { beforeEachWithFixture } from 'utils'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 
 import {
   MockHook__factory,

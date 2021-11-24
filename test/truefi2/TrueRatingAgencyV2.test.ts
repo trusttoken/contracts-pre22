@@ -3,8 +3,6 @@ import { BigNumber, BigNumberish, Wallet } from 'ethers'
 import { deployMockContract, solidity } from 'ethereum-waffle'
 
 import {
-  beforeEachWithFixture,
-  createLegacyLoan,
   parseTRU,
   timeTravel as _timeTravel,
   expectScaledCloseTo,
@@ -12,8 +10,10 @@ import {
   parseEth,
   parseUSDC,
   DAY,
-  setupTruefi2,
 } from 'utils'
+import { createLegacyLoan } from 'fixtures/createLoan'
+import { setupTruefi2 } from 'fixtures/setupTruefi2'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 
 import {
   TrueRatingAgencyV2,

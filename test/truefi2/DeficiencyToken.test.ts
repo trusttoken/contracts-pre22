@@ -8,8 +8,10 @@ import {
 import { expect, use } from 'chai'
 import { deployContract, solidity } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
-import { beforeEachWithFixture } from 'utils/beforeEachWithFixture'
-import { createLoan, parseEth, setupTruefi2 } from 'utils'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
+import { parseEth } from 'utils'
+import { createLoan } from 'fixtures/createLoan'
+import { setupTruefi2 } from 'fixtures/setupTruefi2'
 
 use(solidity)
 

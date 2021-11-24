@@ -1,5 +1,6 @@
 import { expect, use } from 'chai'
-import { beforeEachWithFixture, DAY, timeTravel } from 'utils'
+import { DAY, timeTravel } from 'utils'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 import {
   TrueFiCreditOracle__factory,
   TrueFiCreditOracle,

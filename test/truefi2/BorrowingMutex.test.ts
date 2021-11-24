@@ -2,7 +2,8 @@ import { expect, use } from 'chai'
 import { solidity } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
 import { setupDeploy } from 'scripts/utils'
-import { beforeEachWithFixture, AddressOne } from 'utils'
+import { AddressOne } from 'utils'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 import {
   BorrowingMutex,
   BorrowingMutex__factory,

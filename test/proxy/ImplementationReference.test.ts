@@ -1,6 +1,6 @@
 import { expect, use } from 'chai'
 import { solidity } from 'ethereum-waffle'
-import { beforeEachWithFixture } from 'utils'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 import {
   ImplementationReference,
   ImplementationReference__factory, MockTrueCurrency,

@@ -4,7 +4,7 @@ import { MockProvider, solidity } from 'ethereum-waffle'
 import { formatBytes32String } from '@ethersproject/strings'
 import { parseEther } from '@ethersproject/units'
 
-import { beforeEachWithFixture } from 'utils'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 
 import {
   TokenControllerMock__factory,

@@ -2,7 +2,9 @@ import { expect, use } from 'chai'
 import { MockProvider, solidity } from 'ethereum-waffle'
 import { BigNumberish, Wallet } from 'ethers'
 
-import { beforeEachWithFixture, parseEth, setupTruefi2 } from 'utils'
+import { parseEth } from 'utils'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
+import { setupTruefi2 } from 'fixtures/setupTruefi2'
 
 import { DebtToken, DebtToken__factory, MockTrueCurrency, MockTrueCurrency__factory } from 'contracts'
 

@@ -2,7 +2,8 @@ import { Timelock, TrustToken, Pauser, Timelock__factory, TrustToken__factory, P
 import { expect, use } from 'chai'
 import { solidity } from 'ethereum-waffle'
 import { BigNumber, providers, Wallet } from 'ethers'
-import { beforeEachWithFixture, DAY, parseTRU, timeTravel } from 'utils'
+import { DAY, parseTRU, timeTravel } from 'utils'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 import { AddressZero } from '@ethersproject/constants'
 import { deployContract } from 'scripts/utils/deployContract'
 

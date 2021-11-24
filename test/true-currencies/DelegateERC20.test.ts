@@ -4,10 +4,10 @@ import { expect, use } from 'chai'
 import { initialSupply } from 'fixtures/trueCurrency'
 import { setupDeploy } from 'scripts/utils'
 import {
-  beforeEachWithFixture,
   toAddress,
   WalletOrAddress,
 } from 'utils'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 
 import {
   MockTrueCurrencyWithAutosweep,

@@ -5,7 +5,8 @@ import { AddressZero, Zero } from '@ethersproject/constants'
 import { expect, use } from 'chai'
 
 import { initialSupply, trueCurrency } from 'fixtures/trueCurrency'
-import { loadFixture, toAddress, WalletOrAddress } from 'utils'
+import { toAddress, WalletOrAddress } from 'utils'
+import { loadFixture } from 'fixtures/beforeEachWithFixture'
 
 import { MockTrueCurrency } from 'contracts'
 

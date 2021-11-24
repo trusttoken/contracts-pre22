@@ -13,16 +13,15 @@ import { expect, use } from 'chai'
 import { MockProvider, solidity } from 'ethereum-waffle'
 import { ContractTransaction, Wallet } from 'ethers'
 import {
-  beforeEachWithFixture,
   DAY,
-  extractDebtTokens,
   parseEth,
   parseTRU,
-  setupTruefi2,
   timeTravel as _timeTravel,
-  extractLoanTokenAddress as _extractLoanTokenAddress,
   AddressOne,
 } from 'utils'
+import { extractDebtTokens, extractLoanTokenAddress as _extractLoanTokenAddress } from 'utils/extractLoanTokenAddress'
+import { setupTruefi2 } from 'fixtures/setupTruefi2'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 
 use(solidity)
 

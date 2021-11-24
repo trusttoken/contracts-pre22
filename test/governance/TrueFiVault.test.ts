@@ -1,7 +1,8 @@
 import { expect, use } from 'chai'
 import { MockProvider, solidity } from 'ethereum-waffle'
 import { BigNumber, Wallet } from 'ethers'
-import { beforeEachWithFixture, DAY, parseTRU, timeTravel } from 'utils'
+import { DAY, parseTRU, timeTravel } from 'utils'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 
 import {
   Erc20Mock,
