@@ -13,9 +13,8 @@ contract BulletLoans is ERC721 {
 
     function createLoan(IERC20 _underlyingToken) public returns (uint256) {
         underlyingToken = _underlyingToken;
-        uint256 loanId = nextId;
+        uint256 loanId = nextId++;
         _safeMint(msg.sender, loanId);
-        nextId++;
         return loanId;
     }
 
