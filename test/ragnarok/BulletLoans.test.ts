@@ -17,7 +17,7 @@ describe('BulletLoans', () => {
     token = await new MockUsdc__factory(owner).deploy()
   })
 
-  describe.only('createLoan', () => {
+  describe('createLoan', () => {
     let loanId: BigNumber
     beforeEach(async () => {
       loanId = await extractLoanId(bulletLoans.connect(portfolio).createLoan(token.address))
