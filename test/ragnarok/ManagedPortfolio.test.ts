@@ -11,11 +11,11 @@ import {
 } from 'contracts'
 import { describe } from 'mocha'
 
-import { parseEth, parseUSDC, DAY, YEAR, timeTravel } from 'utils'
+import { parseEth, parseUSDC, DAY, YEAR, timeTravel, ONE_PERCENT } from 'utils'
 import { MockProvider } from '@ethereum-waffle/provider'
 import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 
-const TEN_PERCENT = 1000
+const TEN_PERCENT = 10 * ONE_PERCENT
 
 describe('ManagedPortfolio', () => {
   let provider: MockProvider

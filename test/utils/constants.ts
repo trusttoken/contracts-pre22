@@ -7,3 +7,5 @@ export const MAX_BURN_BOUND = constants.MaxUint256.sub(constants.MaxUint256.mod(
 export const MAX_APY = 100_000
 export const DAY = 60 * 60 * 24
 export const YEAR = 365 * DAY
+
+export const ONE_PERCENT = 100
