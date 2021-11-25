@@ -79,10 +79,6 @@ describe('ManagedPortfolio', () => {
       expect(await portfolio.endDate()).to.equal(creationTimestamp + YEAR)
     })
 
-    it('sets owner', async () => {
-      expect(await portfolio.owner()).to.equal(portfolioOwner.address)
-    })
-
     it('manager fee', async () => {
       expect(await portfolio.managerFee()).to.equal(TEN_PERCENT)
     })
@@ -303,6 +299,7 @@ describe('ManagedPortfolio', () => {
     })
 
     it('whether portfolio is full depends on total amount deposited, not amount of underlying token', async () => {
+      await portfolio.connect(manager).setManagerFee(0)
       await portfolio.setMaxSize(parseUSDC(110))
       await depositIntoPortfolio(100)
       await portfolio.createBulletLoan(DAY * 30, borrower.address, parseUSDC(100), parseUSDC(106))
