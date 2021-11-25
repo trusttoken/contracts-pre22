@@ -7,30 +7,41 @@ import {IERC721} from "@openzeppelin/contracts4/token/ERC721/IERC721.sol";
 import {IERC721Receiver} from "@openzeppelin/contracts4/token/ERC721/IERC721Receiver.sol";
 import {Ownable} from "@openzeppelin/contracts4/access/Ownable.sol";
 import {BulletLoans, GRACE_PERIOD} from "./BulletLoans.sol";
+import {BP, BPMath} from "./types/BP.sol";
 
 interface IERC20WithDecimals is IERC20 {
     function decimals() external view returns (uint256);
 }
 
 contract ManagedPortfolio is IERC721Receiver, ERC20, Ownable {
+    using BPMath for BP;
+
     IERC20WithDecimals public underlyingToken;
     BulletLoans public bulletLoans;
     uint256 public endDate;
     uint256 public maxSize;
     uint256 public totalDeposited;
+    BP public managerFee;
+    address public manager;
 
     event BulletLoanCreated(uint256 id);
+
+    event ManagerFeeChanged(BP newManagerFee);
 
     constructor(
         IERC20WithDecimals _underlyingToken,
         BulletLoans _bulletLoans,
         uint256 _duration,
-        uint256 _maxSize
-    ) ERC20("ManagerPortfolio", "MPS") Ownable() {
+        uint256 _maxSize,
+        BP _managerFee,
+        address _manager
+    ) ERC20("ManagerPortfolio", "MPS") {
         underlyingToken = _underlyingToken;
         bulletLoans = _bulletLoans;
         endDate = block.timestamp + _duration;
         maxSize = _maxSize;
+        managerFee = _managerFee;
+        manager = _manager;
     }
 
     function deposit(uint256 depositAmount) external {
@@ -40,6 +51,13 @@ contract ManagedPortfolio is IERC721Receiver, ERC20, Ownable {
 
         _mint(msg.sender, getAmountToMint(depositAmount));
         underlyingToken.transferFrom(msg.sender, address(this), depositAmount);
+    }
+
+    function setManagerFee(BP _managerFee) external {
+        require(msg.sender == manager, "ManagedPortfolio: Only manager can set manager fee");
+
+        managerFee = _managerFee;
+        emit ManagerFeeChanged(_managerFee);
     }
 
     function getAmountToMint(uint256 amount) public view returns (uint256) {
@@ -75,8 +93,9 @@ contract ManagedPortfolio is IERC721Receiver, ERC20, Ownable {
             block.timestamp + loanDuration + GRACE_PERIOD <= endDate,
             "ManagedPortfolio: Loan end date is greater than Portfolio end date"
         );
-
+        uint256 managersPart = managerFee.mul(principalAmount).normalize();
         underlyingToken.transfer(borrower, principalAmount);
+        underlyingToken.transfer(manager, managersPart);
         uint256 loanId = bulletLoans.createLoan(underlyingToken);
         emit BulletLoanCreated(loanId);
     }
