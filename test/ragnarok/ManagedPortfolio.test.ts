@@ -14,8 +14,11 @@ import { describe } from 'mocha'
 import { parseEth, parseUSDC, DAY, YEAR, timeTravel } from 'utils'
 import { MockProvider } from '@ethereum-waffle/provider'
 import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
+import { arrayify, solidityKeccak256 } from 'ethers/lib/utils'
 
 const TEN_PERCENT = 1000
+const DEPOSIT_MESSAGE = 'deposit message'
+const HASHED_MESSAGE = solidityKeccak256(['string'], [DEPOSIT_MESSAGE])
 
 describe('ManagedPortfolio', () => {
   let provider: MockProvider
@@ -50,6 +53,7 @@ describe('ManagedPortfolio', () => {
       parseUSDC(1e7),
       TEN_PERCENT,
       manager.address,
+      DEPOSIT_MESSAGE,
     )
 
     portfolioAsLender = portfolio.connect(lender)
@@ -86,6 +90,10 @@ describe('ManagedPortfolio', () => {
     it('manager', async () => {
       expect(await portfolio.manager()).to.equal(manager.address)
     })
+
+    it('sets hashed deposit message', async () => {
+      expect(await portfolio.hashedDepositMessage()).to.equal(HASHED_MESSAGE)
+    })
   })
 
   describe('setManagerFee', () => {
@@ -114,13 +122,17 @@ describe('ManagedPortfolio', () => {
     it('lender cannot deposit after portfolio endDate', async () => {
       await timeTravel(provider, YEAR + DAY)
       await tokenAsLender.approve(portfolio.address, parseUSDC(10))
-      await expect(portfolioAsLender.deposit(parseUSDC(10))).to.be.revertedWith('ManagedPortfolio: Cannot deposit after portfolio end date')
+      const signature = await signMessage(lender, DEPOSIT_MESSAGE)
+      await expect(portfolioAsLender.deposit(parseUSDC(10), signature)).to.be.revertedWith('ManagedPortfolio: Cannot deposit after portfolio end date')
+    })
+
+    it('reverts if lender\'s signature is invalid', async () => {
+      const signature = await signMessage(lender, 'other message')
+      await expect(portfolioAsLender.deposit(parseUSDC(10), signature)).to.be.revertedWith('ManagedPortfolio: Signature is invalid')
     })
 
     it('transfers tokens to portfolio', async () => {
-      await tokenAsLender.approve(portfolio.address, parseUSDC(10))
-      await portfolioAsLender.deposit(parseUSDC(10))
-
+      await depositIntoPortfolio(10, lender)
       expect(await token.balanceOf(portfolio.address)).to.equal(parseUSDC(10))
     })
 
@@ -326,8 +338,31 @@ describe('ManagedPortfolio', () => {
     })
   })
 
+  describe('isSignatureValid', () => {
+    it('returns true for valid signature', async () => {
+      const signature = await signMessage(lender, DEPOSIT_MESSAGE)
+      expect(await portfolio.isSignatureValid(lender.address, signature)).to.be.true
+    })
+
+    it('returns false for invalid message', async () => {
+      const signature = await signMessage(lender, 'other message')
+      expect(await portfolio.isSignatureValid(lender.address, signature)).to.be.false
+    })
+
+    it('returns false for invalid signer', async () => {
+      const signature = await signMessage(manager, DEPOSIT_MESSAGE)
+      expect(await portfolio.isSignatureValid(lender.address, signature)).to.be.false
+    })
+  })
+
+  const signMessage = async (wallet: Wallet, message: string) => {
+    const hashedMessage = solidityKeccak256(['string'], [message])
+    return wallet.signMessage(arrayify(hashedMessage))
+  }
+
   const depositIntoPortfolio = async (amount: number, wallet: Wallet = lender) => {
     await token.connect(wallet).approve(portfolio.address, parseUSDC(amount))
-    await portfolio.connect(wallet).deposit(parseUSDC(amount))
+    const signature = await signMessage(wallet, DEPOSIT_MESSAGE)
+    await portfolio.connect(wallet).deposit(parseUSDC(amount), signature)
   }
 })
