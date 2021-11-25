@@ -11,11 +11,11 @@ contract BulletLoans is ERC721 {
 
     constructor() ERC721("BulletLoans", "BulletLoans") {}
 
-    function createLoan(IERC20 _underlyingToken) public returns (uint256 loanId) {
+    function createLoan(IERC20 _underlyingToken) public returns (uint256) {
         underlyingToken = _underlyingToken;
-        loanId = nextId;
+        uint256 loanId = nextId++;
         _safeMint(msg.sender, loanId);
-        nextId++;
+        return loanId;
     }
 
     function repay(uint256 instrumentId, uint256 amount) public {
