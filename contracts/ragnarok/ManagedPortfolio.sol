@@ -33,7 +33,7 @@ contract ManagedPortfolio is IERC721Receiver, ERC20, Manageable {
         uint256 _duration,
         uint256 _maxSize,
         BP _managerFee
-    ) ERC20("ManagerPortfolio", "MPS") Manageable() {
+    ) ERC20("ManagerPortfolio", "MPS") {
         underlyingToken = _underlyingToken;
         bulletLoans = _bulletLoans;
         endDate = block.timestamp + _duration;
