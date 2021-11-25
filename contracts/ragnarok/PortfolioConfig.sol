@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.10;
 
-import {BP, BPMath} from "./types/BP.sol";
 import {Ownable} from "@openzeppelin/contracts4/access/Ownable.sol";
+import {BP, BPMath} from "./types/BP.sol";
 
 contract PortfolioConfig is Ownable {
     using BPMath for BP;
