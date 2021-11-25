@@ -44,6 +44,7 @@ describe('ManagedPortfolio', () => {
       token.address,
       bulletLoans.address,
       YEAR,
+      parseUSDC(1e7),
     )
 
     portfolioAsLender = portfolio.connect(lender)
@@ -127,6 +128,12 @@ describe('ManagedPortfolio', () => {
       expect(await portfolio.balanceOf(lender.address)).to.equal(parseShares(10 + 5))
       expect(await portfolio.balanceOf(lender2.address)).to.equal(parseShares(30 + 10))
       expect(await portfolio.balanceOf(lender3.address)).to.equal(parseShares(10))
+    })
+
+    it('causes totalDeposited to increase', async () => {
+      expect(await portfolio.totalDeposited()).to.equal(parseUSDC(0))
+      await depositIntoPortfolio(10, lender)
+      expect(await portfolio.totalDeposited()).to.equal(parseUSDC(10))
     })
   })
 
@@ -224,6 +231,38 @@ describe('ManagedPortfolio', () => {
       await depositIntoPortfolio(10)
       await expect(portfolio.connect(borrower).createBulletLoan(YEAR - GRACE_PERIOD + 1, borrower.address, parseUSDC(5), parseUSDC(6)))
         .to.be.revertedWith('Ownable: caller is not the owner')
+    })
+  })
+
+  describe('maxSize', () => {
+    it('prevents deposit if total after deposit > maxSize', async () => {
+      await portfolio.setMaxSize(0)
+      return expect(depositIntoPortfolio(10, lender)).to.be.revertedWith('ManagedPortfolio: Portfolio is full')
+    })
+
+    it('allows deposit if total after deposit = maxSize', async () => {
+      await portfolio.setMaxSize(parseUSDC(100))
+      await expect(depositIntoPortfolio(100, lender)).not.to.be.reverted
+    })
+
+    it('allows multiple deposits until total after deposit > maxSize', async () => {
+      await portfolio.setMaxSize(parseUSDC(100))
+      await expect(depositIntoPortfolio(50, lender)).not.to.be.reverted
+      await expect(depositIntoPortfolio(50, lender2)).not.to.be.reverted
+      await expect(depositIntoPortfolio(50, lender)).to.be.revertedWith('ManagedPortfolio: Portfolio is full')
+    })
+
+    it('whether portfolio is full depends on total amount deposited, not amount of underlying token', async () => {
+      await portfolio.setMaxSize(parseUSDC(110))
+      await depositIntoPortfolio(100)
+      await portfolio.createBulletLoan(DAY * 30, borrower.address, parseUSDC(100), parseUSDC(106))
+
+      await expect(depositIntoPortfolio(100, lender)).to.be.revertedWith('ManagedPortfolio: Portfolio is full')
+    })
+
+    it('only owner is allowed to change maxSize', async () => {
+      await expect(portfolio.connect(lender).setMaxSize(0)).to.be.revertedWith('Ownable: caller is not the owner')
+      await expect(portfolio.connect(portfolioOwner).setMaxSize(0)).not.to.be.reverted
     })
   })
 
