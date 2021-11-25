@@ -55,6 +55,10 @@ describe('ManagedPortfolio', () => {
   })
 
   describe('constructor parameters', () => {
+    it('sets owner', async () => {
+      expect(await portfolio.owner()).to.equal(portfolioOwner.address)
+    })
+
     it('sets underlyingToken', async () => {
       expect(await portfolio.underlyingToken()).to.equal(token.address)
     })
@@ -67,10 +71,6 @@ describe('ManagedPortfolio', () => {
       const deployTx = await portfolio.deployTransaction.wait()
       const creationTimestamp = (await provider.getBlock(deployTx.blockHash)).timestamp
       expect(await portfolio.endDate()).to.equal(creationTimestamp + YEAR)
-    })
-
-    it('sets owner', async () => {
-      expect(await portfolio.owner()).to.equal(portfolioOwner.address)
     })
   })
 
@@ -218,6 +218,12 @@ describe('ManagedPortfolio', () => {
       await depositIntoPortfolio(10)
       await expect(portfolio.createBulletLoan(YEAR - GRACE_PERIOD + 1, borrower.address, parseUSDC(5), parseUSDC(6)))
         .to.be.revertedWith('ManagedPortfolio: Loan end date is greater than Portfolio end date')
+    })
+
+    it('only manager can create a loan', async () => {
+      await depositIntoPortfolio(10)
+      await expect(portfolio.connect(borrower).createBulletLoan(YEAR - GRACE_PERIOD + 1, borrower.address, parseUSDC(5), parseUSDC(6)))
+        .to.be.revertedWith('Ownable: caller is not the owner')
     })
   })
 
