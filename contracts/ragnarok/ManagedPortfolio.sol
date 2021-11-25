@@ -5,7 +5,7 @@ import {IERC20} from "@openzeppelin/contracts4/token/ERC20/IERC20.sol";
 import {ERC20} from "@openzeppelin/contracts4/token/ERC20/ERC20.sol";
 import {IERC721} from "@openzeppelin/contracts4/token/ERC721/IERC721.sol";
 import {IERC721Receiver} from "@openzeppelin/contracts4/token/ERC721/IERC721Receiver.sol";
-import {Ownable} from "@openzeppelin/contracts4/access/Ownable.sol";
+import {Manageable} from "./Manageable.sol";
 import {BulletLoans, GRACE_PERIOD} from "./BulletLoans.sol";
 import {BP, BPMath} from "./types/BP.sol";
 
@@ -13,7 +13,7 @@ interface IERC20WithDecimals is IERC20 {
     function decimals() external view returns (uint256);
 }
 
-contract ManagedPortfolio is IERC721Receiver, ERC20, Ownable {
+contract ManagedPortfolio is IERC721Receiver, ERC20, Manageable {
     using BPMath for BP;
 
     IERC20WithDecimals public underlyingToken;
@@ -22,7 +22,6 @@ contract ManagedPortfolio is IERC721Receiver, ERC20, Ownable {
     uint256 public maxSize;
     uint256 public totalDeposited;
     BP public managerFee;
-    address public manager;
 
     event BulletLoanCreated(uint256 id);
 
@@ -33,15 +32,13 @@ contract ManagedPortfolio is IERC721Receiver, ERC20, Ownable {
         BulletLoans _bulletLoans,
         uint256 _duration,
         uint256 _maxSize,
-        BP _managerFee,
-        address _manager
-    ) ERC20("ManagerPortfolio", "MPS") {
+        BP _managerFee
+    ) ERC20("ManagerPortfolio", "MPS") Manageable() {
         underlyingToken = _underlyingToken;
         bulletLoans = _bulletLoans;
         endDate = block.timestamp + _duration;
         maxSize = _maxSize;
         managerFee = _managerFee;
-        manager = _manager;
     }
 
     function deposit(uint256 depositAmount) external {
@@ -53,9 +50,7 @@ contract ManagedPortfolio is IERC721Receiver, ERC20, Ownable {
         underlyingToken.transferFrom(msg.sender, address(this), depositAmount);
     }
 
-    function setManagerFee(BP _managerFee) external {
-        require(msg.sender == manager, "ManagedPortfolio: Only manager can set manager fee");
-
+    function setManagerFee(BP _managerFee) external onlyManager {
         managerFee = _managerFee;
         emit ManagerFeeChanged(_managerFee);
     }
@@ -87,7 +82,7 @@ contract ManagedPortfolio is IERC721Receiver, ERC20, Ownable {
         address borrower,
         uint256 principalAmount,
         uint256 // repaymentAmount
-    ) public onlyOwner {
+    ) public onlyManager {
         require(block.timestamp < endDate, "ManagedPortfolio: Portfolio end date is in the past");
         require(
             block.timestamp + loanDuration + GRACE_PERIOD <= endDate,
@@ -113,7 +108,7 @@ contract ManagedPortfolio is IERC721Receiver, ERC20, Ownable {
         return IERC721Receiver.onERC721Received.selector;
     }
 
-    function setMaxSize(uint256 _maxSize) external onlyOwner {
+    function setMaxSize(uint256 _maxSize) external onlyManager {
         maxSize = _maxSize;
     }
 }

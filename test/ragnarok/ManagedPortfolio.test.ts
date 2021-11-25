@@ -27,7 +27,6 @@ describe('ManagedPortfolio', () => {
   let token: MockUsdc
   let tokenAsLender: MockUsdc
 
-  let portfolioOwner: Wallet
   let lender: Wallet
   let lender2: Wallet
   let lender3: Wallet
@@ -38,18 +37,17 @@ describe('ManagedPortfolio', () => {
   const parseShares = parseEth
 
   beforeEachWithFixture(async (wallets, _provider) => {
-    [portfolioOwner, lender, lender2, lender3, borrower, manager] = wallets
+    [manager, lender, lender2, lender3, borrower] = wallets
     provider = _provider
 
-    token = await new MockUsdc__factory(portfolioOwner).deploy()
-    bulletLoans = await new BulletLoans__factory(portfolioOwner).deploy()
-    portfolio = await new ManagedPortfolio__factory(portfolioOwner).deploy(
+    token = await new MockUsdc__factory(manager).deploy()
+    bulletLoans = await new BulletLoans__factory(manager).deploy()
+    portfolio = await new ManagedPortfolio__factory(manager).deploy(
       token.address,
       bulletLoans.address,
       YEAR,
       parseUSDC(1e7),
       TEN_PERCENT,
-      manager.address,
     )
 
     portfolioAsLender = portfolio.connect(lender)
@@ -61,8 +59,8 @@ describe('ManagedPortfolio', () => {
   })
 
   describe('constructor parameters', () => {
-    it('sets owner', async () => {
-      expect(await portfolio.owner()).to.equal(portfolioOwner.address)
+    it('sets manager', async () => {
+      expect(await portfolio.manager()).to.equal(manager.address)
     })
 
     it('sets underlyingToken', async () => {
@@ -82,10 +80,6 @@ describe('ManagedPortfolio', () => {
     it('manager fee', async () => {
       expect(await portfolio.managerFee()).to.equal(TEN_PERCENT)
     })
-
-    it('manager', async () => {
-      expect(await portfolio.manager()).to.equal(manager.address)
-    })
   })
 
   describe('setManagerFee', () => {
@@ -101,7 +95,7 @@ describe('ManagedPortfolio', () => {
 
     it('only manager can set fees', async () => {
       await expect(portfolio.connect(lender).setManagerFee(2000)).to.be.revertedWith(
-        'ManagedPortfolio: Only manager can set manager fee',
+        'Manageable: Caller is not the manager',
       )
     })
   })
@@ -269,7 +263,7 @@ describe('ManagedPortfolio', () => {
     it('only manager can create a loan', async () => {
       await depositIntoPortfolio(10)
       await expect(portfolio.connect(borrower).createBulletLoan(YEAR - GRACE_PERIOD + 1, borrower.address, parseUSDC(5), parseUSDC(6)))
-        .to.be.revertedWith('Ownable: caller is not the owner')
+        .to.be.revertedWith('Manageable: Caller is not the manager')
     })
 
     it('transfers manager fee to the manager', async () => {
@@ -307,9 +301,9 @@ describe('ManagedPortfolio', () => {
       await expect(depositIntoPortfolio(100, lender)).to.be.revertedWith('ManagedPortfolio: Portfolio is full')
     })
 
-    it('only owner is allowed to change maxSize', async () => {
-      await expect(portfolio.connect(lender).setMaxSize(0)).to.be.revertedWith('Ownable: caller is not the owner')
-      await expect(portfolio.connect(portfolioOwner).setMaxSize(0)).not.to.be.reverted
+    it('only manager is allowed to change maxSize', async () => {
+      await expect(portfolio.connect(lender).setMaxSize(0)).to.be.revertedWith('Manageable: Caller is not the manager')
+      await expect(portfolio.connect(manager).setMaxSize(0)).not.to.be.reverted
     })
   })
 
