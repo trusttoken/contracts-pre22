@@ -16,16 +16,24 @@ interface IERC20WithDecimals is IERC20 {
 contract ManagedPortfolio is IERC721Receiver, ERC20, Manageable {
     using BPMath for BP;
 
+    enum LoanStatus {
+        Active,
+        Defaulted
+    }
+
     IERC20WithDecimals public underlyingToken;
     BulletLoans public bulletLoans;
     uint256 public endDate;
     uint256 public maxSize;
     uint256 public totalDeposited;
     BP public managerFee;
+    mapping(uint256 => LoanStatus) public loanStatus;
 
     event BulletLoanCreated(uint256 id);
 
     event ManagerFeeChanged(BP newManagerFee);
+
+    event LoanStatusChanged(uint256 id, LoanStatus newStatus);
 
     constructor(
         IERC20WithDecimals _underlyingToken,
@@ -110,5 +118,20 @@ contract ManagedPortfolio is IERC721Receiver, ERC20, Manageable {
 
     function setMaxSize(uint256 _maxSize) external onlyManager {
         maxSize = _maxSize;
+    }
+
+    function markLoanAsDefaulted(uint256 id) public onlyManager {
+        require(loanStatus[id] != LoanStatus.Defaulted, "ManagedPortfolio: Loan is already defaulted");
+        _changeLoanStatus(id, LoanStatus.Defaulted);
+    }
+
+    function markLoanAsActive(uint256 id) public onlyManager {
+        require(loanStatus[id] != LoanStatus.Active, "ManagedPortfolio: Loan is already active");
+        _changeLoanStatus(id, LoanStatus.Active);
+    }
+
+    function _changeLoanStatus(uint256 id, LoanStatus status) private {
+        loanStatus[id] = status;
+        emit LoanStatusChanged(id, status);
     }
 }
