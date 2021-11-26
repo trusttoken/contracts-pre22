@@ -449,11 +449,11 @@ contract AvalancheTokenController {
         registryAdmin = admin;
     }
 
-    function setIsMintPauser(address account, bool status) external onlyRegistryAdmin {
+    function setIsMintPauser(address account, bool status) external onlyOwner {
         isMintPauser[account] = status;
     }
 
-    function setIsMintRatifier(address account, bool status) external onlyRegistryAdmin {
+    function setIsMintRatifier(address account, bool status) external onlyOwner {
         isMintRatifier[account] = status;
     }
 

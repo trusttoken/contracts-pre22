@@ -13,7 +13,7 @@ contract PortfolioConfig is Ownable {
     event ProtocolFeeChanged(BP newProtocolFee);
     event ProtocolAddressChanged(address newProtocolAddress);
 
-    constructor(BP _protocolFee, address _protocolAddress) public {
+    constructor(BP _protocolFee, address _protocolAddress) {
         protocolFee = _protocolFee;
         protocolAddress = _protocolAddress;
     }

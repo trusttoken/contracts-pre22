@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.10;
 
+import {ECDSA} from "@openzeppelin/contracts4/utils/cryptography/ECDSA.sol";
 import {IERC20} from "@openzeppelin/contracts4/token/ERC20/IERC20.sol";
 import {ERC20} from "@openzeppelin/contracts4/token/ERC20/ERC20.sol";
 import {IERC721Receiver} from "@openzeppelin/contracts4/token/ERC721/IERC721Receiver.sol";
 import {Manageable} from "./Manageable.sol";
 import {BulletLoans, LoanStatus, GRACE_PERIOD} from "./BulletLoans.sol";
+import {PortfolioConfig} from "./PortfolioConfig.sol";
 import {BP, BPMath} from "./types/BP.sol";
 
 interface IERC20WithDecimals is IERC20 {
@@ -14,13 +16,16 @@ interface IERC20WithDecimals is IERC20 {
 
 contract ManagedPortfolio is IERC721Receiver, ERC20, Manageable {
     using BPMath for BP;
+    using ECDSA for bytes32;
 
     IERC20WithDecimals public underlyingToken;
     BulletLoans public bulletLoans;
+    PortfolioConfig public portfolioConfig;
     uint256 public endDate;
     uint256 public maxSize;
     uint256 public totalDeposited;
     BP public managerFee;
+    bytes32 public hashedDepositMessage;
     mapping(uint256 => LoanStatus) public loanStatus;
 
     event BulletLoanCreated(uint256 id);
@@ -32,21 +37,26 @@ contract ManagedPortfolio is IERC721Receiver, ERC20, Manageable {
     constructor(
         IERC20WithDecimals _underlyingToken,
         BulletLoans _bulletLoans,
+        PortfolioConfig _portfolioConfig,
         uint256 _duration,
         uint256 _maxSize,
-        BP _managerFee
+        BP _managerFee,
+        string memory _depositMessage
     ) ERC20("ManagerPortfolio", "MPS") {
         underlyingToken = _underlyingToken;
         bulletLoans = _bulletLoans;
+        portfolioConfig = _portfolioConfig;
         endDate = block.timestamp + _duration;
         maxSize = _maxSize;
         managerFee = _managerFee;
+        hashedDepositMessage = keccak256(bytes(_depositMessage));
     }
 
-    function deposit(uint256 depositAmount) external {
+    function deposit(uint256 depositAmount, bytes memory metadata) external {
         totalDeposited += depositAmount;
         require(totalDeposited <= maxSize, "ManagedPortfolio: Portfolio is full");
         require(block.timestamp < endDate, "ManagedPortfolio: Cannot deposit after portfolio end date");
+        require(isSignatureValid(msg.sender, metadata), "ManagedPortfolio: Signature is invalid");
 
         _mint(msg.sender, getAmountToMint(depositAmount));
         underlyingToken.transferFrom(msg.sender, address(this), depositAmount);
@@ -91,8 +101,10 @@ contract ManagedPortfolio is IERC721Receiver, ERC20, Manageable {
             "ManagedPortfolio: Loan end date is greater than Portfolio end date"
         );
         uint256 managersPart = managerFee.mul(principalAmount).normalize();
+        uint256 protocolsPart = portfolioConfig.protocolFee().mul(principalAmount).normalize();
         underlyingToken.transfer(borrower, principalAmount);
         underlyingToken.transfer(manager, managersPart);
+        underlyingToken.transfer(portfolioConfig.protocolAddress(), protocolsPart);
         uint256 loanId = bulletLoans.createLoan(underlyingToken);
         emit BulletLoanCreated(loanId);
     }
@@ -112,6 +124,11 @@ contract ManagedPortfolio is IERC721Receiver, ERC20, Manageable {
 
     function setMaxSize(uint256 _maxSize) external onlyManager {
         maxSize = _maxSize;
+    }
+
+    function isSignatureValid(address signer, bytes memory signature) public view returns (bool) {
+        address recovered = hashedDepositMessage.toEthSignedMessageHash().recover(signature);
+        return recovered == signer;
     }
 
     function markLoanAsDefaulted(uint256 id) public onlyManager {
