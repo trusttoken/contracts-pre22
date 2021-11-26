@@ -22,11 +22,10 @@ rule onePlusTwoEqualsThree(uint one, uint two) {
     assert three == 3, "One plus two does not equal three";
 }
 
-rule functionDoesNotBanUnlockedBorrower() {
+rule functionDoesNotBanUnlockedBorrower(method f) {
     address borrower;
     require isUnlocked(borrower);
 
-    method f;
     env e;
     require isReasonableEnv(e);
     calldataarg args;
@@ -34,6 +33,8 @@ rule functionDoesNotBanUnlockedBorrower() {
         address locker = anyReasonableAddress();
         address lockee;
         lock(e, lockee, locker);
+    } else if (f.isFallback) {
+        f@withrevert(e,args);
     } else {
         f(e, args);
     }
@@ -41,43 +42,52 @@ rule functionDoesNotBanUnlockedBorrower() {
     assert !isBanned(borrower), "Borrower's status changes from unlocked to banned directly";
 }
 
-rule functionDoesNotUnbanBorrower {
+rule functionDoesNotUnbanBorrower(method f) {
     address borrower;
     require isBanned(borrower);
 
-    method f;
     env e;
     require isReasonableEnv(e);
     calldataarg args;
-    f(e, args);
+    if (f.isFallback) {
+        f@withrevert(e, args);
+    } else {
+        f(e, args);
+    }
 
     assert isBanned(borrower), "Borrower gets unbanned";
 }
 
-rule onlyLockerCanBanBorrower {
+rule onlyLockerCanBanBorrower(method f) {
     address borrower;
     address lockerAddress = anyReasonableAddress();
     require locker(borrower) == lockerAddress;
 
-    method f;
     env e;
     require isReasonableEnv(e);
     calldataarg args;
-    f(e, args);
+    if (f.isFallback) {
+        f@withrevert(e, args);
+    } else {
+        f(e, args);
+    }
 
     assert isBanned(borrower) => e.msg.sender == lockerAddress, "Borrower gets banned by non-locker address";
 }
 
-rule onlyLockerCanUnlockBorrower {
+rule onlyLockerCanUnlockBorrower(method f) {
     address borrower;
     address lockerAddress = anyReasonableAddress();
     require locker(borrower) == lockerAddress;
 
-    method f;
     env e;
     require isReasonableEnv(e);
     calldataarg args;
-    f(e, args);
+    if (f.isFallback) {
+        f@withrevert(e, args);
+    } else {
+        f(e, args);
+    }
 
     assert isUnlocked(borrower) => e.msg.sender == lockerAddress, "Borrower gets unlocked by non-locker address";
 }
