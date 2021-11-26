@@ -320,6 +320,62 @@ describe('ManagedPortfolio', () => {
     })
   })
 
+  describe('changeLoanStatus', () => {
+    enum LoanStatus {
+      Active,
+      Defaulted,
+    }
+    const id = 0
+
+    it('changes loan status', async () => {
+      await portfolio.markLoanAsDefaulted(id)
+      expect(await portfolio.loanStatus(id)).to.equal(LoanStatus.Defaulted)
+      await portfolio.markLoanAsActive(id)
+      expect(await portfolio.loanStatus(id)).to.equal(LoanStatus.Active)
+      await portfolio.markLoanAsDefaulted(id)
+      expect(await portfolio.loanStatus(id)).to.equal(LoanStatus.Defaulted)
+    })
+
+    it('emits event', async () => {
+      await expect(portfolio.markLoanAsDefaulted(id))
+        .to.emit(portfolio, 'LoanStatusChanged')
+        .withArgs(id, LoanStatus.Defaulted)
+      await expect(portfolio.markLoanAsActive(id))
+        .to.emit(portfolio, 'LoanStatusChanged')
+        .withArgs(id, LoanStatus.Active)
+    })
+
+    describe('markLoanAsDefaulted', () => {
+      it('only manager can mark loan as defaulted', async () => {
+        await expect(portfolio.connect(lender).markLoanAsDefaulted(id))
+          .to.be.revertedWith('Manageable: Caller is not the manager')
+      })
+
+      it('can mark only not defaulted loan', async () => {
+        await portfolio.markLoanAsDefaulted(id)
+        await expect(portfolio.connect(manager).markLoanAsDefaulted(id))
+          .to.be.revertedWith('ManagedPortfolio: Loan is already defaulted')
+      })
+    })
+
+    describe('markLoanAsActive', () => {
+      beforeEach(async () => {
+        await portfolio.markLoanAsDefaulted(id)
+      })
+
+      it('only manager can mark loan as active', async () => {
+        await expect(portfolio.connect(lender).markLoanAsActive(id))
+          .to.be.revertedWith('Manageable: Caller is not the manager')
+      })
+
+      it('can mark only not active loan', async () => {
+        await portfolio.markLoanAsActive(id)
+        await expect(portfolio.connect(manager).markLoanAsActive(id))
+          .to.be.revertedWith('ManagedPortfolio: Loan is already active')
+      })
+    })
+  })
+
   const depositIntoPortfolio = async (amount: number, wallet: Wallet = lender) => {
     await token.connect(wallet).approve(portfolio.address, parseUSDC(amount))
     await portfolio.connect(wallet).deposit(parseUSDC(amount))
