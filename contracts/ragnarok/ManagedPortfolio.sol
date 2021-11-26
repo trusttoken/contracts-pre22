@@ -7,6 +7,7 @@ import {IERC721} from "@openzeppelin/contracts4/token/ERC721/IERC721.sol";
 import {IERC721Receiver} from "@openzeppelin/contracts4/token/ERC721/IERC721Receiver.sol";
 import {Manageable} from "./Manageable.sol";
 import {BulletLoans, GRACE_PERIOD} from "./BulletLoans.sol";
+import {PortfolioConfig} from "./PortfolioConfig.sol";
 import {BP, BPMath} from "./types/BP.sol";
 
 interface IERC20WithDecimals is IERC20 {
@@ -18,6 +19,7 @@ contract ManagedPortfolio is IERC721Receiver, ERC20, Manageable {
 
     IERC20WithDecimals public underlyingToken;
     BulletLoans public bulletLoans;
+    PortfolioConfig public portfolioConfig;
     uint256 public endDate;
     uint256 public maxSize;
     uint256 public totalDeposited;
@@ -30,12 +32,14 @@ contract ManagedPortfolio is IERC721Receiver, ERC20, Manageable {
     constructor(
         IERC20WithDecimals _underlyingToken,
         BulletLoans _bulletLoans,
+        PortfolioConfig _portfolioConfig,
         uint256 _duration,
         uint256 _maxSize,
         BP _managerFee
     ) ERC20("ManagerPortfolio", "MPS") {
         underlyingToken = _underlyingToken;
         bulletLoans = _bulletLoans;
+        portfolioConfig = _portfolioConfig;
         endDate = block.timestamp + _duration;
         maxSize = _maxSize;
         managerFee = _managerFee;
@@ -89,8 +93,10 @@ contract ManagedPortfolio is IERC721Receiver, ERC20, Manageable {
             "ManagedPortfolio: Loan end date is greater than Portfolio end date"
         );
         uint256 managersPart = managerFee.mul(principalAmount).normalize();
+        uint256 protocolsPart = portfolioConfig.protocolFee().mul(principalAmount).normalize();
         underlyingToken.transfer(borrower, principalAmount);
         underlyingToken.transfer(manager, managersPart);
+        underlyingToken.transfer(portfolioConfig.protocolAddress(), protocolsPart);
         uint256 loanId = bulletLoans.createLoan(underlyingToken);
         emit BulletLoanCreated(loanId);
     }
