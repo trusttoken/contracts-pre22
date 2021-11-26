@@ -3,10 +3,9 @@ pragma solidity 0.8.10;
 
 import {IERC20} from "@openzeppelin/contracts4/token/ERC20/IERC20.sol";
 import {ERC20} from "@openzeppelin/contracts4/token/ERC20/ERC20.sol";
-import {IERC721} from "@openzeppelin/contracts4/token/ERC721/IERC721.sol";
 import {IERC721Receiver} from "@openzeppelin/contracts4/token/ERC721/IERC721Receiver.sol";
 import {Manageable} from "./Manageable.sol";
-import {BulletLoans, GRACE_PERIOD} from "./BulletLoans.sol";
+import {BulletLoans, LoanStatus, GRACE_PERIOD} from "./BulletLoans.sol";
 import {BP, BPMath} from "./types/BP.sol";
 
 interface IERC20WithDecimals is IERC20 {
@@ -15,11 +14,6 @@ interface IERC20WithDecimals is IERC20 {
 
 contract ManagedPortfolio is IERC721Receiver, ERC20, Manageable {
     using BPMath for BP;
-
-    enum LoanStatus {
-        Active,
-        Defaulted
-    }
 
     IERC20WithDecimals public underlyingToken;
     BulletLoans public bulletLoans;
