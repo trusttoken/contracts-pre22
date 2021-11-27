@@ -141,6 +141,7 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
      * @param minAmount Minimum amount of tokens to remove from strategy
      */
     function withdraw(uint256 minAmount) external override onlyPool {
+        revert("withdraws disabled");
         // get rough estimate of how much yCRV we should sell
         uint256 roughCurveTokenAmount = calcTokenWithdrawAmount(minAmount);
         uint256 yBalance = yTokenBalance();
