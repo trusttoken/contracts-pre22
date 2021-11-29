@@ -117,6 +117,7 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
      * @param amount amount of token to add to curve
      */
     function deposit(uint256 amount) external override onlyPool {
+        revert("deposits disabled");
         token.safeTransferFrom(pool, address(this), amount);
 
         uint256 totalAmount = token.balanceOf(address(this));
@@ -233,7 +234,7 @@ contract CurveYearnStrategy is UpgradeableClaimable, ITrueStrategy {
      * @param data Data that is forwarded into the 1inch exchange contract. Can be acquired from 1Inch API https://api.1inch.exchange/v3.0/1/swap
      * [See more](https://docs.1inch.exchange/api/quote-swap#swap)
      */
-    function sellCrv(bytes calldata data) external {
+    function sellCrv(bytes calldata data) external onlyOwner {
         (I1Inch3.SwapDescription memory swap, uint256 balanceDiff) = _1Inch.exchange(data);
 
         uint256 expectedGain = normalizeDecimals(crvOracle.crvToUsd(swap.amount));
