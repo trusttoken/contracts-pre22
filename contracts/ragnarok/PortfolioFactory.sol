@@ -6,9 +6,9 @@ import {BulletLoans} from "./BulletLoans.sol";
 import {PortfolioConfig} from "./PortfolioConfig.sol";
 import {BP} from "./types/BP.sol";
 
-contract PortflioFactory {
-    BulletLoans bulletLoans;
-    PortfolioConfig portfolioConfig;
+contract PortfolioFactory {
+    BulletLoans public bulletLoans;
+    PortfolioConfig public portfolioConfig;
     ManagedPortfolio[] public supportedPortfolios;
 
     event PortfolioCreated(ManagedPortfolio newPortfolio, address manager);
