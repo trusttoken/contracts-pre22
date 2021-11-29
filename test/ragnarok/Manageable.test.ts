@@ -17,7 +17,7 @@ describe('Manageable', () => {
 
   beforeEachWithFixture(async (wallets) => {
     [manager, otherWallet] = wallets
-    manageable = await new Manageable__factory(manager).deploy()
+    manageable = await new Manageable__factory(manager).deploy(manager.address)
   })
 
   describe('constructor', () => {
@@ -30,7 +30,7 @@ describe('Manageable', () => {
     })
 
     it('emits event', async () => {
-      const anotherManageable = await new Manageable__factory(manager).deploy()
+      const anotherManageable = await new Manageable__factory(manager).deploy(manager.address)
       const creationTx = (anotherManageable).deployTransaction
       await expect(creationTx)
         .to.emit(anotherManageable, 'ManagementTransferred')

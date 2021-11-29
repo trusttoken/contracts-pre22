@@ -19,6 +19,7 @@ contract PortfolioFactory {
     }
 
     function createPortfolio(
+        address _manager,
         IERC20WithDecimals _underlyingToken,
         uint256 _duration,
         uint256 _maxSize,
@@ -26,6 +27,7 @@ contract PortfolioFactory {
         string memory _depositMessage
     ) public {
         ManagedPortfolio newPortfolio = new ManagedPortfolio(
+            _manager,
             _underlyingToken,
             bulletLoans,
             portfolioConfig,

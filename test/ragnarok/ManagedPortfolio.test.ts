@@ -49,9 +49,10 @@ describe('ManagedPortfolio', () => {
     provider = _provider
 
     token = await new MockUsdc__factory(manager).deploy()
-    bulletLoans = await new BulletLoans__factory(manager).deploy()
+    bulletLoans = await new BulletLoans__factory(protocolOwner).deploy()
     portfolioConfig = await new PortfolioConfig__factory(protocolOwner).deploy(500, protocol.address)
     portfolio = await new ManagedPortfolio__factory(manager).deploy(
+      manager.address,
       token.address,
       bulletLoans.address,
       portfolioConfig.address,

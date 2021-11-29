@@ -60,6 +60,7 @@ describe('PortfolioFactory', () => {
 
     beforeEach(async () => {
       tx = factory.connect(manager).createPortfolio(
+        manager.address,
         token.address,
         YEAR,
         parseUSDC(1e7),

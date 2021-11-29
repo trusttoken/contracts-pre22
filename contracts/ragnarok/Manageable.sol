@@ -12,8 +12,8 @@ contract Manageable {
         _;
     }
 
-    constructor() {
-        _setManager(msg.sender);
+    constructor(address _manager) {
+        _setManager(_manager);
     }
 
     function transferManagement(address newManager) public onlyManager {

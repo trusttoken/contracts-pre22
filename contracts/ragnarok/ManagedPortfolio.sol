@@ -4,7 +4,6 @@ pragma solidity 0.8.10;
 import {ECDSA} from "@openzeppelin/contracts4/utils/cryptography/ECDSA.sol";
 import {IERC20} from "@openzeppelin/contracts4/token/ERC20/IERC20.sol";
 import {ERC20} from "@openzeppelin/contracts4/token/ERC20/ERC20.sol";
-import {IERC721} from "@openzeppelin/contracts4/token/ERC721/IERC721.sol";
 import {IERC721Receiver} from "@openzeppelin/contracts4/token/ERC721/IERC721Receiver.sol";
 import {Manageable} from "./Manageable.sol";
 import {BulletLoans, GRACE_PERIOD} from "./BulletLoans.sol";
@@ -33,6 +32,7 @@ contract ManagedPortfolio is IERC721Receiver, ERC20, Manageable {
     event ManagerFeeChanged(BP newManagerFee);
 
     constructor(
+        address _manager,
         IERC20WithDecimals _underlyingToken,
         BulletLoans _bulletLoans,
         PortfolioConfig _portfolioConfig,
@@ -40,7 +40,7 @@ contract ManagedPortfolio is IERC721Receiver, ERC20, Manageable {
         uint256 _maxSize,
         BP _managerFee,
         string memory _depositMessage
-    ) ERC20("ManagerPortfolio", "MPS") {
+    ) ERC20("ManagedPortfolio", "MPS") Manageable(_manager) {
         underlyingToken = _underlyingToken;
         bulletLoans = _bulletLoans;
         portfolioConfig = _portfolioConfig;
