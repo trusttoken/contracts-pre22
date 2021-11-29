@@ -39,4 +39,8 @@ contract PortfolioFactory {
         supportedPortfolios.push(newPortfolio);
         emit PortfolioCreated(newPortfolio, msg.sender);
     }
+
+    function getSupportedPortfolios() public view returns (ManagedPortfolio[] memory) {
+        return supportedPortfolios;
+    }
 }

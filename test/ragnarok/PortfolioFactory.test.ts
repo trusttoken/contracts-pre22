@@ -107,6 +107,29 @@ describe('PortfolioFactory', () => {
     })
   })
 
+  describe('getSupportedPortfolios', () => {
+    const portfolioAddresses = []
+
+    beforeEach(async () => {
+      for (let i = 0; i < 3; i++) {
+        const tx = factory.connect(manager).createPortfolio(
+          manager.address,
+          token.address,
+          YEAR,
+          parseUSDC(1e7),
+          TEN_PERCENT,
+          DEPOSIT_MESSAGE,
+        )
+        portfolioAddresses.push(await extractPortfolioAddress(tx))
+      }
+    })
+
+    it('returns list of created portfolios', async () => {
+      const supportedPortfolios = await factory.getSupportedPortfolios()
+      expect(supportedPortfolios).to.deep.equal(portfolioAddresses)
+    })
+  })
+
   const extractPortfolioAddress = async (pendingTx: Promise<ContractTransaction>) => {
     const tx = await pendingTx
     const receipt = await tx.wait()
