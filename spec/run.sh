@@ -6,7 +6,7 @@ extract_json() {
     local keys="$2"
 
     python3 <<EOF
-import json,sys
+import json
 obj=json.load(open("${json_file}", 'r'))
 for key in "${keys}".split('.'):
     obj=obj[key]
