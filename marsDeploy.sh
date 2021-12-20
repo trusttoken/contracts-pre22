@@ -19,7 +19,7 @@ while [[ "$@" ]]; do
   case "$1" in
     --network)
       if [ "$2" ]; then
-        network="$2"
+        network="unknown"
         shift 1
       fi
       ;;
