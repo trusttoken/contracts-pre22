@@ -5,6 +5,10 @@ import {
   OwnedUpgradeabilityProxy,
 } from '../build/artifacts'
 
+// Example usage:
+//   $ ./marsDeploy.sh deploy/avalanche.ts --network https://api.avax.network/ext/bc/C/rpc --dry-run
+//   PRIVATE_KEY=0x123..64
+
 deploy({}, () => {
   const proxy = createProxy(OwnedUpgradeabilityProxy)
   const tusd = proxy(contract(AvalancheTrueUSD), 'initialize', [])
