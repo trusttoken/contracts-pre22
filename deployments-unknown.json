@@ -15,10 +15,6 @@
     "avalancheTokenController_proxy": {
       "txHash": "0xb8a69fb68b07c1e72ac3adb9c6973b888f885eb6891488a6783227a9d7902f28",
       "address": "0x08031B53f15F7E5aADDCdF6da3382f8483dB4323"
-    },
-    "ownedUpgradeabilityProxy": {
-      "txHash": "0xa9bc3c2b29b8d1013696c21384ce3e10d3bf73d295fb15f5456cd95007f0e292",
-      "address": "0x3D7e2B1725EB4608f32E8F63aBe97b65513479F4"
     }
   }
 }
