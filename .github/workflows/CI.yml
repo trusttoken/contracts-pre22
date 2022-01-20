@@ -25,3 +25,6 @@ jobs:
           REPORT_GAS: true
       - name: Run codechecks
         run: yarn codechecks
+        env:
+          CC_SECRET: ${{ secrets.CC_SECRET }}
+
