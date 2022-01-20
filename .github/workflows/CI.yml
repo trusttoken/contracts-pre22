@@ -1,0 +1,27 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js 14.x
+        uses: actions/setup-node@v2
+        with:
+          node-version: 14.x
+          cache: 'yarn'
+      - name: yarn
+        run: yarn
+      - name: build
+        run: yarn build
+      - name: test with gas reporter
+        run: yarn hardhat test
+        env:
+          REPORT_GAS: true
+      - name: Run codechecks
+        run: yarn codechecks

@@ -40,11 +40,13 @@
     "checks": "yarn lint && yarn typecheck && yarn test && yarn test:integration",
     "docs": "npx solidity-docgen --solc-module solc-0.6 -i contracts -o docs",
     "slither": "./slither.sh",
-    "coverage": "bash ./runCoverage.sh"
+    "coverage": "bash ./runCoverage.sh",
+    "codechecks": "codechecks"
   },
   "author": "",
   "license": "SEE LICENSE IN LICENSE.md",
   "devDependencies": {
+    "@codechecks/client": "0.1.13-beta",
     "@typechain/ethers-v5": "^6.0.5",
     "@types/chai": "^4.2.11",
     "@types/mocha": "^7.0.2",
@@ -55,6 +57,7 @@
     "eslint": "^6.8.0",
     "ethereum-waffle": "^3.4.0",
     "hardhat-abi-exporter": "^2.2.1",
+    "hardhat-gas-reporter": "^1.0.7",
     "mocha": "^8.2.1",
     "node-fetch": "^2.6.1",
     "patch-package": "^6.2.2",

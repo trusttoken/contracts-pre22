@@ -1,5 +1,4 @@
-import { expect, use } from 'chai'
-import { solidity } from 'ethereum-waffle'
+import { expect } from 'chai'
 import { Wallet } from 'ethers'
 import { setupDeploy } from 'scripts/utils'
 import { AddressOne } from 'utils'
@@ -9,8 +8,6 @@ import {
   BorrowingMutex__factory,
 } from 'contracts'
 import { AddressZero } from '@ethersproject/constants'
-
-use(solidity)
 
 describe('BorrowingMutex', () => {
   let owner: Wallet

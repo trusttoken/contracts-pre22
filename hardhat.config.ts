@@ -3,6 +3,7 @@ import '@nomiclabs/hardhat-waffle'
 import 'solidity-coverage'
 import './abi-exporter'
 import 'tsconfig-paths/register'
+import 'hardhat-gas-reporter'
 
 import mocharc from './.mocharc.json'
 
@@ -40,4 +41,7 @@ module.exports = {
     ...mocharc,
     timeout: 400000,
   },
+  gasReporter: {
+    enabled: (process.env.REPORT_GAS) ? true : false
+  }
 }
