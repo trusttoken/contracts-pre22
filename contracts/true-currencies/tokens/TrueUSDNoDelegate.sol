@@ -1259,7 +1259,7 @@ abstract contract TrueCurrencyWithLegacyAutosweep is DelegateERC20 {
 
     function requireNotAutosweepAddress(address recipient, address depositAddress) internal pure {
         return
-        require(uint256(recipient) >> 20 != uint256(depositAddress) >> 20 || recipient == depositAddress, "Autosweep is disabled");
+          require(uint256(recipient) >> 20 != uint256(depositAddress) >> 20 || recipient == depositAddress, "Autosweep is disabled");
     }
 }
 
