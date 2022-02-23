@@ -1,6 +1,6 @@
 /**
  *Submitted for verification at Etherscan.io on 2020-09-25
- */
+*/
 
 /**
  *  :::==== :::====  :::  === :::===== :::  === :::===  :::====
@@ -202,11 +202,7 @@ interface IERC20 {
      *
      * Emits a {Transfer} event.
      */
-    function transferFrom(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) external returns (bool);
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
 
     /**
      * @dev Emitted when `value` tokens are moved from one account (`from`) to
@@ -303,11 +299,7 @@ library SafeMath {
      *
      * - Subtraction cannot overflow.
      */
-    function sub(
-        uint256 a,
-        uint256 b,
-        string memory errorMessage
-    ) internal pure returns (uint256) {
+    function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
         require(b <= a, errorMessage);
         uint256 c = a - b;
 
@@ -366,11 +358,7 @@ library SafeMath {
      *
      * - The divisor cannot be zero.
      */
-    function div(
-        uint256 a,
-        uint256 b,
-        string memory errorMessage
-    ) internal pure returns (uint256) {
+    function div(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
         require(b > 0, errorMessage);
         uint256 c = a / b;
         // assert(a == b * c + a % b); // There is no case in which this doesn't hold
@@ -406,11 +394,7 @@ library SafeMath {
      *
      * - The divisor cannot be zero.
      */
-    function mod(
-        uint256 a,
-        uint256 b,
-        string memory errorMessage
-    ) internal pure returns (uint256) {
+    function mod(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
         require(b != 0, errorMessage);
         return a % b;
     }
@@ -446,9 +430,7 @@ library Address {
         bytes32 codehash;
         bytes32 accountHash = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
         // solhint-disable-next-line no-inline-assembly
-        assembly {
-            codehash := extcodehash(account)
-        }
+        assembly { codehash := extcodehash(account) }
         return (codehash != accountHash && codehash != 0x0);
     }
 
@@ -472,7 +454,7 @@ library Address {
         require(address(this).balance >= amount, "Address: insufficient balance");
 
         // solhint-disable-next-line avoid-low-level-calls, avoid-call-value
-        (bool success, ) = recipient.call{value: amount}("");
+        (bool success, ) = recipient.call{ value: amount }("");
         require(success, "Address: unable to send value, recipient may have reverted");
     }
 
@@ -504,11 +486,7 @@ library Address {
      *
      * _Available since v3.1._
      */
-    function functionCall(
-        address target,
-        bytes memory data,
-        string memory errorMessage
-    ) internal returns (bytes memory) {
+    function functionCall(address target, bytes memory data, string memory errorMessage) internal returns (bytes memory) {
         return _functionCallWithValue(target, data, 0, errorMessage);
     }
 
@@ -523,11 +501,7 @@ library Address {
      *
      * _Available since v3.1._
      */
-    function functionCallWithValue(
-        address target,
-        bytes memory data,
-        uint256 value
-    ) internal returns (bytes memory) {
+    function functionCallWithValue(address target, bytes memory data, uint256 value) internal returns (bytes memory) {
         return functionCallWithValue(target, data, value, "Address: low-level call with value failed");
     }
 
@@ -537,26 +511,16 @@ library Address {
      *
      * _Available since v3.1._
      */
-    function functionCallWithValue(
-        address target,
-        bytes memory data,
-        uint256 value,
-        string memory errorMessage
-    ) internal returns (bytes memory) {
+    function functionCallWithValue(address target, bytes memory data, uint256 value, string memory errorMessage) internal returns (bytes memory) {
         require(address(this).balance >= value, "Address: insufficient balance for call");
         return _functionCallWithValue(target, data, value, errorMessage);
     }
 
-    function _functionCallWithValue(
-        address target,
-        bytes memory data,
-        uint256 weiValue,
-        string memory errorMessage
-    ) private returns (bytes memory) {
+    function _functionCallWithValue(address target, bytes memory data, uint256 weiValue, string memory errorMessage) private returns (bytes memory) {
         require(isContract(target), "Address: call to non-contract");
 
         // solhint-disable-next-line avoid-low-level-calls
-        (bool success, bytes memory returndata) = target.call{value: weiValue}(data);
+        (bool success, bytes memory returndata) = target.call{ value: weiValue }(data);
         if (success) {
             return returndata;
         } else {
@@ -622,13 +586,13 @@ abstract contract ERC20 is ClaimableOwnable, Context, IERC20 {
     /**
      * @dev Returns the name of the token.
      */
-    function name() public pure virtual returns (string memory);
+    function name() public virtual pure returns (string memory);
 
     /**
      * @dev Returns the symbol of the token, usually a shorter version of the
      * name.
      */
-    function symbol() public pure virtual returns (string memory);
+    function symbol() public virtual pure returns (string memory);
 
     /**
      * @dev Returns the number of decimals used to get its user representation.
@@ -643,7 +607,7 @@ abstract contract ERC20 is ClaimableOwnable, Context, IERC20 {
      * no way affects any of the arithmetic of the contract, including
      * {IERC20-balanceOf} and {IERC20-transfer}.
      */
-    function decimals() public pure virtual returns (uint8) {
+    function decimals() public virtual pure returns (uint8) {
         return 18;
     }
 
@@ -705,11 +669,7 @@ abstract contract ERC20 is ClaimableOwnable, Context, IERC20 {
      * - the caller must have allowance for ``sender``'s tokens of at least
      * `amount`.
      */
-    function transferFrom(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) public virtual override returns (bool) {
+    function transferFrom(address sender, address recipient, uint256 amount) public virtual override returns (bool) {
         _transfer(sender, recipient, amount);
         _approve(sender, _msgSender(), _allowances[sender][_msgSender()].sub(amount, "ERC20: transfer amount exceeds allowance"));
         return true;
@@ -747,11 +707,7 @@ abstract contract ERC20 is ClaimableOwnable, Context, IERC20 {
      * `subtractedValue`.
      */
     function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
-        _approve(
-            _msgSender(),
-            spender,
-            _allowances[_msgSender()][spender].sub(subtractedValue, "ERC20: decreased allowance below zero")
-        );
+        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].sub(subtractedValue, "ERC20: decreased allowance below zero"));
         return true;
     }
 
@@ -769,11 +725,7 @@ abstract contract ERC20 is ClaimableOwnable, Context, IERC20 {
      * - `recipient` cannot be the zero address.
      * - `sender` must have a balance of at least `amount`.
      */
-    function _transfer(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) internal virtual {
+    function _transfer(address sender, address recipient, uint256 amount) internal virtual {
         require(sender != address(0), "ERC20: transfer from the zero address");
         require(recipient != address(0), "ERC20: transfer to the zero address");
 
@@ -837,11 +789,7 @@ abstract contract ERC20 is ClaimableOwnable, Context, IERC20 {
      * - `owner` cannot be the zero address.
      * - `spender` cannot be the zero address.
      */
-    function _approve(
-        address owner,
-        address spender,
-        uint256 amount
-    ) internal virtual {
+    function _approve(address owner, address spender, uint256 amount) internal virtual {
         require(owner != address(0), "ERC20: approve from the zero address");
         require(spender != address(0), "ERC20: approve to the zero address");
 
@@ -864,11 +812,7 @@ abstract contract ERC20 is ClaimableOwnable, Context, IERC20 {
      * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
      */
     // solhint-disable-next-line no-empty-blocks
-    function _beforeTokenTransfer(
-        address from,
-        address to,
-        uint256 amount
-    ) internal virtual {}
+    function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual { }
 }
 
 pragma solidity 0.6.10;
@@ -1315,7 +1259,7 @@ abstract contract TrueCurrencyWithLegacyAutosweep is DelegateERC20 {
 
     function requireNotAutosweepAddress(address recipient, address depositAddress) internal pure {
         return
-            require(uint256(recipient) >> 20 != uint256(depositAddress) >> 20 || recipient == depositAddress, "Autosweep is disabled");
+        require(uint256(recipient) >> 20 != uint256(depositAddress) >> 20 || recipient == depositAddress, "Autosweep is disabled");
     }
 }
 
@@ -1330,7 +1274,7 @@ contract TrueUSD is TrueCurrencyWithLegacyAutosweep {
     uint8 constant DECIMALS = 18;
     uint8 constant ROUNDING = 2;
 
-    function decimals() public pure override returns (uint8) {
+    function decimals() public override pure returns (uint8) {
         return DECIMALS;
     }
 
@@ -1338,11 +1282,11 @@ contract TrueUSD is TrueCurrencyWithLegacyAutosweep {
         return ROUNDING;
     }
 
-    function name() public pure override returns (string memory) {
+    function name() public override pure returns (string memory) {
         return "TrueUSD";
     }
 
-    function symbol() public pure override returns (string memory) {
+    function symbol() public override pure returns (string memory) {
         return "TUSD";
     }
 }
