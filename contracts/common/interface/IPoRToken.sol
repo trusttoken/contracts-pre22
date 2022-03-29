@@ -5,16 +5,16 @@ interface IPoRToken {
     /**
      * @notice Event emitted when the feed is updated
      */
-    event NewFeed(address oldFeed, address newFeed);
+    event NewChainReserveFeed(address oldFeed, address newFeed);
 
     /**
-     * @notice Event emitted when the heartbeat of a feed is updated
+     * @notice Event emitted when the heartbeat of chain reserve feed is updated
      */
-    event NewHeartbeat(uint256 oldHeartbeat, uint256 newHeartbeat);
+    event NewChainReserveHeartbeat(uint256 oldHeartbeat, uint256 newHeartbeat);
 
     /*** Admin Functions ***/
 
-    function setFeed(address newFeed) external returns (uint256);
+    function setChainReserveFeed(address newFeed) external returns (uint256);
 
-    function setHeartbeat(uint256 newHeartbeat) external returns (uint256);
+    function setChainReserveHeartbeat(uint256 newHeartbeat) external returns (uint256);
 }
