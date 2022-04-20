@@ -53,8 +53,8 @@ contract MockV3Aggregator is IChainlinkAggregatorV3 {
 
     function getRoundData(uint80 _roundId)
         external
-        override
         view
+        override
         returns (
             uint80 roundId,
             int256 answer,
@@ -68,8 +68,8 @@ contract MockV3Aggregator is IChainlinkAggregatorV3 {
 
     function latestRoundData()
         external
-        override
         view
+        override
         returns (
             uint80 roundId,
             int256 answer,
@@ -87,7 +87,7 @@ contract MockV3Aggregator is IChainlinkAggregatorV3 {
         );
     }
 
-    function description() external override view returns (string memory) {
+    function description() external view override returns (string memory) {
         return "MockV3Aggregator.sol";
     }
 }

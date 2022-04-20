@@ -81,6 +81,7 @@ abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
      */
     function setChainReserveHeartbeat(uint256 newHeartbeat) external override onlyOwner returns (uint256) {
         require(newHeartbeat <= MAX_AGE, "TrueCurrency: PoR heartbeat greater than MAX_AGE");
+
         // Allowable scenarios:
         //  - heartbeat is not initialised (0 instead of default MAX_AGE); OR
         //  - new heartbeat is different AND
