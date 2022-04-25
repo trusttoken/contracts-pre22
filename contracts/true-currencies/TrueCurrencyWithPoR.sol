@@ -87,7 +87,8 @@ abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
         //  - new heartbeat is different AND
         //    new heartbeat is not resetting to default while current heartbeat is already set to the default
         require(
-            chainReserveHeartbeat == 0 || (newHeartbeat != chainReserveHeartbeat && !(newHeartbeat == 0 && chainReserveHeartbeat == MAX_AGE)),
+            chainReserveHeartbeat == 0 ||
+                (newHeartbeat != chainReserveHeartbeat && !(newHeartbeat == 0 && chainReserveHeartbeat == MAX_AGE)),
             "TrueCurrency: new chainReserveHeartbeat must be different to current heartbeat"
         );
 
