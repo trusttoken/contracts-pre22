@@ -1,4 +1,4 @@
-import { BigNumber, BigNumberish, Wallet, utils } from 'ethers"'
+import { BigNumber, BigNumberish, Wallet, utils } from 'ethers'
 import { AddressZero } from '@ethersproject/constants'
 import { solidity } from 'ethereum-waffle'
 import { expect, use } from 'chai'
