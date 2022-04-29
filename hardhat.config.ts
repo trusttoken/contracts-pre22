@@ -1,4 +1,4 @@
-import 'hardhat-typechain'
+import "@typechain/hardhat"
 import '@nomiclabs/hardhat-waffle'
 import 'solidity-coverage'
 import './abi-exporter'
