@@ -56,6 +56,10 @@ contract ProxyStorage {
     mapping(address => bool) isBlacklisted;
     mapping(address => bool) public canBurn;
 
+    // PoR feed-related variables
+    address public chainReserveFeed;
+    uint256 public chainReserveHeartbeat;
+
     /* Additionally, we have several keccak-based storage locations.
      * If you add more keccak-based storage mappings, such as mappings, you must document them here.
      * If the length of the keccak input is the same as an existing mapping, it is possible there could be a preimage collision.
