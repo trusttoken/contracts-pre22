@@ -4,6 +4,7 @@ import { solidity } from 'ethereum-waffle'
 import { expect, use } from 'chai'
 import { waffle, network } from 'hardhat'
 
+import { timeTravel } from 'utils'
 import {
   MockV3Aggregator,
   MockV3Aggregator__factory,
@@ -147,7 +148,7 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
     expect(await token.chainReserveHeartbeat()).to.equal(ONE_DAY_SECONDS)
 
     // Heartbeat is set to 1 day, so fast-forward 2 days
-    await network.provider.send('evm_increaseTime', [2 * ONE_DAY_SECONDS])
+    await timeTravel(network.provider, 2 * ONE_DAY_SECONDS)
 
     // Mint TUSD
     const balanceBefore = await token.balanceOf(owner.address)
