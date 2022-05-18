@@ -95,8 +95,6 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
     // Set feed and heartbeat on newly-deployed aggregator
     await token.setChainReserveFeed(mockV3AggregatorWith6Decimals.address)
     expect(await token.chainReserveFeed()).to.equal(mockV3AggregatorWith6Decimals.address)
-    await token.setChainReserveHeartbeat(ONE_DAY_SECONDS)
-    expect(await token.chainReserveHeartbeat()).to.equal(ONE_DAY_SECONDS)
 
     // Mint TUSD
     const balanceBefore = await token.balanceOf(owner.address)
