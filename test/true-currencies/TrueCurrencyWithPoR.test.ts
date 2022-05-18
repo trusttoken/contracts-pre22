@@ -48,7 +48,7 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
     const currentHeartbeat = await token.chainReserveHeartbeat()
     const MAX_AGE = await token.MAX_AGE()
     if (!currentHeartbeat.eq(MAX_AGE)) {
-      await token.setChainReserveHeartbeat(ONE_DAY_SECONDS)
+      await token.setChainReserveHeartbeat(0)
     }
 
     // Set fresh, valid answer on mock PoR feed
