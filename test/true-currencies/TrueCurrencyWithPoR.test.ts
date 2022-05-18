@@ -165,4 +165,10 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
     await expect(token.mint(owner.address, AMOUNT_TO_MINT)).to.be.revertedWith('TrueCurrency: Invalid answer from PoR feed')
     expect(await token.balanceOf(owner.address)).to.equal(balanceBefore)
   })
+
+  it('should revert if setChainReserveHeartbeat called twice with same value', async () => {
+    await token.setChainReserveHeartbeat(2 * ONE_DAY_SECONDS)
+    expect(await token.chainReserveHeartbeat()).to.equal(2 * ONE_DAY_SECONDS)
+    await expect(token.setChainReserveHeartbeat(2 * ONE_DAY_SECONDS)).to.be.revertedWith('TrueCurrency: new chainReserveHeartbeat must be different to current heartbeat')
+  })
 })
