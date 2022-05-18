@@ -48,7 +48,7 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
     const currentHeartbeat = await token.chainReserveHeartbeat()
     const MAX_AGE = await token.MAX_AGE()
     if (!currentHeartbeat.eq(MAX_AGE)) {
-      await token.setChainReserveHeartbeat(0)
+      await token.setChainReserveHeartbeat(ONE_DAY_SECONDS)
     }
 
     // Set fresh, valid answer on mock PoR feed
@@ -114,8 +114,6 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
     // Set feed and heartbeat on newly-deployed aggregator
     await token.setChainReserveFeed(mockV3AggregatorWith20Decimals.address)
     expect(await token.chainReserveFeed()).to.equal(mockV3AggregatorWith20Decimals.address)
-    await token.setChainReserveHeartbeat(ONE_DAY_SECONDS)
-    expect(await token.chainReserveHeartbeat()).to.equal(ONE_DAY_SECONDS)
 
     // Mint TUSD
     const balanceBefore = await token.balanceOf(owner.address)
@@ -126,10 +124,6 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
   })
 
   it('should mint successfully when TrueCurrency supply == proof-of-reserves', async () => {
-    // Set heartbeat to 1 day
-    await token.setChainReserveHeartbeat(ONE_DAY_SECONDS)
-    expect(await token.chainReserveHeartbeat()).to.equal(ONE_DAY_SECONDS)
-
     // Mint TUSD
     const balanceBefore = await token.balanceOf(owner.address)
     await token.mint(owner.address, AMOUNT_TO_MINT)
@@ -137,14 +131,9 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
   })
 
   it('should revert if TrueCurrency supply > proof-of-reserves', async () => {
-    // Re-deploy aggregator with fewer TUSD in reserves
     const currentTusdSupply = await token.totalSupply()
     const notEnoughReserves = currentTusdSupply.sub('1')
     await mockV3Aggregator.updateAnswer(notEnoughReserves)
-
-    // Set heartbeat to 1 day
-    await token.setChainReserveHeartbeat(ONE_DAY_SECONDS)
-    expect(await token.chainReserveHeartbeat()).to.equal(ONE_DAY_SECONDS)
 
     // Mint TUSD
     const balanceBefore = await token.balanceOf(owner.address)
@@ -171,10 +160,6 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
   it('should revert if feed returns an invalid answer', async () => {
     // Update feed with invalid answer
     await mockV3Aggregator.updateAnswer(0)
-
-    // Set heartbeat to 1 day
-    await token.setChainReserveHeartbeat(ONE_DAY_SECONDS)
-    expect(await token.chainReserveHeartbeat()).to.equal(ONE_DAY_SECONDS)
 
     // Mint TUSD
     const balanceBefore = await token.balanceOf(owner.address)
