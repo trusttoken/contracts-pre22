@@ -44,11 +44,12 @@ abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
         uint256 oldestAllowed = block.timestamp.sub(chainReserveHeartbeat, "TrueCurrency: Invalid timestamp from PoR feed");
         require(updatedAt >= oldestAllowed, "TrueCurrency: PoR answer too old");
 
+        uint256 reserves = uint256(answer);
+
         // Get required info about total supply & decimals
         uint256 currentSupply = totalSupply();
         uint8 trueDecimals = decimals();
         uint8 reserveDecimals = IChainlinkAggregatorV3(chainReserveFeed).decimals();
-        uint256 reserves = uint256(answer);
         // Normalise TrueCurrency & reserve decimals
         if (trueDecimals < reserveDecimals) {
             currentSupply = currentSupply.mul(10**uint256(reserveDecimals - trueDecimals));
