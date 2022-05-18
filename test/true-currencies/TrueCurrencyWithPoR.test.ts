@@ -171,4 +171,10 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
     expect(await token.chainReserveHeartbeat()).to.equal(2 * ONE_DAY_SECONDS)
     await expect(token.setChainReserveHeartbeat(2 * ONE_DAY_SECONDS)).to.be.revertedWith('TrueCurrency: new chainReserveHeartbeat must be different to current heartbeat')
   })
+
+  it('should revert if setChainReserveHeartbeat reset twice to default', async () => {
+    // setChainReserveHeartbeat(0) was already called in beforeEach
+    expect(await token.chainReserveHeartbeat()).to.equal(await token.MAX_AGE()) 
+    await expect(token.setChainReserveHeartbeat(0)).to.be.revertedWith('TrueCurrency: new chainReserveHeartbeat must be different to current heartbeat')
+  })
 })
