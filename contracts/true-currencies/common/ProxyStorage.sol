@@ -57,8 +57,8 @@ contract ProxyStorage {
     mapping(address => bool) public canBurn;
 
     // PoR feed-related variables
-    address public chainReserveFeed;
     uint256 public chainReserveHeartbeat;
+    address public chainReserveFeed;
 
     /* Additionally, we have several keccak-based storage locations.
      * If you add more keccak-based storage mappings, such as mappings, you must document them here.
