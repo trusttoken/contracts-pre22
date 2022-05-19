@@ -18,7 +18,7 @@ describe('TrueLender2.reclaim', () => {
   let tfUSDC: TrueFiPool2
 
   const tfUSDCPrice = async () => {
-    return await tfUSDC.poolValue() / await tfUSDC.totalSupply()
+    return (await tfUSDC.poolValue()).toNumber() / (await tfUSDC.totalSupply()).toNumber()
   }
 
   beforeEach(async () => {
