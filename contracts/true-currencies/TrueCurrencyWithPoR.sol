@@ -46,9 +46,9 @@ abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
         require(updatedAt >= oldestAllowed, "TrueCurrency: PoR answer too old");
 
         // Get required info about total supply & decimals
-        uint256 currentSupply = totalSupply();
         uint8 trueDecimals = decimals();
         uint8 reserveDecimals = IChainlinkAggregatorV3(chainReserveFeed).decimals();
+        uint256 currentSupply = totalSupply();
         // Normalise TrueCurrency & reserve decimals
         if (trueDecimals < reserveDecimals) {
             currentSupply = currentSupply.mul(10**uint256(reserveDecimals - trueDecimals));
