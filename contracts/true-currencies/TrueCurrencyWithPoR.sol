@@ -16,9 +16,8 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
     using SafeMath for uint256;
 
-    uint256 public constant INITIAL_CHAIN_RESERVE_HEARTBEAT = 7 days;
-
     constructor() public {
+        uint256 INITIAL_CHAIN_RESERVE_HEARTBEAT = 7 days;
         chainReserveHeartbeat = INITIAL_CHAIN_RESERVE_HEARTBEAT;
     }
 
