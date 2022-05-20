@@ -2,7 +2,7 @@
 pragma solidity 0.6.10;
 
 import {TrueCurrency} from "./TrueCurrency.sol";
-import {IChainlinkAggregatorV3} from "../common/interface/IChainlinkAggregatorV3.sol";
+import {IChainlinkAggregatorV3} from "@chainlink/contracts";
 import {IPoRToken} from "../common/interface/IPoRToken.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
