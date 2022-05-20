@@ -68,8 +68,10 @@ abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
      * @param newFeed Address of the new feed
      */
     function setChainReserveFeed(address newFeed) external override onlyOwner returns (uint256) {
-        emit NewChainReserveFeed(chainReserveFeed, newFeed);
-        chainReserveFeed = newFeed;
+        if (newFeed != chainReserveFeed) {
+            emit NewChainReserveFeed(chainReserveFeed, newFeed);
+            chainReserveFeed = newFeed;
+	}
     }
 
     /**
@@ -78,7 +80,9 @@ abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
      * @param newHeartbeat Value of the age of the latest update from the feed
      */
     function setChainReserveHeartbeat(uint256 newHeartbeat) external override onlyOwner returns (uint256) {
-        emit NewChainReserveHeartbeat(chainReserveHeartbeat, newHeartbeat);
-        chainReserveHeartbeat = newHeartbeat;
+        if (newHeartbeat != chainReserveHeartbeat) {
+            emit NewChainReserveHeartbeat(chainReserveHeartbeat, newHeartbeat);
+            chainReserveHeartbeat = newHeartbeat;
+	}
     }
 }
