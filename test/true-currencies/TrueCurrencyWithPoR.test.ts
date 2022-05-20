@@ -21,6 +21,7 @@ const exp = (base: BigNumberish, exponent: BigNumberish): BigNumber => {
 
 describe('TrueCurrency with Proof-of-reserves check', () => {
   const ONE_DAY_SECONDS = 24 * 60 * 60 // seconds in a day
+  // const INITIAL_CHAIN_RESERVE_HEARTBEAT = 7 * ONE_DAY_SECONDS
   const TUSD_FEED_INITIAL_ANSWER = exp(1_000_000, 18).toString() // "1M TUSD in reserves"
   const AMOUNT_TO_MINT = utils.parseEther('1000000')
   let token: TrueCurrencyWithPoR
@@ -46,11 +47,6 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
     if (currentFeed.toLowerCase() !== mockV3Aggregator.address.toLowerCase()) {
       await token.setChainReserveFeed(mockV3Aggregator.address)
     }
-    const currentHeartbeat = await token.chainReserveHeartbeat()
-    const MAX_AGE = await token.MAX_AGE()
-    if (!currentHeartbeat.eq(MAX_AGE)) {
-      await token.setChainReserveHeartbeat(0)
-    }
 
     // Set fresh, valid answer on mock PoR feed
     const tusdSupply = await token.totalSupply()
@@ -68,7 +64,7 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
     expect(await token.balanceOf(owner.address)).to.equal(balanceBefore.add(AMOUNT_TO_MINT))
   })
 
-  it('should mint successfully when feed is set, but heartbeat is unset (defaulting to MAX_AGE)', async () => {
+  it('should mint successfully when feed is set, but heartbeat is default', async () => {
     // Mint TUSD
     const balanceBefore = await token.balanceOf(owner.address)
     await token.mint(owner.address, AMOUNT_TO_MINT, {
@@ -164,18 +160,6 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
     const balanceBefore = await token.balanceOf(owner.address)
     await expect(token.mint(owner.address, AMOUNT_TO_MINT)).to.be.revertedWith('TrueCurrency: Invalid answer from PoR feed')
     expect(await token.balanceOf(owner.address)).to.equal(balanceBefore)
-  })
-
-  it('should revert if setChainReserveHeartbeat called twice with same value', async () => {
-    await token.setChainReserveHeartbeat(2 * ONE_DAY_SECONDS)
-    expect(await token.chainReserveHeartbeat()).to.equal(2 * ONE_DAY_SECONDS)
-    await expect(token.setChainReserveHeartbeat(2 * ONE_DAY_SECONDS)).to.be.revertedWith('TrueCurrency: new chainReserveHeartbeat must be different to current heartbeat')
-  })
-
-  it('should revert if setChainReserveHeartbeat reset twice to default', async () => {
-    // setChainReserveHeartbeat(0) was already called in beforeEach
-    expect(await token.chainReserveHeartbeat()).to.equal(await token.MAX_AGE())
-    await expect(token.setChainReserveHeartbeat(0)).to.be.revertedWith('TrueCurrency: new chainReserveHeartbeat must be different to current heartbeat')
   })
 
   it('should emit NewChainReserveHeartbeatChanged if setChainReserveHeartbeat called successfully', async () => {
