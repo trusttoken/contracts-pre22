@@ -71,7 +71,7 @@ abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
         if (newFeed != chainReserveFeed) {
             emit NewChainReserveFeed(chainReserveFeed, newFeed);
             chainReserveFeed = newFeed;
-	}
+        }
     }
 
     /**
@@ -83,6 +83,6 @@ abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
         if (newHeartbeat != chainReserveHeartbeat) {
             emit NewChainReserveHeartbeat(chainReserveHeartbeat, newHeartbeat);
             chainReserveHeartbeat = newHeartbeat;
-	}
+        }
     }
 }
