@@ -16,6 +16,8 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
     using SafeMath for uint256;
 
+    uint256 public constant MAX_CHAIN_RESERVE_HEARTBEAT = 30 days;
+
     constructor() public {
         uint256 INITIAL_CHAIN_RESERVE_HEARTBEAT = 7 days;
         chainReserveHeartbeat = INITIAL_CHAIN_RESERVE_HEARTBEAT;
@@ -41,8 +43,7 @@ abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
         uint256 reserves = uint256(signedReserves);
 
         // Check the answer is fresh enough (i.e., within the specified heartbeat)
-        uint256 oldestAllowed = block.timestamp.sub(chainReserveHeartbeat, "TrueCurrency: Invalid timestamp from PoR feed");
-        require(updatedAt >= oldestAllowed, "TrueCurrency: PoR answer too old");
+        require(updatedAt >= block.timestamp.sub(chainReserveHeartbeat), "TrueCurrency: PoR answer too old");
 
         // Get required info about total supply & decimals
         uint8 trueDecimals = decimals();
@@ -79,6 +80,8 @@ abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
      * @param newHeartbeat Value of the age of the latest update from the feed
      */
     function setChainReserveHeartbeat(uint256 newHeartbeat) external override onlyOwner returns (uint256) {
+        require(newHeartbeat <= MAX_CHAIN_RESERVE_HEARTBEAT, "TrueCurrency: PoR heartbeat too long");
+
         if (newHeartbeat != chainReserveHeartbeat) {
             emit NewChainReserveHeartbeat(chainReserveHeartbeat, newHeartbeat);
             chainReserveHeartbeat = newHeartbeat;

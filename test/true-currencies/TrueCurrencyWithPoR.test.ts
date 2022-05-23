@@ -21,7 +21,7 @@ const exp = (base: BigNumberish, exponent: BigNumberish): BigNumber => {
 
 describe('TrueCurrency with Proof-of-reserves check', () => {
   const ONE_DAY_SECONDS = 24 * 60 * 60 // seconds in a day
-  // const INITIAL_CHAIN_RESERVE_HEARTBEAT = 7 * ONE_DAY_SECONDS
+  const MAX_CHAIN_RESERVE_HEARTBEAT = 30 * ONE_DAY_SECONDS
   const TUSD_FEED_INITIAL_ANSWER = exp(1_000_000, 18).toString() // "1M TUSD in reserves"
   const AMOUNT_TO_MINT = utils.parseEther('1000000')
   let token: TrueCurrencyWithPoR
@@ -172,5 +172,10 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
     const oldChainReserveFeed = await token.chainReserveFeed()
     await expect(token.setChainReserveFeed(AddressZero))
       .to.emit(token, 'NewChainReserveFeed').withArgs(oldChainReserveFeed, AddressZero)
+  })
+
+  it('should revert if setChainReserveFeed called with value greater than MAX_CHAIN_RESERVE_HEARTBEAT', async () => {
+    await expect(token.setChainReserveHeartbeat(MAX_CHAIN_RESERVE_HEARTBEAT + 1))
+      .to.be.revertedWith('TrueCurrency: PoR heartbeat too long')
   })
 })
