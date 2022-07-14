@@ -80,9 +80,7 @@ abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
     function setChainReserveHeartbeat(uint256 newHeartbeat) external override onlyOwner returns (uint256) {
         require(newHeartbeat <= MAX_CHAIN_RESERVE_HEARTBEAT, "TrueCurrency: PoR heartbeat too long");
 
-        if (newHeartbeat != chainReserveHeartbeat) {
-            emit NewChainReserveHeartbeat(chainReserveHeartbeat, newHeartbeat);
-            chainReserveHeartbeat = newHeartbeat;
-        }
+        emit NewChainReserveHeartbeat(chainReserveHeartbeat, newHeartbeat);
+        chainReserveHeartbeat = newHeartbeat;
     }
 }
