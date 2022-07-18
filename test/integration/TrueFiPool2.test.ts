@@ -53,7 +53,7 @@ describe('TrueFiPool2', () => {
     await strategyProxy.upgradeTo(newStrategy.address)
     await holder.sendTransaction({ value: parseEth(100), to: CONFIG_GNOSIS_SAFE })
 
-    await usdtPool.connect(configGnosis).switchStrategy(strategyProxy.address)
-    await expect(usdtPool.connect(configGnosis).flush(10000000)).not.to.be.reverted
+    await usdtPool.connect(powner).switchStrategy(strategyProxy.address)
+    await expect(usdtPool.connect(powner).flush(10000000)).not.to.be.reverted
   })
 })
