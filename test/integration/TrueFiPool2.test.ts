@@ -27,7 +27,6 @@ describe('TrueFiPool2', () => {
   const provider = forkChain([OWNER, PROXY_OWNER, CONFIG_GNOSIS_SAFE, TRU_HOLDER, ETH_HOLDER])
   const owner = provider.getSigner(OWNER)
   const powner = provider.getSigner(PROXY_OWNER)
-  const configGnosis = provider.getSigner(CONFIG_GNOSIS_SAFE)
   const holder = provider.getSigner(ETH_HOLDER)
   const deployContract = setupDeploy(owner)
 
