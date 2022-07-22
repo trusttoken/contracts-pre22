@@ -16,8 +16,6 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
     using SafeMath for uint256;
 
-    uint256 public constant MAX_CHAIN_RESERVE_HEARTBEAT = 30 days;
-
     constructor() public {
         uint256 INITIAL_CHAIN_RESERVE_HEARTBEAT = 7 days;
         chainReserveHeartbeat = INITIAL_CHAIN_RESERVE_HEARTBEAT;
@@ -81,8 +79,6 @@ abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
      * @param newHeartbeat Value of the age of the latest update from the feed
      */
     function setChainReserveHeartbeat(uint256 newHeartbeat) external override onlyOwner returns (uint256) {
-        require(newHeartbeat <= MAX_CHAIN_RESERVE_HEARTBEAT, "TrueCurrency: PoR heartbeat too long");
-
         emit NewChainReserveHeartbeat(chainReserveHeartbeat, newHeartbeat);
         chainReserveHeartbeat = newHeartbeat;
     }
