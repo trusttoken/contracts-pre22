@@ -42,8 +42,11 @@ abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
         require(signedReserves > 0, "TrueCurrency: Invalid answer from PoR feed");
         uint256 reserves = uint256(signedReserves);
 
+        // Sanity check: is chainlink answer updatedAt in the past
+        require(block.timestamp >= updatedAt);
+
         // Check the answer is fresh enough (i.e., within the specified heartbeat)
-        require(updatedAt >= block.timestamp.sub(chainReserveHeartbeat), "TrueCurrency: PoR answer too old");
+        require(block.timestamp.sub(updatedAt) <= chainReserveHeartbeat, "TrueCurrency: PoR answer too old");
 
         // Get required info about total supply & decimals
         uint8 trueDecimals = decimals();
