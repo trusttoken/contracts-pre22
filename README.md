@@ -1,6 +1,6 @@
 # 💰 TrueFi Smart Contracts
 
-[![Coverage Status](https://coveralls.io/repos/github/trusttoken/contracts-pre22/badge.svg?branch=main)](https://coveralls.io/github/trusttoken/contracts-pre22?branch=main)
+[![Coverage Status](https://coveralls.io/repos/github/trusttoken/smart-contracts/badge.svg?branch=main)](https://coveralls.io/github/trusttoken/smart-contracts?branch=main)
 
 ## 🗂 Table of Contents
 - [💡 Intro](#-Intro)
@@ -32,9 +32,9 @@ Smart contracts implementing True Gold - a synthetic gold on Ethereum blockchain
 # 🧰 Installation
 In order to compile the contracts first clone the repository. In order to do that run
 ```
-git clone git@github.com:trusttoken/contracts-pre22.git
+git clone git@github.com:trusttoken/smart-contracts.git
 ```
-Then enter `contracts-pre22` directory and install all necessary dependencies by running
+Then enter `smart-contracts` directory and install all necessary dependencies by running
 ```
 yarn
 ```
