@@ -18,11 +18,9 @@ import {TrueCurrency} from "./TrueCurrency.sol";
  * Our audits for TrueCurrency can be found here: github.com/trusttoken/audits
  */
 abstract contract DelegateERC20 is TrueCurrency {
-    address constant DELEGATE_FROM = 0x8dd5fbCe2F6a956C3022bA3663759011Dd51e73E;
-
     // require msg.sender is the delegate smart contract
     modifier onlyDelegateFrom() {
-        require(msg.sender == DELEGATE_FROM);
+        revert("DelegateERC20: TrueUSD (V1) is not supported");
         _;
     }
 
