@@ -1,8 +1,8 @@
 {
   "mainnet": {
     "trueUSD": {
-      "txHash": "0x4312def38fcaba545123b9a733deebd13f6a709096ed0d102fea696faa506ebb",
-      "address": "0xffc40F39806F1400d8278BfD33823705b5a4c196"
+      "txHash": "0x76bb5d23bef6d699c41947f80b099e2711c03298ec9a4ffd9c86b7eaba842ded",
+      "address": "0xd8D59c59Ab40B880b54C969920E8d9172182Ad7b"
     },
     "trueUSD_proxy": {
       "txHash": "0x109dd106b68123f40b6112ee660d619d152db7e2468623ee57829c3be686c6b8",
