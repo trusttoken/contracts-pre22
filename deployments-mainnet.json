@@ -307,6 +307,10 @@
     "chainlinkTruBusdOracle": {
       "txHash": "0x033fdfe090f475f758238e4a449166f82e2fc5f22e049f2dd35be94cd17fd958",
       "address": "0x93f2edf37F368c088DCC4Ad3b9F74F6F7b359a8b"
+    },
+    "sushiswap_TruRewarder": {
+      "txHash": "0x08199f15eb7b2a9d41ed7e20c7e773316ea6730cd4a003ebbbf672fa7cb60373",
+      "address": "0xD69BEEcA5Ff117eF87D94B58Ec0E96B5a74A078b"
     }
   }
 }
