@@ -1,7 +1,6 @@
 
 methods {
     balanceOf(address) returns uint256 envfree
-    isBlacklisted(address) returns bool envfree
     chainReserveFeed() returns address envfree
     owner() returns address envfree
     totalSupply() returns uint256 envfree
