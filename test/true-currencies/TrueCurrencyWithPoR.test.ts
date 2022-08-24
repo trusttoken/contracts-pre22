@@ -137,6 +137,24 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
     expect(await token.balanceOf(owner.address)).to.equal(balanceBefore)
   })
 
+  it.only('should revert if feed decimals > TrueCurrency decimals and TrueCurrency supply > proof-of-reserves', async () => {
+    const maxAmountToMint = utils.parseEther('10')
+    const tooMuchToMint = utils.parseEther('1000')
+
+    // Re-deploy a mock aggregator with more decimals
+    const currentTusdSupply = await token.totalSupply()
+    const validReserve = (currentTusdSupply.add(maxAmountToMint)).mul(100)
+    const mockV3AggregatorWith20Decimals = await new MockV3Aggregator__factory(owner).deploy('20', validReserve)
+    // Set feed and heartbeat on newly-deployed aggregator
+    await token.setChainReserveFeed(mockV3AggregatorWith20Decimals.address)
+    expect(await token.chainReserveFeed()).to.equal(mockV3AggregatorWith20Decimals.address)
+
+    // Mint TUSD
+    const balanceBefore = await token.balanceOf(owner.address)
+    await expect(token.mint(owner.address, tooMuchToMint)).to.be.reverted
+    expect(await token.balanceOf(owner.address)).to.equal(balanceBefore)
+  })
+
   it('should revert if the feed is not updated within the heartbeat', async () => {
     // Set heartbeat to 1 day
     await token.setChainReserveHeartbeat(ONE_DAY_SECONDS)
