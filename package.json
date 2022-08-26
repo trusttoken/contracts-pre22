@@ -7,7 +7,7 @@
     "flatten": "./flatten.sh",
     "clean": "rm -rf ./build",
     "typecheck": "tsc --noEmit",
-    "lint:sol": "solhint 'contracts/**/*.sol' && prettylint 'contracts/**/*.sol'",
+    "lint:sol": "solhint --ignore-path .solhintignore 'contracts/**/*.sol' && prettylint 'contracts/**/*.sol'",
     "lint": "yarn lint:sol && yarn lint:ts",
     "lint:js": "eslint '{test,scripts}/**/*.js'",
     "lint:ts": "eslint '{test,scripts}/**/*.ts' -c .eslintrc.typescript.js",
