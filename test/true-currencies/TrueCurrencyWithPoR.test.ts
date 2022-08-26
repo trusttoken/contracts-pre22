@@ -97,7 +97,7 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
     const balanceBefore = await token.balanceOf(owner.address)
     await expect(token.mint(owner.address, AMOUNT_TO_MINT, {
       gasLimit: 200_000,
-    })).to.be.revertedWith("Unexpected decimals of PoR feed")
+    })).to.be.revertedWith('Unexpected decimals of PoR feed')
     expect(await token.balanceOf(owner.address)).to.equal(balanceBefore)
   })
 
@@ -115,7 +115,7 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
     const balanceBefore = await token.balanceOf(owner.address)
     await expect(token.mint(owner.address, AMOUNT_TO_MINT, {
       gasLimit: 200_000,
-    })).to.be.revertedWith("Unexpected decimals of PoR feed")
+    })).to.be.revertedWith('Unexpected decimals of PoR feed')
     expect(await token.balanceOf(owner.address)).to.equal(balanceBefore)
   })
 
