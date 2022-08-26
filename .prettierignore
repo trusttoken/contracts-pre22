@@ -1,1 +1,4 @@
+contracts/governance/GovernorAlpha.sol
+contracts/governance/Timelock.sol
+contracts/governance/VoteToken.sol
 contracts/true-currencies/tokens/TrueUSDNoDelegate.sol
