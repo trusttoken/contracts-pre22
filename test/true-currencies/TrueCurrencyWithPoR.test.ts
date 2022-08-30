@@ -137,7 +137,7 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
     expect(await token.balanceOf(owner.address)).to.equal(balanceBefore)
   })
 
-  it.only('should revert if feed decimals > TrueCurrency decimals and TrueCurrency supply > proof-of-reserves', async () => {
+  it('should revert if feed decimals > TrueCurrency decimals and TrueCurrency supply > proof-of-reserves', async () => {
     const maxAmountToMint = utils.parseEther('10')
     const tooMuchToMint = utils.parseEther('1000')
 
