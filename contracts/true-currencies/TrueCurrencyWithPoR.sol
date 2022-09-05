@@ -47,11 +47,8 @@ abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
         require(block.timestamp.sub(updatedAt) <= chainReserveHeartbeat, "TrueCurrency: PoR answer too old");
 
         // Get required info about total supply & decimals
-        uint8 trueDecimals = decimals();
-        uint8 reserveDecimals = AggregatorV3Interface(chainReserveFeed).decimals();
-
         // Decimals of the Proof of Reserve feed must be the same as the token's.
-        require(reserveDecimals == trueDecimals, "Unexpected decimals of PoR feed");
+        require(decimals() == AggregatorV3Interface(chainReserveFeed).decimals(), "Unexpected decimals of PoR feed");
 
         uint256 currentSupply = totalSupply();
 
