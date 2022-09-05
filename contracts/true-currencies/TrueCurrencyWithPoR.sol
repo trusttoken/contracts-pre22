@@ -50,11 +50,9 @@ abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
         // Decimals of the Proof of Reserve feed must be the same as the token's.
         require(decimals() == AggregatorV3Interface(chainReserveFeed).decimals(), "Unexpected decimals of PoR feed");
 
-        uint256 currentSupply = totalSupply();
-
         // Check that after minting more tokens, the total supply would NOT exceed the reserves
         // reported by the latest valid proof-of-reserves feed.
-        require(currentSupply + amount <= reserves, "TrueCurrency: total supply would exceed reserves after mint");
+        require(totalSupply() + amount <= reserves, "TrueCurrency: total supply would exceed reserves after mint");
         super._mint(account, amount);
     }
 
