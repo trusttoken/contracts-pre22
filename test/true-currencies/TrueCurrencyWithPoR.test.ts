@@ -106,7 +106,7 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
     const currentTusdSupply = await token.totalSupply()
     const validReserve = currentTusdSupply.div(exp(1, 12)).add(AMOUNT_TO_MINT)
 
-    const mockV3AggregatorWith6Decimals = await new MockV3Aggregator__factory(owner).deploy('20', validReserve)
+    const mockV3AggregatorWith20Decimals = await new MockV3Aggregator__factory(owner).deploy('20', validReserve)
     // Set feed and heartbeat on newly-deployed aggregator
     await token.setChainReserveFeed(mockV3AggregatorWith6Decimals.address)
     expect(await token.chainReserveFeed()).to.equal(mockV3AggregatorWith6Decimals.address)
