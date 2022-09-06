@@ -102,7 +102,7 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
   })
 
   it('should revert mint when feed decimals > TrueCurrency decimals', async () => {
-    // Re-deploy a mock aggregator with fewer decimals
+    // Re-deploy a mock aggregator with more decimals
     const currentTusdSupply = await token.totalSupply()
     const validReserve = currentTusdSupply.div(exp(1, 12)).add(AMOUNT_TO_MINT)
 
