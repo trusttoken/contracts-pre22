@@ -84,10 +84,10 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
   })
 
   it('should revert mint when feed decimals < TrueCurrency decimals', async () => {
-    // Re-deploy a mock aggregator with fewer decimals
     const currentTusdSupply = await token.totalSupply()
     const validReserve = currentTusdSupply.div(exp(1, 12)).add(AMOUNT_TO_MINT)
 
+    // Re-deploy a mock aggregator with fewer decimals
     const mockV3AggregatorWith6Decimals = await new MockV3Aggregator__factory(owner).deploy('6', validReserve)
     // Set feed and heartbeat on newly-deployed aggregator
     await token.setChainReserveFeed(mockV3AggregatorWith6Decimals.address)
@@ -108,8 +108,8 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
 
     const mockV3AggregatorWith20Decimals = await new MockV3Aggregator__factory(owner).deploy('20', validReserve)
     // Set feed and heartbeat on newly-deployed aggregator
-    await token.setChainReserveFeed(mockV3AggregatorWith6Decimals.address)
-    expect(await token.chainReserveFeed()).to.equal(mockV3AggregatorWith6Decimals.address)
+    await token.setChainReserveFeed(mockV3AggregatorWith20Decimals.address)
+    expect(await token.chainReserveFeed()).to.equal(mockV3AggregatorWith20Decimals.address)
 
     // Mint TUSD
     const balanceBefore = await token.balanceOf(owner.address)
