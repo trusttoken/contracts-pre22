@@ -17,8 +17,6 @@ abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
     using SafeMath for uint256;
 
     constructor() public {
-        uint256 INITIAL_CHAIN_RESERVE_HEARTBEAT = 7 days;
-        chainReserveHeartbeat = INITIAL_CHAIN_RESERVE_HEARTBEAT;
     }
 
     /**
@@ -30,7 +28,7 @@ abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
      * @param amount The amount of tokens to mint
      */
     function _mint(address account, uint256 amount) internal virtual override {
-        if (chainReserveFeed == address(0)) {
+        if (chainReserveFeed == address(0) || !proofOfReserveEnabled) {
             super._mint(account, amount);
             return;
         }
@@ -74,5 +72,15 @@ abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
     function setChainReserveHeartbeat(uint256 newHeartbeat) external override onlyOwner returns (uint256) {
         emit NewChainReserveHeartbeat(chainReserveHeartbeat, newHeartbeat);
         chainReserveHeartbeat = newHeartbeat;
+    }
+
+    function pauseProofOfReserve() external override onlyOwner () {
+        emit ProofOfReservePaused();
+        proofOfReserveEnabled = false;
+    }
+
+    function unpauseProofOfReserve() external override onlyOwner () {
+        emit ProofOfReserveUnpaused();
+        proofOfReserveEnabled = true;
     }
 }

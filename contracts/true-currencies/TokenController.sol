@@ -86,6 +86,8 @@ contract TokenController {
     // pausing the contract upgrades the proxy to this implementation
     address public constant PAUSED_IMPLEMENTATION = 0x3c8984DCE8f68FCDEEEafD9E0eca3598562eD291;
 
+    address public proofOfReservePauser;
+
     modifier onlyMintKeyOrOwner() {
         require(msg.sender == mintKey || msg.sender == owner, "must be mintKey or owner");
         _;
@@ -192,6 +194,11 @@ contract TokenController {
         require(msg.sender == pendingOwner);
         _;
     }
+
+    modifier onlyProofOfReservePauserOrOwner() {
+        require(msg.sender == proofOfReservePauser || msg.sender == owner);
+        _;
+    } 
 
     /**
      * @dev Allows the current owner to set the pendingOwner address.
@@ -467,6 +474,10 @@ contract TokenController {
         registryAdmin = admin;
     }
 
+    function setProofOfReservePauser(address pauser) external onlyOwner {
+        proofOfReservePauser = pauser;
+    }
+
     /*
     ========================================
     Mint Pausing
@@ -640,5 +651,39 @@ contract TokenController {
         // Add 20% to compensate inter contract communication
         // (x + 20%) / 2 / 15000 = x / 25000
         token.refundGas(gasUsed.div(25000));
+    }
+
+    /*
+    ========================================
+    Proof of Reserve, administrative
+    ========================================
+    */
+
+    /**
+     * Set new chainReserveFeed address
+     */
+    function setChainReserveFeed(address newFeed) external onlyOwner {
+        token.setChainReserveFeed(newFeed);
+    }
+
+    /**
+     * Set new chainReserveHeartbeat 
+     */
+    function setChainReserveHeartbeat(uint256 newHeartbeat) external onlyOwner {
+        token.setChainReserveHeartbeat(newHeartbeat);
+    }
+
+    /**
+     * Pause Proof of Reserve check
+     */
+    function pauseProofOfReserve() external onlyProofOfReservePauserOrOwner {
+        token.pauseProofOfReserve();
+    }
+
+    /**
+     * Unpause Proof of Reserve check
+     */
+    function unpauseProofOfReserve() external onlyProofOfReservePauserOrOwner {
+        token.unpauseProofOfReserve();
     }
 }
