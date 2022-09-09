@@ -10,7 +10,7 @@ import {IRegistry as Registry} from "../registry/interface/IRegistry.sol";
 
 import {IHasOwner as HasOwner} from "./interface/IHasOwner.sol";
 import {IHook as Hook} from "./interface/IHook.sol";
-import {ITrueCurrency as TrueCurrency} from "./interface/ITrueCurrency.sol";
+import {TrueCurrencyWithPoR as TrueCurrency} from "./TrueCurrencyWithPoR.sol";
 
 /** @title TokenController
  * @dev This contract allows us to split ownership of the TrueCurrency contract
