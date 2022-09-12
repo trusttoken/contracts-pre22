@@ -199,7 +199,7 @@ contract TokenController {
      * @dev Modifier throws if called by any account other than proofOfReserveEnabler or owner.
      */
     modifier onlyProofOfReserveEnablerOrOwner() {
-        require(msg.sender == proofOfReserveEnabler || msg.sender == owner);
+        require(msg.sender == proofOfReserveEnabler || msg.sender == owner, "only proofOfReserveEnabler or owner");
         _;
     } 
 
