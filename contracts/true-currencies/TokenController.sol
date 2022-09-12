@@ -201,7 +201,7 @@ contract TokenController {
     modifier onlyProofOfReserveEnablerOrOwner() {
         require(msg.sender == proofOfReserveEnabler || msg.sender == owner, "only proofOfReserveEnabler or owner");
         _;
-    } 
+    }
 
     /**
      * @dev Allows the current owner to set the pendingOwner address.
@@ -670,7 +670,7 @@ contract TokenController {
     }
 
     /**
-     * Set new chainReserveHeartbeat 
+     * Set new chainReserveHeartbeat
      */
     function setChainReserveHeartbeat(uint256 newHeartbeat) external onlyProofOfReserveEnablerOrOwner {
         token.setChainReserveHeartbeat(newHeartbeat);
