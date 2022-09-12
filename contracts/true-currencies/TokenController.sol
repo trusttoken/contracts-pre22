@@ -82,11 +82,11 @@ contract TokenController {
     bytes32 public constant IS_MINT_RATIFIER = "isTUSDMintRatifier";
     bytes32 public constant IS_REDEMPTION_ADMIN = "isTUSDRedemptionAdmin";
 
+    address public proofOfReserveEnabler;
+
     // paused version of TrueCurrency in Production
     // pausing the contract upgrades the proxy to this implementation
     address public constant PAUSED_IMPLEMENTATION = 0x3c8984DCE8f68FCDEEEafD9E0eca3598562eD291;
-
-    address public proofOfReservePauser;
 
     modifier onlyMintKeyOrOwner() {
         require(msg.sender == mintKey || msg.sender == owner, "must be mintKey or owner");
@@ -195,8 +195,11 @@ contract TokenController {
         _;
     }
 
-    modifier onlyProofOfReservePauserOrOwner() {
-        require(msg.sender == proofOfReservePauser || msg.sender == owner);
+    /**
+     * @dev Modifier throws if called by any account other than proofOfReserveEnabler or owner.
+     */
+    modifier onlyProofOfReserveEnablerOrOwner() {
+        require(msg.sender == proofOfReserveEnabler || msg.sender == owner);
         _;
     } 
 
@@ -474,8 +477,8 @@ contract TokenController {
         registryAdmin = admin;
     }
 
-    function setProofOfReservePauser(address pauser) external onlyOwner {
-        proofOfReservePauser = pauser;
+    function setProofOfReserveEnabler(address enabler) external onlyOwner {
+        proofOfReserveEnabler = enabler;
     }
 
     /*
@@ -669,21 +672,21 @@ contract TokenController {
     /**
      * Set new chainReserveHeartbeat 
      */
-    function setChainReserveHeartbeat(uint256 newHeartbeat) external onlyOwner {
+    function setChainReserveHeartbeat(uint256 newHeartbeat) external onlyProofOfReserveEnablerOrOwner {
         token.setChainReserveHeartbeat(newHeartbeat);
     }
 
     /**
-     * Pause Proof of Reserve check
+     * Disable Proof of Reserve check
      */
-    function pauseProofOfReserve() external onlyProofOfReservePauserOrOwner {
-        token.pauseProofOfReserve();
+    function disableProofOfReserve() external onlyProofOfReserveEnablerOrOwner {
+        token.disableProofOfReserve();
     }
 
     /**
-     * Unpause Proof of Reserve check
+     * Enable Proof of Reserve check
      */
-    function unpauseProofOfReserve() external onlyProofOfReservePauserOrOwner {
-        token.unpauseProofOfReserve();
+    function enableProofOfReserve() external onlyProofOfReserveEnablerOrOwner {
+        token.enableProofOfReserve();
     }
 }

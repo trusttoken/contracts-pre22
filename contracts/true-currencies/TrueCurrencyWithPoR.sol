@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
+import {TrueCurrency} from "./TrueCurrency.sol";
 import {TrueCurrencyWithGasRefund} from "./TrueCurrencyWithGasRefund.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.6/interfaces/AggregatorV3Interface.sol";
 import {IPoRToken} from "../common/interface/IPoRToken.sol";
@@ -59,9 +60,11 @@ abstract contract TrueCurrencyWithPoR is TrueCurrencyWithGasRefund, IPoRToken {
      * @dev Admin function to set a new feed
      * @param newFeed Address of the new feed
      */
-    function setChainReserveFeed(address newFeed) external override onlyOwner returns (uint256) {
+    function setChainReserveFeed(address newFeed) external override onlyOwner {
         emit NewChainReserveFeed(chainReserveFeed, newFeed);
         chainReserveFeed = newFeed;
+        if (proofOfReserveEnabled)
+            proofOfReserveEnabled = false;
     }
 
     /**
@@ -69,18 +72,19 @@ abstract contract TrueCurrencyWithPoR is TrueCurrencyWithGasRefund, IPoRToken {
      * @dev Admin function to set the heartbeat
      * @param newHeartbeat Value of the age of the latest update from the feed
      */
-    function setChainReserveHeartbeat(uint256 newHeartbeat) external override onlyOwner returns (uint256) {
+    function setChainReserveHeartbeat(uint256 newHeartbeat) external override onlyOwner {
         emit NewChainReserveHeartbeat(chainReserveHeartbeat, newHeartbeat);
         chainReserveHeartbeat = newHeartbeat;
     }
 
-    function pauseProofOfReserve() external override onlyOwner () {
-        emit ProofOfReservePaused();
+    function disableProofOfReserve() external override onlyOwner () {
+        emit ProofOfReserveDisabled();
         proofOfReserveEnabled = false;
     }
 
-    function unpauseProofOfReserve() external override onlyOwner () {
-        emit ProofOfReserveUnpaused();
+    function enableProofOfReserve() external override onlyOwner () {
+        require (chainReserveFeed != address(0), "TrueCurrency: chainReserveFeed not set");
+        emit ProofOfReserveEnabled();
         proofOfReserveEnabled = true;
     }
 }

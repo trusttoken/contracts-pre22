@@ -15,20 +15,20 @@ interface IPoRToken {
     /**
      * @notice Event emitted when Proof of Reserve is paused
      */
-    event ProofOfReservePaused();
+    event ProofOfReserveEnabled();
 
     /**
      * @notice Event emitted when Proof of Reserve is unpaused
      */
-    event ProofOfReserveUnpaused();
+    event ProofOfReserveDisabled();
 
     /*** Admin Functions ***/
 
-    function setChainReserveFeed(address newFeed) external returns (uint256);
+    function setChainReserveFeed(address newFeed) external;
 
-    function setChainReserveHeartbeat(uint256 newHeartbeat) external returns (uint256);
+    function setChainReserveHeartbeat(uint256 newHeartbeat) external;
 
-    function pauseProofOfReserve() external; 
+    function enableProofOfReserve() external; 
 
-    function unpauseProofOfReserve() external; 
+    function disableProofOfReserve() external; 
 }
