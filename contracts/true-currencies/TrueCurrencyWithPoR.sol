@@ -17,9 +17,6 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 abstract contract TrueCurrencyWithPoR is TrueCurrencyWithGasRefund, IPoRToken {
     using SafeMath for uint256;
 
-    constructor() public {
-    }
-
     /**
      * @notice Overriden mint function that checks the specified proof-of-reserves feed to
      * ensure that the total supply of this TrueCurrency is not greater than the reported
@@ -63,7 +60,7 @@ abstract contract TrueCurrencyWithPoR is TrueCurrencyWithGasRefund, IPoRToken {
     function setChainReserveFeed(address newFeed) external override onlyOwner {
         emit NewChainReserveFeed(chainReserveFeed, newFeed);
         chainReserveFeed = newFeed;
-        if (proofOfReserveEnabled)
+        if (newFeed == address(0) && proofOfReserveEnabled)
             proofOfReserveEnabled = false;
     }
 
