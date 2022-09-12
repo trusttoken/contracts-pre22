@@ -45,6 +45,8 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
     const currentFeed = await token.chainReserveFeed()
     if (currentFeed.toLowerCase() !== mockV3Aggregator.address.toLowerCase()) {
       await token.setChainReserveFeed(mockV3Aggregator.address)
+      await token.setChainReserveHeartbeat(ONE_DAY_SECONDS)
+      await token.enableProofOfReserve()
     }
 
     // Set fresh, valid answer on mock PoR feed
@@ -91,6 +93,8 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
     const mockV3AggregatorWith6Decimals = await new MockV3Aggregator__factory(owner).deploy('6', validReserve)
     // Set feed and heartbeat on newly-deployed aggregator
     await token.setChainReserveFeed(mockV3AggregatorWith6Decimals.address)
+    await token.setChainReserveHeartbeat(ONE_DAY_SECONDS)
+    await token.enableProofOfReserve()
     expect(await token.chainReserveFeed()).to.equal(mockV3AggregatorWith6Decimals.address)
 
     // Mint TUSD
@@ -109,6 +113,8 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
     const mockV3AggregatorWith20Decimals = await new MockV3Aggregator__factory(owner).deploy('20', validReserve)
     // Set feed and heartbeat on newly-deployed aggregator
     await token.setChainReserveFeed(mockV3AggregatorWith20Decimals.address)
+    await token.setChainReserveHeartbeat(ONE_DAY_SECONDS)
+    await token.enableProofOfReserve()
     expect(await token.chainReserveFeed()).to.equal(mockV3AggregatorWith20Decimals.address)
 
     // Mint TUSD
@@ -142,6 +148,7 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
   it('should revert if the feed is not updated within the heartbeat', async () => {
     // Set heartbeat to 1 day
     await token.setChainReserveHeartbeat(ONE_DAY_SECONDS)
+    await token.enableProofOfReserve()
     expect(await token.chainReserveHeartbeat()).to.equal(ONE_DAY_SECONDS)
 
     // Heartbeat is set to 1 day, so fast-forward 2 days
