@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {TrueCurrency} from "./TrueCurrency.sol";
+import {TrueCurrencyWithGasRefund} from "./TrueCurrencyWithGasRefund.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.6/interfaces/AggregatorV3Interface.sol";
 import {IPoRToken} from "../common/interface/IPoRToken.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
@@ -13,7 +13,7 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
  *  This contract implements an additional check against a Proof-of-Reserves feed before
  *  allowing tokens to be minted.
  */
-abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
+abstract contract TrueCurrencyWithPoR is TrueCurrencyWithGasRefund, IPoRToken {
     using SafeMath for uint256;
 
     constructor() public {

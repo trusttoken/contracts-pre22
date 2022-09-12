@@ -4,7 +4,7 @@ pragma solidity 0.6.10;
 import {IOwnedUpgradeabilityProxy as OwnedUpgradeabilityProxy} from "../../proxy/interface/IOwnedUpgradeabilityProxy.sol";
 import {IRegistry as Registry} from "../../registry/interface/IRegistry.sol";
 
-import {ITrueCurrency as TrueCurrency} from "../interface/ITrueCurrency.sol";
+import {TrueCurrencyWithPoR as TrueCurrency} from "../TrueCurrencyWithPoR.sol";
 
 import {TokenController} from "../TokenController.sol";
 
