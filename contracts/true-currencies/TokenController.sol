@@ -77,12 +77,12 @@ contract TokenController {
     address public registryAdmin;
     address public gasRefunder;
 
+    address public proofOfReserveEnabler;
+
     // Registry attributes for admin keys
     bytes32 public constant IS_MINT_PAUSER = "isTUSDMintPausers";
     bytes32 public constant IS_MINT_RATIFIER = "isTUSDMintRatifier";
     bytes32 public constant IS_REDEMPTION_ADMIN = "isTUSDRedemptionAdmin";
-
-    address public proofOfReserveEnabler;
 
     // paused version of TrueCurrency in Production
     // pausing the contract upgrades the proxy to this implementation
