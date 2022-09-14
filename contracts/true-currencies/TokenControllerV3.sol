@@ -1416,6 +1416,42 @@ abstract contract GasRefund {
     }
 }
 
+// File: contracts-pre22/contracts/common/interface/IPoRToken.sol
+
+pragma solidity 0.6.10;
+
+interface IPoRToken {
+    /**
+     * @notice Event emitted when the feed is updated
+     */
+    event NewChainReserveFeed(address oldFeed, address newFeed);
+
+    /**
+     * @notice Event emitted when the heartbeat of chain reserve feed is updated
+     */
+    event NewChainReserveHeartbeat(uint256 oldHeartbeat, uint256 newHeartbeat);
+
+    /**
+     * @notice Event emitted when Proof of Reserve is enabled
+     */
+    event ProofOfReserveEnabled();
+
+    /**
+     * @notice Event emitted when Proof of Reserve is disabled
+     */
+    event ProofOfReserveDisabled();
+
+    /*** Admin Functions ***/
+
+    function setChainReserveFeed(address newFeed) external;
+
+    function setChainReserveHeartbeat(uint256 newHeartbeat) external;
+
+    function enableProofOfReserve() external;
+
+    function disableProofOfReserve() external;
+}
+
 // File: contracts/true-currencies-new/TrueCurrency.sol
 
 pragma solidity 0.6.10;
@@ -1455,7 +1491,7 @@ pragma solidity 0.6.10;
  * Reclaimer Token
  * - ERC20 Tokens and Ether sent to this contract can be reclaimed by the owner
  */
-abstract contract TrueCurrency is BurnableTokenWithBounds, GasRefund {
+abstract contract TrueCurrency is BurnableTokenWithBounds, GasRefund, IPoRToken {
     uint256 constant CENT = 10**16;
     uint256 constant REDEMPTION_ADDRESS_COUNT = 0x100000;
 
