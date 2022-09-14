@@ -1676,6 +1676,8 @@ contract TokenControllerV2 {
     address public fastPause; // deprecated
     address public trueRewardManager; // deprecated
 
+    address public proofOfReserveEnabler;
+
     // Registry attributes for admin keys
     bytes32 public constant IS_MINT_PAUSER = "isTUSDMintPausers";
     bytes32 public constant IS_MINT_RATIFIER = "isTUSDMintRatifier";
@@ -1794,6 +1796,14 @@ contract TokenControllerV2 {
      */
     modifier onlyPendingOwner() {
         require(msg.sender == pendingOwner);
+        _;
+    }
+
+    /**
+     * @dev Modifier throws if called by any account other than proofOfReserveEnabler or owner.
+     */
+    modifier onlyProofOfReserveEnablerOrOwner() {
+        require(msg.sender == proofOfReserveEnabler || msg.sender == owner, "only proofOfReserveEnabler or owner");
         _;
     }
 
@@ -2063,6 +2073,10 @@ contract TokenControllerV2 {
         mintKey = _newMintKey;
     }
 
+    function setProofOfReserveEnabler(address enabler) external onlyOwner {
+        proofOfReserveEnabler = enabler;
+    }
+
     /*
     ========================================
     Mint Pausing
@@ -2214,6 +2228,39 @@ contract TokenControllerV2 {
         token.setCanBurn(burner, canBurn);
     }
 
+    /*
+    ========================================
+    Proof of Reserve, administrative
+    ========================================
+    */
+
+    /**
+     * Set new chainReserveFeed address
+     */
+    function setChainReserveFeed(address newFeed) external onlyOwner {
+        token.setChainReserveFeed(newFeed);
+    }
+
+    /**
+     * Set new chainReserveHeartbeat
+     */
+    function setChainReserveHeartbeat(uint256 newHeartbeat) external onlyProofOfReserveEnablerOrOwner {
+        token.setChainReserveHeartbeat(newHeartbeat);
+    }
+
+    /**
+     * Disable Proof of Reserve check
+     */
+    function disableProofOfReserve() external onlyProofOfReserveEnablerOrOwner {
+        token.disableProofOfReserve();
+    }
+
+    /**
+     * Enable Proof of Reserve check
+     */
+    function enableProofOfReserve() external onlyProofOfReserveEnablerOrOwner {
+        token.enableProofOfReserve();
+    }
     /**
      * Call hook in `hookContract` with gas refund
      */
