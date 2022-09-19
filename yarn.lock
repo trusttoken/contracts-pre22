@@ -4679,18 +4679,6 @@ eth-sig-util@^1.4.2:
     ethereumjs-abi "git+https://github.com/ethereumjs/ethereumjs-abi.git"
     ethereumjs-util "^5.1.1"
 
-eth-sig-util@^2.0.0:
-  version "2.5.3"
-  resolved "https://registry.yarnpkg.com/eth-sig-util/-/eth-sig-util-2.5.3.tgz#6938308b38226e0b3085435474900b03036abcbe"
-  integrity sha512-KpXbCKmmBUNUTGh9MRKmNkIPietfhzBqqYqysDavLseIiMUGl95k6UcPEkALAZlj41e9E6yioYXc1PC333RKqw==
-  dependencies:
-    buffer "^5.2.1"
-    elliptic "^6.4.0"
-    ethereumjs-abi "0.6.5"
-    ethereumjs-util "^5.1.1"
-    tweetnacl "^1.0.0"
-    tweetnacl-util "^0.15.0"
-
 eth-sig-util@^2.5.2:
   version "2.5.4"
   resolved "https://registry.yarnpkg.com/eth-sig-util/-/eth-sig-util-2.5.4.tgz#577b01fe491b6bf59b0464be09633e20c1677bc5"
@@ -5742,10 +5730,10 @@ ganache-cli@^6.11.0:
     source-map-support "0.5.12"
     yargs "13.2.4"
 
-ganache-core@^2.13.0, ganache-core@^2.13.2:
-  version "2.13.1"
-  resolved "https://registry.yarnpkg.com/ganache-core/-/ganache-core-2.13.1.tgz#bf60399a2dd084e1090db91cbbc7ed3885dc01e4"
-  integrity sha512-Ewg+kNcDqXtOohe7jCcP+ZUv9EMzOx2MoqOYYP3BCfxrDh3KjBXXaKK+Let7li0TghAs9lxmBgevZku35j5YzA==
+ganache-core@^2.13.2:
+  version "2.13.2"
+  resolved "https://registry.yarnpkg.com/ganache-core/-/ganache-core-2.13.2.tgz#27e6fc5417c10e6e76e2e646671869d7665814a3"
+  integrity sha512-tIF5cR+ANQz0+3pHWxHjIwHqFXcVo0Mb+kcsNhglNFALcYo49aQpnS9dqHartqPfMFjiHh/qFoD3mYK0d/qGgw==
   dependencies:
     abstract-leveldown "3.0.0"
     async "2.6.2"
@@ -5754,7 +5742,7 @@ ganache-core@^2.13.0, ganache-core@^2.13.2:
     clone "2.1.2"
     debug "3.2.6"
     encoding-down "5.0.4"
-    eth-sig-util "^2.0.0"
+    eth-sig-util "3.0.0"
     ethereumjs-abi "0.6.8"
     ethereumjs-account "3.0.0"
     ethereumjs-block "2.2.2"

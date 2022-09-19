@@ -85,8 +85,6 @@
     "web3": "1.2.4"
   },
   "resolutions": {
-    "ethereum-waffle/**/ganache-core": "^2.13.0",
-    "@ethereum-waffle/provider/ganache-core": "^2.13.0",
     "**/@resolver-engine/core": "^0.3.3"
   }
 }
