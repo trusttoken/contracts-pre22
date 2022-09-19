@@ -1,15 +1,13 @@
-import { expect, use } from 'chai'
-import { solidity } from 'ethereum-waffle'
-import { setupFixtureLoader } from './setup'
-import { dummyContractFixture } from 'fixtures/dummyContractFixture'
+import { expect } from 'chai'
 
-use(solidity)
+const { ethers } = require("hardhat");
 
 describe('DummyContract', () => {
-  const loadFixture = setupFixtureLoader()
 
   it('should have a constructor', async () => {
-    const { dummyContract } = await loadFixture(dummyContractFixture)
+    const DummyContract = await ethers.getContractFactory("contracts/DummyContract.sol:DummyContract");
+    const dummyContract = await DummyContract.deploy();
+
     expect(await dummyContract.getValue()).to.eq(5)
   })
 })
