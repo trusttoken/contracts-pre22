@@ -1,0 +1,6 @@
+{
+  "name": "@trusttoken-smart-contracts/contracts-por",
+  "version": "0.0.1",
+  "description": "Updates to TUSD contracts for Proof of Reserve feature",
+  "private": true
+}

@@ -2,6 +2,10 @@
   "name": "trusttoken-smart-contracts",
   "version": "2.0.0",
   "description": "TrueFi and True Currency Smart Contracts",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "postinstall": "patch-package",
     "flatten": "./flatten.sh",
@@ -42,7 +46,6 @@
     "slither": "./slither.sh",
     "coverage": "bash ./runCoverage.sh"
   },
-  "author": "",
   "license": "SEE LICENSE IN LICENSE.md",
   "devDependencies": {
     "@typechain/ethers-v5": "^6.0.5",
