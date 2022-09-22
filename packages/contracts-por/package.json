@@ -4,6 +4,7 @@
   "description": "Updates to TUSD contracts for Proof of Reserve feature",
   "private": true,
   "devDependencies": {
-    "ethereum-waffle": "4.0.7"
+    "ethereum-waffle": "4.0.7",
+    "ethers": "^5.7.0"
   }
 }
