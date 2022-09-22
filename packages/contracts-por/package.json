@@ -2,5 +2,8 @@
   "name": "@trusttoken-smart-contracts/contracts-por",
   "version": "0.0.1",
   "description": "Updates to TUSD contracts for Proof of Reserve feature",
-  "private": true
+  "private": true,
+  "devDependencies": {
+    "ethereum-waffle": "4.0.7"
+  }
 }

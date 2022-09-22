@@ -48,6 +48,9 @@
   },
   "license": "SEE LICENSE IN LICENSE.md",
   "devDependencies": {
+    "@ethersproject/keccak256": "5.0.4",
+    "@ethersproject/providers": "5.0.13",
+    "@ethersproject/strings": "5.0.5",
     "@typechain/ethers-v5": "^6.0.5",
     "@types/chai": "^4.2.11",
     "@types/mocha": "^7.0.2",
