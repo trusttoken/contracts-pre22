@@ -5,6 +5,7 @@
   "private": true,
   "devDependencies": {
     "ethereum-waffle": "4.0.7",
-    "ethers": "^5.7.0"
+    "ethers": "^5.7.0",
+    "hardhat": "^2.10.2"
   }
 }
