@@ -67,7 +67,7 @@ jobs:
       - attach_workspace:
           at: .
       - run: yarn lint
-  test-packages:
+  test-package-contracts-por:
     docker:
       - image: cimg/node:16.1.0
     steps:
@@ -144,7 +144,7 @@ workflows:
       - slither:
           requires:
             - setup
-      - test-packages:
+      - test-package-contracts-por:
           requires:
             - build
       - test-truefi:
