@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "skipLibCheck": true,
+    "target": "esnext",
+    "sourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "build/*": ["build/*"],
+      "build": ["build"],
+      "fixtures/*": ["test/fixtures/*"],
+      "fixtures": ["test/fixtures"],
+      "contracts/*": ["build/types/*"],
+      "contracts": ["build/types", "build/types/factories"],
+      "utils/*": ["test/utils/*"],
+      "utils": ["test/utils"],
+      "config/*": ["test/config/*"],
+      "config": ["test/config"],
+    }
+  },
+  "include": [
+    "build",
+    "contracts",
+    "test",
+    "scripts",
+  ]
+}

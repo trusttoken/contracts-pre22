@@ -1,0 +1,8 @@
+{
+  "require": ["ts-node/register/transpile-only", "tsconfig-paths/register"],
+  "extension": ["ts"],
+  "target": "esnext",
+  "timeout": 40000,
+  "watch-files": ["test"],
+  "exit": true
+}
