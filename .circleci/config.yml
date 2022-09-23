@@ -73,7 +73,7 @@ jobs:
     steps:
       - attach_workspace:
           at: .
-      - run: for d in packages/*; do cd $d && yarn test; done
+      - yarn workspace @trusttoken-smart-contracts/contracts-por test
   test-others:
     docker:
       - image: cimg/node:16.1.0
