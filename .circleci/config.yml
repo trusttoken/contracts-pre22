@@ -48,6 +48,7 @@ jobs:
           at: .
       - run: yarn build
       - run: yarn typecheck
+      - run: for d in packages/*; do cd $d; yarn build; done
       - persist_to_workspace:
           root: .
           paths:
@@ -66,6 +67,13 @@ jobs:
       - attach_workspace:
           at: .
       - run: yarn lint
+  test-packages:
+    docker:
+      - image: cimg/node:16.1.0
+    steps:
+      - attach_workspace:
+          at: .
+      - run: for d in packages/*; do cd $d; yarn test; done
   test-others:
     docker:
       - image: cimg/node:16.1.0
@@ -136,6 +144,9 @@ workflows:
       - slither:
           requires:
             - setup
+      - test-packages:
+          requires:
+            - build
       - test-truefi:
           requires:
             - build
