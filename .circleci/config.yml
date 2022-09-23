@@ -48,7 +48,7 @@ jobs:
           at: .
       - run: yarn build
       - run: yarn typecheck
-      - run: for d in packages/*; do cd $d && yarn build; done
+      - yarn workspace @trusttoken-smart-contracts/contracts-por build
       - persist_to_workspace:
           root: .
           paths:
