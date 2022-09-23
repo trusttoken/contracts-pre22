@@ -48,7 +48,7 @@ jobs:
           at: .
       - run: yarn build
       - run: yarn typecheck
-      - yarn workspace @trusttoken-smart-contracts/contracts-por build
+      - run: yarn workspace @trusttoken-smart-contracts/contracts-por build
       - persist_to_workspace:
           root: .
           paths:
@@ -73,7 +73,7 @@ jobs:
     steps:
       - attach_workspace:
           at: .
-      - yarn workspace @trusttoken-smart-contracts/contracts-por test
+      - run: yarn workspace @trusttoken-smart-contracts/contracts-por test
   test-others:
     docker:
       - image: cimg/node:16.1.0
