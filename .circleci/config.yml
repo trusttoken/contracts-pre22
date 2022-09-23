@@ -48,6 +48,7 @@ jobs:
           at: .
       - run: yarn build
       - run: yarn typecheck
+      - run: yarn workspace @trusttoken-smart-contracts/contracts-por build
       - persist_to_workspace:
           root: .
           paths:
@@ -66,6 +67,13 @@ jobs:
       - attach_workspace:
           at: .
       - run: yarn lint
+  test-package-contracts-por:
+    docker:
+      - image: cimg/node:16.1.0
+    steps:
+      - attach_workspace:
+          at: .
+      - run: yarn workspace @trusttoken-smart-contracts/contracts-por test
   test-others:
     docker:
       - image: cimg/node:16.1.0
@@ -136,6 +144,9 @@ workflows:
       - slither:
           requires:
             - setup
+      - test-package-contracts-por:
+          requires:
+            - build
       - test-truefi:
           requires:
             - build
