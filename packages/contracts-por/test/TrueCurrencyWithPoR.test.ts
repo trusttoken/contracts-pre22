@@ -4,12 +4,12 @@ import { solidity } from 'ethereum-waffle'
 import { expect, use } from 'chai'
 import { waffle, network } from 'hardhat'
 
-import { timeTravel } from 'utils'
+import { timeTravel } from 'utils/timeTravel'
 import {
   MockV3Aggregator,
   MockV3Aggregator__factory,
   TrueCurrencyWithPoR,
-  TrueUsdWithPoR__factory,
+  TrueUSDWithPoR__factory,
 } from 'contracts'
 
 use(solidity)
@@ -31,7 +31,7 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
     const provider = waffle.provider;
     [owner] = provider.getWallets()
 
-    token = (await new TrueUsdWithPoR__factory(owner).deploy()) as TrueCurrencyWithPoR
+    token = (await new TrueUSDWithPoR__factory(owner).deploy()) as TrueCurrencyWithPoR
 
     // Deploy a mock aggregator to mock PoR feed answers
     mockV3Aggregator = await new MockV3Aggregator__factory(owner).deploy(
