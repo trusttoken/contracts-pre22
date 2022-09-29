@@ -1,0 +1,13 @@
+{
+  "compilerVersion": "0.6.10",
+  "compilerOptions": {
+    "optimizer": {
+      "enabled": true,
+      "runs": 20000
+    }
+  },
+  "sourceDirectory": "./contracts",
+  "outputDirectory": "./build",
+  "typechainEnabled": true,
+  "typechainOutputDir": "types"
+}

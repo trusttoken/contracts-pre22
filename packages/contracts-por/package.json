@@ -4,10 +4,8 @@
   "description": "Updates to TUSD contracts for Proof of Reserve feature",
   "private": true,
   "scripts": {
-    "clean": "rm -rf ./build && hardhat clean",
-    "build:hardhat": "hardhat compile",
-    "build:typechain": "typechain --target ethers-v5 --out-dir build/types 'build/*.json'",
-    "build": "yarn clean && yarn build:hardhat && yarn build:typechain && mars",
+    "clean": "rm -rf ./build",
+    "build": "yarn clean && waffle compile .waffle.json",
     "test": "mocha 'test/**/*.test.ts'"
   },
   "dependencies": {
@@ -30,7 +28,6 @@
     "ethers": "^5.7.0",
     "hardhat": "~2.10.2",
     "mocha": "^10.0.0",
-    "solc": "0.8.16",
     "ts-node": "^10.7.0",
     "tsconfig-paths": "^4.1.0",
     "typechain": "^8.0.0",
