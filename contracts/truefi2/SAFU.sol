@@ -36,7 +36,7 @@ contract SAFU is ISAFU, UpgradeableClaimable {
     I1Inch3 public _1Inch;
 
     mapping(ILoanToken2 => IDeficiencyToken) public override deficiencyToken;
-    mapping(address => uint256) public override poolDeficit;
+    mapping(address => uint256) public internalPoolDeficit;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -51,7 +51,7 @@ contract SAFU is ISAFU, UpgradeableClaimable {
     /**
      * @dev Emitted when a loan gets liquidated
      * @param loan Loan that has been liquidated
-     * @param repaid Amount repaid to the pool
+     * @param repaid DEPRECATED Amount repaid to the pool
      * @param deficiencyToken Deficiency token representing a deficit that is owed to the pool by SAFU
      * @param deficit Deficit amount that SAFU still owes the pool
      */
@@ -81,9 +81,16 @@ contract SAFU is ISAFU, UpgradeableClaimable {
     }
 
     /**
-     * @dev Liquidates a defaulted Loan, withdraws a portion of tru from staking pool
-     * then tries to cover the loan with own funds, to compensate TrueFiPool
-     * If SAFU does not have enough funds, deficit is saved to be redeemed later
+     * @dev Dummy view so that tfTOKEN.deficitValue() discounts deficiency tokens to zero value.
+     * Does not affect SAFU internal deficiency token tracking.
+     */
+    function poolDeficit(address) external override view returns (uint256) {
+        return 0;
+    }
+
+    /**
+     * @dev Liquidates a defaulted Loan and withdraws a portion of tru from staking pool
+     * to compensate TrueFiPool. Deficit is saved to be redeemed later
      * @param loan Loan to be liquidated
      */
     function liquidate(ILoanToken2 loan) external {
@@ -91,23 +98,15 @@ contract SAFU is ISAFU, UpgradeableClaimable {
         require(loan.status() == ILoanToken2.Status.Defaulted, "SAFU: Loan is not defaulted");
 
         ITrueFiPool2 pool = ITrueFiPool2(loan.pool());
-        IERC20 token = IERC20(pool.token());
 
         liquidator.liquidate(loan);
         pool.liquidate(loan);
-        uint256 owedToPool = loan.debt().mul(tokenBalance(loan)).div(loan.totalSupply());
-        uint256 safuTokenBalance = tokenBalance(token);
 
-        uint256 deficit = 0;
-        uint256 toTransfer = owedToPool;
-        if (owedToPool > safuTokenBalance) {
-            deficit = owedToPool.sub(safuTokenBalance);
-            toTransfer = safuTokenBalance;
-            deficiencyToken[loan] = new DeficiencyToken(loan, deficit);
-            poolDeficit[address(loan.pool())] = poolDeficit[address(loan.pool())].add(deficit);
-        }
-        token.safeTransfer(address(pool), toTransfer);
-        emit Liquidated(loan, toTransfer, deficiencyToken[loan], deficit);
+        uint256 deficit = loan.debt().mul(tokenBalance(loan)).div(loan.totalSupply());
+        deficiencyToken[loan] = new DeficiencyToken(loan, deficit);
+        internalPoolDeficit[address(pool)] = internalPoolDeficit[address(pool)].add(deficit);
+
+        emit Liquidated(loan, 0, deficiencyToken[loan], deficit);
     }
 
     /**
@@ -145,7 +144,7 @@ contract SAFU is ISAFU, UpgradeableClaimable {
         require(address(dToken) != address(0), "SAFU: No deficiency token found for loan");
         require(dToken.balanceOf(poolAddress) > 0, "SAFU: Pool does not have deficiency tokens to be reclaimed");
 
-        poolDeficit[poolAddress] = poolDeficit[poolAddress].sub(amount);
+        internalPoolDeficit[poolAddress] = internalPoolDeficit[poolAddress].sub(amount);
         dToken.burnFrom(msg.sender, amount);
         loan.token().safeTransfer(poolAddress, amount);
 
