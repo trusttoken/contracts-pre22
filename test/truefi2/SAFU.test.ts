@@ -142,7 +142,12 @@ describe('SAFU', () => {
           expect(await safu.deficiencyToken(loan.address)).to.eq(AddressZero)
         })
 
-        it('increases pool deficit', async () => {
+        it('increases internal pool deficit', async () => {
+          await safu.liquidate(loan.address)
+          expect(await safu.internalPoolDeficit(pool.address)).to.eq(0)
+        })
+
+        it('does not move pool deficit from zero', async () => {
           await safu.liquidate(loan.address)
           expect(await safu.poolDeficit(pool.address)).to.eq(0)
         })
@@ -175,9 +180,14 @@ describe('SAFU', () => {
           expect(await safu.deficiencyToken(loan.address)).to.eq(deficiencyToken)
         })
 
-        it('increases pool deficit', async () => {
+        it('increases internal pool deficit', async () => {
           await safu.liquidate(loan.address)
-          expect(await safu.poolDeficit(pool.address)).to.eq(defaultAmount.div(2))
+          expect(await safu.internalPoolDeficit(pool.address)).to.eq(defaultAmount.div(2))
+        })
+
+        it('does not move pool deficit from zero', async () => {
+          await safu.liquidate(loan.address)
+          expect(await safu.poolDeficit(pool.address)).to.eq(0)
         })
 
         it('emits event', async () => {
@@ -298,7 +308,12 @@ describe('SAFU', () => {
         expect(await dToken.totalSupply()).to.eq(0)
       })
 
-      it('decreases pool deficit', async () => {
+      it('decreases internal pool deficit', async () => {
+        await pool.reclaimDeficit(loan.address)
+        expect(await safu.internalPoolDeficit(pool.address)).to.eq(0)
+      })
+
+      it('does not move pool deficit from zero', async () => {
         await pool.reclaimDeficit(loan.address)
         expect(await safu.poolDeficit(pool.address)).to.eq(0)
       })

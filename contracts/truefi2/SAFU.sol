@@ -36,7 +36,7 @@ contract SAFU is ISAFU, UpgradeableClaimable {
     I1Inch3 public _1Inch;
 
     mapping(ILoanToken2 => IDeficiencyToken) public override deficiencyToken;
-    mapping(address => uint256) public override poolDeficit;
+    mapping(address => uint256) public internalPoolDeficit;
 
     // ======= STORAGE DECLARATION END ============
 
@@ -81,6 +81,14 @@ contract SAFU is ISAFU, UpgradeableClaimable {
     }
 
     /**
+     * @dev Dummy view so that tfTOKEN.deficitValue() discounts deficiency tokens to zero value.
+     * Does not affect SAFU internal deficiency token tracking.
+     */
+    function poolDeficit(address) external override view returns (uint256) {
+        return 0;
+    }
+
+    /**
      * @dev Liquidates a defaulted Loan, withdraws a portion of tru from staking pool
      * then tries to cover the loan with own funds, to compensate TrueFiPool
      * If SAFU does not have enough funds, deficit is saved to be redeemed later
@@ -104,7 +112,7 @@ contract SAFU is ISAFU, UpgradeableClaimable {
             deficit = owedToPool.sub(safuTokenBalance);
             toTransfer = safuTokenBalance;
             deficiencyToken[loan] = new DeficiencyToken(loan, deficit);
-            poolDeficit[address(loan.pool())] = poolDeficit[address(loan.pool())].add(deficit);
+            internalPoolDeficit[address(loan.pool())] = internalPoolDeficit[address(loan.pool())].add(deficit);
         }
         token.safeTransfer(address(pool), toTransfer);
         emit Liquidated(loan, toTransfer, deficiencyToken[loan], deficit);
@@ -145,7 +153,7 @@ contract SAFU is ISAFU, UpgradeableClaimable {
         require(address(dToken) != address(0), "SAFU: No deficiency token found for loan");
         require(dToken.balanceOf(poolAddress) > 0, "SAFU: Pool does not have deficiency tokens to be reclaimed");
 
-        poolDeficit[poolAddress] = poolDeficit[poolAddress].sub(amount);
+        internalPoolDeficit[poolAddress] = internalPoolDeficit[poolAddress].sub(amount);
         dToken.burnFrom(msg.sender, amount);
         loan.token().safeTransfer(poolAddress, amount);
 
