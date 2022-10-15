@@ -1,10 +1,10 @@
 import { BigNumber, BigNumberish, Wallet, utils, providers } from 'ethers'
 import { AddressZero } from '@ethersproject/constants'
-import { solidity, MockProvider } from 'ethereum-waffle'
-
+import { solidity } from 'ethereum-waffle'
 import { expect, use } from 'chai'
+import { waffle, network } from 'hardhat'
 
-import { timeTravel } from './utils/timeTravel'
+import { timeTravel } from 'utils/timeTravel'
 import {
   MockV3Aggregator,
   MockV3Aggregator__factory,
@@ -28,7 +28,7 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
   let owner: Wallet
 
   before(async () => {
-    const provider = new MockProvider();
+    const provider = waffle.provider;
     [owner] = provider.getWallets()
 
     token = (await new TrueUSDWithPoR__factory(owner).deploy()) as TrueCurrencyWithPoR
@@ -45,6 +45,8 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
     const currentFeed = await token.chainReserveFeed()
     if (currentFeed.toLowerCase() !== mockV3Aggregator.address.toLowerCase()) {
       await token.setChainReserveFeed(mockV3Aggregator.address)
+      await token.setChainReserveHeartbeat(ONE_DAY_SECONDS)
+      await token.enableProofOfReserve()
     }
 
     // Set fresh, valid answer on mock PoR feed
@@ -91,13 +93,15 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
     const mockV3AggregatorWith6Decimals = await new MockV3Aggregator__factory(owner).deploy('6', validReserve)
     // Set feed and heartbeat on newly-deployed aggregator
     await token.setChainReserveFeed(mockV3AggregatorWith6Decimals.address)
+    await token.setChainReserveHeartbeat(ONE_DAY_SECONDS)
+    await token.enableProofOfReserve()
     expect(await token.chainReserveFeed()).to.equal(mockV3AggregatorWith6Decimals.address)
 
     // Mint TUSD
     const balanceBefore = await token.balanceOf(owner.address)
     await expect(token.mint(owner.address, AMOUNT_TO_MINT, {
       gasLimit: 200_000,
-    })).to.be.revertedWith('Unexpected decimals of PoR feed')
+    })).to.be.revertedWith('TrueCurrency: Unexpected decimals of PoR feed')
     expect(await token.balanceOf(owner.address)).to.equal(balanceBefore)
   })
 
@@ -109,13 +113,15 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
     const mockV3AggregatorWith20Decimals = await new MockV3Aggregator__factory(owner).deploy('20', validReserve)
     // Set feed and heartbeat on newly-deployed aggregator
     await token.setChainReserveFeed(mockV3AggregatorWith20Decimals.address)
+    await token.setChainReserveHeartbeat(ONE_DAY_SECONDS)
+    await token.enableProofOfReserve()
     expect(await token.chainReserveFeed()).to.equal(mockV3AggregatorWith20Decimals.address)
 
     // Mint TUSD
     const balanceBefore = await token.balanceOf(owner.address)
     await expect(token.mint(owner.address, AMOUNT_TO_MINT, {
       gasLimit: 200_000,
-    })).to.be.revertedWith('Unexpected decimals of PoR feed')
+    })).to.be.revertedWith('TrueCurrency: Unexpected decimals of PoR feed')
     expect(await token.balanceOf(owner.address)).to.equal(balanceBefore)
   })
 
@@ -133,7 +139,9 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
 
     // Mint TUSD
     const balanceBefore = await token.balanceOf(owner.address)
-    await expect(token.mint(owner.address, AMOUNT_TO_MINT)).to.be.revertedWith(
+    await expect(token.mint(owner.address, AMOUNT_TO_MINT), {
+      gasLimit: 600_000,
+    }).to.be.revertedWith(
       'TrueCurrency: total supply would exceed reserves after mint',
     )
     expect(await token.balanceOf(owner.address)).to.equal(balanceBefore)
@@ -142,11 +150,11 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
   it('should revert if the feed is not updated within the heartbeat', async () => {
     // Set heartbeat to 1 day
     await token.setChainReserveHeartbeat(ONE_DAY_SECONDS)
+    await token.enableProofOfReserve()
     expect(await token.chainReserveHeartbeat()).to.equal(ONE_DAY_SECONDS)
 
     // Heartbeat is set to 1 day, so fast-forward 2 days
-    const provider = new MockProvider();
-    await timeTravel(<unknown> provider as providers.JsonRpcProvider, 2 * ONE_DAY_SECONDS)
+    await timeTravel(<unknown> network.provider as providers.JsonRpcProvider, 2 * ONE_DAY_SECONDS)
 
     // Mint TUSD
     const balanceBefore = await token.balanceOf(owner.address)
