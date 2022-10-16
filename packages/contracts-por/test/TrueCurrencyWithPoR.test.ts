@@ -8,8 +8,8 @@ import { timeTravel } from 'utils/timeTravel'
 import {
   MockV3Aggregator,
   MockV3Aggregator__factory,
-  TrueCurrencyWithPoR,
-  TrueUSDWithPoR__factory,
+  TrueCurrencyWithProofOfReserve,
+  TrueUSDWithProofOfReserve__factory,
 } from 'contracts'
 
 use(solidity)
@@ -23,7 +23,7 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
   const ONE_DAY_SECONDS = 24 * 60 * 60 // seconds in a day
   const TUSD_FEED_INITIAL_ANSWER = exp(1_000_000, 18).toString() // "1M TUSD in reserves"
   const AMOUNT_TO_MINT = utils.parseEther('1000000')
-  let token: TrueCurrencyWithPoR
+  let token: TrueCurrencyWithProofOfReserve
   let mockV3Aggregator: MockV3Aggregator
   let owner: Wallet
 
@@ -31,9 +31,9 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
     const provider = waffle.provider;
     [owner] = provider.getWallets()
 
-    token = (await new TrueUSDWithPoR__factory(owner).deploy()) as TrueCurrencyWithPoR
+    token = (await new TrueUSDWithProofOfReserve__factory(owner).deploy()) as TrueCurrencyWithProofOfReserve
 
-    // Deploy a mock aggregator to mock PoR feed answers
+    // Deploy a mock aggregator to mock Proof of Reserve feed answers
     mockV3Aggregator = await new MockV3Aggregator__factory(owner).deploy(
       '18',
       TUSD_FEED_INITIAL_ANSWER,
@@ -41,7 +41,7 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
   })
 
   beforeEach(async () => {
-    // Reset pool PoR feed defaults
+    // Reset pool Proof Of Reserve feed defaults
     const currentFeed = await token.chainReserveFeed()
     if (currentFeed.toLowerCase() !== mockV3Aggregator.address.toLowerCase()) {
       await token.setChainReserveFeed(mockV3Aggregator.address)
@@ -49,7 +49,7 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
       await token.enableProofOfReserve()
     }
 
-    // Set fresh, valid answer on mock PoR feed
+    // Set fresh, valid answer on mock Proof of Reserve feed
     const tusdSupply = await token.totalSupply()
     await mockV3Aggregator.updateAnswer(tusdSupply.add(AMOUNT_TO_MINT))
   })

@@ -24,7 +24,7 @@ import {BurnableTokenWithBounds} from "contracts/true-currencies-new/BurnableTok
 // File: contracts/true-currencies-new/GasRefund.sol
 import {GasRefund} from "contracts/true-currencies-new/GasRefund.sol";
 // File: contracts/true-currencies-new/TrueCurrency.sol
-import {TrueCurrency} from "contracts/true-currencies-new/TrueCurrency.sol";
+import {TrueCurrencyWithProofOfReserve as TrueCurrency} from "contracts/true-currencies-new/TrueCurrencyWithProofOfReserve.sol";
 
 pragma solidity 0.6.10;
 
@@ -99,6 +99,8 @@ contract TokenControllerV3 {
     Registry public registry;
     address public fastPause; // deprecated
     address public trueRewardManager; // deprecated
+
+    address public proofOfReserveEnabler;
 
     // Registry attributes for admin keys
     bytes32 public constant IS_MINT_PAUSER = "isTUSDMintPausers";
@@ -218,6 +220,14 @@ contract TokenControllerV3 {
      */
     modifier onlyPendingOwner() {
         require(msg.sender == pendingOwner);
+        _;
+    }
+
+    /**
+     * @dev Modifier throws if called by any account other than proofOfReserveEnabler or owner.
+     */
+    modifier onlyProofOfReserveEnablerOrOwner() {
+        require(msg.sender == proofOfReserveEnabler || msg.sender == owner, "only proofOfReserveEnabler or owner");
         _;
     }
 
@@ -487,6 +497,10 @@ contract TokenControllerV3 {
         mintKey = _newMintKey;
     }
 
+    function setProofOfReserveEnabler(address enabler) external onlyOwner {
+        proofOfReserveEnabler = enabler;
+    }
+
     /*
     ========================================
     Mint Pausing
@@ -652,5 +666,39 @@ contract TokenControllerV3 {
         // Add 20% to compensate inter contract communication
         // (x + 20%) / 2 / 15000 = x / 25000
         token.refundGas(gasUsed.div(25000));
+    }
+
+    /*
+    ========================================
+    Proof of Reserve, administrative
+    ========================================
+    */
+
+    /**
+     * Set new chainReserveFeed address
+     */
+    function setChainReserveFeed(address newFeed) external onlyOwner {
+        token.setChainReserveFeed(newFeed);
+    }
+
+    /**
+     * Set new chainReserveHeartbeat
+     */
+    function setChainReserveHeartbeat(uint256 newHeartbeat) external onlyProofOfReserveEnablerOrOwner {
+        token.setChainReserveHeartbeat(newHeartbeat);
+    }
+
+    /**
+     * Disable Proof of Reserve check
+     */
+    function disableProofOfReserve() external onlyProofOfReserveEnablerOrOwner {
+        token.disableProofOfReserve();
+    }
+
+    /**
+     * Enable Proof of Reserve check
+     */
+    function enableProofOfReserve() external onlyProofOfReserveEnablerOrOwner {
+        token.enableProofOfReserve();
     }
 }
