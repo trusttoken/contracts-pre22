@@ -12,9 +12,23 @@ interface IPoRToken {
      */
     event NewChainReserveHeartbeat(uint256 oldHeartbeat, uint256 newHeartbeat);
 
+    /**
+     * @notice Event emitted when Proof of Reserve is enabled
+     */
+    event ProofOfReserveEnabled();
+
+    /**
+     * @notice Event emitted when Proof of Reserve is disabled
+     */
+    event ProofOfReserveDisabled();
+
     /*** Admin Functions ***/
 
-    function setChainReserveFeed(address newFeed) external returns (uint256);
+    function setChainReserveFeed(address newFeed) external;
 
-    function setChainReserveHeartbeat(uint256 newHeartbeat) external returns (uint256);
+    function setChainReserveHeartbeat(uint256 newHeartbeat) external;
+
+    function enableProofOfReserve() external;
+
+    function disableProofOfReserve() external;
 }
