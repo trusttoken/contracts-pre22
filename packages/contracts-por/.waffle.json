@@ -7,5 +7,5 @@
         }
       },
     "sourceDirectory": "./contracts",
-    "flattenOutputDirectory": "./custom_flatten"
+    "flattenOutputDirectory": "./flattened_contracts"
   }
