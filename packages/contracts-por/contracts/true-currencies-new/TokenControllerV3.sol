@@ -1,32 +1,10 @@
-
-// File: @openzeppelin/contracts/math/SafeMath.sol
-import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
-// File: @openzeppelin/contracts/token/ERC20/IERC20.sol
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-// File: contracts/registry/Registry.sol
-import {Registry} from "./registry/Registry.sol";
-// File: contracts/truecurrencies/proxy/OwnedUpgradeabilityProxy.sol
-import {OwnedUpgradeabilityProxy} from "./OwnedUpgradeabilityProxy.sol";
-// File: contracts/true-currencies-new/ProxyStorage.sol
-import {ProxyStorage} from "./ProxyStorage.sol";
-// File: contracts/true-currencies-new/ClaimableOwnable.sol
-import {ClaimableOwnable} from "./ClaimableOwnable.sol";
-// File: @openzeppelin/contracts/GSN/Context.sol
-import {Context} from "@openzeppelin/contracts/GSN/Context.sol";
-// File: @openzeppelin/contracts/utils/Address.sol
-import {Address} from "@openzeppelin/contracts/utils/Address.sol";
-// File: contracts/true-currencies-new/ERC20.sol
-import {ERC20} from "./ERC20.sol";
-// File: contracts/true-currencies-new/ReclaimerToken.sol
-import {ReclaimerToken} from "./ReclaimerToken.sol";
-// File: contracts/true-currencies-new/BurnableTokenWithBounds.sol
-import {BurnableTokenWithBounds} from "./BurnableTokenWithBounds.sol";
-// File: contracts/true-currencies-new/GasRefund.sol
-import {GasRefund} from "./GasRefund.sol";
-// File: contracts/true-currencies-new/TrueCurrency.sol
-import {ITrueCurrency} from "./ITrueCurrency.sol";
-
 pragma solidity 0.6.10;
+
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {Registry} from "./registry/Registry.sol";
+import {OwnedUpgradeabilityProxy} from "./OwnedUpgradeabilityProxy.sol";
+import {ITrueCurrency} from "./ITrueCurrency.sol";
 
 /**
  * @dev Contract that can be called with a gas refund
