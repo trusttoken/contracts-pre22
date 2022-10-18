@@ -11,7 +11,9 @@
     "test": "mocha 'test/**/*.test.ts'"
   },
   "dependencies": {
-    "ethereum-mars": "0.2.5"
+    "ethereum-mars": "0.2.5",
+    "@openzeppelin/contracts": "3.4.2",
+    "@chainlink/contracts": "0.1.6"
   },
   "devDependencies": {
     "@ethersproject/abi": "^5.7.0",
