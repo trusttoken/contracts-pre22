@@ -2,7 +2,7 @@ pragma solidity 0.6.10;
 
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {Registry} from "./registry/Registry.sol";
+import {IRegistry} from "./IRegistry.sol";
 import {OwnedUpgradeabilityProxy} from "./OwnedUpgradeabilityProxy.sol";
 import {ITrueCurrency} from "./ITrueCurrency.sol";
 
@@ -74,7 +74,7 @@ contract TokenControllerV3 {
     MintOperation[] public mintOperations; //list of a mint requests
 
     ITrueCurrency public token;
-    Registry public registry;
+    IRegistry public registry;
     address public fastPause; // deprecated
     address public trueRewardManager; // deprecated
 
@@ -530,7 +530,7 @@ contract TokenControllerV3 {
     /**
      * @dev Update this contract's registry pointer to _registry
      */
-    function setRegistry(Registry _registry) external onlyOwner {
+    function setRegistry(IRegistry _registry) external onlyOwner {
         registry = _registry;
         emit SetRegistry(address(registry));
     }
