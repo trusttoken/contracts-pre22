@@ -3,7 +3,7 @@ pragma solidity 0.6.10;
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IRegistry} from "./IRegistry.sol";
-import {OwnedUpgradeabilityProxy} from "./OwnedUpgradeabilityProxy.sol";
+import {IOwnedUpgradeabilityProxy} from "./IOwnedUpgradeabilityProxy.sol";
 import {ITrueCurrency} from "./ITrueCurrency.sol";
 
 /**
@@ -224,15 +224,15 @@ contract TokenControllerV3 {
     */
 
     function transferTrueCurrencyProxyOwnership(address _newOwner) external onlyOwner {
-        OwnedUpgradeabilityProxy(address(uint160(address(token)))).transferProxyOwnership(_newOwner);
+        IOwnedUpgradeabilityProxy(address(uint160(address(token)))).transferProxyOwnership(_newOwner);
     }
 
     function claimTrueCurrencyProxyOwnership() external onlyOwner {
-        OwnedUpgradeabilityProxy(address(uint160(address(token)))).claimProxyOwnership();
+        IOwnedUpgradeabilityProxy(address(uint160(address(token)))).claimProxyOwnership();
     }
 
     function upgradeTrueCurrencyProxyImplTo(address _implementation) external onlyOwner {
-        OwnedUpgradeabilityProxy(address(uint160(address(token)))).upgradeTo(_implementation);
+        IOwnedUpgradeabilityProxy(address(uint160(address(token)))).upgradeTo(_implementation);
     }
 
     /*
@@ -576,7 +576,7 @@ contract TokenControllerV3 {
      * @dev pause all pausable actions on TrueCurrency, mints/burn/transfer/approve
      */
     function pauseToken() external virtual onlyFastPauseOrOwner {
-        OwnedUpgradeabilityProxy(address(uint160(address(token)))).upgradeTo(PAUSED_IMPLEMENTATION);
+        IOwnedUpgradeabilityProxy(address(uint160(address(token)))).upgradeTo(PAUSED_IMPLEMENTATION);
     }
 
     /**
