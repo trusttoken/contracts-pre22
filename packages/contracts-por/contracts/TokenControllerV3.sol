@@ -2,9 +2,9 @@ pragma solidity 0.6.10;
 
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IRegistry} from "./IRegistry.sol";
-import {IOwnedUpgradeabilityProxy} from "./IOwnedUpgradeabilityProxy.sol";
-import {ITrueCurrency} from "./ITrueCurrency.sol";
+import {IRegistry} from "./interface/IRegistry.sol";
+import {IOwnedUpgradeabilityProxy} from "./interface/IOwnedUpgradeabilityProxy.sol";
+import {ITrueCurrency} from "./interface/ITrueCurrency.sol";
 
 /**
  * @dev Contract that can be called with a gas refund
