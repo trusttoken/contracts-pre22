@@ -31,7 +31,7 @@ abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
         }
         // Get required info about decimals.
         // Decimals of the Proof of Reserve feed must be the same as the token's.
-        require(decimals() == AggregatorV3Interface(chainReserveFeed).decimals(), "Unexpected decimals of PoR feed");
+        require(decimals() == AggregatorV3Interface(chainReserveFeed).decimals(), "TrueCurrency: Unexpected decimals of PoR feed");
 
         // Get latest proof-of-reserves from the feed
         (, int256 signedReserves, , uint256 updatedAt, ) = AggregatorV3Interface(chainReserveFeed).latestRoundData();
