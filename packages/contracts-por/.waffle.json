@@ -1,0 +1,11 @@
+{
+    "compilerVersion": "v0.6.10+commit.00c0fcaf",
+    "compilerOptions": {
+        "optimizer": {
+          "enabled": true,
+          "runs": 20000
+        }
+      },
+    "sourceDirectory": "./contracts",
+    "flattenOutputDirectory": "./flattened_contracts"
+  }
