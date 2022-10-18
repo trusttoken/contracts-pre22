@@ -24,7 +24,7 @@ import {BurnableTokenWithBounds} from "./BurnableTokenWithBounds.sol";
 // File: contracts/true-currencies-new/GasRefund.sol
 import {GasRefund} from "./GasRefund.sol";
 // File: contracts/true-currencies-new/TrueCurrency.sol
-import {TrueCurrency} from "./TrueCurrency.sol";
+import {ITrueCurrency} from "./ITrueCurrency.sol";
 
 pragma solidity 0.6.10;
 
@@ -95,7 +95,7 @@ contract TokenControllerV3 {
     address public mintKey;
     MintOperation[] public mintOperations; //list of a mint requests
 
-    TrueCurrency public token;
+    ITrueCurrency public token;
     Registry public registry;
     address public fastPause; // deprecated
     address public trueRewardManager; // deprecated
@@ -164,7 +164,7 @@ contract TokenControllerV3 {
     /// @dev Emitted when child ownership was claimed
     event RequestReclaimContract(address indexed other);
     /// @dev Emitted when child token was changed
-    event SetToken(TrueCurrency newContract);
+    event SetToken(ITrueCurrency newContract);
 
     /// @dev Emitted when mint was requested
     event RequestMint(address indexed to, uint256 indexed value, uint256 opIndex, address mintKey);
@@ -544,7 +544,7 @@ contract TokenControllerV3 {
      * @dev Update this contract's token pointer to newContract (e.g. if the
      * contract is upgraded)
      */
-    function setToken(TrueCurrency _newContract) external onlyOwner {
+    function setToken(ITrueCurrency _newContract) external onlyOwner {
         token = _newContract;
         emit SetToken(_newContract);
     }
