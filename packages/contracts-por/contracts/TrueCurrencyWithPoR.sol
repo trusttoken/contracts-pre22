@@ -16,11 +16,6 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
     using SafeMath for uint256;
 
-    constructor() public {
-        uint256 INITIAL_CHAIN_RESERVE_HEARTBEAT = 7 days;
-        chainReserveHeartbeat = INITIAL_CHAIN_RESERVE_HEARTBEAT;
-    }
-
     /**
      * @notice Overriden mint function that checks the specified proof-of-reserves feed to
      * ensure that the total supply of this TrueCurrency is not greater than the reported
@@ -30,7 +25,7 @@ abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
      * @param amount The amount of tokens to mint
      */
     function _mint(address account, uint256 amount) internal virtual override {
-        if (chainReserveFeed == address(0)) {
+        if (chainReserveFeed == address(0) || !proofOfReserveEnabled) {
             super._mint(account, amount);
             return;
         }
@@ -61,9 +56,12 @@ abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
      * @dev Admin function to set a new feed
      * @param newFeed Address of the new feed
      */
-    function setChainReserveFeed(address newFeed) external override onlyOwner returns (uint256) {
+    function setChainReserveFeed(address newFeed) external override onlyOwner {
         emit NewChainReserveFeed(chainReserveFeed, newFeed);
         chainReserveFeed = newFeed;
+        if (newFeed == address(0) && proofOfReserveEnabled) {
+            proofOfReserveEnabled = false;
+        }
     }
 
     /**
@@ -71,8 +69,27 @@ abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
      * @dev Admin function to set the heartbeat
      * @param newHeartbeat Value of the age of the latest update from the feed
      */
-    function setChainReserveHeartbeat(uint256 newHeartbeat) external override onlyOwner returns (uint256) {
+    function setChainReserveHeartbeat(uint256 newHeartbeat) external override onlyOwner {
         emit NewChainReserveHeartbeat(chainReserveHeartbeat, newHeartbeat);
         chainReserveHeartbeat = newHeartbeat;
+    }
+
+    /**
+     * @notice Disable Proof of Reserve check
+     * @dev Admin function to disable Proof of Reserve
+     */
+    function disableProofOfReserve() external override onlyOwner {
+        emit ProofOfReserveDisabled();
+        proofOfReserveEnabled = false;
+    }
+
+    /**
+     * @notice Enable Proof of Reserve check
+     * @dev Admin function to enable Proof of Reserve
+     */
+    function enableProofOfReserve() external override onlyOwner {
+        require(chainReserveFeed != address(0), "TrueCurrency: chainReserveFeed not set");
+        emit ProofOfReserveEnabled();
+        proofOfReserveEnabled = true;
     }
 }
