@@ -67,9 +67,7 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
     it('should mint successfully when feed is set, but heartbeat is default', async () => {
         // Mint TUSD
         const balanceBefore = await token.balanceOf(owner.address)
-        await token.mint(owner.address, AMOUNT_TO_MINT, {
-            gasLimit: 200_000,
-        })
+        await token.mint(owner.address, AMOUNT_TO_MINT)
         expect(await token.balanceOf(owner.address)).to.equal(AMOUNT_TO_MINT.add(balanceBefore))
     })
 
@@ -98,9 +96,7 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
 
         // Mint TUSD
         const balanceBefore = await token.balanceOf(owner.address)
-        await expect(token.mint(owner.address, AMOUNT_TO_MINT, {
-            gasLimit: 200_000,
-        })).to.be.revertedWith('TrueCurrency: Unexpected decimals of PoR feed')
+        await expect(token.mint(owner.address, AMOUNT_TO_MINT)).to.be.revertedWith('TrueCurrency: Unexpected decimals of PoR feed')
         expect(await token.balanceOf(owner.address)).to.equal(balanceBefore)
     })
 
@@ -118,9 +114,7 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
 
         // Mint TUSD
         const balanceBefore = await token.balanceOf(owner.address)
-        await expect(token.mint(owner.address, AMOUNT_TO_MINT, {
-            gasLimit: 200_000,
-        })).to.be.revertedWith('TrueCurrency: Unexpected decimals of PoR feed')
+        await expect(token.mint(owner.address, AMOUNT_TO_MINT)).to.be.revertedWith('TrueCurrency: Unexpected decimals of PoR feed')
         expect(await token.balanceOf(owner.address)).to.equal(balanceBefore)
     })
 
@@ -138,9 +132,7 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
 
         // Mint TUSD
         const balanceBefore = await token.balanceOf(owner.address)
-        await expect(token.mint(owner.address, AMOUNT_TO_MINT), {
-            gasLimit: 600_000,
-        }).to.be.revertedWith(
+        await expect(token.mint(owner.address, AMOUNT_TO_MINT)).to.be.revertedWith(
             'TrueCurrency: total supply would exceed reserves after mint',
         )
         expect(await token.balanceOf(owner.address)).to.equal(balanceBefore)
