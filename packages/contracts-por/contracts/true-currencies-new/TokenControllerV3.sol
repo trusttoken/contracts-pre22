@@ -57,7 +57,7 @@ interface IHook {
  * which can only be refilled by the owner.
 */
 
-contract TokenControllerV2 {
+contract TokenControllerV3 {
     using SafeMath for uint256;
 
     struct MintOperation {
