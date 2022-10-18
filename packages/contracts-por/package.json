@@ -5,9 +5,10 @@
   "private": true,
   "scripts": {
     "clean": "rm -rf ./build && hardhat clean",
+    "prebuild": "yarn clean",
     "build:hardhat": "hardhat compile",
     "build:typechain": "typechain --target ethers-v5 --out-dir build/types 'build/*.json'",
-    "build": "yarn clean && yarn build:hardhat && yarn build:typechain && mars",
+    "build": "yarn build:hardhat && yarn build:typechain && mars",
     "test": "mocha 'test/**/*.test.ts'"
   },
   "dependencies": {
@@ -26,11 +27,9 @@
     "@types/mocha": "^9.1.1",
     "@types/node": "^17.0.34",
     "chai": "^4.3.6",
-    "ethereum-waffle": "4.0.7",
     "ethers": "^5.7.0",
     "hardhat": "~2.10.2",
     "mocha": "^10.0.0",
-    "solc": "0.8.16",
     "ts-node": "^10.7.0",
     "tsconfig-paths": "^4.1.0",
     "typechain": "^8.0.0",
