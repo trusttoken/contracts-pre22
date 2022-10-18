@@ -9,6 +9,7 @@
     "build:hardhat": "hardhat compile",
     "build:typechain": "typechain --target ethers-v5 --out-dir build/types 'build/*.json'",
     "build": "yarn build:hardhat && yarn build:typechain && mars",
+    "flatten": "waffle flatten .waffle.json",
     "test": "mocha 'test/**/*.test.ts'"
   },
   "dependencies": {
