@@ -1,8 +1,8 @@
 
 pragma solidity 0.6.10;
 
-import {BurnableTokenWithBounds} from "contracts/true-currencies-new/BurnableTokenWithBounds.sol";
-import {GasRefund} from "contracts/true-currencies-new/GasRefund.sol";
+import {BurnableTokenWithBounds} from "./BurnableTokenWithBounds.sol";
+import {GasRefund} from "./GasRefund.sol";
 
 /**
  * @title TrueCurrency

@@ -1,30 +1,30 @@
 
 // File: @openzeppelin/contracts/math/SafeMath.sol
-import {SafeMath} from "contracts/openzeppelin/contracts/math/SafeMath.sol";
+import {SafeMath} from "../openzeppelin/contracts/math/SafeMath.sol";
 // File: @openzeppelin/contracts/token/ERC20/IERC20.sol
-import {IERC20} from "contracts/openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20} from "../openzeppelin/contracts/token/ERC20/IERC20.sol";
 // File: contracts/registry/Registry.sol
-import {Registry} from "contracts/true-currencies-new/registry/Registry.sol";
+import {Registry} from "./registry/Registry.sol";
 // File: contracts/truecurrencies/proxy/OwnedUpgradeabilityProxy.sol
-import {OwnedUpgradeabilityProxy} from "contracts/true-currencies-new/OwnedUpgradeabilityProxy.sol";
+import {OwnedUpgradeabilityProxy} from "./OwnedUpgradeabilityProxy.sol";
 // File: contracts/true-currencies-new/ProxyStorage.sol
-import {ProxyStorage} from "contracts/true-currencies-new/ProxyStorage.sol";
+import {ProxyStorage} from "./ProxyStorage.sol";
 // File: contracts/true-currencies-new/ClaimableOwnable.sol
-import {ClaimableOwnable} from "contracts/true-currencies-new/ClaimableOwnable.sol";
+import {ClaimableOwnable} from "./ClaimableOwnable.sol";
 // File: @openzeppelin/contracts/GSN/Context.sol
-import {Context} from "contracts/openzeppelin/contracts/GSN/Context.sol";
+import {Context} from "../openzeppelin/contracts/GSN/Context.sol";
 // File: @openzeppelin/contracts/utils/Address.sol
-import {Address} from "contracts/openzeppelin/contracts/utils/Address.sol";
+import {Address} from "../openzeppelin/contracts/utils/Address.sol";
 // File: contracts/true-currencies-new/ERC20.sol
-import {ERC20} from "contracts/true-currencies-new/ERC20.sol";
+import {ERC20} from "./ERC20.sol";
 // File: contracts/true-currencies-new/ReclaimerToken.sol
-import {ReclaimerToken} from "contracts/true-currencies-new/ReclaimerToken.sol";
+import {ReclaimerToken} from "./ReclaimerToken.sol";
 // File: contracts/true-currencies-new/BurnableTokenWithBounds.sol
-import {BurnableTokenWithBounds} from "contracts/true-currencies-new/BurnableTokenWithBounds.sol";
+import {BurnableTokenWithBounds} from "./BurnableTokenWithBounds.sol";
 // File: contracts/true-currencies-new/GasRefund.sol
-import {GasRefund} from "contracts/true-currencies-new/GasRefund.sol";
+import {GasRefund} from "./GasRefund.sol";
 // File: contracts/true-currencies-new/TrueCurrency.sol
-import {TrueCurrency} from "contracts/true-currencies-new/TrueCurrency.sol";
+import {TrueCurrency} from "./TrueCurrency.sol";
 
 pragma solidity 0.6.10;
 
@@ -264,8 +264,8 @@ contract TokenControllerV3 {
     */
 
     /**
-     * @dev set the threshold for a mint to be considered an instant mint, 
-     * ratify mint and multiSig mint. Instant mint requires no approval, 
+     * @dev set the threshold for a mint to be considered an instant mint,
+     * ratify mint and multiSig mint. Instant mint requires no approval,
      * ratify mint requires 1 approval and multiSig mint requires 3 approvals
      */
     function setMintThresholds(
@@ -356,7 +356,7 @@ contract TokenControllerV3 {
     }
 
     /**
-     * @dev Instant mint without ratification if the amount is less 
+     * @dev Instant mint without ratification if the amount is less
      * than instantMintThreshold and instantMintPool
      * @param _to the address to mint to
      * @param _value the amount minted
@@ -370,8 +370,8 @@ contract TokenControllerV3 {
     }
 
     /**
-     * @dev ratifier ratifies a request mint. If the number of 
-     * ratifiers that signed off is greater than the number of 
+     * @dev ratifier ratifies a request mint. If the number of
+     * ratifiers that signed off is greater than the number of
      * approvals required, the request is finalized
      * @param _index the index of the requestMint to ratify
      * @param _to the address to mint to
@@ -559,7 +559,7 @@ contract TokenControllerV3 {
 
     /**
      * @dev Claim ownership of an arbitrary HasOwner contract
-     
+
     function issueClaimOwnership(address _other) public onlyOwner {
         HasOwner other = HasOwner(_other);
         other.claimOwnership();
@@ -570,7 +570,7 @@ contract TokenControllerV3 {
      * Can be used e.g. to upgrade this TokenController contract.
      * @param _child contract that tokenController currently Owns
      * @param _newOwner new owner/pending owner of _child
-     
+
     function transferChild(HasOwner _child, address _newOwner) external onlyOwner {
         _child.transferOwnership(_newOwner);
         emit TransferChild(address(_child), _newOwner);

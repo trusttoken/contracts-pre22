@@ -12,11 +12,11 @@
  * See also: ClaimableOwnable.sol and ProxyStorage.sol
  */
 
-import {ClaimableOwnable} from "contracts/true-currencies-new/ClaimableOwnable.sol";
-import {Context} from "contracts/openzeppelin/contracts/GSN/Context.sol";
-import {IERC20} from "contracts/openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {SafeMath} from "contracts/openzeppelin/contracts/math/SafeMath.sol";
-import {Address} from "contracts/openzeppelin/contracts/utils/Address.sol";
+import {ClaimableOwnable} from "./ClaimableOwnable.sol";
+import {Context} from "../openzeppelin/contracts/GSN/Context.sol";
+import {IERC20} from "../openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeMath} from "../openzeppelin/contracts/math/SafeMath.sol";
+import {Address} from "../openzeppelin/contracts/utils/Address.sol";
 
 pragma solidity 0.6.10;
 

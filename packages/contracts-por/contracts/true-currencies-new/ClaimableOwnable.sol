@@ -1,7 +1,7 @@
 
 pragma solidity 0.6.10;
 
-import {ProxyStorage} from "contracts/true-currencies-new/ProxyStorage.sol";
+import {ProxyStorage} from "./ProxyStorage.sol";
 
 /**
  * @title ClamableOwnable

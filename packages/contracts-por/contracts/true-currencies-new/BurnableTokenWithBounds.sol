@@ -1,7 +1,7 @@
 
 pragma solidity 0.6.10;
 
-import {ReclaimerToken} from "contracts/true-currencies-new/ReclaimerToken.sol";
+import {ReclaimerToken} from "./ReclaimerToken.sol";
 
 /**
  * @title BurnableTokenWithBounds
