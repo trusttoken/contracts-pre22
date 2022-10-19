@@ -1,32 +1,10 @@
-
-// File: @openzeppelin/contracts/math/SafeMath.sol
-import {SafeMath} from "../openzeppelin/contracts/math/SafeMath.sol";
-// File: @openzeppelin/contracts/token/ERC20/IERC20.sol
-import {IERC20} from "../openzeppelin/contracts/token/ERC20/IERC20.sol";
-// File: contracts/registry/Registry.sol
-import {Registry} from "./registry/Registry.sol";
-// File: contracts/truecurrencies/proxy/OwnedUpgradeabilityProxy.sol
-import {OwnedUpgradeabilityProxy} from "./OwnedUpgradeabilityProxy.sol";
-// File: contracts/true-currencies-new/ProxyStorage.sol
-import {ProxyStorage} from "./ProxyStorage.sol";
-// File: contracts/true-currencies-new/ClaimableOwnable.sol
-import {ClaimableOwnable} from "./ClaimableOwnable.sol";
-// File: @openzeppelin/contracts/GSN/Context.sol
-import {Context} from "../openzeppelin/contracts/GSN/Context.sol";
-// File: @openzeppelin/contracts/utils/Address.sol
-import {Address} from "../openzeppelin/contracts/utils/Address.sol";
-// File: contracts/true-currencies-new/ERC20.sol
-import {ERC20} from "./ERC20.sol";
-// File: contracts/true-currencies-new/ReclaimerToken.sol
-import {ReclaimerToken} from "./ReclaimerToken.sol";
-// File: contracts/true-currencies-new/BurnableTokenWithBounds.sol
-import {BurnableTokenWithBounds} from "./BurnableTokenWithBounds.sol";
-// File: contracts/true-currencies-new/GasRefund.sol
-import {GasRefund} from "./GasRefund.sol";
-// File: contracts/true-currencies-new/TrueCurrency.sol
-import {TrueCurrency} from "./TrueCurrency.sol";
-
 pragma solidity 0.6.10;
+
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IRegistry} from "./interface/IRegistry.sol";
+import {IOwnedUpgradeabilityProxy} from "./interface/IOwnedUpgradeabilityProxy.sol";
+import {ITrueCurrency} from "./interface/ITrueCurrency.sol";
 
 /**
  * @dev Contract that can be called with a gas refund
@@ -57,7 +35,7 @@ interface IHook {
  * which can only be refilled by the owner.
 */
 
-contract TokenControllerV2 {
+contract TokenControllerV3 {
     using SafeMath for uint256;
 
     struct MintOperation {
@@ -95,8 +73,8 @@ contract TokenControllerV2 {
     address public mintKey;
     MintOperation[] public mintOperations; //list of a mint requests
 
-    TrueCurrency public token;
-    Registry public registry;
+    ITrueCurrency public token;
+    IRegistry public registry;
     address public fastPause; // deprecated
     address public trueRewardManager; // deprecated
 
@@ -164,7 +142,7 @@ contract TokenControllerV2 {
     /// @dev Emitted when child ownership was claimed
     event RequestReclaimContract(address indexed other);
     /// @dev Emitted when child token was changed
-    event SetToken(TrueCurrency newContract);
+    event SetToken(ITrueCurrency newContract);
 
     /// @dev Emitted when mint was requested
     event RequestMint(address indexed to, uint256 indexed value, uint256 opIndex, address mintKey);
@@ -246,15 +224,15 @@ contract TokenControllerV2 {
     */
 
     function transferTrueCurrencyProxyOwnership(address _newOwner) external onlyOwner {
-        OwnedUpgradeabilityProxy(address(uint160(address(token)))).transferProxyOwnership(_newOwner);
+        IOwnedUpgradeabilityProxy(address(uint160(address(token)))).transferProxyOwnership(_newOwner);
     }
 
     function claimTrueCurrencyProxyOwnership() external onlyOwner {
-        OwnedUpgradeabilityProxy(address(uint160(address(token)))).claimProxyOwnership();
+        IOwnedUpgradeabilityProxy(address(uint160(address(token)))).claimProxyOwnership();
     }
 
     function upgradeTrueCurrencyProxyImplTo(address _implementation) external onlyOwner {
-        OwnedUpgradeabilityProxy(address(uint160(address(token)))).upgradeTo(_implementation);
+        IOwnedUpgradeabilityProxy(address(uint160(address(token)))).upgradeTo(_implementation);
     }
 
     /*
@@ -544,7 +522,7 @@ contract TokenControllerV2 {
      * @dev Update this contract's token pointer to newContract (e.g. if the
      * contract is upgraded)
      */
-    function setToken(TrueCurrency _newContract) external onlyOwner {
+    function setToken(ITrueCurrency _newContract) external onlyOwner {
         token = _newContract;
         emit SetToken(_newContract);
     }
@@ -552,7 +530,7 @@ contract TokenControllerV2 {
     /**
      * @dev Update this contract's registry pointer to _registry
      */
-    function setRegistry(Registry _registry) external onlyOwner {
+    function setRegistry(IRegistry _registry) external onlyOwner {
         registry = _registry;
         emit SetRegistry(address(registry));
     }
@@ -598,7 +576,7 @@ contract TokenControllerV2 {
      * @dev pause all pausable actions on TrueCurrency, mints/burn/transfer/approve
      */
     function pauseToken() external virtual onlyFastPauseOrOwner {
-        OwnedUpgradeabilityProxy(address(uint160(address(token)))).upgradeTo(PAUSED_IMPLEMENTATION);
+        IOwnedUpgradeabilityProxy(address(uint160(address(token)))).upgradeTo(PAUSED_IMPLEMENTATION);
     }
 
     /**
