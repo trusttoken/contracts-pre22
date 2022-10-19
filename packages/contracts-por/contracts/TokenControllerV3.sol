@@ -153,7 +153,7 @@ contract TokenControllerV3 {
     /// @dev Emitted when mint key was replaced
     event TransferMintKey(address indexed previousMintKey, address indexed newMintKey);
     /// @dev Emitted when Proof Of Reserve enabler was set
-    event ProofOfReserveEnablerSet(address newEnabler);
+    event ProofOfReserveEnablerSet(address previousEnabler, address newEnabler);
     /// @dev Emitted when mint was ratified
     event MintRatified(uint256 indexed opIndex, address indexed ratifier);
     /// @dev Emitted when mint is revoked
@@ -475,8 +475,8 @@ contract TokenControllerV3 {
     }
 
     function setProofOfReserveEnabler(address enabler) external onlyOwner {
+        emit ProofOfReserveEnablerSet(proofOfReserveEnabler, enabler);
         proofOfReserveEnabler = enabler;
-        emit ProofOfReserveEnablerSet(enabler);
     }
 
     /*
