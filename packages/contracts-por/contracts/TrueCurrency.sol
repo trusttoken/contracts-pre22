@@ -68,7 +68,7 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
      * - `account` cannot be blacklisted.
      * - `account` cannot be a redemption address.
      */
-    function mint(address account, uint256 amount) external onlyOwner {
+    function mint(address account, uint256 amount) override external onlyOwner {
         require(!isBlacklisted[account], "TrueCurrency: account is blacklisted");
         require(!isRedemptionAddress(account), "TrueCurrency: account is a redemption address");
         _mint(account, amount);
@@ -99,7 +99,7 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
      *
      * - `msg.sender` should be owner.
      */
-    function setCanBurn(address account, bool _canBurn) external onlyOwner {
+    function setCanBurn(address account, bool _canBurn) override external onlyOwner {
         canBurn[account] = _canBurn;
     }
 

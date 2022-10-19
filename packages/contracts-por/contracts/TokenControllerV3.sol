@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
@@ -5,6 +6,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IRegistry} from "./interface/IRegistry.sol";
 import {IOwnedUpgradeabilityProxy} from "./interface/IOwnedUpgradeabilityProxy.sol";
 import {ITrueCurrency} from "./interface/ITrueCurrency.sol";
+import {IPoRToken} from "./interface/IPoRToken.sol";
 
 /**
  * @dev Contract that can be called with a gas refund
@@ -78,11 +80,13 @@ contract TokenControllerV3 {
     address public fastPause; // deprecated
     address public trueRewardManager; // deprecated
 
+    address public proofOfReserveEnabler;
+
     // Registry attributes for admin keys
     bytes32 public constant IS_MINT_PAUSER = "isTUSDMintPausers";
     bytes32 public constant IS_MINT_RATIFIER = "isTUSDMintRatifier";
     bytes32 public constant IS_REDEMPTION_ADMIN = "isTUSDRedemptionAdmin";
-    bytes32 public constant IS_GAS_REFUNDER = "isGasRefunder";
+    // bytes32 public constant IS_GAS_REFUNDER = "isGasRefunder"; // deprecated
     bytes32 public constant IS_REGISTRY_ADMIN = "isRegistryAdmin";
 
     // paused version of TrueCurrency in Production
@@ -111,11 +115,6 @@ contract TokenControllerV3 {
 
     modifier onlyOwnerOrRedemptionAdmin() {
         require(registry.hasAttribute(msg.sender, IS_REDEMPTION_ADMIN) || msg.sender == owner, "must be Redemption admin or owner");
-        _;
-    }
-
-    modifier onlyGasRefunder() {
-        require(registry.hasAttribute(msg.sender, IS_GAS_REFUNDER) || msg.sender == owner, "must be gas refunder or owner");
         _;
     }
 
@@ -153,6 +152,8 @@ contract TokenControllerV3 {
 
     /// @dev Emitted when mint key was replaced
     event TransferMintKey(address indexed previousMintKey, address indexed newMintKey);
+    /// @dev Emitted when Proof Of Reserve enabler was set
+    event ProofOfReserveEnablerSet(address previousEnabler, address newEnabler);
     /// @dev Emitted when mint was ratified
     event MintRatified(uint256 indexed opIndex, address indexed ratifier);
     /// @dev Emitted when mint is revoked
@@ -196,6 +197,14 @@ contract TokenControllerV3 {
      */
     modifier onlyPendingOwner() {
         require(msg.sender == pendingOwner);
+        _;
+    }
+
+    /**
+     * @dev Modifier throws if called by any account other than proofOfReserveEnabler or owner.
+     */
+    modifier onlyProofOfReserveEnablerOrOwner() {
+        require(msg.sender == proofOfReserveEnabler || msg.sender == owner, "only proofOfReserveEnabler or owner");
         _;
     }
 
@@ -451,7 +460,7 @@ contract TokenControllerV3 {
 
     /*
     ========================================
-    Key management
+    Key and role management
     ========================================
     */
 
@@ -463,6 +472,11 @@ contract TokenControllerV3 {
         require(_newMintKey != address(0), "new mint key cannot be 0x0");
         emit TransferMintKey(mintKey, _newMintKey);
         mintKey = _newMintKey;
+    }
+
+    function setProofOfReserveEnabler(address enabler) external onlyOwner {
+        emit ProofOfReserveEnablerSet(proofOfReserveEnabler, enabler);
+        proofOfReserveEnabler = enabler;
     }
 
     /*
@@ -616,19 +630,37 @@ contract TokenControllerV3 {
         token.setCanBurn(burner, canBurn);
     }
 
+    /*
+    ========================================
+    Proof of Reserve, administrative
+    ========================================
+    */
+
     /**
-     * Call hook in `hookContract` with gas refund
+     * Set new chainReserveFeed address
      */
-    function refundGasWithHook(IHook hookContract) external onlyGasRefunder {
-        // calculate start gas amount
-        uint256 startGas = gasleft();
-        // call hook
-        hookContract.hook();
-        // calculate gas used
-        uint256 gasUsed = startGas.sub(gasleft());
-        // 1 refund = 15,000 gas. EVM refunds maximum half of used gas, so divide by 2.
-        // Add 20% to compensate inter contract communication
-        // (x + 20%) / 2 / 15000 = x / 25000
-        token.refundGas(gasUsed.div(25000));
+    function setChainReserveFeed(address newFeed) external onlyOwner {
+        IPoRToken(address(token)).setChainReserveFeed(newFeed);
+    }
+
+    /**
+     * Set new chainReserveHeartbeat
+     */
+    function setChainReserveHeartbeat(uint256 newHeartbeat) external onlyProofOfReserveEnablerOrOwner {
+        IPoRToken(address(token)).setChainReserveHeartbeat(newHeartbeat);
+    }
+
+    /**
+     * Disable Proof of Reserve check
+     */
+    function disableProofOfReserve() external onlyProofOfReserveEnablerOrOwner {
+        IPoRToken(address(token)).disableProofOfReserve();
+    }
+
+    /**
+     * Enable Proof of Reserve check
+     */
+    function enableProofOfReserve() external onlyProofOfReserveEnablerOrOwner {
+        IPoRToken(address(token)).enableProofOfReserve();
     }
 }
