@@ -3,7 +3,7 @@ pragma solidity 0.6.10;
 
 import {TrueCurrency} from "./TrueCurrency.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.6/interfaces/AggregatorV3Interface.sol";
-import {IPoRToken} from "./interface/IPoRToken.sol";
+import {IProofOfReserveToken} from "./interface/IProofOfReserveToken.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 /**
@@ -13,7 +13,7 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
  *  This contract implements an additional check against a Proof-of-Reserves feed before
  *  allowing tokens to be minted.
  */
-abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
+abstract contract TrueCurrencyWithPoR is TrueCurrency, IProofOfReserveToken {
     using SafeMath for uint256;
 
     /**
