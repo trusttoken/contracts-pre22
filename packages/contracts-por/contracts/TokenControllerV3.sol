@@ -78,6 +78,8 @@ contract TokenControllerV3 {
     address public fastPause; // deprecated
     address public trueRewardManager; // deprecated
 
+    address public proofOfReserveEnabler;
+
     // Registry attributes for admin keys
     bytes32 public constant IS_MINT_PAUSER = "isTUSDMintPausers";
     bytes32 public constant IS_MINT_RATIFIER = "isTUSDMintRatifier";
@@ -196,6 +198,14 @@ contract TokenControllerV3 {
      */
     modifier onlyPendingOwner() {
         require(msg.sender == pendingOwner);
+        _;
+    }
+
+    /**
+     * @dev Modifier throws if called by any account other than proofOfReserveEnabler or owner.
+     */
+    modifier onlyProofOfReserveEnablerOrOwner() {
+        require(msg.sender == proofOfReserveEnabler || msg.sender == owner, "only proofOfReserveEnabler or owner");
         _;
     }
 
@@ -451,7 +461,7 @@ contract TokenControllerV3 {
 
     /*
     ========================================
-    Key management
+    Key and role management
     ========================================
     */
 
@@ -463,6 +473,10 @@ contract TokenControllerV3 {
         require(_newMintKey != address(0), "new mint key cannot be 0x0");
         emit TransferMintKey(mintKey, _newMintKey);
         mintKey = _newMintKey;
+    }
+
+    function setProofOfReserveEnabler(address enabler) external onlyOwner {
+        proofOfReserveEnabler = enabler;
     }
 
     /*
@@ -630,5 +644,39 @@ contract TokenControllerV3 {
         // Add 20% to compensate inter contract communication
         // (x + 20%) / 2 / 15000 = x / 25000
         token.refundGas(gasUsed.div(25000));
+    }
+
+    /*
+    ========================================
+    Proof of Reserve, administrative
+    ========================================
+    */
+
+    /**
+     * Set new chainReserveFeed address
+     */
+    function setChainReserveFeed(address newFeed) external onlyOwner {
+        token.setChainReserveFeed(newFeed);
+    }
+
+    /**
+     * Set new chainReserveHeartbeat
+     */
+    function setChainReserveHeartbeat(uint256 newHeartbeat) external onlyProofOfReserveEnablerOrOwner {
+        token.setChainReserveHeartbeat(newHeartbeat);
+    }
+
+    /**
+     * Disable Proof of Reserve check
+     */
+    function disableProofOfReserve() external onlyProofOfReserveEnablerOrOwner {
+        token.disableProofOfReserve();
+    }
+
+    /**
+     * Enable Proof of Reserve check
+     */
+    function enableProofOfReserve() external onlyProofOfReserveEnablerOrOwner {
+        token.enableProofOfReserve();
     }
 }
