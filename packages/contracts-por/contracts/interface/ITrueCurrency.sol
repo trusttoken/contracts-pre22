@@ -1,9 +1,8 @@
 pragma solidity 0.6.10;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IPoRToken} from "../interface/IPoRToken.sol";
 
-interface ITrueCurrency is IPoRToken {
+interface ITrueCurrency {
     function mint(address account, uint256 amount) external;
 
     function setCanBurn(address account, bool _canBurn) external;

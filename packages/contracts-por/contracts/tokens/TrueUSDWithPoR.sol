@@ -2,7 +2,6 @@
 pragma solidity 0.6.10;
 
 import {TrueCurrencyWithPoR} from "../TrueCurrencyWithPoR.sol";
-import {ITrueCurrency} from "../interface/ITrueCurrency.sol";
 
 /**
  * @title TrueUSD

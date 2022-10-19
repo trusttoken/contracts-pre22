@@ -5,6 +5,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IRegistry} from "./interface/IRegistry.sol";
 import {IOwnedUpgradeabilityProxy} from "./interface/IOwnedUpgradeabilityProxy.sol";
 import {ITrueCurrency} from "./interface/ITrueCurrency.sol";
+import {IPoRToken} from "./interface/IPoRToken.sol";
 
 /**
  * @dev Contract that can be called with a gas refund
@@ -656,27 +657,27 @@ contract TokenControllerV3 {
      * Set new chainReserveFeed address
      */
     function setChainReserveFeed(address newFeed) external onlyOwner {
-        token.setChainReserveFeed(newFeed);
+        IPoRToken(address(token)).setChainReserveFeed(newFeed);
     }
 
     /**
      * Set new chainReserveHeartbeat
      */
     function setChainReserveHeartbeat(uint256 newHeartbeat) external onlyProofOfReserveEnablerOrOwner {
-        token.setChainReserveHeartbeat(newHeartbeat);
+        IPoRToken(address(token)).setChainReserveHeartbeat(newHeartbeat);
     }
 
     /**
      * Disable Proof of Reserve check
      */
     function disableProofOfReserve() external onlyProofOfReserveEnablerOrOwner {
-        token.disableProofOfReserve();
+        IPoRToken(address(token)).disableProofOfReserve();
     }
 
     /**
      * Enable Proof of Reserve check
      */
     function enableProofOfReserve() external onlyProofOfReserveEnablerOrOwner {
-        token.enableProofOfReserve();
+        IPoRToken(address(token)).enableProofOfReserve();
     }
 }
