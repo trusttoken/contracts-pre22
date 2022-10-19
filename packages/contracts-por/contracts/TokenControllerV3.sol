@@ -85,7 +85,7 @@ contract TokenControllerV3 {
     bytes32 public constant IS_MINT_PAUSER = "isTUSDMintPausers";
     bytes32 public constant IS_MINT_RATIFIER = "isTUSDMintRatifier";
     bytes32 public constant IS_REDEMPTION_ADMIN = "isTUSDRedemptionAdmin";
-    bytes32 public constant IS_GAS_REFUNDER = "isGasRefunder";
+    // bytes32 public constant IS_GAS_REFUNDER = "isGasRefunder"; // deprecated
     bytes32 public constant IS_REGISTRY_ADMIN = "isRegistryAdmin";
 
     // paused version of TrueCurrency in Production
@@ -114,11 +114,6 @@ contract TokenControllerV3 {
 
     modifier onlyOwnerOrRedemptionAdmin() {
         require(registry.hasAttribute(msg.sender, IS_REDEMPTION_ADMIN) || msg.sender == owner, "must be Redemption admin or owner");
-        _;
-    }
-
-    modifier onlyGasRefunder() {
-        require(registry.hasAttribute(msg.sender, IS_GAS_REFUNDER) || msg.sender == owner, "must be gas refunder or owner");
         _;
     }
 
@@ -629,22 +624,6 @@ contract TokenControllerV3 {
      */
     function setCanBurn(address burner, bool canBurn) external onlyRegistryAdmin {
         token.setCanBurn(burner, canBurn);
-    }
-
-    /**
-     * Call hook in `hookContract` with gas refund
-     */
-    function refundGasWithHook(IHook hookContract) external onlyGasRefunder {
-        // calculate start gas amount
-        uint256 startGas = gasleft();
-        // call hook
-        hookContract.hook();
-        // calculate gas used
-        uint256 gasUsed = startGas.sub(gasleft());
-        // 1 refund = 15,000 gas. EVM refunds maximum half of used gas, so divide by 2.
-        // Add 20% to compensate inter contract communication
-        // (x + 20%) / 2 / 15000 = x / 25000
-        token.refundGas(gasUsed.div(25000));
     }
 
     /*

@@ -9,8 +9,6 @@ interface ITrueCurrency {
 
     function setBurnBounds(uint256 _min, uint256 _max) external;
 
-    function refundGas(uint256 amount) external;
-
     function reclaimEther(address payable _to) external;
 
     function reclaimToken(IERC20 token, address _to) external;
