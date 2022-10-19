@@ -57,8 +57,8 @@ abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
      * @param newFeed Address of the new feed
      */
     function setChainReserveFeed(address newFeed) external override onlyOwner {
-        emit NewChainReserveFeed(chainReserveFeed, newFeed);
         chainReserveFeed = newFeed;
+        emit NewChainReserveFeed(chainReserveFeed, newFeed);
         if (newFeed == address(0) && proofOfReserveEnabled) {
             proofOfReserveEnabled = false;
         }
@@ -70,8 +70,8 @@ abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
      * @param newHeartbeat Value of the age of the latest update from the feed
      */
     function setChainReserveHeartbeat(uint256 newHeartbeat) external override onlyOwner {
-        emit NewChainReserveHeartbeat(chainReserveHeartbeat, newHeartbeat);
         chainReserveHeartbeat = newHeartbeat;
+        emit NewChainReserveHeartbeat(chainReserveHeartbeat, newHeartbeat);
     }
 
     /**
@@ -79,8 +79,8 @@ abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
      * @dev Admin function to disable Proof of Reserve
      */
     function disableProofOfReserve() external override onlyOwner {
-        emit ProofOfReserveDisabled();
         proofOfReserveEnabled = false;
+        emit ProofOfReserveDisabled();
     }
 
     /**
@@ -89,7 +89,7 @@ abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
      */
     function enableProofOfReserve() external override onlyOwner {
         require(chainReserveFeed != address(0), "TrueCurrency: chainReserveFeed not set");
-        emit ProofOfReserveEnabled();
         proofOfReserveEnabled = true;
+        emit ProofOfReserveEnabled();
     }
 }
