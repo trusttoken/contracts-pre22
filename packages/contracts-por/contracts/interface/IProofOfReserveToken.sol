@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-interface IPoRToken {
+interface IProofOfReserveToken {
     /*** Admin Functions ***/
 
     function setChainReserveFeed(address newFeed) external;
