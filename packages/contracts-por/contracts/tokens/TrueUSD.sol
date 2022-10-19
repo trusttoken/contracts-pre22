@@ -8,7 +8,7 @@ import {TrueCurrencyWithProofOfReserve} from "../TrueCurrencyWithProofOfReserve.
  * @dev This is the top-level ERC20 contract, but most of the interesting functionality is
  * inherited - see the documentation on the corresponding contracts.
  */
-contract TrueUSDWithPoR is TrueCurrencyWithProofOfReserve {
+contract TrueUSD is TrueCurrencyWithProofOfReserve {
     uint8 constant DECIMALS = 18;
     uint8 constant ROUNDING = 2;
 
