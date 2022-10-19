@@ -56,7 +56,7 @@ contract ProxyStorage {
     mapping(address => bool) isBlacklisted;
     mapping(address => bool) public canBurn;
 
-    // PoR feed-related variables
+    // Proof of Reserve feed related variables
     uint256 public chainReserveHeartbeat;
     address public chainReserveFeed;
     bool public proofOfReserveEnabled;
