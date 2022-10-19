@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {TrueCurrencyWithPoR} from "../TrueCurrencyWithPoR.sol";
+import {TrueCurrencyWithProofOfReserve} from "../TrueCurrencyWithProofOfReserve.sol";
 
 /**
  * @title TrueUSD
  * @dev This is the top-level ERC20 contract, but most of the interesting functionality is
  * inherited - see the documentation on the corresponding contracts.
  */
-contract TrueUSDWithPoR is TrueCurrencyWithPoR {
+contract TrueUSDWithPoR is TrueCurrencyWithProofOfReserve {
     uint8 constant DECIMALS = 18;
     uint8 constant ROUNDING = 2;
 

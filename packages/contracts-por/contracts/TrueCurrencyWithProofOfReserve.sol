@@ -13,7 +13,7 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
  *  This contract implements an additional check against a Proof-of-Reserves feed before
  *  allowing tokens to be minted.
  */
-abstract contract TrueCurrencyWithPoR is TrueCurrency, IProofOfReserveToken {
+abstract contract TrueCurrencyWithProofOfReserve is TrueCurrency, IProofOfReserveToken {
     using SafeMath for uint256;
 
     /**
