@@ -7,8 +7,8 @@ import {IProofOfReserveToken} from "./interface/IProofOfReserveToken.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 /**
- * @title TrueCurrencyWithPoR
- * @dev TrueCurrencyPoR is an ERC20 with blacklist & redemption addresses.
+ * @title TrueCurrencyWithProofOfReserve
+ * @dev TrueCurrencyWithProofOfReserve is an ERC20 with blacklist & redemption addresses.
  *  Please see TrueCurrency for the implementation that this contract inherits from.
  *  This contract implements an additional check against a Proof-of-Reserves feed before
  *  allowing tokens to be minted.
