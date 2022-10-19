@@ -2,6 +2,18 @@
 pragma solidity 0.6.10;
 
 interface IPoRToken {
+    /*** Admin Functions ***/
+
+    function setChainReserveFeed(address newFeed) external;
+
+    function setChainReserveHeartbeat(uint256 newHeartbeat) external;
+
+    function enableProofOfReserve() external;
+
+    function disableProofOfReserve() external;
+
+    /*** Events ***/
+
     /**
      * @notice Event emitted when the feed is updated
      */
@@ -21,14 +33,4 @@ interface IPoRToken {
      * @notice Event emitted when Proof of Reserve is disabled
      */
     event ProofOfReserveDisabled();
-
-    /*** Admin Functions ***/
-
-    function setChainReserveFeed(address newFeed) external;
-
-    function setChainReserveHeartbeat(uint256 newHeartbeat) external;
-
-    function enableProofOfReserve() external;
-
-    function disableProofOfReserve() external;
 }
