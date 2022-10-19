@@ -59,8 +59,9 @@ abstract contract TrueCurrencyWithPoR is TrueCurrency, IPoRToken {
     function setChainReserveFeed(address newFeed) external override onlyOwner {
         chainReserveFeed = newFeed;
         emit NewChainReserveFeed(chainReserveFeed, newFeed);
-        if (newFeed == address(0) && proofOfReserveEnabled) {
+        if (newFeed == address(0)) {
             proofOfReserveEnabled = false;
+            emit ProofOfReserveDisabled();
         }
     }
 
