@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {TrueCurrency} from "../TrueCurrency.sol";
+import {TrueCurrencyWithProofOfReserve} from "../TrueCurrencyWithProofOfReserve.sol";
 
-contract MockTrueCurrency is TrueCurrency {
+contract MockTrueCurrency is TrueCurrencyWithProofOfReserve {
     uint8 constant DECIMALS = 18;
     uint8 constant ROUNDING = 2;
 
