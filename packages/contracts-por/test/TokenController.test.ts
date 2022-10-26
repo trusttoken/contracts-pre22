@@ -3,7 +3,8 @@ import { BigNumberish, Wallet } from 'ethers'
 import { MockProvider, solidity } from 'ethereum-waffle'
 import { formatBytes32String } from '@ethersproject/strings'
 import { parseEther } from '@ethersproject/units'
-import { waffle, network } from 'hardhat'
+// @ts-ignore
+import { waffle } from 'hardhat'
 import {
   TokenControllerMock__factory,
   TokenControllerMock,
@@ -15,7 +16,6 @@ import {
   MockTrueCurrency,
   ForceEther,
   ForceEther__factory,
-  AvalancheTokenController__factory, AvalancheTokenController,
 } from 'contracts'
 
 use(solidity)
@@ -26,7 +26,6 @@ describe('TokenController', () => {
   let owner: Wallet
   let otherWallet: Wallet
   let thirdWallet: Wallet
-  let registryAdmin: Wallet
   let mintKey: Wallet
   let pauseKey: Wallet
   let ratifier1: Wallet
@@ -41,14 +40,14 @@ describe('TokenController', () => {
 
   const notes = formatBytes32String('notes')
   const CAN_BURN = formatBytes32String('canBurn')
-  const wallets = waffle.provider.getWallets()  
+  const wallets = waffle.provider.getWallets()
 
   const expectTokenBalance = async (token: MockTrueCurrency, wallet: Wallet, value: BigNumberish) => {
     expect(await token.balanceOf(wallet.address)).to.equal(value)
   }
 
   beforeEach(async () => {
-    [owner, registryAdmin, otherWallet, thirdWallet, mintKey, pauseKey, ratifier1, ratifier2, ratifier3] = wallets
+    [owner, otherWallet, thirdWallet, mintKey, pauseKey, ratifier1, ratifier2, ratifier3] = wallets
     provider = waffle.provider
 
     registry = await new RegistryMock__factory(owner).deploy()
@@ -64,7 +63,6 @@ describe('TokenController', () => {
     await token.transferOwnership(controller.address)
     await controller.initialize()
     await controller.issueClaimOwnership(token.address)
-    //await controller.setRegistryAdmin(registryAdmin.address)
     await controller.setRegistry(registry.address)
     await controller.setToken(token.address)
     await controller.transferMintKey(mintKey.address)
@@ -588,5 +586,4 @@ describe('TokenController', () => {
         .to.be.revertedWith('must be registry admin or owner')
     })
   })
-
 })

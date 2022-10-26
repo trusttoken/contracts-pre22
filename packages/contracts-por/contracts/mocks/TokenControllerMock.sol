@@ -9,7 +9,8 @@ import {ITrueCurrency as TrueCurrency} from "../interface/ITrueCurrency.sol";
 import {TokenControllerV3} from "../TokenControllerV3.sol";
 
 interface HasOwner {
-    function claimOwnership() external; 
+    function claimOwnership() external;
+
     function transferOwnership(address newOwner) external;
 }
 
@@ -72,7 +73,7 @@ contract TokenControllerMock is TokenControllerV3 {
      * Can be used e.g. to upgrade this TokenController contract.
      * @param _child contract that tokenController currently Owns
      * @param _newOwner new owner/pending owner of _child
-    */
+     */
     function transferChild(HasOwner _child, address _newOwner) external onlyOwner {
         _child.transferOwnership(_newOwner);
         emit TransferChild(address(_child), _newOwner);
@@ -87,7 +88,7 @@ contract TokenControllerPauseMock is TokenControllerMock {
     }
 
     /**
-     *@dev pause all pausable actions on TrueUSD, mints/burn/transfer/approve
+     * @dev pause all pausable actions on TrueUSD, mints/burn/transfer/approve
      */
     function pauseToken() external override onlyOwner {
         OwnedUpgradeabilityProxy(uint160(address(token))).upgradeTo(pausedImplementation);
