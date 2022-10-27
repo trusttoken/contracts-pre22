@@ -1,8 +1,8 @@
 import { BigNumber, BigNumberish, Wallet, utils, providers } from 'ethers'
 import { AddressZero } from '@ethersproject/constants'
 import { expect, use } from 'chai'
-// @ts-ignore
-import { waffle, network } from 'hardhat'
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
+import { waffle } from "hardhat";
 
 import { timeTravel } from 'utils/timeTravel'
 import {
@@ -26,21 +26,17 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
   let token: TrueUSD
   let mockV3Aggregator: MockV3Aggregator
   let owner: Wallet
+  let provider: providers.JsonRpcProvider
 
-  before(async () => {
-    const provider = waffle.provider;
-    [owner] = provider.getWallets()
-
+  beforeEachWithFixture(async (wallets, _provider) => {
+    [owner] = wallets
+    provider = _provider  
     token = (await new TrueUSD__factory(owner).deploy()) as TrueUSD
-
     // Deploy a mock aggregator to mock Proof of Reserve feed answers
     mockV3Aggregator = await new MockV3Aggregator__factory(owner).deploy(
       '18',
       TUSD_FEED_INITIAL_ANSWER,
     )
-  })
-
-  beforeEach(async () => {
     // Reset pool Proof Of Reserve feed defaults
     const currentFeed = await token.chainReserveFeed()
     if (currentFeed.toLowerCase() !== mockV3Aggregator.address.toLowerCase()) {
@@ -146,7 +142,7 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
     expect(await token.chainReserveHeartbeat()).to.equal(ONE_DAY_SECONDS)
 
     // Heartbeat is set to 1 day, so fast-forward 2 days
-    await timeTravel(<unknown> network.provider as providers.JsonRpcProvider, 2 * ONE_DAY_SECONDS)
+    await timeTravel(<unknown> provider as providers.JsonRpcProvider, 2 * ONE_DAY_SECONDS)
 
     // Mint TUSD
     const balanceBefore = await token.balanceOf(owner.address)

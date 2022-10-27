@@ -3,10 +3,9 @@ import { solidity } from 'ethereum-waffle'
 import { Wallet } from 'ethers'
 import { parseEther } from '@ethersproject/units'
 import { formatBytes32String } from '@ethersproject/strings'
-// @ts-ignore
-import { waffle } from 'hardhat'
 
-// @ts-ignore
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
+
 import {
   RegistryMock,
   MockTrueCurrency,
@@ -42,9 +41,8 @@ describe('ProxyWithController', () => {
 
   const notes = formatBytes32String('some notes')
   const CAN_BURN = formatBytes32String('canBurn')
-  const wallets = waffle.provider.getWallets()
 
-  beforeEach(async () => {
+  beforeEachWithFixture(async (wallets) => {
     [owner, otherWallet, thirdWallet, mintKey, pauseKey, approver1, approver2, approver3] = wallets
     registry = await new RegistryMock__factory(owner).deploy()
 
