@@ -3,8 +3,9 @@ import { BigNumberish, Wallet } from 'ethers'
 import { MockProvider, solidity } from 'ethereum-waffle'
 import { formatBytes32String } from '@ethersproject/strings'
 import { parseEther } from '@ethersproject/units'
-// @ts-ignore
-import { waffle } from 'hardhat'
+
+import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
+
 import {
   TokenControllerMock__factory,
   TokenControllerMock,
@@ -40,15 +41,14 @@ describe('TokenController', () => {
 
   const notes = formatBytes32String('notes')
   const CAN_BURN = formatBytes32String('canBurn')
-  const wallets = waffle.provider.getWallets()
 
   const expectTokenBalance = async (token: MockTrueCurrency, wallet: Wallet, value: BigNumberish) => {
     expect(await token.balanceOf(wallet.address)).to.equal(value)
   }
 
-  beforeEach(async () => {
+  beforeEachWithFixture(async (wallets, _provider) => {
     [owner, otherWallet, thirdWallet, mintKey, pauseKey, ratifier1, ratifier2, ratifier3] = wallets
-    provider = waffle.provider
+    provider = _provider
 
     registry = await new RegistryMock__factory(owner).deploy()
     controller = await new TokenControllerMock__factory(owner).deploy()
