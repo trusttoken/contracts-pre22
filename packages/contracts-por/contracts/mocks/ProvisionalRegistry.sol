@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {Registry} from "../Registry.sol";
+import {Registry} from "../test/Registry.sol";
 
 contract ProvisionalRegistry is Registry {
     bytes32 constant IS_BLACKLISTED = "isBlacklisted";
