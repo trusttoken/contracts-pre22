@@ -2,7 +2,7 @@ import { BigNumber, BigNumberish, Wallet, utils, providers } from 'ethers'
 import { AddressZero } from '@ethersproject/constants'
 import { expect, use } from 'chai'
 import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
-import { waffle } from "hardhat";
+import { waffle } from 'hardhat'
 
 import { timeTravel } from 'utils/timeTravel'
 import {
@@ -21,7 +21,7 @@ const exp = (base: BigNumberish, exponent: BigNumberish): BigNumber => {
 
 describe('TrueCurrency with Proof-of-reserves check', () => {
   const ONE_DAY_SECONDS = 24 * 60 * 60 // seconds in a day
-  const TUSD_FEED_INITIAL_ANSWER = exp(1_000_000, 18).toString() // "1M TUSD in reserves"
+  const TUSD_FEED_INITIAL_ANSWER = exp(1_000_000, 18).toString() // '1M TUSD in reserves'
   const AMOUNT_TO_MINT = utils.parseEther('1000000')
   let token: TrueUSD
   let mockV3Aggregator: MockV3Aggregator
@@ -30,7 +30,7 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
 
   beforeEachWithFixture(async (wallets, _provider) => {
     [owner] = wallets
-    provider = _provider  
+    provider = _provider
     token = (await new TrueUSD__factory(owner).deploy()) as TrueUSD
     // Deploy a mock aggregator to mock Proof of Reserve feed answers
     mockV3Aggregator = await new MockV3Aggregator__factory(owner).deploy(
