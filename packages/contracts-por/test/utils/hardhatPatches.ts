@@ -1,4 +1,3 @@
-// @ts-ignore
 import { waffle } from 'hardhat'
 import type { RecordedCall } from 'ethereum-waffle'
 import { utils } from 'ethers'

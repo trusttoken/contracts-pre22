@@ -25,5 +25,6 @@
     "contracts",
     "test",
     "scripts",
-  ]
+  ],
+  "files": ["./hardhat.config.ts"]
 }
