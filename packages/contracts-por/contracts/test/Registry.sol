@@ -3,7 +3,7 @@ pragma solidity 0.6.10;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import {IRegistryClone as RegistryClone} from "../interface/IRegistryClone.sol";
+import {IRegistryClone as RegistryClone} from "./IRegistryClone.sol";
 
 contract Registry {
     struct AttributeData {
