@@ -41,6 +41,9 @@
     "ts-node": "^10.7.0",
     "tsconfig-paths": "^4.1.0",
     "typechain": "^8.0.0",
-    "typescript": "4.5.4"
+    "typescript": "4.5.4",
+    "solhint": "^3.0.0",
+    "prettylint": "^1.0.0",
+    "prettier": "^2.4.1"
   }
 }
