@@ -18,7 +18,7 @@
     "preflatten": "rm -rf custom_flatten",
     "flatten": "waffle flatten .waffle.json",
     "test": "mocha 'test/**/*.test.ts'",
-    "checks": "yarn lint && yarn test && yarn test:integration"
+    "checks": "yarn lint && yarn test"
   },
   "dependencies": {
     "ethereum-mars": "0.2.5",

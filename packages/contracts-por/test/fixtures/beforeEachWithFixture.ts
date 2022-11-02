@@ -1,13 +1,12 @@
 import { waffle } from 'hardhat'
-import { proxyProvider } from 'utils/hardhatCallHistoryProvider'
 import type { MockProvider } from 'ethereum-waffle'
 import type { Wallet } from 'ethers'
 
 export type Fixture<T> = (wallets: Wallet[], provider: MockProvider) => Promise<T>;
 
 export const loadFixture = waffle.createFixtureLoader(
-  proxyProvider.getWallets(),
-  proxyProvider,
+  waffle.provider.getWallets(),
+  waffle.provider,
 )
 
 export function beforeEachWithFixture (fixture: Fixture<void>) {
