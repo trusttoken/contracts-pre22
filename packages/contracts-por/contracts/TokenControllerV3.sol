@@ -118,7 +118,7 @@ contract TokenControllerV3 {
         _;
     }
 
-    modifier onlyRegistryAdmin() {
+    modifier onlyRegistryAdminOrOwner() {
         require(registry.hasAttribute(msg.sender, IS_REGISTRY_ADMIN) || msg.sender == owner, "must be registry admin or owner");
         _;
     }
@@ -626,7 +626,7 @@ contract TokenControllerV3 {
      * @param burner address of the token that can burn
      * @param canBurn true if account is allowed to burn, false otherwise
      */
-    function setCanBurn(address burner, bool canBurn) external onlyRegistryAdmin {
+    function onlyRegistryAdminOrOwner(address burner, bool canBurn) external onlyRegistryAdmin {
         token.setCanBurn(burner, canBurn);
     }
 
