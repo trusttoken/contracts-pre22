@@ -369,14 +369,14 @@ contract TokenControllerV3 {
         address _to,
         uint256 _value
     ) external mintNotPaused onlyMintRatifierOrOwner {
-        MintOperation memory op = mintOperations[_index];
+        MintOperation storage op = mintOperations[_index];
         require(op.to == _to, "to address does not match");
         require(op.value == _value, "amount does not match");
-        require(!mintOperations[_index].approved[msg.sender], "already approved");
-        mintOperations[_index].approved[msg.sender] = true;
-        mintOperations[_index].numberOfApproval = mintOperations[_index].numberOfApproval.add(1);
+        require(!op.approved[msg.sender], "already approved");
+        op.approved[msg.sender] = true;
+        op.numberOfApproval = op.numberOfApproval.add(1);
         emit MintRatified(_index, msg.sender);
-        if (hasEnoughApproval(mintOperations[_index].numberOfApproval, _value)) {
+        if (hasEnoughApproval(op.numberOfApproval, _value)) {
             finalizeMint(_index);
         }
     }
