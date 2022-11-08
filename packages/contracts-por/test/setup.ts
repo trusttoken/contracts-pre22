@@ -1,5 +1,4 @@
 import { Fixture, MockProvider } from 'ethereum-waffle'
-// @ts-ignore
 import { waffle } from 'hardhat'
 import { Wallet } from 'ethers'
 import './utils/hardhatPatches.ts'
