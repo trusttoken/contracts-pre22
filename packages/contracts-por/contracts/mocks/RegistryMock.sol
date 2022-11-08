@@ -2,7 +2,6 @@
 pragma solidity 0.6.10;
 
 import {Registry} from "../test/Registry.sol";
-import {ProvisionalRegistry} from "./ProvisionalRegistry.sol";
 
 contract RegistryMock is Registry {
     /**
@@ -19,9 +18,4 @@ contract RegistryMock is Registry {
         owner = msg.sender;
         initialized = true;
     }
-}
-
-// solhint-disable-next-line no-empty-blocks
-contract ProvisionalRegistryMock is RegistryMock, ProvisionalRegistry {
-
 }
