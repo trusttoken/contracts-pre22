@@ -9,6 +9,6 @@ export const loadFixture = waffle.createFixtureLoader(
   waffle.provider,
 )
 
-export function beforeEachWithFixture (fixture: Fixture<void>) {
+export function beforeEachWithFixture(fixture: Fixture<void>) {
   beforeEach(() => loadFixture(fixture))
 }

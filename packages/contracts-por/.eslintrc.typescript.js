@@ -1,9 +1,8 @@
-
 const baseConfig = require('./.eslintrc.json')
 
 module.exports = {
   ...baseConfig,
-  parser:  '@typescript-eslint/parser',
+  parser: '@typescript-eslint/parser',
   extends: [
     "plugin:@typescript-eslint/recommended"
   ],
@@ -76,5 +75,12 @@ module.exports = {
     "@typescript-eslint/no-use-before-define": "off",
     "@typescript-eslint/no-useless-constructor": "error",
     "@typescript-eslint/ban-ts-comment": "off",
+    "space-before-function-paren": [
+      "error",
+      {
+        "anonymous": "always",
+        "named": "never"
+      }
+    ],
   },
 }

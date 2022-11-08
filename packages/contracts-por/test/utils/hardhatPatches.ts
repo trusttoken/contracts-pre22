@@ -4,7 +4,7 @@ import { utils } from 'ethers'
 
 const init = (waffle.provider as any)._hardhatNetwork.provider._wrapped._wrapped._wrapped._init
 
-function patchSkipGasCostCheck () {
+function patchSkipGasCostCheck() {
   const originalProcess = (waffle.provider as any)._hardhatNetwork.provider._wrapped._wrapped._wrapped._ethModule.processRequest.bind(
     (waffle.provider as any)._hardhatNetwork.provider._wrapped._wrapped._wrapped._ethModule,
   )
@@ -23,18 +23,18 @@ function patchSkipGasCostCheck () {
 class CallHistory {
   recordedCalls: RecordedCall[] = [];
 
-  addUniqueCall (call: RecordedCall) {
+  addUniqueCall(call: RecordedCall) {
     if (!this.recordedCalls.find(c => c.address === call.address && c.data === call.data)) {
       this.recordedCalls.push(call)
     }
   }
 
-  clearAll () {
+  clearAll() {
     this.recordedCalls = []
   }
 }
 
-function toRecordedCall (message: any): RecordedCall {
+function toRecordedCall(message: any): RecordedCall {
   return {
     address: message.to?.buf ? utils.getAddress(utils.hexlify(message.to.buf)) : undefined,
     data: message.data ? utils.hexlify(message.data) : '0x',
