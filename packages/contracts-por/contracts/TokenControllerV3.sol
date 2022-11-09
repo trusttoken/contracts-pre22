@@ -626,7 +626,7 @@ contract TokenControllerV3 {
      * @param burner address of the token that can burn
      * @param canBurn true if account is allowed to burn, false otherwise
      */
-    function onlyRegistryAdminOrOwner(address burner, bool canBurn) external onlyRegistryAdmin {
+    function setCanBurn(address burner, bool canBurn) external onlyRegistryAdminOrOwner {
         token.setCanBurn(burner, canBurn);
     }
 
