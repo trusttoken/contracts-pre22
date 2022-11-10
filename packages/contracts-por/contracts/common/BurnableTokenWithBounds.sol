@@ -38,7 +38,7 @@ abstract contract BurnableTokenWithBounds is ReclaimerToken {
      * - `msg.sender` must have at least `amount` tokens.
      *
      */
-    function burn(uint256 amount) external {
+    function burn(uint256 amount) override external {
         _burn(msg.sender, amount);
     }
 

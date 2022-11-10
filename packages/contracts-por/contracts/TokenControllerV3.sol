@@ -86,11 +86,6 @@ contract TokenControllerV3 {
     // pausing the contract upgrades the proxy to this implementation
     address public constant PAUSED_IMPLEMENTATION = 0x3c8984DCE8f68FCDEEEafD9E0eca3598562eD291;
 
-    modifier onlyFastPauseOrOwner() {
-        require(msg.sender == fastPause || msg.sender == owner, "must be pauser or owner");
-        _;
-    }
-
     modifier onlyMintKeyOrOwner() {
         require(msg.sender == mintKey || msg.sender == owner, "must be mintKey or owner");
         _;
@@ -581,7 +576,7 @@ contract TokenControllerV3 {
     /**
      * @dev pause all pausable actions on TrueCurrency, mints/burn/transfer/approve
      */
-    function pauseToken() external virtual onlyFastPauseOrOwner {
+    function pauseToken() external virtual onlyOwner {
         IOwnedUpgradeabilityProxy(address(token)).upgradeTo(PAUSED_IMPLEMENTATION);
     }
 
