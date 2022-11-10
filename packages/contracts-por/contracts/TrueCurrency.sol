@@ -21,7 +21,7 @@ import {BurnableTokenWithBounds} from "./common/BurnableTokenWithBounds.sol";
  * ~~~~ Features ~~~~
  *
  * Redemption Addresses
- * - The first 0x100000 addresses are redemption addresses
+ * - The first 0x100000 addresses except from address(0) are redemption addresses
  * - Tokens sent to redemption addresses are burned
  * - Redemptions are tracked off-chain
  * - Cannot mint tokens to redemption addresses
