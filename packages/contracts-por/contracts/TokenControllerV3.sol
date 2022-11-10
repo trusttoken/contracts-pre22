@@ -8,13 +8,6 @@ import {IOwnedUpgradeabilityProxy} from "./interface/IOwnedUpgradeabilityProxy.s
 import {ITrueCurrency} from "./interface/ITrueCurrency.sol";
 import {IProofOfReserveToken} from "./interface/IProofOfReserveToken.sol";
 
-/**
- * @dev Contract that can be called with a gas refund
- */
-interface IHook {
-    function hook() external;
-}
-
 /** @title TokenController
  * @dev This contract allows us to split ownership of the TrueCurrency contract
  * into two addresses. One, called the "owner" address, has unfettered control of the TrueCurrency contract -
