@@ -148,9 +148,9 @@ workflows:
       - lint:
           requires:
             - setup
-      - slither:
+      - lint-package-contracts-por:
           requires:
-            - setup
+            - build
       - test-package-contracts-por:
           requires:
             - build
