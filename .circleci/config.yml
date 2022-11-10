@@ -67,6 +67,13 @@ jobs:
       - attach_workspace:
           at: .
       - run: yarn lint
+  lint-package-contracts-por:
+    docker:
+      - image: cimg/node:16.1.0
+    steps:
+      - attach_workspace:
+          at: .
+      - run: yarn workspace @trusttoken-smart-contracts/contracts-por lint
   test-package-contracts-por:
     docker:
       - image: cimg/node:16.1.0
