@@ -5,13 +5,19 @@
   "private": true,
   "scripts": {
     "clean": "rm -rf ./build && hardhat clean",
+    "lint": "yarn lint:sol && yarn lint:ts",
+    "typecheck": "tsc --noEmit",
+    "lint:sol": "solhint 'contracts/**/*.sol' && prettylint 'contracts/**/*.sol'",
+    "lint:ts": "eslint '{test,scripts}/**/*.ts' -c .eslintrc.typescript.js",
+    "lint:fix": "prettier 'contracts/**/*.sol' --write --loglevel error && yarn lint:ts --fix",
     "prebuild": "yarn clean",
     "build:hardhat": "hardhat compile",
     "build:typechain": "typechain --target ethers-v5 --out-dir build/types 'build/*.json'",
     "build": "yarn build:hardhat && yarn build:typechain && mars",
     "preflatten": "rm -rf custom_flatten",
     "flatten": "waffle flatten .waffle.json",
-    "test": "mocha 'test/**/*.test.ts'"
+    "test": "mocha 'test/**/*.test.ts'",
+    "checks": "yarn lint && yarn test"
   },
   "dependencies": {
     "ethereum-mars": "0.2.5",
@@ -35,6 +41,9 @@
     "ts-node": "^10.7.0",
     "tsconfig-paths": "^4.1.0",
     "typechain": "^8.0.0",
-    "typescript": "4.5.4"
+    "typescript": "4.5.4",
+    "solhint": "^3.0.0",
+    "prettylint": "^1.0.0",
+    "prettier": "^2.4.1"
   }
 }
