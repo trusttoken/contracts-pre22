@@ -562,7 +562,6 @@ contract TokenControllerV3 {
     }
     */
 
-
     /**
      * @dev send all ether in token address to the owner of tokenController
      */
@@ -591,7 +590,7 @@ contract TokenControllerV3 {
      * burn to newMin and newMax
      * @param _min minimum amount user can burn at a time
      * @param _max maximum amount user can burn at a time
-    */
+     */
     function setBurnBounds(uint256 _min, uint256 _max) external onlyOwner {
         token.setBurnBounds(_min, _max);
     }
