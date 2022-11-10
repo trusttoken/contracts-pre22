@@ -46,14 +46,14 @@ contract ClaimableOwnable is ProxyStorage {
      * @dev Allows the current owner to set the pendingOwner address.
      * @param newOwner The address to transfer ownership to.
      */
-    function transferOwnership(address newOwner) public onlyOwner {
+    function transferOwnership(address newOwner) external onlyOwner {
         pendingOwner = newOwner;
     }
 
     /**
      * @dev Allows the pendingOwner address to finalize the transfer.
      */
-    function claimOwnership() public onlyPendingOwner {
+    function claimOwnership() external onlyPendingOwner {
         emit OwnershipTransferred(owner, pendingOwner);
         owner = pendingOwner;
         pendingOwner = address(0);
