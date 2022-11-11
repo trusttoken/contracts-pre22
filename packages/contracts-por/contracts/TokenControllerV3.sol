@@ -8,13 +8,6 @@ import {IOwnedUpgradeabilityProxy} from "./interface/IOwnedUpgradeabilityProxy.s
 import {ITrueCurrency} from "./interface/ITrueCurrency.sol";
 import {IProofOfReserveToken} from "./interface/IProofOfReserveToken.sol";
 
-/**
- * @dev Contract that can be called with a gas refund
- */
-interface IHook {
-    function hook() external;
-}
-
 /** @title TokenController
  * @dev This contract allows us to split ownership of the TrueCurrency contract
  * into two addresses. One, called the "owner" address, has unfettered control of the TrueCurrency contract -
@@ -93,11 +86,6 @@ contract TokenControllerV3 {
     // pausing the contract upgrades the proxy to this implementation
     address public constant PAUSED_IMPLEMENTATION = 0x3c8984DCE8f68FCDEEEafD9E0eca3598562eD291;
 
-    modifier onlyFastPauseOrOwner() {
-        require(msg.sender == fastPause || msg.sender == owner, "must be pauser or owner");
-        _;
-    }
-
     modifier onlyMintKeyOrOwner() {
         require(msg.sender == mintKey || msg.sender == owner, "must be mintKey or owner");
         _;
@@ -118,7 +106,7 @@ contract TokenControllerV3 {
         _;
     }
 
-    modifier onlyRegistryAdmin() {
+    modifier onlyRegistryAdminOrOwner() {
         require(registry.hasAttribute(msg.sender, IS_REGISTRY_ADMIN) || msg.sender == owner, "must be registry admin or owner");
         _;
     }
@@ -233,15 +221,15 @@ contract TokenControllerV3 {
     */
 
     function transferTrueCurrencyProxyOwnership(address _newOwner) external onlyOwner {
-        IOwnedUpgradeabilityProxy(address(uint160(address(token)))).transferProxyOwnership(_newOwner);
+        IOwnedUpgradeabilityProxy(address(token)).transferProxyOwnership(_newOwner);
     }
 
     function claimTrueCurrencyProxyOwnership() external onlyOwner {
-        IOwnedUpgradeabilityProxy(address(uint160(address(token)))).claimProxyOwnership();
+        IOwnedUpgradeabilityProxy(address(token)).claimProxyOwnership();
     }
 
     function upgradeTrueCurrencyProxyImplTo(address _implementation) external onlyOwner {
-        IOwnedUpgradeabilityProxy(address(uint160(address(token)))).upgradeTo(_implementation);
+        IOwnedUpgradeabilityProxy(address(token)).upgradeTo(_implementation);
     }
 
     /*
@@ -588,8 +576,8 @@ contract TokenControllerV3 {
     /**
      * @dev pause all pausable actions on TrueCurrency, mints/burn/transfer/approve
      */
-    function pauseToken() external virtual onlyFastPauseOrOwner {
-        IOwnedUpgradeabilityProxy(address(uint160(address(token)))).upgradeTo(PAUSED_IMPLEMENTATION);
+    function pauseToken() external virtual onlyOwner {
+        IOwnedUpgradeabilityProxy(address(token)).upgradeTo(PAUSED_IMPLEMENTATION);
     }
 
     /**
@@ -625,7 +613,7 @@ contract TokenControllerV3 {
      * @param burner address of the token that can burn
      * @param canBurn true if account is allowed to burn, false otherwise
      */
-    function setCanBurn(address burner, bool canBurn) external onlyRegistryAdmin {
+    function setCanBurn(address burner, bool canBurn) external onlyRegistryAdminOrOwner {
         token.setCanBurn(burner, canBurn);
     }
 
