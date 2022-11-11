@@ -221,15 +221,15 @@ contract TokenControllerV3 {
     */
 
     function transferTrueCurrencyProxyOwnership(address _newOwner) external onlyOwner {
-        IOwnedUpgradeabilityProxy(address(uint160(address(token)))).transferProxyOwnership(_newOwner);
+        IOwnedUpgradeabilityProxy(address(token)).transferProxyOwnership(_newOwner);
     }
 
     function claimTrueCurrencyProxyOwnership() external onlyOwner {
-        IOwnedUpgradeabilityProxy(address(uint160(address(token)))).claimProxyOwnership();
+        IOwnedUpgradeabilityProxy(address(token)).claimProxyOwnership();
     }
 
     function upgradeTrueCurrencyProxyImplTo(address _implementation) external onlyOwner {
-        IOwnedUpgradeabilityProxy(address(uint160(address(token)))).upgradeTo(_implementation);
+        IOwnedUpgradeabilityProxy(address(token)).upgradeTo(_implementation);
     }
 
     /*
@@ -577,7 +577,7 @@ contract TokenControllerV3 {
      * @dev pause all pausable actions on TrueCurrency, mints/burn/transfer/approve
      */
     function pauseToken() external virtual onlyOwner {
-        IOwnedUpgradeabilityProxy(address(uint160(address(token)))).upgradeTo(PAUSED_IMPLEMENTATION);
+        IOwnedUpgradeabilityProxy(address(token)).upgradeTo(PAUSED_IMPLEMENTATION);
     }
 
     /**
