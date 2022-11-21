@@ -15,4 +15,6 @@ interface ITrueCurrency {
     function reclaimEther(address payable _to) external;
 
     function reclaimToken(IERC20 token, address _to) external;
+
+    function setBlacklisted(address account, bool isBlacklisted) external;
 }
