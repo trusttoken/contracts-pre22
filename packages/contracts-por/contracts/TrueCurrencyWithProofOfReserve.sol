@@ -39,7 +39,7 @@ abstract contract TrueCurrencyWithProofOfReserve is TrueCurrency, IProofOfReserv
         uint256 reserves = uint256(signedReserves);
 
         // Sanity check: is chainlink answer updatedAt in the past
-        require(block.timestamp >= updatedAt);
+        require(block.timestamp >= updatedAt, "TrueCurrency: invalid PoR updatedAt");
 
         // Check the answer is fresh enough (i.e., within the specified heartbeat)
         require(block.timestamp.sub(updatedAt) <= chainReserveHeartbeat, "TrueCurrency: PoR answer too old");
