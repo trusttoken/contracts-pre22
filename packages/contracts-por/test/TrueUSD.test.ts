@@ -173,9 +173,9 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
   })
 
   it('should revert enableProofOfReserve if chainReserveHeartbeat not set', async () => {
-      await token.setChainReserveHeartbeat(0)
-      await expect(token.enableProofOfReserve()).to.be.revertedWith(
-          "TrueCurrency: chainReserveHeartbeat not set"
-      )
+    await token.setChainReserveHeartbeat(0)
+    await expect(token.enableProofOfReserve()).to.be.revertedWith(
+      'TrueCurrency: chainReserveHeartbeat not set',
+    )
   })
 })
