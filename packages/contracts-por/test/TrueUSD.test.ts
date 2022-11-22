@@ -171,4 +171,11 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
     await expect(token.setChainReserveFeed(AddressZero))
       .to.emit(token, 'NewChainReserveFeed').withArgs(oldChainReserveFeed, AddressZero)
   })
+
+  it('should revert enableProofOfReserve if chainReserveHeartbeat not set', async () => {
+      await token.setChainReserveHeartbeat(0)
+      await expect(token.enableProofOfReserve()).to.be.revertedWith(
+          "TrueCurrency: chainReserveHeartbeat not set"
+      )
+  })
 })

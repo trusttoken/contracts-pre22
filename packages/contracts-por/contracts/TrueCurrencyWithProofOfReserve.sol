@@ -90,6 +90,7 @@ abstract contract TrueCurrencyWithProofOfReserve is TrueCurrency, IProofOfReserv
      */
     function enableProofOfReserve() external override onlyOwner {
         require(chainReserveFeed != address(0), "TrueCurrency: chainReserveFeed not set");
+        require(chainReserveHeartbeat != 0, "TrueCurrency: chainReserveHeartbeat not set");
         proofOfReserveEnabled = true;
         emit ProofOfReserveEnabled();
     }
