@@ -171,4 +171,20 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
     await expect(token.setChainReserveFeed(AddressZero))
       .to.emit(token, 'NewChainReserveFeed').withArgs(oldChainReserveFeed, AddressZero)
   })
+
+  it('should revert enableProofOfReserve if chainReserveHeartbeat not set', async () => {
+    await token.setChainReserveHeartbeat(0)
+    await expect(token.enableProofOfReserve()).to.be.revertedWith(
+      'TrueCurrency: chainReserveHeartbeat not set',
+    )
+  })
+
+  it("should revert mint when feed's updatedAt is invalid", async () => {
+    const [roundId, answer, startedAt, updatedAt] = await mockV3Aggregator.latestRoundData()
+    await mockV3Aggregator.updateRoundData(roundId, answer, updatedAt.add(1000), startedAt)
+    // Mint TUSD
+    const balanceBefore = await token.balanceOf(owner.address)
+    await expect(token.mint(owner.address, AMOUNT_TO_MINT)).to.be.revertedWith('TrueCurrency: invalid PoR updatedAt')
+    expect(await token.balanceOf(owner.address)).to.equal(balanceBefore)
+  })
 })
