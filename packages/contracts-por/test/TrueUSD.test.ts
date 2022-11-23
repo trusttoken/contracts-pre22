@@ -179,7 +179,7 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
     )
   })
 
-  it(`should revert mint when feed's updatedAt is invalid`, async () => {
+  it("should revert mint when feed's updatedAt is invalid", async () => {
     const [roundId, answer, startedAt, updatedAt] = await mockV3Aggregator.latestRoundData()
     await mockV3Aggregator.updateRoundData(roundId, answer, updatedAt.add(1000), startedAt)
     // Mint TUSD
