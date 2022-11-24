@@ -39,7 +39,7 @@ abstract contract TrueCurrencyWithProofOfReserve is TrueCurrency, IProofOfReserv
         uint256 reserves = uint256(signedReserves);
 
         // Sanity check: is chainlink answer updatedAt in the past
-        require(block.timestamp >= updatedAt);
+        require(block.timestamp >= updatedAt, "TrueCurrency: invalid PoR updatedAt");
 
         // Check the answer is fresh enough (i.e., within the specified heartbeat)
         require(block.timestamp.sub(updatedAt) <= chainReserveHeartbeat, "TrueCurrency: PoR answer too old");
@@ -90,6 +90,7 @@ abstract contract TrueCurrencyWithProofOfReserve is TrueCurrency, IProofOfReserv
      */
     function enableProofOfReserve() external override onlyOwner {
         require(chainReserveFeed != address(0), "TrueCurrency: chainReserveFeed not set");
+        require(chainReserveHeartbeat != 0, "TrueCurrency: chainReserveHeartbeat not set");
         proofOfReserveEnabled = true;
         emit ProofOfReserveEnabled();
     }
