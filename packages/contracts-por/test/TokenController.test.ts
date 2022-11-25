@@ -586,4 +586,17 @@ describe('TokenController', () => {
         .to.be.revertedWith('must be registry admin or owner')
     })
   })
+
+  describe('setBlacklisted', () => {
+    it('sets blacklisted status for the account', async () => {
+      await expect(controller.setBlacklisted(otherWallet.address, true)).to.emit(token, 'Blacklisted')
+        .withArgs(otherWallet.address, true)
+      await expect(controller.setBlacklisted(otherWallet.address, false)).to.emit(token, 'Blacklisted')
+        .withArgs(otherWallet.address, false)
+    })
+
+    it('rejects when called by non owner or registry admin', async () => {
+      await expect(controller.connect(otherWallet).setBlacklisted(otherWallet.address, true)).to.be.revertedWith('must be registry admin or owner')
+    })
+  })
 })

@@ -617,6 +617,15 @@ contract TokenControllerV3 {
         token.setCanBurn(burner, canBurn);
     }
 
+    /**
+     * @dev Set blacklisted status for the account.
+     * @param account address to set blacklist flag for
+     * @param isBlacklisted blacklist flag value
+     */
+    function setBlacklisted(address account, bool isBlacklisted) external onlyRegistryAdminOrOwner {
+        token.setBlacklisted(account, isBlacklisted);
+    }
+
     /*
     ========================================
     Proof of Reserve, administrative
