@@ -595,8 +595,8 @@ describe('TokenController', () => {
         .withArgs(otherWallet.address, false)
     })
 
-    it('rejects when called by non owner or registry admin', async () => {
-      await expect(controller.connect(otherWallet).setBlacklisted(otherWallet.address, true)).to.be.revertedWith('must be registry admin or owner')
+    it('rejects when called by non owner', async () => {
+      await expect(controller.connect(otherWallet).setBlacklisted(otherWallet.address, true)).to.be.revertedWith('only Owner')
     })
   })
 })
