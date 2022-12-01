@@ -101,11 +101,6 @@ contract TokenControllerV3 {
         _;
     }
 
-    modifier onlyOwnerOrRedemptionAdmin() {
-        require(registry.hasAttribute(msg.sender, IS_REDEMPTION_ADMIN) || msg.sender == owner, "must be Redemption admin or owner");
-        _;
-    }
-
     modifier onlyRegistryAdminOrOwner() {
         require(registry.hasAttribute(msg.sender, IS_REGISTRY_ADMIN) || msg.sender == owner, "must be registry admin or owner");
         _;
