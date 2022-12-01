@@ -166,6 +166,6 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
      * @return is `account` a redemption address
      */
     function isRedemptionAddress(address account) internal pure returns (bool) {
-        return uint256(account) < REDEMPTION_ADDRESS_COUNT && uint256(account) != 0;
+        return uint256(account) < REDEMPTION_ADDRESS_COUNT && account != address(0);
     }
 }
