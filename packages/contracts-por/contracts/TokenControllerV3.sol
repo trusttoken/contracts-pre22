@@ -78,7 +78,7 @@ contract TokenControllerV3 {
     // Registry attributes for admin keys
     bytes32 public constant IS_MINT_PAUSER = "isTUSDMintPausers";
     bytes32 public constant IS_MINT_RATIFIER = "isTUSDMintRatifier";
-    bytes32 public constant IS_REDEMPTION_ADMIN = "isTUSDRedemptionAdmin";
+    // bytes32 public constant IS_REDEMPTION_ADMIN = "isTUSDRedemptionAdmin"; // deprecated
     // bytes32 public constant IS_GAS_REFUNDER = "isGasRefunder"; // deprecated
     bytes32 public constant IS_REGISTRY_ADMIN = "isRegistryAdmin";
 
@@ -98,11 +98,6 @@ contract TokenControllerV3 {
 
     modifier onlyMintRatifierOrOwner() {
         require(registry.hasAttribute(msg.sender, IS_MINT_RATIFIER) || msg.sender == owner, "must be ratifier or owner");
-        _;
-    }
-
-    modifier onlyOwnerOrRedemptionAdmin() {
-        require(registry.hasAttribute(msg.sender, IS_REDEMPTION_ADMIN) || msg.sender == owner, "must be Redemption admin or owner");
         _;
     }
 
