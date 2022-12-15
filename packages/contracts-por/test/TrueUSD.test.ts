@@ -93,12 +93,11 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
 
     // Mint TUSD
     const balanceBefore = await token.balanceOf(owner.address)
-    await token.mint(owner.address, AMOUNT_TO_MINT, { gasLimit: 200_000, })
+    await token.mint(owner.address, AMOUNT_TO_MINT, { gasLimit: 200_000 })
     expect(await token.balanceOf(owner.address)).to.equal(balanceBefore.add(AMOUNT_TO_MINT))
   })
 
   it('should mint successfully when feed decimals > TrueCurrency decimals', async () => {
-
     // Re-deploy a mock aggregator with more decimals
     const currentTusdSupply = await token.totalSupply()
     const validReserve = currentTusdSupply.mul(exp(1, 2)).add(AMOUNT_TO_MINT)
