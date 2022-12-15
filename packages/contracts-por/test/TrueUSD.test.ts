@@ -32,6 +32,7 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
     [owner] = wallets
     provider = _provider
     token = (await new TrueUSD__factory(owner).deploy()) as TrueUSD
+    await token.mint(owner.address, AMOUNT_TO_MINT)
     // Deploy a mock aggregator to mock Proof of Reserve feed answers
     mockV3Aggregator = await new MockV3Aggregator__factory(owner).deploy(
       '18',
