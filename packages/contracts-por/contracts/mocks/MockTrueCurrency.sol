@@ -22,10 +22,10 @@ contract MockTrueCurrency is TrueCurrencyWithProofOfReserve {
     }
 
     function name() public pure override returns (string memory) {
-        return "TrueCurrency";
+        return "TrueUSD";
     }
 
     function symbol() public pure override returns (string memory) {
-        return "TCUR";
+        return "TUSD";
     }
 }
