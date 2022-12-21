@@ -3,7 +3,7 @@ pragma solidity 0.6.10;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import {IRegistryClone as RegistryClone} from "./IRegistryClone.sol";
+import {IRegistryClone} from "./IRegistryClone.sol";
 
 contract Registry {
     struct AttributeData {
@@ -28,13 +28,13 @@ contract Registry {
     // The logic governing who is allowed to set what attributes is abstracted as
     // this accessManager, so that it may be replaced by the owner as needed
     bytes32 constant WRITE_PERMISSION = keccak256("canWriteTo-");
-    mapping(bytes32 => RegistryClone[]) subscribers;
+    mapping(bytes32 => IRegistryClone[]) subscribers;
 
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event SetAttribute(address indexed who, bytes32 attribute, uint256 value, bytes32 notes, address indexed adminAddr);
     event SetManager(address indexed oldManager, address indexed newManager);
-    event StartSubscription(bytes32 indexed attribute, RegistryClone indexed subscriber);
-    event StopSubscription(bytes32 indexed attribute, RegistryClone indexed subscriber);
+    event StartSubscription(bytes32 indexed attribute, IRegistryClone indexed subscriber);
+    event StopSubscription(bytes32 indexed attribute, IRegistryClone indexed subscriber);
 
     // Allows a write if either a) the writer is that Registry's owner, or
     // b) the writer is writing to attribute foo and that writer already has
@@ -54,14 +54,14 @@ contract Registry {
         attributes[_who][_attribute] = AttributeData(_value, _notes, msg.sender, block.timestamp);
         emit SetAttribute(_who, _attribute, _value, _notes, msg.sender);
 
-        RegistryClone[] storage targets = subscribers[_attribute];
+        IRegistryClone[] storage targets = subscribers[_attribute];
         uint256 index = targets.length;
         while (index-- > 0) {
             targets[index].syncAttributeValue(_who, _attribute, _value);
         }
     }
 
-    function subscribe(bytes32 _attribute, RegistryClone _syncer) external onlyOwner {
+    function subscribe(bytes32 _attribute, IRegistryClone _syncer) external onlyOwner {
         subscribers[_attribute].push(_syncer);
         emit StartSubscription(_attribute, _syncer);
     }
@@ -86,7 +86,7 @@ contract Registry {
         require(confirmWrite(_attribute, msg.sender));
         attributes[_who][_attribute] = AttributeData(_value, "", msg.sender, block.timestamp);
         emit SetAttribute(_who, _attribute, _value, "", msg.sender);
-        RegistryClone[] storage targets = subscribers[_attribute];
+        IRegistryClone[] storage targets = subscribers[_attribute];
         uint256 index = targets.length;
         while (index-- > 0) {
             targets[index].syncAttributeValue(_who, _attribute, _value);
@@ -130,10 +130,10 @@ contract Registry {
         uint256 _startIndex,
         address[] calldata _addresses
     ) external {
-        RegistryClone[] storage targets = subscribers[_attribute];
+        IRegistryClone[] storage targets = subscribers[_attribute];
         uint256 index = targets.length;
         while (index-- > _startIndex) {
-            RegistryClone target = targets[index];
+            IRegistryClone target = targets[index];
             for (uint256 i = _addresses.length; i-- > 0; ) {
                 address who = _addresses[i];
                 target.syncAttributeValue(who, _attribute, attributes[who][_attribute].value);
