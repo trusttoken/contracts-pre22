@@ -652,7 +652,7 @@ contract BscTokenController {
      * @param account address to set blacklist flag for
      * @param isBlacklisted blacklist flag value
      */
-    function setBlacklisted(address account, bool isBlacklisted) external onlyRegistryAdminOrOwner {
+    function setBlacklisted(address account, bool isBlacklisted) external onlyOwner {
         token.setBlacklisted(account, isBlacklisted);
     }
 
