@@ -1,4 +1,4 @@
-PRIVATE_KEY=0xe1ad20aae239ccbb609aa537d515dc9d53c5936ea67d8acc9fe0618925279f7d
+PRIVATE_KEY=private_key
 export PRIVATE_KEY
 
 DEPLOY_SCRIPT="scripts/deployment/deploy.ts"
