@@ -54,6 +54,12 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
      */
     event Mint(address indexed to, uint256 value);
 
+    function initialize() external {
+        require(!initialized, "already initialized");
+        owner = msg.sender;
+        initialized = true;
+    }
+
     /**
      * @dev Creates `amount` tokens and assigns them to `account`, increasing
      * the total supply.

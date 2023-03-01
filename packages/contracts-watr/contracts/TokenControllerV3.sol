@@ -183,6 +183,12 @@ contract TokenControllerV3 {
         _;
     }
 
+    function initialize() external {
+        require(!initialized, "already initialized");
+        owner = msg.sender;
+        initialized = true;
+    }
+
     /**
      * @dev Modifier throws if called by any account other than proofOfReserveEnabler or owner.
      */
