@@ -7,12 +7,6 @@ contract MockTrueCurrency is TrueCurrencyWithProofOfReserve {
     uint8 constant DECIMALS = 18;
     uint8 constant ROUNDING = 2;
 
-    function initialize() external {
-        require(!initialized);
-        owner = msg.sender;
-        initialized = true;
-    }
-
     function decimals() public pure override returns (uint8) {
         return DECIMALS;
     }
