@@ -7,7 +7,6 @@ import {IRegistry} from "./interface/IRegistry.sol";
 import {IOwnedUpgradeabilityProxy} from "./interface/IOwnedUpgradeabilityProxy.sol";
 import {ITrueCurrency} from "./interface/ITrueCurrency.sol";
 import {IProofOfReserveToken} from "./interface/IProofOfReserveToken.sol";
-import {IClaimableOwnable} from "./interface/IClaimableOwnable.sol";
 
 /** @title TokenController
  * @dev This contract allows us to split ownership of the TrueCurrency contract
@@ -223,11 +222,11 @@ contract TokenControllerV3 {
     */
 
     function transferTrueCurrencyProxyOwnership(address _newOwner) external onlyOwner {
-        IClaimableOwnable(address(token)).transferOwnership(_newOwner);
+        IOwnedUpgradeabilityProxy(address(token)).transferProxyOwnership(_newOwner);
     }
 
     function claimTrueCurrencyProxyOwnership() external onlyOwner {
-        IClaimableOwnable(address(token)).claimOwnership();
+        IOwnedUpgradeabilityProxy(address(token)).claimProxyOwnership();
     }
 
     function upgradeTrueCurrencyProxyImplTo(address _implementation) external onlyOwner {

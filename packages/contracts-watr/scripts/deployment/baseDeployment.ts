@@ -18,7 +18,7 @@ export function baseDeployment() {
 
   tokenControllerProxy.setRegistry(registryProxy)
   tokenControllerProxy.setToken(trueUSDProxy)
-  trueUSDProxy.transferOwnership(tokenControllerProxy)
+  trueUSDProxy['transferProxyOwnership'](tokenControllerProxy)
   tokenControllerProxy.claimTrueCurrencyProxyOwnership()
 
   return {

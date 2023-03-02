@@ -2,7 +2,6 @@
 pragma solidity 0.6.10;
 
 import {ProxyStorage} from "./ProxyStorage.sol";
-import {IClaimableOwnable} from "../interface/IClaimableOwnable.sol";
 
 /**
  * @title ClamableOwnable
@@ -10,7 +9,7 @@ import {IClaimableOwnable} from "../interface/IClaimableOwnable.sol";
  * and provides basic authorization control functions. Inherits storage layout of
  * ProxyStorage.
  */
-contract ClaimableOwnable is IClaimableOwnable, ProxyStorage {
+contract ClaimableOwnable is ProxyStorage {
     /**
      * @dev emitted when ownership is transferred
      * @param previousOwner previous owner of this contract
@@ -47,14 +46,14 @@ contract ClaimableOwnable is IClaimableOwnable, ProxyStorage {
      * @dev Allows the current owner to set the pendingOwner address.
      * @param newOwner The address to transfer ownership to.
      */
-    function transferOwnership(address newOwner) external override onlyOwner {
+    function transferOwnership(address newOwner) external onlyOwner {
         pendingOwner = newOwner;
     }
 
     /**
      * @dev Allows the pendingOwner address to finalize the transfer.
      */
-    function claimOwnership() external override onlyPendingOwner {
+    function claimOwnership() external onlyPendingOwner {
         emit OwnershipTransferred(owner, pendingOwner);
         owner = pendingOwner;
         pendingOwner = address(0);
