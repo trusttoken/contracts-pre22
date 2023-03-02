@@ -1,0 +1,34 @@
+{
+  "unknown": {
+    "tokenControllerV3": {
+      "txHash": "0xc131052b2b70321482698a4577834e456b606430bdfcba62120ed0e2ec465fbd",
+      "address": "0x2C496B278E62f6421dEbb4BeB65DA43abc850ef9",
+      "multisig": false
+    },
+    "tokenControllerV3_proxy": {
+      "txHash": "0x63be58bbd4028a0a5d09acb5b776d775bf068afe4008488a2f60f98398420fcd",
+      "address": "0x40cAefab297A5CFab68cDA4830D9018f659aA074",
+      "multisig": false
+    },
+    "trueUSD": {
+      "txHash": "0x5fb07faa12ac2a097e2ca5ef05e47ee30cfa62008e17eee294699124cb206e79",
+      "address": "0xA829fE04C8C2574788FA2Dd2df2a9C7Be6c39783",
+      "multisig": false
+    },
+    "trueUSD_proxy": {
+      "txHash": "0x2dd3d7b47457a58cb6cfde05a0a43d546b0996d883c8d3d9cf0bd3f40cfa688f",
+      "address": "0x58ed1F14aA178acFeB34b3D081803909805c2298",
+      "multisig": false
+    },
+    "registry": {
+      "txHash": "0x98ecd59e15a21c1e81fe6116e17d08c74f31aaab44eb3de46e328bb0777c090e",
+      "address": "0x156bba59C4f69072C866fa966ae3c6C41c84A804",
+      "multisig": false
+    },
+    "registry_proxy": {
+      "txHash": "0xe1670efd740ebc36d1e877b89d77319462ad09ea6686d15ce32558da1a43f0fd",
+      "address": "0xCeD0B6F265517e4a1C7E3e1f0A0A8Be4c13831a3",
+      "multisig": false
+    }
+  }
+}
