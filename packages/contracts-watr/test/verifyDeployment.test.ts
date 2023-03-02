@@ -11,6 +11,7 @@ describe('verify deployment', () => {
   const controllerInterface = [
     ...ownableInterface,
     'function token() view returns (address)',
+    'function registry() view returns (address)',
   ]
 
   const ownableContract = (address: string) => new Contract(
@@ -39,5 +40,13 @@ describe('verify deployment', () => {
     const token = await contract.token()
 
     expect(token).to.eq(deployments.trueUSD_proxy.address)
+  })
+
+  it('controller has registry set correctly', async () => {
+    const contract = controllerContract(deployments.tokenControllerV3_proxy.address)
+
+    const token = await contract.registry()
+
+    expect(token).to.eq(deployments.registry_proxy.address)
   })
 })
