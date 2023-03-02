@@ -8,12 +8,11 @@ export function baseDeployment() {
   const tokenControllerProxy = proxy(tokenControllerImplementation)
   tokenControllerProxy.initialize()
 
+  const trueUSDImplementation = contract(TrueUSD)
   const tokenProxy = createProxy(OwnedUpgradeabilityProxy, (proxy) => {
-    proxy.upgradeTo(proxy.implementation())
+    proxy.upgradeTo(trueUSDImplementation)
     proxy.transferProxyOwnership(tokenControllerProxy)
   })
-
-  const trueUSDImplementation = contract(TrueUSD)
   const trueUSDProxy = tokenProxy(trueUSDImplementation, (token) => {
     token.initialize()
   })
