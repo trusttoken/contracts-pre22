@@ -1,12 +1,13 @@
 import { Contract } from 'ethers'
 import { JsonRpcProvider } from '@ethersproject/providers'
 import { expect } from 'chai'
-import { unknown as deployments } from '../deployments-watr_local_please.json'
+import { unknown as deployments } from '../deployments-watr_local.json'
 
 describe('verify deployment', () => {
   const provider = new JsonRpcProvider('http://127.0.0.1:8822', 688)
   const ownableInterface = [
     'function owner() view returns (address)',
+    'function proxyOwner() view returns (address)',
   ]
   const controllerInterface = [
     ...ownableInterface,
