@@ -30,6 +30,12 @@ import {IProofOfReserveToken} from "./interface/IProofOfReserveToken.sol";
  * which can only be refilled by the owner.
 */
 
+interface HasOwner {
+    function claimOwnership() external;
+
+    function transferOwnership(address newOwner) external;
+}
+
 contract TokenControllerV3 {
     using SafeMath for uint256;
 
@@ -213,6 +219,19 @@ contract TokenControllerV3 {
         emit OwnershipTransferred(address(owner), address(pendingOwner));
         owner = pendingOwner;
         pendingOwner = address(0);
+    }
+
+    /*
+    ========================================
+    token ownership
+    ========================================
+    */
+    function transferTrueCurrencyOwnership(address _newOwner) external onlyOwner {
+        HasOwner(address(token)).transferOwnership(_newOwner);
+    }
+
+    function claimTrueCurrencyOwnership() public onlyOwner {
+        HasOwner(address(token)).claimOwnership();
     }
 
     /*
