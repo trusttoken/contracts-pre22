@@ -1,30 +1,22 @@
-import { contract, createProxy } from 'ethereum-mars'
-import { OwnedUpgradeabilityProxy, Registry, TokenControllerV3, TrueUSD } from '../../build/artifacts'
+import { TrueUSD } from '../../build/artifacts'
+import { deployToken } from './deployToken'
+import { deployTokenController, setupTokenController } from './deployTokenController'
+import { deployRegistry } from './deployRegistry'
 
 export function baseDeployment() {
-  const proxy = createProxy(OwnedUpgradeabilityProxy)
+  const {
+    implementation: tokenControllerImplementation,
+    proxy: tokenControllerProxy,
+  } = deployTokenController()
 
-  const tokenControllerImplementation = contract(TokenControllerV3)
-  const tokenControllerProxy = proxy(tokenControllerImplementation)
-  tokenControllerProxy.initialize()
+  const { implementation: trueUSDImplementation, proxy: trueUSDProxy } = deployToken(TrueUSD, tokenControllerProxy)
 
-  const trueUSDImplementation = contract(TrueUSD)
-  const tokenProxy = createProxy(OwnedUpgradeabilityProxy, (proxy) => {
-    proxy.upgradeTo(trueUSDImplementation)
-    proxy.transferProxyOwnership(tokenControllerProxy)
-  })
-  const trueUSDProxy = tokenProxy(trueUSDImplementation, (token) => {
-    token.initialize()
-  })
+  const {
+    implementation: registryImplementation,
+    proxy: registryProxy,
+  } = deployRegistry()
 
-  const registryImplementation = contract(Registry)
-  const registryProxy = proxy(registryImplementation, (registry) => {
-    registry.initialize()
-  })
-
-  tokenControllerProxy.setRegistry(registryProxy)
-  tokenControllerProxy.setToken(trueUSDProxy)
-  tokenControllerProxy.claimTrueCurrencyProxyOwnership()
+  setupTokenController(tokenControllerProxy, trueUSDProxy, registryProxy)
 
   return {
     trueUSDImplementation,
