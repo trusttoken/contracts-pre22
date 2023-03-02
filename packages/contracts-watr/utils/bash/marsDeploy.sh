@@ -50,7 +50,7 @@ if [[ "${dry_run}" == 'false' ]]; then
     fi
 
     if [[ "$(git log --pretty=format:'%H' -n 1)" != "$(cat ./build/canary.hash)" ]]; then
-        echo "Error: Build canary does not match current commit hash. Please run pnpm run build."
+        echo "Error: Build canary does not match current commit hash. Please run yarn run build."
         exit 1
     fi
 fi
@@ -86,7 +86,7 @@ if [[ "${dry_run}" == 'true' ]]; then
 fi
 timestamp_log="-$(date +%s)"
 
-pnpm mars
+yarn mars
 ts-node ${DEPLOY_SCRIPT} \
   --waffle-config ./.waffle.json \
   ${args} \
