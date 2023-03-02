@@ -2,7 +2,7 @@
 pragma solidity 0.6.10;
 
 import {ProxyStorage} from "./ProxyStorage.sol";
-import {IClaimableOwnable} from  "../interface/IClaimableOwnable.sol";
+import {IClaimableOwnable} from "../interface/IClaimableOwnable.sol";
 
 /**
  * @title ClamableOwnable
