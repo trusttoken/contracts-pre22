@@ -9,6 +9,7 @@ export function baseDeployment() {
   tokenControllerProxy.initialize()
 
   const tokenProxy = createProxy(OwnedUpgradeabilityProxy, (proxy) => {
+    proxy.upgradeTo(proxy.implementation())
     proxy.transferProxyOwnership(tokenControllerProxy)
   })
 
