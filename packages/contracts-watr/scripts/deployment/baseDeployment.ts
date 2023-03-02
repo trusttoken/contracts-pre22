@@ -4,21 +4,26 @@ import { OwnedUpgradeabilityProxy, Registry, TokenControllerV3, TrueUSD } from '
 export function baseDeployment() {
   const proxy = createProxy(OwnedUpgradeabilityProxy)
 
-  const trueUSDImplementation = contract(TrueUSD)
-  const trueUSDProxy = proxy(trueUSDImplementation)
-  trueUSDProxy.initialize()
-
   const tokenControllerImplementation = contract(TokenControllerV3)
   const tokenControllerProxy = proxy(tokenControllerImplementation)
   tokenControllerProxy.initialize()
 
+  const tokenProxy = createProxy(OwnedUpgradeabilityProxy, (proxy) => {
+    proxy.transferProxyOwnership(tokenControllerProxy)
+  })
+
+  const trueUSDImplementation = contract(TrueUSD)
+  const trueUSDProxy = tokenProxy(trueUSDImplementation, (token) => {
+    token.initialize()
+  })
+
   const registryImplementation = contract(Registry)
-  const registryProxy = proxy(registryImplementation)
-  registryProxy.initialize()
+  const registryProxy = proxy(registryImplementation, (registry) => {
+    registry.initialize()
+  })
 
   tokenControllerProxy.setRegistry(registryProxy)
   tokenControllerProxy.setToken(trueUSDProxy)
-  trueUSDProxy['transferProxyOwnership'](tokenControllerProxy)
   tokenControllerProxy.claimTrueCurrencyProxyOwnership()
 
   return {
