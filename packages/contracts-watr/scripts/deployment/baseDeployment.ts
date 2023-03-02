@@ -1,7 +1,7 @@
-import { contract, createProxy, ExecuteOptions } from 'ethereum-mars'
-import { OwnedUpgradeabilityProxy, TokenControllerV3, TrueUSD } from '../../build/artifacts'
+import { contract, createProxy } from 'ethereum-mars'
+import { OwnedUpgradeabilityProxy, Registry, TokenControllerV3, TrueUSD } from '../../build/artifacts'
 
-export function baseDeployment(deployer: string, options: ExecuteOptions) {
+export function baseDeployment() {
   const proxy = createProxy(OwnedUpgradeabilityProxy)
 
   const trueUSDImplementation = contract(TrueUSD)
@@ -11,10 +11,22 @@ export function baseDeployment(deployer: string, options: ExecuteOptions) {
   const tokenControllerImplementation = contract(TokenControllerV3)
   const tokenControllerProxy = proxy(tokenControllerImplementation)
   tokenControllerProxy.initialize()
+
+  const registryImplementation = contract(Registry)
+  const registryProxy = proxy(registryImplementation)
+  registryProxy.initialize()
+
+  tokenControllerProxy.setRegistry(registryProxy)
   tokenControllerProxy.setToken(trueUSDProxy)
+  trueUSDProxy.transferOwnership(tokenControllerProxy)
+  tokenControllerProxy.claimTrueCurrencyProxyOwnership()
 
   return {
+    trueUSDImplementation,
+    trueUSDProxy,
     tokenControllerImplementation,
     tokenControllerProxy,
+    registryImplementation,
+    registryProxy,
   }
 }
