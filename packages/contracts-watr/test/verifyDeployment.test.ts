@@ -31,8 +31,10 @@ describe('verify deployment', () => {
     const contract = ownableContract(deployments.trueUSD_proxy.address)
 
     const owner = await contract.owner()
+    const proxyOwner = await contract.proxyOwner()
 
     expect(owner).to.eq(deployments.tokenControllerV3_proxy.address)
+    expect(proxyOwner).to.eq(deployments.tokenControllerV3_proxy.address)
   })
 
   it('controller has currency set as token', async () => {
