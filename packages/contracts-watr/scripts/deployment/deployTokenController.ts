@@ -30,4 +30,7 @@ export function setupTokenController(controller: ReturnType<typeof deployTokenCo
 export function setupMintThresholds(controller: ReturnType<typeof deployTokenController>['proxy']) {
     controller.setMintThresholds(parseEther('1000000'), parseEther('5000000'), parseEther('10000000'))
     controller.setMintLimits(parseEther('10000000'), parseEther('50000000'), parseEther('100000000'))
+    controller.refillMultiSigMintPool()
+    controller.refillRatifiedMintPool()
+    controller.refillInstantMintPool()
 }

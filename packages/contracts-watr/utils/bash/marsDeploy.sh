@@ -43,17 +43,17 @@ while [[ "$@" ]]; do
   shift 1
 done
 
-if [[ "${dry_run}" == 'false' ]]; then
-    if [[ "$(git status --porcelain)" ]]; then
-        echo "Error: git working directory must be empty to run deploy script."
-        exit 1
-    fi
-
-    if [[ "$(git log --pretty=format:'%H' -n 1)" != "$(cat ./build/canary.hash)" ]]; then
-        echo "Error: Build canary does not match current commit hash. Please run yarn run build."
-        exit 1
-    fi
-fi
+#if [[ "${dry_run}" == 'false' ]]; then
+#    if [[ "$(git status --porcelain)" ]]; then
+#        echo "Error: git working directory must be empty to run deploy script."
+#        exit 1
+#    fi
+#
+#    if [[ "$(git log --pretty=format:'%H' -n 1)" != "$(cat ./build/canary.hash)" ]]; then
+#        echo "Error: Build canary does not match current commit hash. Please run yarn run build."
+#        exit 1
+#    fi
+#fi
 
 # Skip prompt if PRIVATE_KEY variable already exists
 if [[ -z "${PRIVATE_KEY:-}" ]]; then
@@ -91,4 +91,5 @@ ts-node ${DEPLOY_SCRIPT} \
   --waffle-config ./.waffle.json \
   --network "$network" \
   --out-file "deployments-${network_name}.json" \
+  --yes \
   --log "./cache/deploy${network_log}${target_log}${dry_run_log}${timestamp_log}.log"

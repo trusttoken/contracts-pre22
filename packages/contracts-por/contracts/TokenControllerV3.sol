@@ -332,7 +332,7 @@ contract TokenControllerV3 {
      * @param _value the amount minted
      */
     function instantMint(address _to, uint256 _value) external mintNotPaused onlyMintKeyOrOwner {
-        require(_value <= instantMintThreshold, "over the instant mint threshold");
+        require(_value <= instantMintThresholdļ, "over the instant mint threshold");
         require(_value <= instantMintPool, "instant mint pool is dry");
         instantMintPool = instantMintPool.sub(_value);
         emit InstantMint(_to, _value, msg.sender);

@@ -3,14 +3,14 @@ pragma solidity 0.6.10;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ITrueCurrency} from "../interface/ITrueCurrency.sol";
-import {ERC20} from "./ERC20.sol";
+import {XC20Wrapper} from "./XC20Wrapper.sol";
 
 /**
  * @title ReclaimerToken
  * @dev ERC20 token which allows owner to reclaim ERC20 tokens
  * or ether sent to this contract
  */
-abstract contract ReclaimerToken is ERC20, ITrueCurrency {
+abstract contract ReclaimerToken is XC20Wrapper, ITrueCurrency {
     /**
      * @dev send all eth balance in the contract to another address
      * @param _to address to send eth balance to

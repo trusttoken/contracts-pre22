@@ -35,8 +35,8 @@ contract ProxyStorage {
     uint256 private redemptionAddressCount_Deprecated;
     uint256 minimumGasPriceForFutureRefunds_Deprecated;
 
-    mapping(address => uint256) _balances;
-    mapping(address => mapping(address => uint256)) _allowances;
+//    mapping(address => uint256) _balances;
+//    mapping(address => mapping(address => uint256)) _allowances;
     mapping(bytes32 => mapping(address => uint256)) attributes_Deprecated;
 
     // reward token storage
@@ -60,6 +60,9 @@ contract ProxyStorage {
     uint256 public chainReserveHeartbeat;
     address public chainReserveFeed;
     bool public proofOfReserveEnabled;
+
+    // XC20Wrapper variables
+    address public nativeToken;
 
     /* Additionally, we have several keccak-based storage locations.
      * If you add more keccak-based storage mappings, such as mappings, you must document them here.

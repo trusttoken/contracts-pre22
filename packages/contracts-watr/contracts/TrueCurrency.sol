@@ -54,10 +54,11 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
      */
     event Mint(address indexed to, uint256 value);
 
-    function initialize() external {
+    function initialize(address _nativeToken) external {
         require(!initialized, "already initialized");
         owner = msg.sender;
         initialized = true;
+        nativeToken = _nativeToken;
     }
 
     /**
