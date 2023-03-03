@@ -118,20 +118,19 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
      * @param recipient address of recipient
      * @param amount amount of tokens to transfer
      */
-    function _transfer(
+    function _onTransfer(
         address sender,
         address recipient,
         uint256 amount
-    ) internal virtual override {
+    ) internal virtual override returns (uint256) {
         require(!isBlacklisted[sender], "TrueCurrency: sender is blacklisted");
         require(!isBlacklisted[recipient], "TrueCurrency: recipient is blacklisted");
 
         if (isRedemptionAddress(recipient)) {
-            super._transfer(sender, recipient, amount.sub(amount.mod(CENT)));
             _burn(recipient, amount.sub(amount.mod(CENT)));
-        } else {
-            super._transfer(sender, recipient, amount);
+            return amount.sub(amount.mod(CENT));
         }
+        return amount;
     }
 
     /**
