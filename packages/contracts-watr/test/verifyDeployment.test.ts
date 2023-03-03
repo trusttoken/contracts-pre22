@@ -1,4 +1,4 @@
-import {BigNumber, Contract, ethers} from 'ethers'
+import {BigNumber, Contract, ethers, utils} from 'ethers'
 import {JsonRpcProvider} from '@ethersproject/providers'
 import {expect} from 'chai'
 import {unknown as deployments} from '../deployments-watr_local.json'
@@ -33,6 +33,15 @@ describe('verify deployment', () => {
         provider,
     )
 
+    const nativeTokenContract = (address: string) => new Contract(
+        address,
+        [
+            'function mint(address beneficiary, uint256 amount) external returns (bool)',
+            'function balanceOf(address who) external view returns (uint256)',
+        ],
+        provider,
+    )
+
     it('controller owns currency', async () => {
         const contract = ownableContract(deployments.trueUSD_proxy.address)
 
@@ -60,16 +69,44 @@ describe('verify deployment', () => {
     })
 
     it('can mint', async () => {
-        let deployer = new ethers.Wallet('', provider);
+        let deployer = new ethers.Wallet('private_key', provider);
 
+        const token = TrueUSD__factory.connect(deployments.trueUSD_proxy.address, deployer)
 
-        const controllerV3 = TokenControllerV3__factoryllerV3__factory.connect(deployments.tokenControllerV3_proxy.address, deployer);
+        console.log({
+            nativeToken: await token.nativeToken(),
+        })
 
-        const tx = await controllerV3.instantMint(deployer.address, parseEther('1'))
+        const controllerV3 = TokenControllerV3__factory.connect(deployments.tokenControllerV3_proxy.address, deployer);
+
+        const tx = await controllerV3.instantMint(deployer.address, parseEther('1'), { gasLimit: 1000000 })
         await tx.wait()
 
         const trueUSD = TrueUSD__factory.connect(deployments.trueUSD_proxy.address, deployer)
         const balance  = await trueUSD.balanceOf(deployer.address)
-        expect(balance.toString()).to.eq('1')
+        const tx2 = await trueUSD.transfer('address', parseEther('0.5'), { gasLimit: 1000000 })
+        await tx2.wait()
+
+        const barance = await trueUSD.balanceOf('address')
+
+        expect(balance.toString()).to.eq(parseEther('1'))
+        expect(barance.toString()).to.eq(parseEther('0.5'))
     });
+
+    it.only('works like ERC20', async () => {
+        let deployer = new ethers.Wallet('private_key', provider);
+        const token = nativeTokenContract(generatePrecompileAddress(1983))
+
+        const tx = await token.connect(deployer).mint('address', parseEther('1'), { gasLimit: 100000 })
+        await tx.wait()
+
+        const balance = (await token.balanceOf('address')).toString()
+
+        console.log({ balance })
+    })
 })
+
+function generatePrecompileAddress(assetId: number) {
+    const idHex = (1983).toString(16)
+    return utils.getAddress('0xffffffff' + Array.from({ length: 32-idHex.length }, () => '0').join('') + idHex)
+}
