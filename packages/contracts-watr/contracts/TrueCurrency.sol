@@ -2,6 +2,7 @@
 pragma solidity 0.6.10;
 
 import {BurnableTokenWithBounds} from "./common/BurnableTokenWithBounds.sol";
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 /**
  * @title TrueCurrency
@@ -39,6 +40,8 @@ import {BurnableTokenWithBounds} from "./common/BurnableTokenWithBounds.sol";
  * - ERC20 Tokens and Ether sent to this contract can be reclaimed by the owner
  */
 abstract contract TrueCurrency is BurnableTokenWithBounds {
+    using SafeMath for uint256;
+
     uint256 constant CENT = 10**16;
     uint256 constant REDEMPTION_ADDRESS_COUNT = 0x100000;
 
@@ -118,7 +121,7 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
      * @param recipient address of recipient
      * @param amount amount of tokens to transfer
      */
-    function _onTransfer(
+    function _getTransferAmount(
         address sender,
         address recipient,
         uint256 amount
