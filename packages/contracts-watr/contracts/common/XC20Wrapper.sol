@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: MIT
+pragma solidity 0.6.10;
+
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Context} from "@openzeppelin/contracts/GSN/Context.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
@@ -7,6 +10,8 @@ import {ClaimableOwnable} from "./ClaimableOwnable.sol";
 import {IERC20Plus} from "../interface/IERC20Plus.sol";
 
 abstract contract XC20Wrapper is IERC20, ClaimableOwnable, Context {
+    using SafeMath for uint256;
+
     function _mint(address account, uint256 amount) internal virtual {
         IERC20Plus(nativeToken).mint(account, amount);
     }
@@ -15,8 +20,8 @@ abstract contract XC20Wrapper is IERC20, ClaimableOwnable, Context {
         IERC20Plus(nativeToken).burn(account, amount);
     }
 
-    function decimals() public virtual pure returns (uint8) {
-        return IMintableXC20(nativeToken).decimals();
+    function decimals() public virtual view returns (uint8) {
+        return IERC20Plus(nativeToken).decimals();
     }
 
     function totalSupply() public view virtual override returns (uint256) {
@@ -28,11 +33,12 @@ abstract contract XC20Wrapper is IERC20, ClaimableOwnable, Context {
     }
 
     function approve(address spender, uint256 amount) external virtual override returns (bool) {
-        return _approve(spender, amount);
+        _approve(msg.sender, spender, amount);
+        return true;
     }
 
-    function _approve(address spender, uint256 amount) internal virtual returns (bool) {
-        return IMintableXC20(nativeToken).approve(from, spender, amount);
+    function _approve(address owner, address spender, uint256 amount) internal virtual {
+        allowances[owner][spender] = amount;
     }
 
     function balanceOf(address account) external view override returns (uint256) {
@@ -40,24 +46,29 @@ abstract contract XC20Wrapper is IERC20, ClaimableOwnable, Context {
     }
 
     function transfer(address recipient, uint256 amount) external virtual override returns (bool) {
-        uint256 _amount = _onTransfer(msg.sender, recipient, amount);
-        return IMintableXC20(nativeToken)._transfer(recipient, _amount);
+        uint256 _amount = _getTransferAmount(msg.sender, recipient, amount);
+        IERC20Plus(nativeToken).burn(msg.sender, _amount);
+        IERC20Plus(nativeToken).mint(recipient, _amount);
+        return true;
     }
 
     function transferFrom(address sender, address recipient, uint256 amount) external override returns (bool) {
-        uint256 _amount = _onTransfer(sender, recipient, amount);
-        return IMintableXC20(nativeToken).transferFrom(sender, recipient, _amount);
+        uint256 _amount = _getTransferAmount(sender, recipient, amount);
+        allowances[sender][recipient] = allowances[sender][recipient].sub(_amount, "XC20: amount exceeds allowance");
+        IERC20Plus(nativeToken).burn(sender, _amount);
+        IERC20Plus(nativeToken).mint(recipient, _amount);
+        return true;
     }
 
-    function _getTransferAmount(address sender, address recipient, uint256 amount) internal virtual returns (uint256) {
+    function _getTransferAmount(address /*sender*/, address /*recipient*/, uint256 amount) internal virtual returns (uint256) {
         return amount;
     }
 
     function name() public virtual pure returns (string memory) {
-        return IERC20Plus(nativeToken).name();
+        return "";
     }
 
     function symbol() public virtual pure returns (string memory) {
-        return IERC20Plus(nativeToken).symbol();
+        return "";
     }
 }
