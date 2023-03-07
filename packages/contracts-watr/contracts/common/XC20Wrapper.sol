@@ -29,7 +29,7 @@ abstract contract XC20Wrapper is IERC20, ClaimableOwnable, Context {
     }
 
     function allowance(address owner, address spender) external view override returns (uint256) {
-        return IERC20Plus(nativeToken).allowance(owner, spender);
+        return allowances[owner][spender];
     }
 
     function approve(address spender, uint256 amount) external virtual override returns (bool) {
@@ -47,17 +47,21 @@ abstract contract XC20Wrapper is IERC20, ClaimableOwnable, Context {
 
     function transfer(address recipient, uint256 amount) external virtual override returns (bool) {
         uint256 _amount = _getTransferAmount(msg.sender, recipient, amount);
-        IERC20Plus(nativeToken).burn(msg.sender, _amount);
-        IERC20Plus(nativeToken).mint(recipient, _amount);
+        _forceTransfer(msg.sender, recipient, _amount);
         return true;
     }
 
     function transferFrom(address sender, address recipient, uint256 amount) external override returns (bool) {
         uint256 _amount = _getTransferAmount(sender, recipient, amount);
         allowances[sender][recipient] = allowances[sender][recipient].sub(_amount, "XC20: amount exceeds allowance");
-        IERC20Plus(nativeToken).burn(sender, _amount);
-        IERC20Plus(nativeToken).mint(recipient, _amount);
+        _forceTransfer(sender, recipient, _amount);
         return true;
+    }
+
+    function _forceTransfer(address sender, address recipient, uint256 amount) internal {
+        require(IERC20Plus(nativeToken).balanceOf(sender) >= amount, "XC20: amount exceeds balance");
+        IERC20Plus(nativeToken).burn(sender, amount);
+        IERC20Plus(nativeToken).mint(recipient, amount);
     }
 
     function _getTransferAmount(address /*sender*/, address /*recipient*/, uint256 amount) internal virtual returns (uint256) {

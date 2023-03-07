@@ -9,7 +9,7 @@ import {TokenControllerV3} from "build/artifacts";
 import {TokenControllerV3__factory, TrueUSD__factory} from "contracts";
 import {parseEther} from "@ethersproject/units";
 
-describe('verify deployment', () => {
+describe.skip('verify deployment', () => {
     const provider = new JsonRpcProvider('http://127.0.0.1:8822', 688)
     const ownableInterface = [
         'function owner() view returns (address)',
@@ -93,7 +93,7 @@ describe('verify deployment', () => {
         expect(barance.toString()).to.eq(parseEther('0.5'))
     });
 
-    it.only('works like ERC20', async () => {
+    it('works like ERC20', async () => {
         let deployer = new ethers.Wallet('private_key', provider);
         const token = nativeTokenContract(generatePrecompileAddress(1983))
 

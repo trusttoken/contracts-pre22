@@ -15,6 +15,8 @@ import {
   MockTrueCurrency__factory,
   OwnedUpgradeabilityProxy__factory,
   TokenControllerMock__factory,
+  MockXC20__factory,
+  MockXC20,
 } from 'contracts'
 
 use(solidity)
@@ -31,6 +33,8 @@ describe('ProxyWithController', () => {
 
   let registry: RegistryMock
 
+  let xc20: MockXC20
+
   let tokenProxy: OwnedUpgradeabilityProxy
   let tusdImplementation: MockTrueCurrency
   let token: MockTrueCurrency
@@ -46,11 +50,13 @@ describe('ProxyWithController', () => {
     [owner, otherWallet, thirdWallet, mintKey, pauseKey, approver1, approver2, approver3] = wallets
     registry = await new RegistryMock__factory(owner).deploy()
 
+    xc20 = await new MockXC20__factory(owner).deploy(18)
+
     tokenProxy = await new OwnedUpgradeabilityProxy__factory(owner).deploy()
     tusdImplementation = await new MockTrueCurrency__factory(owner).deploy()
     await tokenProxy.upgradeTo(tusdImplementation.address)
     token = new MockTrueCurrency__factory(owner).attach(tokenProxy.address)
-    await token.initialize()
+    await token.initialize(xc20.address)
 
     controllerProxy = await new OwnedUpgradeabilityProxy__factory(owner).deploy()
     controllerImplementation = await new TokenControllerMock__factory(owner).deploy()

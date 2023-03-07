@@ -17,6 +17,7 @@ import {
   MockTrueCurrency,
   ForceEther,
   ForceEther__factory,
+  MockXC20__factory,
 } from 'contracts'
 
 use(solidity)
@@ -57,8 +58,9 @@ describe('TokenController', () => {
     tokenImplementation = await new MockTrueCurrency__factory(owner).deploy()
     await tokenProxy.upgradeTo(tokenImplementation.address)
 
+    const xc20 = await new MockXC20__factory(owner).deploy(18)
     token = new MockTrueCurrency__factory(owner).attach(tokenProxy.address)
-    await token.initialize()
+    await token.initialize(xc20.address)
 
     await token.transferOwnership(controller.address)
     await controller.initialize()
