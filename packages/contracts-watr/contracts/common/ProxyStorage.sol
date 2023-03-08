@@ -35,8 +35,8 @@ contract ProxyStorage {
     uint256 private redemptionAddressCount_Deprecated;
     uint256 minimumGasPriceForFutureRefunds_Deprecated;
 
-//    mapping(address => uint256) _balances;
-//    mapping(address => mapping(address => uint256)) _allowances;
+    //    mapping(address => uint256) _balances;
+    //    mapping(address => mapping(address => uint256)) _allowances;
     mapping(bytes32 => mapping(address => uint256)) attributes_Deprecated;
 
     // reward token storage

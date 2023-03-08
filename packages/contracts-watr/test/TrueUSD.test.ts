@@ -14,7 +14,6 @@ import {
   OwnedUpgradeabilityProxy,
   OwnedUpgradeabilityProxy__factory,
   TrueUSD,
-  TrueUSD__factory,
 } from 'contracts'
 
 use(waffle.solidity)

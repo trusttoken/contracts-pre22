@@ -2,23 +2,22 @@
 pragma solidity 0.6.10;
 
 interface IERC20 {
-
     /**
-    * @dev Returns the name of the token.
-    * Selector: 06fdde03
-    */
+     * @dev Returns the name of the token.
+     * Selector: 06fdde03
+     */
     function name() external view returns (string memory);
 
     /**
-    * @dev Returns the symbol of the token.
-    * Selector: 95d89b41
-    */
+     * @dev Returns the symbol of the token.
+     * Selector: 95d89b41
+     */
     function symbol() external view returns (string memory);
 
     /**
-    * @dev Returns the decimals places of the token.
-    * Selector: 313ce567
-    */
+     * @dev Returns the decimals places of the token.
+     * Selector: 313ce567
+     */
     function decimals() external view returns (uint8);
 
     /**
@@ -42,8 +41,7 @@ interface IERC20 {
      * @param spender address The address which will spend the funds.
      * @return A uint256 specifying the amount of tokens still available for the spender.
      */
-    function allowance(address owner, address spender)
-    external view returns (uint256);
+    function allowance(address owner, address spender) external view returns (uint256);
 
     /**
      * @dev Transfer token for a specified address
@@ -66,8 +64,7 @@ interface IERC20 {
      * @param spender The address which will spend the funds.
      * @param value The amount of tokens to be spent.
      */
-    function approve(address spender, uint256 value)
-    external returns (bool);
+    function approve(address spender, uint256 value) external returns (bool);
 
     /**
      * @dev Transfer tokens from one address to another
@@ -76,8 +73,11 @@ interface IERC20 {
      * @param to address The address which you want to transfer to
      * @param value uint256 the amount of tokens to be transferred
      */
-    function transferFrom(address from, address to, uint256 value)
-    external returns (bool);
+    function transferFrom(
+        address from,
+        address to,
+        uint256 value
+    ) external returns (bool);
 
     /**
      * @dev Event emited when a transfer has been performed.
@@ -86,11 +86,7 @@ interface IERC20 {
      * @param to address The address receiving the tokens.
      * @param value uint256 The amount of tokens transfered.
      */
-    event Transfer(
-        address indexed from,
-        address indexed to,
-        uint256 value
-    );
+    event Transfer(address indexed from, address indexed to, uint256 value);
 
     /**
      * @dev Event emited when an approval has been registered.
@@ -99,19 +95,14 @@ interface IERC20 {
      * @param spender address Allowed spender.
      * @param value uint256 Amount of tokens approved.
      */
-    event Approval(
-        address indexed owner,
-        address indexed spender,
-        uint256 value
-    );
+    event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
 /**
  * @title Extension for ERC20 interface
-     * @dev Extended functions with minimum balance check as well as mint & burn.
-     */
+ * @dev Extended functions with minimum balance check as well as mint & burn.
+ */
 interface IERC20Plus is IERC20 {
-
     /**
      * @dev Returns minimum balance an account must have to exist
      * Selector: b9d1d49b

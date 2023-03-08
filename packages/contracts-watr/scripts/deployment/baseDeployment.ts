@@ -1,10 +1,10 @@
-import {TrueUSD} from '../../build/artifacts'
-import {deployToken} from './deployToken'
+import { TrueUSD } from '../../build/artifacts'
+import { deployToken } from './deployToken'
 import {
-    deployTokenController,
-    setupMintThresholds, setupTokenController
+  deployTokenController,
+  setupMintThresholds, setupTokenController,
 } from './deployTokenController'
-import {deployRegistry} from './deployRegistry'
+import { deployRegistry } from './deployRegistry'
 
 export function baseDeployment() {
   const {

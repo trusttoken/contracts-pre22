@@ -20,7 +20,7 @@ abstract contract XC20Wrapper is IERC20, ClaimableOwnable, Context {
         IERC20Plus(nativeToken).burn(account, amount);
     }
 
-    function decimals() public virtual view returns (uint8) {
+    function decimals() public view virtual returns (uint8) {
         return IERC20Plus(nativeToken).decimals();
     }
 
@@ -37,7 +37,11 @@ abstract contract XC20Wrapper is IERC20, ClaimableOwnable, Context {
         return true;
     }
 
-    function _approve(address owner, address spender, uint256 amount) internal virtual {
+    function _approve(
+        address owner,
+        address spender,
+        uint256 amount
+    ) internal virtual {
         allowances[owner][spender] = amount;
     }
 
@@ -51,28 +55,40 @@ abstract contract XC20Wrapper is IERC20, ClaimableOwnable, Context {
         return true;
     }
 
-    function transferFrom(address sender, address recipient, uint256 amount) external override returns (bool) {
+    function transferFrom(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) external override returns (bool) {
         uint256 _amount = _getTransferAmount(sender, recipient, amount);
         allowances[sender][recipient] = allowances[sender][recipient].sub(_amount, "XC20: amount exceeds allowance");
         _forceTransfer(sender, recipient, _amount);
         return true;
     }
 
-    function _forceTransfer(address sender, address recipient, uint256 amount) internal {
+    function _forceTransfer(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) internal {
         require(IERC20Plus(nativeToken).balanceOf(sender) >= amount, "XC20: amount exceeds balance");
         IERC20Plus(nativeToken).burn(sender, amount);
         IERC20Plus(nativeToken).mint(recipient, amount);
     }
 
-    function _getTransferAmount(address /*sender*/, address /*recipient*/, uint256 amount) internal virtual returns (uint256) {
+    function _getTransferAmount(
+        address, /*sender*/
+        address, /*recipient*/
+        uint256 amount
+    ) internal virtual returns (uint256) {
         return amount;
     }
 
-    function name() public virtual pure returns (string memory) {
+    function name() public pure virtual returns (string memory) {
         return "";
     }
 
-    function symbol() public virtual pure returns (string memory) {
+    function symbol() public pure virtual returns (string memory) {
         return "";
     }
 }
