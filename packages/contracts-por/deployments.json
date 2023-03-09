@@ -1,0 +1,20 @@
+{
+  "mainnet": {
+    "TokenControllerV3_proxy": {
+      "address": "0x0000000000075EfBeE23fe2de1bd0b7690883cc9"
+    },
+    "TokenControllerV3": {
+      "commitHash": "40991356a7572de7d519a52e0fe25a99d8cbc48a",
+      "txHash": "0x5b51bd057bbdcb8dcf12a35d60ce19e26a75857f99efebc0fb922874731c108e",
+      "address": "0x0cbA367Dacb539b5Fc00c31B4faa5EdD6Ab253F5"
+    },
+    "TrueUSD_proxy": {
+      "address": "0x0000000000085d4780B73119b644AE5ecd22b376"
+    },
+    "TrueUSD": {
+      "commitHash": "40991356a7572de7d519a52e0fe25a99d8cbc48a",
+      "txHash": "0xbdab8e1de4f3dcf472ba9bb292dcf88f4f5594154ae1dc53c7312728688f3b70",
+      "address": "0xB650eb28d35691dd1BD481325D40E65273844F9b"
+    }
+  }
+}
