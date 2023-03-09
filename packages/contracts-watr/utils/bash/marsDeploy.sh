@@ -91,5 +91,4 @@ ts-node ${DEPLOY_SCRIPT} \
   --waffle-config ./.waffle.json \
   --network "$network" \
   --out-file "deployments-${network_name}.json" \
-  --yes \
   --log "./cache/deploy${network_log}${target_log}${dry_run_log}${timestamp_log}.log"
