@@ -9,7 +9,9 @@ import { solidity } from 'ethereum-waffle'
 use(solidity)
 
 describe('verify deployment', () => {
-  const provider = new JsonRpcProvider('http://127.0.0.1:8822', 688)
+  const localWatrUrl = 'http://127.0.0.1:8822'
+  const chainId = 688
+  const provider = new JsonRpcProvider(localWatrUrl, chainId)
   const ownableInterface = [
     'function owner() view returns (address)',
     'function proxyOwner() view returns (address)',
