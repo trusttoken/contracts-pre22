@@ -77,6 +77,7 @@ abstract contract XC20Wrapper is IERC20, ClaimableOwnable, Context {
         if (!isRedemptionAddress) {
             IERC20Plus(nativeToken).mint(recipient, amount);
         }
+        emit Transfer(sender, recipient, amount);
     }
 
     function _getTransferAmount(
