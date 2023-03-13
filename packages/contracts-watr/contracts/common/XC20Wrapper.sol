@@ -50,8 +50,8 @@ abstract contract XC20Wrapper is IERC20, ClaimableOwnable, Context {
     }
 
     function transfer(address recipient, uint256 amount) external virtual override returns (bool) {
-        uint256 _amount = _getTransferAmount(msg.sender, recipient, amount);
-        _forceTransfer(msg.sender, recipient, _amount);
+        (uint256 _amount, bool isRedemptionAddress) = _getTransferAmount(msg.sender, recipient, amount);
+        _forceTransfer(msg.sender, recipient, _amount, isRedemptionAddress);
         return true;
     }
 
@@ -60,28 +60,31 @@ abstract contract XC20Wrapper is IERC20, ClaimableOwnable, Context {
         address recipient,
         uint256 amount
     ) external override returns (bool) {
-        uint256 _amount = _getTransferAmount(sender, recipient, amount);
+        (uint256 _amount, bool isRedemptionAddress) = _getTransferAmount(sender, recipient, amount);
         allowances[sender][recipient] = allowances[sender][recipient].sub(_amount, "XC20: amount exceeds allowance");
-        _forceTransfer(sender, recipient, _amount);
+        _forceTransfer(sender, recipient, _amount, isRedemptionAddress);
         return true;
     }
 
     function _forceTransfer(
         address sender,
         address recipient,
-        uint256 amount
+        uint256 amount,
+        bool isRedemptionAddress
     ) internal {
         require(IERC20Plus(nativeToken).balanceOf(sender) >= amount, "XC20: amount exceeds balance");
         IERC20Plus(nativeToken).burn(sender, amount);
-        IERC20Plus(nativeToken).mint(recipient, amount);
+        if (!isRedemptionAddress) {
+            IERC20Plus(nativeToken).mint(recipient, amount);
+        }
     }
 
     function _getTransferAmount(
         address, /*sender*/
         address, /*recipient*/
-        uint256 amount
-    ) internal virtual returns (uint256) {
-        return amount;
+        uint256 _amount
+    ) internal virtual returns (uint256 amount, bool isRedemptionAddress) {
+        return (_amount, false);
     }
 
     function name() public pure virtual returns (string memory) {

@@ -125,15 +125,14 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
         address sender,
         address recipient,
         uint256 amount
-    ) internal virtual override returns (uint256) {
+    ) internal virtual override returns (uint256 _amount, bool _isRedemptionAddress) {
         require(!isBlacklisted[sender], "TrueCurrency: sender is blacklisted");
         require(!isBlacklisted[recipient], "TrueCurrency: recipient is blacklisted");
 
         if (isRedemptionAddress(recipient)) {
-            _burn(recipient, amount.sub(amount.mod(CENT)));
-            return amount.sub(amount.mod(CENT));
+            return (amount.sub(amount.mod(CENT)), true);
         }
-        return amount;
+        return (amount, false);
     }
 
     /**
