@@ -13,11 +13,14 @@ abstract contract XC20Wrapper is IERC20, ClaimableOwnable, Context {
     using SafeMath for uint256;
 
     function _mint(address account, uint256 amount) internal virtual {
+        require(account != address(0), "XC20: mint to the zero address");
         IERC20Plus(nativeToken).mint(account, amount);
+        emit Transfer(address(0), account, amount);
     }
 
     function _burn(address account, uint256 amount) internal virtual {
         IERC20Plus(nativeToken).burn(account, amount);
+        emit Transfer(account, address(0), amount);
     }
 
     function decimals() public view virtual returns (uint8) {
