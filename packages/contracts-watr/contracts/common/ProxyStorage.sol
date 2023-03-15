@@ -63,7 +63,6 @@ contract ProxyStorage {
 
     // XC20Wrapper variables
     address public nativeToken;
-    mapping(address => mapping(address => uint256)) allowances;
 
     /* Additionally, we have several keccak-based storage locations.
      * If you add more keccak-based storage mappings, such as mappings, you must document them here.

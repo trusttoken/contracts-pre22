@@ -29,7 +29,7 @@ abstract contract XC20Wrapper is IERC20, ClaimableOwnable, Context {
     }
 
     function allowance(address owner, address spender) external view override returns (uint256) {
-        return allowances[owner][spender];
+        return _allowances[owner][spender];
     }
 
     function approve(address spender, uint256 amount) external virtual override returns (bool) {
@@ -43,16 +43,16 @@ abstract contract XC20Wrapper is IERC20, ClaimableOwnable, Context {
         uint256 amount
     ) internal virtual {
         require(owner != address(0) && spender != address(0), "XC20: approve to the zero address");
-        allowances[owner][spender] = amount;
+        _allowances[owner][spender] = amount;
         emit Approval(owner, spender, amount);
     }
 
     function decreaseAllowance(address spender, uint256 amount) external virtual {
-        _approve(msg.sender, spender, allowances[msg.sender][spender].sub(amount, "XC20: decreased allowance below zero"));
+        _approve(msg.sender, spender, _allowances[msg.sender][spender].sub(amount, "XC20: decreased allowance below zero"));
     }
 
     function increaseAllowance(address spender, uint256 amount) external virtual {
-        _approve(msg.sender, spender, allowances[msg.sender][spender].add(amount));
+        _approve(msg.sender, spender, _allowances[msg.sender][spender].add(amount));
     }
 
     function balanceOf(address account) external view override returns (uint256) {
@@ -80,7 +80,7 @@ abstract contract XC20Wrapper is IERC20, ClaimableOwnable, Context {
         uint256 amount
     ) external override returns (bool) {
         require(sender != address(0), "XC20: transfer from the zero address");
-        _approve(sender, msg.sender, allowances[sender][msg.sender].sub(amount, "XC20: amount exceeds allowance"));
+        _approve(sender, msg.sender, _allowances[sender][msg.sender].sub(amount, "XC20: amount exceeds allowance"));
         _transfer(sender, recipient, amount);
         return true;
     }
