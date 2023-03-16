@@ -3,11 +3,9 @@ import { solidity } from 'ethereum-waffle'
 import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 import { BigNumber, BigNumberish, constants, Wallet } from 'ethers'
 import { MockXC20__factory, TrueUSD, TrueUSD__factory } from 'contracts'
-import { parseUnits } from 'ethers/lib/utils'
+import { parseTrueUSD, trueUSDDecimals } from 'utils'
 
 use(solidity)
-
-const decimals = 18
 
 describe('TrueCurrency - ERC20', () => {
   let owner: Wallet
@@ -20,7 +18,7 @@ describe('TrueCurrency - ERC20', () => {
 
   beforeEachWithFixture(async (wallets) => {
     [owner, initialHolder, secondAccount, thirdAccount] = wallets
-    const mockXC20 = await new MockXC20__factory(owner).deploy(decimals)
+    const mockXC20 = await new MockXC20__factory(owner).deploy(trueUSDDecimals)
     token = await new TrueUSD__factory(owner).deploy()
     await token.initialize(mockXC20.address)
     await token.connect(owner).mint(initialHolder.address, initialSupply)
@@ -451,7 +449,3 @@ describe('TrueCurrency - ERC20', () => {
     })
   })
 })
-
-function parseTrueUSD(amount: string) {
-  return parseUnits(amount, decimals)
-}

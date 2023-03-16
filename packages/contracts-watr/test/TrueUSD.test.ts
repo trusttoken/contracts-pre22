@@ -4,7 +4,7 @@ import { expect, use } from 'chai'
 import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 import { waffle } from 'hardhat'
 
-import { timeTravel } from 'utils/timeTravel'
+import { timeTravel } from 'utils'
 import {
   MockTrueCurrency__factory,
   MockV3Aggregator,

@@ -3,13 +3,11 @@ import { solidity } from 'ethereum-waffle'
 import { BigNumber, BigNumberish, constants, Wallet } from 'ethers'
 import { MockXC20__factory, TrueUSD, TrueUSD__factory } from 'contracts'
 import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
-import { parseUnits } from 'ethers/lib/utils'
 import { AddressZero, Zero } from '@ethersproject/constants'
 import { parseEther } from '@ethersproject/units'
+import { parseTrueUSD, trueUSDDecimals } from 'utils'
 
 use(solidity)
-
-const decimals = 18
 
 describe('TrueCurrency - Mint/Burn', () => {
   const redemptionAddress = { address: '0x0000000000000000000000000000000000074D72' }
@@ -23,7 +21,7 @@ describe('TrueCurrency - Mint/Burn', () => {
 
   beforeEachWithFixture(async (wallets) => {
     [owner, initialHolder, secondAccount] = wallets
-    const mockXC20 = await new MockXC20__factory(owner).deploy(decimals)
+    const mockXC20 = await new MockXC20__factory(owner).deploy(trueUSDDecimals)
     token = await new TrueUSD__factory(owner).deploy()
     await token.initialize(mockXC20.address)
     await token.connect(owner).mint(initialHolder.address, initialSupply)
@@ -386,7 +384,3 @@ describe('TrueCurrency - Mint/Burn', () => {
     })
   })
 })
-
-function parseTrueUSD(amount: string) {
-  return parseUnits(amount, decimals)
-}
