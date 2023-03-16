@@ -18,6 +18,7 @@ import {
   MockXC20__factory,
   MockXC20,
 } from 'contracts'
+import { trueUSDDecimals } from 'utils'
 
 use(solidity)
 
@@ -50,7 +51,7 @@ describe('ProxyWithController', () => {
     [owner, otherWallet, thirdWallet, mintKey, pauseKey, approver1, approver2, approver3] = wallets
     registry = await new RegistryMock__factory(owner).deploy()
 
-    xc20 = await new MockXC20__factory(owner).deploy(18)
+    xc20 = await new MockXC20__factory(owner).deploy(trueUSDDecimals)
 
     tokenProxy = await new OwnedUpgradeabilityProxy__factory(owner).deploy()
     tusdImplementation = await new MockTrueCurrency__factory(owner).deploy()

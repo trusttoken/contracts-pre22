@@ -4,7 +4,7 @@ import { expect, use } from 'chai'
 import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 import { waffle } from 'hardhat'
 
-import { timeTravel } from 'utils'
+import { timeTravel, trueUSDDecimals } from 'utils'
 import {
   MockTrueCurrency__factory,
   MockV3Aggregator,
@@ -15,6 +15,7 @@ import {
   OwnedUpgradeabilityProxy__factory,
   TrueUSD,
 } from 'contracts'
+import { MockProvider } from 'ethereum-waffle'
 
 use(waffle.solidity)
 
@@ -32,7 +33,7 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
   let tokenProxy: OwnedUpgradeabilityProxy
   let mockV3Aggregator: MockV3Aggregator
   let owner: Wallet
-  let provider: providers.JsonRpcProvider
+  let provider: MockProvider
   let xc20: MockXC20
 
   beforeEachWithFixture(async (wallets, _provider) => {
@@ -41,13 +42,13 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
     tokenProxy = await new OwnedUpgradeabilityProxy__factory(owner).deploy()
     tusdImplementation = await new MockTrueCurrency__factory(owner).deploy()
     await tokenProxy.upgradeTo(tusdImplementation.address)
-    xc20 = await new MockXC20__factory(owner).deploy(18)
+    xc20 = await new MockXC20__factory(owner).deploy(trueUSDDecimals)
     token = new MockTrueCurrency__factory(owner).attach(tokenProxy.address)
     await token.initialize(xc20.address)
     await token.mint(owner.address, AMOUNT_TO_MINT)
     // Deploy a mock aggregator to mock Proof of Reserve feed answers
     mockV3Aggregator = await new MockV3Aggregator__factory(owner).deploy(
-      '18',
+      trueUSDDecimals,
       TUSD_FEED_INITIAL_ANSWER,
     )
     // Reset pool Proof Of Reserve feed defaults

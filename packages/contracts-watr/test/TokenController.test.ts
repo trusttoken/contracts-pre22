@@ -19,6 +19,7 @@ import {
   ForceEther__factory,
   MockXC20__factory,
 } from 'contracts'
+import { trueUSDDecimals } from 'utils'
 
 use(solidity)
 
@@ -58,7 +59,7 @@ describe('TokenController', () => {
     tokenImplementation = await new MockTrueCurrency__factory(owner).deploy()
     await tokenProxy.upgradeTo(tokenImplementation.address)
 
-    const xc20 = await new MockXC20__factory(owner).deploy(18)
+    const xc20 = await new MockXC20__factory(owner).deploy(trueUSDDecimals)
     token = new MockTrueCurrency__factory(owner).attach(tokenProxy.address)
     await token.initialize(xc20.address)
 
