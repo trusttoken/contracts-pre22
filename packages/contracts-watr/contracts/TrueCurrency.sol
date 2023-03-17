@@ -59,8 +59,8 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
 
     function initialize(address _nativeToken) external {
         require(!initialized, "already initialized");
-        owner = msg.sender;
         initialized = true;
+        owner = msg.sender;
         nativeToken = _nativeToken;
     }
 

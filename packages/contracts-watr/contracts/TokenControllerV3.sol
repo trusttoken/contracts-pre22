@@ -191,9 +191,9 @@ contract TokenControllerV3 {
 
     function initialize(address _pausedImplementation) external {
         require(!initialized, "already initialized");
+        initialized = true;
         pausedImplementation = _pausedImplementation;
         owner = msg.sender;
-        initialized = true;
     }
 
     /**
