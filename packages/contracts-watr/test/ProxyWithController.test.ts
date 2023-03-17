@@ -10,13 +10,11 @@ import {
   RegistryMock,
   MockTrueCurrency,
   OwnedUpgradeabilityProxy,
-  TokenControllerMock,
   RegistryMock__factory,
   MockTrueCurrency__factory,
   OwnedUpgradeabilityProxy__factory,
-  TokenControllerMock__factory,
   MockXC20__factory,
-  MockXC20,
+  MockXC20, TokenControllerV3__factory, TokenControllerV3,
 } from 'contracts'
 import { trueUSDDecimals } from 'utils'
 
@@ -41,8 +39,8 @@ describe('ProxyWithController', () => {
   let token: MockTrueCurrency
 
   let controllerProxy: OwnedUpgradeabilityProxy
-  let controllerImplementation: TokenControllerMock
-  let controller: TokenControllerMock
+  let controllerImplementation: TokenControllerV3
+  let controller: TokenControllerV3
 
   const notes = formatBytes32String('some notes')
   const CAN_BURN = formatBytes32String('canBurn')
@@ -60,18 +58,18 @@ describe('ProxyWithController', () => {
     await token.initialize(xc20.address)
 
     controllerProxy = await new OwnedUpgradeabilityProxy__factory(owner).deploy()
-    controllerImplementation = await new TokenControllerMock__factory(owner).deploy()
+    controllerImplementation = await new TokenControllerV3__factory(owner).deploy()
     await controllerProxy.upgradeTo(controllerImplementation.address)
-    controller = new TokenControllerMock__factory(owner).attach(controllerProxy.address)
+    controller = new TokenControllerV3__factory(owner).attach(controllerProxy.address)
 
-    await controller.initialize()
+    await controller.initialize('0x3c8984DCE8f68FCDEEEafD9E0eca3598562eD291')
     await controller.setToken(token.address)
     await controller.transferMintKey(mintKey.address)
   })
 
   describe('Set up proxy', () => {
     it('controller cannot be reinitialized', async () => {
-      await expect(controller.initialize())
+      await expect(controller.initialize('0x3c8984DCE8f68FCDEEEafD9E0eca3598562eD291'))
         .to.be.reverted
     })
 
@@ -99,7 +97,7 @@ describe('ProxyWithController', () => {
       await token.transferOwnership(controller.address)
       expect(await token.pendingOwner()).to.equal(controller.address)
 
-      await controller.issueClaimOwnership(token.address)
+      await controller.claimTrueCurrencyOwnership()
       expect(await token.owner()).to.equal(controller.address)
     })
 
@@ -112,7 +110,7 @@ describe('ProxyWithController', () => {
         await registry.setAttribute(pauseKey.address, formatBytes32String('isTUSDMintPausers'), 1, notes)
         await token.mint(thirdWallet.address, parseEther('1000'))
         await token.transferOwnership(controller.address)
-        await controller.issueClaimOwnership(token.address)
+        await controller.claimTrueCurrencyOwnership()
         await controller.setMintThresholds(parseEther('100'), parseEther('1000'), parseEther('10000'))
         await controller.setMintLimits(parseEther('300'), parseEther('3000'), parseEther('30000'))
       })
