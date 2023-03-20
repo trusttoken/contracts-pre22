@@ -1,16 +1,18 @@
-import { TrueUSD } from '../../build/artifacts'
+import { PausedTrueUSD, TrueUSD } from '../../build/artifacts'
 import { deployToken } from './deployToken'
 import {
   deployTokenController,
   setupMintThresholds, setupTokenController,
 } from './deployTokenController'
 import { deployRegistry } from './deployRegistry'
+import { contract } from 'ethereum-mars'
 
 export function baseDeployment() {
+  const pausedImplementation = contract(PausedTrueUSD)
   const {
     implementation: tokenControllerImplementation,
     proxy: tokenControllerProxy,
-  } = deployTokenController()
+  } = deployTokenController(pausedImplementation)
 
   const { implementation: trueUSDImplementation, proxy: trueUSDProxy } = deployToken(TrueUSD, tokenControllerProxy)
 

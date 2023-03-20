@@ -5,12 +5,12 @@ import {
 } from '../../build/artifacts'
 import { parseEther } from '@ethersproject/units'
 
-export function deployTokenController() {
+export function deployTokenController(pausedImplementation: AddressLike) {
   const ownedUpgradabilityProxy = createProxy(OwnedUpgradeabilityProxy)
 
   const implementation = contract(TokenControllerV3)
   const proxy = ownedUpgradabilityProxy(implementation, (controller) => {
-    controller.initialize()
+    controller.initialize(pausedImplementation)
   })
 
   return {
