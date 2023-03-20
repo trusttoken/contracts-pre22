@@ -1,0 +1,28 @@
+{
+    "mainnet": {
+      "BscTokenControllerProxy": {
+        "address": "0xb25E3C3493fc61bdD02661BCc27058022716c66A"
+      },
+      "BscTokenController": {
+        "commitHash": "a210fce88caa3e51e53b18ea1b37bf812dad8641",
+        "txHash": "0x9073ad46fc95d7c0b3c3d22728535edb8eb6a0bbf396ae1458e4acb6dae1c563",
+        "address": "0xc2B7CfFF2b23ad864B022066761cd4fae3158623"
+      },
+      "BscTrueUSDProxy": {
+        "address": "0x40af3827F39D0EAcBF4A168f8D4ee67c121D11c9"
+      },
+      "BscTrueUSD": {
+        "commitHash": "a210fce88caa3e51e53b18ea1b37bf812dad8641",
+        "txHash": "0x146b8baeac33b802a74cbd0d8bc32405ec56b47bc7ec2234f235b492070ac9bc",
+        "address": "0x8ceD6Eb5EFbD8db963e89fbc2ABfef9af42f94D0"
+      },
+      "BscRegistryProxy": {
+        "address": "0x549C860916B097292344DcA1d266B1493eFE30be"
+      },
+      "BscRegistry": {
+        "commitHash": "a210fce88caa3e51e53b18ea1b37bf812dad8641",
+        "txHash": "0x0c1070b468dc4ac615312cc3828523b0f144e5319db8372eeaed19bbe7f757d2",
+        "address": "0xCc240D9733BB5fED7531255820a50539927186eB"
+      }
+    }
+  }
