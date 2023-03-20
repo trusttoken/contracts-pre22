@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {TrueCurrencyWithProofOfReserve} from "../TrueCurrencyWithProofOfReserve.sol";
+import {TrueCurrencyWithProofOfReserve} from "../common/TrueCurrencyWithProofOfReserve.sol";
 
 contract MockTrueCurrency is TrueCurrencyWithProofOfReserve {
     uint8 constant DECIMALS = 18;
@@ -13,7 +13,7 @@ contract MockTrueCurrency is TrueCurrencyWithProofOfReserve {
         initialized = true;
     }
 
-    function decimals() public pure override returns (uint8) {
+    function decimals() public view override returns (uint8) {
         return DECIMALS;
     }
 
@@ -21,11 +21,11 @@ contract MockTrueCurrency is TrueCurrencyWithProofOfReserve {
         return ROUNDING;
     }
 
-    function name() public pure override returns (string memory) {
+    function name() public view override returns (string memory) {
         return "TrueCurrency";
     }
 
-    function symbol() public pure override returns (string memory) {
+    function symbol() public view override returns (string memory) {
         return "TCUR";
     }
 }
