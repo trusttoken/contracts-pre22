@@ -1,30 +1,13 @@
-/**
- * @notice This is a copy of openzeppelin ERC20 contract with removed state variables.
- * Removing state variables has been necessary due to proxy pattern usage.
- * Changes to Openzeppelin ERC20 https://github.com/OpenZeppelin/openzeppelin-contracts/blob/de99bccbfd4ecd19d7369d01b070aa72c64423c9/contracts/token/ERC20/ERC20.sol:
- * - Remove state variables _name, _symbol, _decimals
- * - Use state variables _balances, _allowances, _totalSupply from ProxyStorage
- * - Remove constructor
- * - Solidity version changed from ^0.6.0 to 0.6.10
- * - Contract made abstract
- *
- * See also: ClaimableOwnable.sol and ProxyStorage.sol
- */
-
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.6.10;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {Context} from "@openzeppelin/contracts/GSN/Context.sol";
-import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
-import {Address} from "@openzeppelin/contracts/utils/Address.sol";
-
 import {ClaimableOwnable} from "./ClaimableOwnable.sol";
+import {IBEP20} from "../interface/IBEP20.sol";
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+import {Context} from "@openzeppelin/contracts/GSN/Context.sol";
 
-// prettier-ignore
 /**
- * @dev Implementation of the {IERC20} interface.
+ * @dev Implementation of the {IBEP20} interface.
  *
  * This implementation is agnostic to the way tokens are created. This means
  * that a supply mechanism has to be added in a derived contract using {_mint}.
@@ -40,61 +23,66 @@ import {ClaimableOwnable} from "./ClaimableOwnable.sol";
  *
  * Additionally, an {Approval} event is emitted on calls to {transferFrom}.
  * This allows applications to reconstruct the allowance for all accounts just
- * by listening to said events. Other implementations of the EIP may not emit
+ * by listening to said events. Other implementations of the TIP may not emit
  * these events, as it isn't required by the specification.
  *
  * Finally, the non-standard {decreaseAllowance} and {increaseAllowance}
  * functions have been added to mitigate the well-known issues around setting
- * allowances. See {IERC20-approve}.
+ * allowances. See {IBEP20-approve}.
  */
-abstract contract ERC20 is ClaimableOwnable, Context, IERC20 {
+abstract contract BEP20 is ClaimableOwnable, Context, IBEP20 {
     using SafeMath for uint256;
-    using Address for address;
 
     /**
      * @dev Returns the name of the token.
      */
-    function name() public virtual pure returns (string memory);
+    function name() public view virtual override returns (string memory);
 
     /**
      * @dev Returns the symbol of the token, usually a shorter version of the
      * name.
      */
-    function symbol() public virtual pure returns (string memory);
+    function symbol() public view virtual override returns (string memory);
 
     /**
      * @dev Returns the number of decimals used to get its user representation.
      * For example, if `decimals` equals `2`, a balance of `505` tokens should
      * be displayed to a user as `5,05` (`505 / 10 ** 2`).
      *
-     * Tokens usually opt for a value of 18, imitating the relationship between
-     * Ether and Wei. This is the value {ERC20} uses, unless {_setupDecimals} is
-     * called.
+     * Tokens usually opt for a value of 18. This is the value {BEP20} uses,
+     * unless {_setupDecimals} is called.
      *
      * NOTE: This information is only used for _display_ purposes: it in
      * no way affects any of the arithmetic of the contract, including
-     * {IERC20-balanceOf} and {IERC20-transfer}.
+     * {IBEP20-balanceOf} and {IBEP20-transfer}.
      */
-    function decimals() public virtual pure returns (uint8) {
+    function decimals() public view virtual override returns (uint8) {
         return 18;
     }
 
     /**
-     * @dev See {IERC20-totalSupply}.
+     * @dev See {IBEP20-totalSupply}.
      */
     function totalSupply() public view virtual override returns (uint256) {
         return _totalSupply;
     }
 
     /**
-     * @dev See {IERC20-balanceOf}.
+     * @dev Returns the bep token owner.
+     */
+    function getOwner() public view virtual override returns (address) {
+        return owner;
+    }
+
+    /**
+     * @dev See {IBEP20-balanceOf}.
      */
     function balanceOf(address account) public view virtual override returns (uint256) {
         return _balances[account];
     }
 
     /**
-     * @dev See {IERC20-transfer}.
+     * @dev See {IBEP20-transfer}.
      *
      * Requirements:
      *
@@ -107,14 +95,14 @@ abstract contract ERC20 is ClaimableOwnable, Context, IERC20 {
     }
 
     /**
-     * @dev See {IERC20-allowance}.
+     * @dev See {IBEP20-allowance}.
      */
     function allowance(address owner, address spender) public view virtual override returns (uint256) {
         return _allowances[owner][spender];
     }
 
     /**
-     * @dev See {IERC20-approve}.
+     * @dev See {IBEP20-approve}.
      *
      * Requirements:
      *
@@ -126,10 +114,10 @@ abstract contract ERC20 is ClaimableOwnable, Context, IERC20 {
     }
 
     /**
-     * @dev See {IERC20-transferFrom}.
+     * @dev See {IBEP20-transferFrom}.
      *
      * Emits an {Approval} event indicating the updated allowance. This is not
-     * required by the EIP. See the note at the beginning of {ERC20};
+     * required by the TIP. See the note at the beginning of {BEP20};
      *
      * Requirements:
      * - `sender` and `recipient` cannot be the zero address.
@@ -137,9 +125,13 @@ abstract contract ERC20 is ClaimableOwnable, Context, IERC20 {
      * - the caller must have allowance for ``sender``'s tokens of at least
      * `amount`.
      */
-    function transferFrom(address sender, address recipient, uint256 amount) public virtual override returns (bool) {
+    function transferFrom(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) public virtual override returns (bool) {
         _transfer(sender, recipient, amount);
-        _approve(sender, _msgSender(), _allowances[sender][_msgSender()].sub(amount, "ERC20: transfer amount exceeds allowance"));
+        _approve(sender, _msgSender(), _allowances[sender][_msgSender()].sub(amount, "BEP20: transfer amount exceeds allowance"));
         return true;
     }
 
@@ -147,7 +139,7 @@ abstract contract ERC20 is ClaimableOwnable, Context, IERC20 {
      * @dev Atomically increases the allowance granted to `spender` by the caller.
      *
      * This is an alternative to {approve} that can be used as a mitigation for
-     * problems described in {IERC20-approve}.
+     * problems described in {IBEP20-approve}.
      *
      * Emits an {Approval} event indicating the updated allowance.
      *
@@ -164,7 +156,7 @@ abstract contract ERC20 is ClaimableOwnable, Context, IERC20 {
      * @dev Atomically decreases the allowance granted to `spender` by the caller.
      *
      * This is an alternative to {approve} that can be used as a mitigation for
-     * problems described in {IERC20-approve}.
+     * problems described in {IBEP20-approve}.
      *
      * Emits an {Approval} event indicating the updated allowance.
      *
@@ -175,7 +167,11 @@ abstract contract ERC20 is ClaimableOwnable, Context, IERC20 {
      * `subtractedValue`.
      */
     function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
-        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].sub(subtractedValue, "ERC20: decreased allowance below zero"));
+        _approve(
+            _msgSender(),
+            spender,
+            _allowances[_msgSender()][spender].sub(subtractedValue, "BEP20: decreased allowance below zero")
+        );
         return true;
     }
 
@@ -193,13 +189,17 @@ abstract contract ERC20 is ClaimableOwnable, Context, IERC20 {
      * - `recipient` cannot be the zero address.
      * - `sender` must have a balance of at least `amount`.
      */
-    function _transfer(address sender, address recipient, uint256 amount) internal virtual {
-        require(sender != address(0), "ERC20: transfer from the zero address");
-        require(recipient != address(0), "ERC20: transfer to the zero address");
+    function _transfer(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) internal virtual {
+        require(sender != address(0), "BEP20: transfer from the zero address");
+        require(recipient != address(0), "BEP20: transfer to the zero address");
 
         _beforeTokenTransfer(sender, recipient, amount);
 
-        _balances[sender] = _balances[sender].sub(amount, "ERC20: transfer amount exceeds balance");
+        _balances[sender] = _balances[sender].sub(amount, "BEP20: transfer amount exceeds balance");
         _balances[recipient] = _balances[recipient].add(amount);
         emit Transfer(sender, recipient, amount);
     }
@@ -214,7 +214,7 @@ abstract contract ERC20 is ClaimableOwnable, Context, IERC20 {
      * - `to` cannot be the zero address.
      */
     function _mint(address account, uint256 amount) internal virtual {
-        require(account != address(0), "ERC20: mint to the zero address");
+        require(account != address(0), "BEP20: mint to the zero address");
 
         _beforeTokenTransfer(address(0), account, amount);
 
@@ -235,11 +235,11 @@ abstract contract ERC20 is ClaimableOwnable, Context, IERC20 {
      * - `account` must have at least `amount` tokens.
      */
     function _burn(address account, uint256 amount) internal virtual {
-        require(account != address(0), "ERC20: burn from the zero address");
+        require(account != address(0), "BEP20: burn from the zero address");
 
         _beforeTokenTransfer(account, address(0), amount);
 
-        _balances[account] = _balances[account].sub(amount, "ERC20: burn amount exceeds balance");
+        _balances[account] = _balances[account].sub(amount, "BEP20: burn amount exceeds balance");
         _totalSupply = _totalSupply.sub(amount);
         emit Transfer(account, address(0), amount);
     }
@@ -257,9 +257,13 @@ abstract contract ERC20 is ClaimableOwnable, Context, IERC20 {
      * - `owner` cannot be the zero address.
      * - `spender` cannot be the zero address.
      */
-    function _approve(address owner, address spender, uint256 amount) internal virtual {
-        require(owner != address(0), "ERC20: approve from the zero address");
-        require(spender != address(0), "ERC20: approve to the zero address");
+    function _approve(
+        address owner,
+        address spender,
+        uint256 amount
+    ) internal virtual {
+        require(owner != address(0), "BEP20: approve from the zero address");
+        require(spender != address(0), "BEP20: approve to the zero address");
 
         _allowances[owner][spender] = amount;
         emit Approval(owner, spender, amount);
@@ -280,5 +284,9 @@ abstract contract ERC20 is ClaimableOwnable, Context, IERC20 {
      * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
      */
     // solhint-disable-next-line no-empty-blocks
-    function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual { }
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal virtual {}
 }
