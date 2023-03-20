@@ -251,15 +251,15 @@ contract BscTokenController {
     */
 
     function transferTrueCurrencyProxyOwnership(address _newOwner) external onlyOwner {
-        IOwnedUpgradeabilityProxy(address(token)).transferProxyOwnership(_newOwner);
+        OwnedUpgradeabilityProxy(address(token)).transferProxyOwnership(_newOwner);
     }
 
     function claimTrueCurrencyProxyOwnership() external onlyOwner {
-        IOwnedUpgradeabilityProxy(address(token)).claimProxyOwnership();
+        OwnedUpgradeabilityProxy(address(token)).claimProxyOwnership();
     }
 
     function upgradeTrueCurrencyProxyImplTo(address _implementation) external onlyOwner {
-        IOwnedUpgradeabilityProxy(address(token)).upgradeTo(_implementation);
+        OwnedUpgradeabilityProxy(address(token)).upgradeTo(_implementation);
     }
 
     /*
@@ -606,7 +606,7 @@ contract BscTokenController {
      * @dev pause all pausable actions on TrueCurrency, mints/burn/transfer/approve
      */
     function pauseToken() external virtual onlyOwner {
-        IOwnedUpgradeabilityProxy(address(token)).upgradeTo(PAUSED_IMPLEMENTATION);
+        OwnedUpgradeabilityProxy(address(token)).upgradeTo(PAUSED_IMPLEMENTATION);
     }
 
     /**
