@@ -1,7 +1,7 @@
 {
-  "name": "@trusttoken-smart-contracts/contracts-por",
+  "name": "@trusttoken-smart-contracts/contracts-bsc",
   "version": "0.0.1",
-  "description": "Updates to TUSD contracts for Proof of Reserve feature",
+  "description": "TrueUSD contract on BNB Smart Chain",
   "private": true,
   "scripts": {
     "clean": "rm -rf ./build && hardhat clean",
