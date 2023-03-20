@@ -515,7 +515,7 @@ describe('TokenController', () => {
       await token.connect(thirdWallet).transfer(mintKey.address, parseEther('10'))
       await controller.pauseToken()
       expect(await tokenProxy.implementation())
-        .to.equal('0x3c8984DCE8f68FCDEEEafD9E0eca3598562eD291')
+        .to.equal('0xccd19a52768342fc5F00b1B206D60333C3A9ABA2')
     })
 
     it('non pauser cannot pause TrueUSD ', async function () {
@@ -531,7 +531,7 @@ describe('TokenController', () => {
     })
   })
 
-  describe('requestReclaimEther', function () {
+  describe('requestReclaimBNB', function () {
     let forceEther: ForceEther
 
     beforeEach(async () => {
@@ -541,14 +541,14 @@ describe('TokenController', () => {
     it('reclaims ether', async function () {
       await forceEther.destroyAndSend(token.address)
       const balance1 = await provider.getBalance(owner.address)
-      await controller.requestReclaimEther()
+      await controller.requestReclaimBNB()
       const balance2 = await provider.getBalance(owner.address)
       expect(balance2.gt(balance1)).to.be.true
     })
 
     it('cannot be called by non-owner', async function () {
       await forceEther.destroyAndSend(token.address)
-      await expect(controller.connect(otherWallet).requestReclaimEther())
+      await expect(controller.connect(otherWallet).requestReclaimBNB())
         .to.be.reverted
     })
   })
