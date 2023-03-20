@@ -2,10 +2,11 @@
 pragma solidity 0.6.10;
 
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IRegistry} from "./interface/IRegistry.sol";
-import {IOwnedUpgradeabilityProxy} from "./interface/IOwnedUpgradeabilityProxy.sol";
-import {ITrueCurrency} from "./interface/ITrueCurrency.sol";
+import {IBEP20} from "./interface/IBEP20.sol";
+import {TrueCurrency} from "./common/TrueCurrency.sol";
+import {OwnedUpgradeabilityProxy} from "./OwnedUpgradeabilityProxy.sol";
+import {Registry} from "./Registry.sol";
+import {IHasOwner} from "./interface/IHasOwner.sol";
 import {IProofOfReserveToken} from "./interface/IProofOfReserveToken.sol";
 
 /** @title TokenController
@@ -30,7 +31,7 @@ import {IProofOfReserveToken} from "./interface/IProofOfReserveToken.sol";
  * which can only be refilled by the owner.
 */
 
-contract TokenControllerV3 {
+contract BscTokenController {
     using SafeMath for uint256;
 
     struct MintOperation {
@@ -68,23 +69,20 @@ contract TokenControllerV3 {
     address public mintKey;
     MintOperation[] public mintOperations; //list of a mint requests
 
-    ITrueCurrency public token;
-    IRegistry public registry;
-    address public fastPause; // deprecated
-    address public trueRewardManager; // deprecated
+    TrueCurrency public token;
+    Registry public registry;
 
+    // Proof Of Reserve
     address public proofOfReserveEnabler;
 
     // Registry attributes for admin keys
     bytes32 public constant IS_MINT_PAUSER = "isTUSDMintPausers";
     bytes32 public constant IS_MINT_RATIFIER = "isTUSDMintRatifier";
-    // bytes32 public constant IS_REDEMPTION_ADMIN = "isTUSDRedemptionAdmin"; // deprecated
-    // bytes32 public constant IS_GAS_REFUNDER = "isGasRefunder"; // deprecated
     bytes32 public constant IS_REGISTRY_ADMIN = "isRegistryAdmin";
 
     // paused version of TrueCurrency in Production
     // pausing the contract upgrades the proxy to this implementation
-    address public constant PAUSED_IMPLEMENTATION = 0x3c8984DCE8f68FCDEEEafD9E0eca3598562eD291;
+    address public constant PAUSED_IMPLEMENTATION = 0xccd19a52768342fc5F00b1B206D60333C3A9ABA2;
 
     modifier onlyMintKeyOrOwner() {
         require(msg.sender == mintKey || msg.sender == owner, "must be mintKey or owner");
@@ -113,6 +111,7 @@ contract TokenControllerV3 {
         }
         _;
     }
+
     /// @dev Emitted when ownership of controller was transferred
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     /// @dev Emitted when ownership of controller transfer procedure was started
@@ -120,11 +119,13 @@ contract TokenControllerV3 {
     /// @dev Emitted when new registry was set
     event SetRegistry(address indexed registry);
     /// @dev Emitted when owner was transferred for child contract
-    // event TransferChild(address indexed child, address indexed newOwner);
+    event TransferChild(address indexed child, address indexed newOwner);
     /// @dev Emitted when child ownership was claimed
     event RequestReclaimContract(address indexed other);
     /// @dev Emitted when child token was changed
-    event SetToken(ITrueCurrency newContract);
+    event SetToken(TrueCurrency newContract);
+    /// @dev Emitted when canBurn status of the `burner` was changed to `canBurn`
+    event CanBurn(address burner, bool canBurn);
 
     /// @dev Emitted when mint was requested
     event RequestMint(address indexed to, uint256 indexed value, uint256 opIndex, address mintKey);
@@ -192,6 +193,40 @@ contract TokenControllerV3 {
     }
 
     /**
+     * @dev sets the original `owner` of the contract to the sender
+     * at construction. Must then be reinitialized
+     */
+    constructor() public {
+        owner = msg.sender;
+        emit OwnershipTransferred(address(0), owner);
+    }
+
+    function initialize() public {
+        require(!initialized, "already initialized");
+        owner = msg.sender;
+        emit OwnershipTransferred(address(0), owner);
+
+        instantMintThreshold = 150_000_000_000_000_000_000_000_000; // 150 M
+        ratifiedMintThreshold = 300_000_000_000_000_000_000_000_000; // 300 M
+        multiSigMintThreshold = 1_000_000_000_000_000_000_000_000_000; // 1 B
+        emit MintThresholdChanged(
+            150_000_000_000_000_000_000_000_000,
+            300_000_000_000_000_000_000_000_000,
+            1_000_000_000_000_000_000_000_000_000
+        );
+        instantMintLimit = 150_000_000_000_000_000_000_000_000; // 150 M
+        ratifiedMintLimit = 300_000_000_000_000_000_000_000_000; // 300 M
+        multiSigMintLimit = 1_000_000_000_000_000_000_000_000_000; // 1 B
+        emit MintLimitsChanged(
+            150_000_000_000_000_000_000_000_000,
+            300_000_000_000_000_000_000_000_000,
+            1_000_000_000_000_000_000_000_000_000
+        );
+
+        initialized = true;
+    }
+
+    /**
      * @dev Allows the current owner to set the pendingOwner address.
      * @param newOwner The address to transfer ownership to.
      */
@@ -216,15 +251,15 @@ contract TokenControllerV3 {
     */
 
     function transferTrueCurrencyProxyOwnership(address _newOwner) external onlyOwner {
-        IOwnedUpgradeabilityProxy(address(token)).transferProxyOwnership(_newOwner);
+        OwnedUpgradeabilityProxy(address(uint160(address(token)))).transferProxyOwnership(_newOwner);
     }
 
     function claimTrueCurrencyProxyOwnership() external onlyOwner {
-        IOwnedUpgradeabilityProxy(address(token)).claimProxyOwnership();
+        OwnedUpgradeabilityProxy(address(uint160(address(token)))).claimProxyOwnership();
     }
 
     function upgradeTrueCurrencyProxyImplTo(address _implementation) external onlyOwner {
-        IOwnedUpgradeabilityProxy(address(token)).upgradeTo(_implementation);
+        OwnedUpgradeabilityProxy(address(uint160(address(token)))).upgradeTo(_implementation);
     }
 
     /*
@@ -443,7 +478,7 @@ contract TokenControllerV3 {
 
     /*
     ========================================
-    Key and role management
+    Key management
     ========================================
     */
 
@@ -519,7 +554,7 @@ contract TokenControllerV3 {
      * @dev Update this contract's token pointer to newContract (e.g. if the
      * contract is upgraded)
      */
-    function setToken(ITrueCurrency _newContract) external onlyOwner {
+    function setToken(TrueCurrency _newContract) external onlyOwner {
         token = _newContract;
         emit SetToken(_newContract);
     }
@@ -527,16 +562,16 @@ contract TokenControllerV3 {
     /**
      * @dev Update this contract's registry pointer to _registry
      */
-    function setRegistry(IRegistry _registry) external onlyOwner {
+    function setRegistry(Registry _registry) external onlyOwner {
         registry = _registry;
         emit SetRegistry(address(registry));
     }
 
     /**
-     * @dev Claim ownership of an arbitrary HasOwner contract
-
+     * @dev Claim ownership of an arbitrary IHasOwner contract
+     */
     function issueClaimOwnership(address _other) public onlyOwner {
-        HasOwner other = HasOwner(_other);
+        IHasOwner other = IHasOwner(_other);
         other.claimOwnership();
     }
 
@@ -545,18 +580,17 @@ contract TokenControllerV3 {
      * Can be used e.g. to upgrade this TokenController contract.
      * @param _child contract that tokenController currently Owns
      * @param _newOwner new owner/pending owner of _child
-
-    function transferChild(HasOwner _child, address _newOwner) external onlyOwner {
+     */
+    function transferChild(IHasOwner _child, address _newOwner) external onlyOwner {
         _child.transferOwnership(_newOwner);
         emit TransferChild(address(_child), _newOwner);
     }
-    */
 
     /**
-     * @dev send all ether in token address to the owner of tokenController
+     * @dev send all bnb in token address to the owner of tokenController
      */
-    function requestReclaimEther() external onlyOwner {
-        token.reclaimEther(owner);
+    function requestReclaimBNB() external onlyOwner {
+        token.reclaimBNB(owner);
     }
 
     /**
@@ -564,7 +598,7 @@ contract TokenControllerV3 {
      * owner of tokenController
      * @param _token token address of the token to transfer
      */
-    function requestReclaimToken(IERC20 _token) external onlyOwner {
+    function requestReclaimToken(IBEP20 _token) external onlyOwner {
         token.reclaimToken(_token, owner);
     }
 
@@ -572,7 +606,7 @@ contract TokenControllerV3 {
      * @dev pause all pausable actions on TrueCurrency, mints/burn/transfer/approve
      */
     function pauseToken() external virtual onlyOwner {
-        IOwnedUpgradeabilityProxy(address(token)).upgradeTo(PAUSED_IMPLEMENTATION);
+        OwnedUpgradeabilityProxy(address(uint160(address(token)))).upgradeTo(PAUSED_IMPLEMENTATION);
     }
 
     /**
@@ -586,19 +620,19 @@ contract TokenControllerV3 {
     }
 
     /**
-     * @dev Owner can send ether balance in contract address
+     * @dev Owner can send bnb balance in contract address
      * @param _to address to which the funds will be send to
      */
-    function reclaimEther(address payable _to) external onlyOwner {
+    function reclaimBNB(address payable _to) external onlyOwner {
         _to.transfer(address(this).balance);
     }
 
     /**
-     * @dev Owner can send erc20 token balance in contract address
+     * @dev Owner can send bep20 token balance in contract address
      * @param _token address of the token to send
      * @param _to address to which the funds will be send to
      */
-    function reclaimToken(IERC20 _token, address _to) external onlyOwner {
+    function reclaimToken(IBEP20 _token, address _to) external onlyOwner {
         uint256 balance = _token.balanceOf(address(this));
         _token.transfer(_to, balance);
     }
@@ -610,6 +644,7 @@ contract TokenControllerV3 {
      */
     function setCanBurn(address burner, bool canBurn) external onlyRegistryAdminOrOwner {
         token.setCanBurn(burner, canBurn);
+        emit CanBurn(burner, canBurn);
     }
 
     /**
