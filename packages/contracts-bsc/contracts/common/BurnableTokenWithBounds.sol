@@ -38,7 +38,7 @@ abstract contract BurnableTokenWithBounds is ReclaimerToken {
      * - `msg.sender` must have at least `amount` tokens.
      *
      */
-    function burn(uint256 amount) external override {
+    function burn(uint256 amount) external {
         _burn(msg.sender, amount);
     }
 
@@ -52,7 +52,7 @@ abstract contract BurnableTokenWithBounds is ReclaimerToken {
      * @param _min minimum amount that can be burned at once
      * @param _max maximum amount that can be burned at once
      */
-    function setBurnBounds(uint256 _min, uint256 _max) external override onlyOwner {
+    function setBurnBounds(uint256 _min, uint256 _max) external onlyOwner {
         require(_min <= _max, "BurnableTokenWithBounds: min > max");
         burnMin = _min;
         burnMax = _max;

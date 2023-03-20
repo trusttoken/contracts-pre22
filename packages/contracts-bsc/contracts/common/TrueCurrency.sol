@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {BurnableTokenWithBounds} from "./common/BurnableTokenWithBounds.sol";
+import {BurnableTokenWithBounds} from "./BurnableTokenWithBounds.sol";
 
 /**
  * @title TrueCurrency
- * @dev TrueCurrency is an ERC20 with blacklist & redemption addresses
+ * @dev TrueCurrency is an BEP20 with blacklist & redemption addresses
  *
  * TrueCurrency is a compliant stablecoin with blacklist and redemption
  * addresses. Only the owner can blacklist accounts. Redemption addresses
@@ -36,7 +36,7 @@ import {BurnableTokenWithBounds} from "./common/BurnableTokenWithBounds.sol";
  * - canBurn prevents tokens from being sent to the incorrect address
  *
  * Reclaimer Token
- * - ERC20 Tokens and Ether sent to this contract can be reclaimed by the owner
+ * - BEP20 Tokens and BNB sent to this contract can be reclaimed by the owner
  */
 abstract contract TrueCurrency is BurnableTokenWithBounds {
     uint256 constant CENT = 10**16;
@@ -68,7 +68,7 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
      * - `account` cannot be blacklisted.
      * - `account` cannot be a redemption address.
      */
-    function mint(address account, uint256 amount) external override onlyOwner {
+    function mint(address account, uint256 amount) external onlyOwner {
         require(!isBlacklisted[account], "TrueCurrency: account is blacklisted");
         require(!isRedemptionAddress(account), "TrueCurrency: account is a redemption address");
         _mint(account, amount);
@@ -84,7 +84,7 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
      *
      * - `msg.sender` should be owner.
      */
-    function setBlacklisted(address account, bool _isBlacklisted) external override onlyOwner {
+    function setBlacklisted(address account, bool _isBlacklisted) external onlyOwner {
         require(uint256(account) >= REDEMPTION_ADDRESS_COUNT, "TrueCurrency: blacklisting of redemption address is not allowed");
         isBlacklisted[account] = _isBlacklisted;
         emit Blacklisted(account, _isBlacklisted);
@@ -99,7 +99,7 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
      *
      * - `msg.sender` should be owner.
      */
-    function setCanBurn(address account, bool _canBurn) external override onlyOwner {
+    function setCanBurn(address account, bool _canBurn) external onlyOwner {
         canBurn[account] = _canBurn;
     }
 
