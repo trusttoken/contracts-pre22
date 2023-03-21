@@ -5,17 +5,17 @@ interface IBEP20 {
     /**
      * @dev Returns the amount of tokens in existence.
      */
-    function totalSupply() external view returns (uint256);
+    function totalSupply() external pure returns (uint256);
 
     /**
      * @dev Returns the token decimals.
      */
-    function decimals() external view returns (uint8);
+    function decimals() external pure returns (uint8);
 
     /**
      * @dev Returns the token symbol.
      */
-    function symbol() external view returns (string memory);
+    function symbol() external pure returns (string memory);
 
     /**
      * @dev Returns the token name.
