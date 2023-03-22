@@ -30,7 +30,7 @@ import {IProofOfReserveToken} from "./interface/IProofOfReserveToken.sol";
  * which can only be refilled by the owner.
 */
 
-contract TokenControllerV3 {
+contract BscTokenController {
     using SafeMath for uint256;
 
     struct MintOperation {
