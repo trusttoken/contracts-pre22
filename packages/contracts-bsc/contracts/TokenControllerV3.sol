@@ -2,7 +2,7 @@
 pragma solidity 0.6.10;
 
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IBEP20} from "./interface/IBEP20.sol";
 import {IRegistry} from "./interface/IRegistry.sol";
 import {IOwnedUpgradeabilityProxy} from "./interface/IOwnedUpgradeabilityProxy.sol";
 import {ITrueCurrency} from "./interface/ITrueCurrency.sol";
@@ -564,7 +564,7 @@ contract TokenControllerV3 {
      * owner of tokenController
      * @param _token token address of the token to transfer
      */
-    function requestReclaimToken(IERC20 _token) external onlyOwner {
+    function requestReclaimToken(IBEP20 _token) external onlyOwner {
         token.reclaimToken(_token, owner);
     }
 
@@ -598,7 +598,7 @@ contract TokenControllerV3 {
      * @param _token address of the token to send
      * @param _to address to which the funds will be send to
      */
-    function reclaimToken(IERC20 _token, address _to) external onlyOwner {
+    function reclaimToken(IBEP20 _token, address _to) external onlyOwner {
         uint256 balance = _token.balanceOf(address(this));
         _token.transfer(_to, balance);
     }
