@@ -5,7 +5,7 @@ import {TrueCurrencyWithProofOfReserve} from "./common/TrueCurrencyWithProofOfRe
 
 /**
  * @title TrueUSD
- * @dev This is the top-level ERC20 contract, but most of the interesting functionality is
+ * @dev This is the top-level BEP20 contract, but most of the interesting functionality is
  * inherited - see the documentation on the corresponding contracts.
  */
 contract BscTrueUSD is TrueCurrencyWithProofOfReserve {

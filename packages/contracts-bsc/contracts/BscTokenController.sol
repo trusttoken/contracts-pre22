@@ -6,6 +6,7 @@ import {IBEP20} from "./interface/IBEP20.sol";
 import {IRegistry} from "./interface/IRegistry.sol";
 import {IOwnedUpgradeabilityProxy} from "./interface/IOwnedUpgradeabilityProxy.sol";
 import {ITrueCurrency} from "./interface/ITrueCurrency.sol";
+import {IHasOwner} from "./interface/IHasOwner.sol";
 import {IProofOfReserveToken} from "./interface/IProofOfReserveToken.sol";
 
 /** @title TokenController
@@ -70,16 +71,13 @@ contract BscTokenController {
 
     ITrueCurrency public token;
     IRegistry public registry;
-    address public fastPause; // deprecated
-    address public trueRewardManager; // deprecated
 
+    // Proof Of Reserve
     address public proofOfReserveEnabler;
 
     // Registry attributes for admin keys
     bytes32 public constant IS_MINT_PAUSER = "isTUSDMintPausers";
     bytes32 public constant IS_MINT_RATIFIER = "isTUSDMintRatifier";
-    // bytes32 public constant IS_REDEMPTION_ADMIN = "isTUSDRedemptionAdmin"; // deprecated
-    // bytes32 public constant IS_GAS_REFUNDER = "isGasRefunder"; // deprecated
     bytes32 public constant IS_REGISTRY_ADMIN = "isRegistryAdmin";
 
     // paused version of TrueCurrency in Production
@@ -113,6 +111,7 @@ contract BscTokenController {
         }
         _;
     }
+
     /// @dev Emitted when ownership of controller was transferred
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     /// @dev Emitted when ownership of controller transfer procedure was started
@@ -125,6 +124,8 @@ contract BscTokenController {
     event RequestReclaimContract(address indexed other);
     /// @dev Emitted when child token was changed
     event SetToken(ITrueCurrency newContract);
+    /// @dev Emitted when canBurn status of the `burner` was changed to `canBurn`
+    event CanBurn(address burner, bool canBurn);
 
     /// @dev Emitted when mint was requested
     event RequestMint(address indexed to, uint256 indexed value, uint256 opIndex, address mintKey);
@@ -533,10 +534,10 @@ contract BscTokenController {
     }
 
     /**
-     * @dev Claim ownership of an arbitrary HasOwner contract
-
+     * @dev Claim ownership of an arbitrary IHasOwner contract
+     */
     function issueClaimOwnership(address _other) public onlyOwner {
-        HasOwner other = HasOwner(_other);
+        IHasOwner other = IHasOwner(_other);
         other.claimOwnership();
     }
 
@@ -594,7 +595,7 @@ contract BscTokenController {
     }
 
     /**
-     * @dev Owner can send erc20 token balance in contract address
+     * @dev Owner can send bep20 token balance in contract address
      * @param _token address of the token to send
      * @param _to address to which the funds will be send to
      */
@@ -610,6 +611,7 @@ contract BscTokenController {
      */
     function setCanBurn(address burner, bool canBurn) external onlyRegistryAdminOrOwner {
         token.setCanBurn(burner, canBurn);
+        emit CanBurn(burner, canBurn);
     }
 
     /**
