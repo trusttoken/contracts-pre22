@@ -121,8 +121,6 @@ contract BscTokenController {
     event NewOwnerPending(address indexed currentOwner, address indexed pendingOwner);
     /// @dev Emitted when new registry was set
     event SetRegistry(address indexed registry);
-    /// @dev Emitted when owner was transferred for child contract
-    event TransferChild(address indexed child, address indexed newOwner);
     /// @dev Emitted when child ownership was claimed
     event RequestReclaimContract(address indexed other);
     /// @dev Emitted when child token was changed
@@ -245,7 +243,7 @@ contract BscTokenController {
     /**
      * @dev Transfer ownership of token to _newOwner.
      * Can be used e.g. to upgrade this TokenController contract.
-     * @param _newOwner new owner/pending owner of _child
+     * @param _newOwner new owner/pending owner of token
      */
     function transferTrueCurrencyImplOwnership(address _newOwner) external onlyOwner {
         token.transferOwnership(_newOwner);
