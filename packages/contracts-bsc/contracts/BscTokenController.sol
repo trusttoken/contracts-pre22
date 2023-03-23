@@ -196,8 +196,9 @@ contract BscTokenController {
      * at construction. Must then be reinitialized
      */
     constructor() public {
-        owner = msg.sender;
-        emit OwnershipTransferred(address(0), owner);
+        owner = address(0);
+        // prevent initialize being called.
+        initialized = true;
     }
 
     function initialize() public {
