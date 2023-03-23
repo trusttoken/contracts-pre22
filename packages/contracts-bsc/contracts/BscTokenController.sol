@@ -83,7 +83,7 @@ contract BscTokenController {
     address public constant PAUSED_IMPLEMENTATION = 0x3c8984DCE8f68FCDEEEafD9E0eca3598562eD291;
 
     uint32 constant MILLION = 1_000_000;
-    uint8 constant DECIMALS = 18;
+    uint256 constant DECIMALS = 18;
 
     modifier onlyMintKeyOrOwner() {
         require(msg.sender == mintKey || msg.sender == owner, "must be mintKey or owner");

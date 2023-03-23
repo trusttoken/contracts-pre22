@@ -20,8 +20,8 @@ contract BscTrueUSD is TrueCurrencyWithProofOfReserve {
         emit OwnershipTransferred(address(0), owner);
 
         setBurnBounds(
-            1_000 * 10**DECIMALS,
-            1 * BILLION * 10**DECIMALS
+            1_000 * 10**uint256(DECIMALS),
+            1 * BILLION * 10**uint256(DECIMALS)
         );
     }
 
