@@ -61,7 +61,7 @@ describe('TokenController', () => {
     await token.initialize()
 
     await token.transferOwnership(controller.address)
-    await controller.initialize()
+    await controller.initialize_owner()
     await controller.issueClaimOwnership(token.address)
     await controller.setRegistry(registry.address)
     await controller.setToken(token.address)
