@@ -550,12 +550,11 @@ contract BscTokenController {
      * Can be used e.g. to upgrade this TokenController contract.
      * @param _child contract that tokenController currently Owns
      * @param _newOwner new owner/pending owner of _child
-
-    function transferChild(HasOwner _child, address _newOwner) external onlyOwner {
+     */
+    function transferChild(IHasOwner _child, address _newOwner) external onlyOwner {
         _child.transferOwnership(_newOwner);
         emit TransferChild(address(_child), _newOwner);
     }
-    */
 
     /**
      * @dev send all ether in token address to the owner of tokenController
