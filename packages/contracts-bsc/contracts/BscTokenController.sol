@@ -232,6 +232,28 @@ contract BscTokenController {
 
     /*
     ========================================
+    Impl functions
+    ========================================
+    */
+
+    /**
+     * @dev Claim ownership of token contract
+     */
+    function claimTrueCurrencyImplOwnership() external onlyOwner {
+        token.claimOwnership();
+    }
+
+    /**
+     * @dev Transfer ownership of token to _newOwner.
+     * Can be used e.g. to upgrade this TokenController contract.
+     * @param _newOwner new owner/pending owner of _child
+     */
+    function transferTrueCurrencyImplOwnership(address _newOwner) external onlyOwner {
+        token.transferOwnership(_newOwner);
+    }
+
+    /*
+    ========================================
     Minting functions
     ========================================
     */
@@ -533,25 +555,6 @@ contract BscTokenController {
     function setRegistry(IRegistry _registry) external onlyOwner {
         registry = _registry;
         emit SetRegistry(address(registry));
-    }
-
-    /**
-     * @dev Claim ownership of an arbitrary IHasOwner contract
-     */
-    function issueClaimOwnership(address _other) public onlyOwner {
-        IHasOwner other = IHasOwner(_other);
-        other.claimOwnership();
-    }
-
-    /**
-     * @dev Transfer ownership of _child to _newOwner.
-     * Can be used e.g. to upgrade this TokenController contract.
-     * @param _child contract that tokenController currently Owns
-     * @param _newOwner new owner/pending owner of _child
-     */
-    function transferChild(IHasOwner _child, address _newOwner) external onlyOwner {
-        _child.transferOwnership(_newOwner);
-        emit TransferChild(address(_child), _newOwner);
     }
 
     /**
