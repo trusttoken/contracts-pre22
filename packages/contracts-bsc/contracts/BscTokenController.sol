@@ -71,6 +71,8 @@ contract BscTokenController {
 
     ITrueCurrency public token;
     IRegistry public registry;
+    address public fastPause; // deprecated
+    address public trueRewardManager; // deprecated
 
     // Proof Of Reserve
     address public proofOfReserveEnabler;
@@ -78,6 +80,8 @@ contract BscTokenController {
     // Registry attributes for admin keys
     bytes32 public constant IS_MINT_PAUSER = "isTUSDMintPausers";
     bytes32 public constant IS_MINT_RATIFIER = "isTUSDMintRatifier";
+    // bytes32 public constant IS_REDEMPTION_ADMIN = "isTUSDRedemptionAdmin"; // deprecated
+    // bytes32 public constant IS_GAS_REFUNDER = "isGasRefunder"; // deprecated
     bytes32 public constant IS_REGISTRY_ADMIN = "isRegistryAdmin";
 
     // paused version of TrueCurrency in Production
@@ -611,7 +615,6 @@ contract BscTokenController {
      */
     function setCanBurn(address burner, bool canBurn) external onlyRegistryAdminOrOwner {
         token.setCanBurn(burner, canBurn);
-        emit CanBurn(burner, canBurn);
     }
 
     /**
