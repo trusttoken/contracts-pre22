@@ -20,6 +20,13 @@ interface HasOwner {
 contract TokenControllerMock is BscTokenController {
     event TransferChild(address indexed child, address indexed newOwner);
 
+    // initalize controller. useful for tests
+    function initialize() external {
+        require(!initialized, "already initialized");
+        owner = msg.sender;
+        initialized = true;
+    }
+
     // initialize with paramaters. useful for tests
     // sets initial paramaters on testnet
     function initializeWithParams(TrueCurrency _token, Registry _registry) external {
@@ -53,6 +60,24 @@ contract TokenControllerMock is BscTokenController {
         emit MultiSigPoolRefilled();
     }
 
+    /**
+     * @dev Claim ownership of an arbitrary HasOwner contract
+     */
+    function issueClaimOwnership(address _other) public onlyOwner {
+        HasOwner other = HasOwner(_other);
+        other.claimOwnership();
+    }
+
+    /**
+     * @dev Transfer ownership of _child to _newOwner.
+     * Can be used e.g. to upgrade this TokenController contract.
+     * @param _child contract that tokenController currently Owns
+     * @param _newOwner new owner/pending owner of _child
+     */
+    function transferChild(HasOwner _child, address _newOwner) external onlyOwner {
+        _child.transferOwnership(_newOwner);
+        emit TransferChild(address(_child), _newOwner);
+    }
 }
 
 contract TokenControllerPauseMock is TokenControllerMock {
