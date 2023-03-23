@@ -128,8 +128,6 @@ contract BscTokenController {
     event RequestReclaimContract(address indexed other);
     /// @dev Emitted when child token was changed
     event SetToken(ITrueCurrency newContract);
-    /// @dev Emitted when canBurn status of the `burner` was changed to `canBurn`
-    event CanBurn(address burner, bool canBurn);
 
     /// @dev Emitted when mint was requested
     event RequestMint(address indexed to, uint256 indexed value, uint256 opIndex, address mintKey);
