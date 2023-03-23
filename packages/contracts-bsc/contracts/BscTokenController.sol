@@ -123,7 +123,7 @@ contract BscTokenController {
     /// @dev Emitted when new registry was set
     event SetRegistry(address indexed registry);
     /// @dev Emitted when owner was transferred for child contract
-    // event TransferChild(address indexed child, address indexed newOwner);
+    event TransferChild(address indexed child, address indexed newOwner);
     /// @dev Emitted when child ownership was claimed
     event RequestReclaimContract(address indexed other);
     /// @dev Emitted when child token was changed
