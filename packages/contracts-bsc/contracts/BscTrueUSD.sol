@@ -11,14 +11,18 @@ import {TrueCurrencyWithProofOfReserve} from "./common/TrueCurrencyWithProofOfRe
 contract BscTrueUSD is TrueCurrencyWithProofOfReserve {
     uint8 constant DECIMALS = 18;
     uint8 constant ROUNDING = 2;
+    uint32 constant BILLION = 1_000_000_000;
 
     function initialize() public {
         require(!initialized, "already initialized");
         initialized = true;
         owner = msg.sender;
         emit OwnershipTransferred(address(0), owner);
-        burnMin = 1_000_000_000_000_000_000_000; // 1 K
-        burnMax = 1_000_000_000_000_000_000_000_000_000; // 1 B
+
+        setBurnBounds(
+            1_000 * 10**DECIMALS,
+            1 * BILLION * 10**DECIMALS
+        );
     }
 
     function decimals() public pure override returns (uint8) {

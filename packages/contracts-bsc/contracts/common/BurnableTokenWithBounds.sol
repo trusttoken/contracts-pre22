@@ -52,7 +52,7 @@ abstract contract BurnableTokenWithBounds is ReclaimerToken {
      * @param _min minimum amount that can be burned at once
      * @param _max maximum amount that can be burned at once
      */
-    function setBurnBounds(uint256 _min, uint256 _max) external override onlyOwner {
+    function setBurnBounds(uint256 _min, uint256 _max) public override onlyOwner {
         require(_min <= _max, "BurnableTokenWithBounds: min > max");
         burnMin = _min;
         burnMax = _max;
