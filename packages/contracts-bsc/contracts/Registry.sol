@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IBEP20} from "./interface/IBEP20.sol";
 
 interface RegistryClone {
     function syncAttributeValue(
@@ -41,6 +41,22 @@ contract Registry {
     event SetManager(address indexed oldManager, address indexed newManager);
     event StartSubscription(bytes32 indexed attribute, RegistryClone indexed subscriber);
     event StopSubscription(bytes32 indexed attribute, RegistryClone indexed subscriber);
+
+    /**
+     * @dev sets the original `owner` of the contract to the sender
+     * at construction. Must then be reinitialized
+     */
+    constructor() public {
+        owner = msg.sender;
+        emit OwnershipTransferred(address(0), owner);
+    }
+
+    function initialize() public {
+        require(!initialized, "already initialized");
+        initialized = true;
+        owner = msg.sender;
+        emit OwnershipTransferred(address(0), owner);
+    }
 
     // Allows a write if either a) the writer is that Registry's owner, or
     // b) the writer is writing to attribute foo and that writer already has
@@ -151,7 +167,7 @@ contract Registry {
         _to.transfer(address(this).balance);
     }
 
-    function reclaimToken(IERC20 token, address _to) external onlyOwner {
+    function reclaimToken(IBEP20 token, address _to) external onlyOwner {
         uint256 balance = token.balanceOf(address(this));
         token.transfer(_to, balance);
     }
