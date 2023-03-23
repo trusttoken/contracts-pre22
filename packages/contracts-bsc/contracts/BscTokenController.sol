@@ -82,9 +82,6 @@ contract BscTokenController {
     // pausing the contract upgrades the proxy to this implementation
     address public constant PAUSED_IMPLEMENTATION = 0x3c8984DCE8f68FCDEEEafD9E0eca3598562eD291;
 
-    uint32 constant MILLION = 1_000_000;
-    uint8 constant DECIMALS = 18;
-
     modifier onlyMintKeyOrOwner() {
         require(msg.sender == mintKey || msg.sender == owner, "must be mintKey or owner");
         _;
@@ -207,17 +204,22 @@ contract BscTokenController {
         owner = msg.sender;
         emit OwnershipTransferred(address(0), owner);
 
-        setMintThresholds(
-            150 * MILLION * 10**DECIMALS,
-            300 * MILLION * 10**DECIMALS,
-            1_000 * MILLION * 10**DECIMALS
+        instantMintThreshold = 150_000_000_000_000_000_000_000_000; // 150 M
+        ratifiedMintThreshold = 300_000_000_000_000_000_000_000_000; // 300 M
+        multiSigMintThreshold = 1_000_000_000_000_000_000_000_000_000; // 1 B
+        emit MintThresholdChanged(
+            150_000_000_000_000_000_000_000_000,
+            300_000_000_000_000_000_000_000_000,
+            1_000_000_000_000_000_000_000_000_000
         );
-
-        setMintLimits(
-            150 * MILLION * 10**DECIMALS,
-            300 * MILLION * 10**DECIMALS,
-            1_000 * MILLION * 10**DECIMALS
-        );   
+        instantMintLimit = 150_000_000_000_000_000_000_000_000; // 150 M
+        ratifiedMintLimit = 300_000_000_000_000_000_000_000_000; // 300 M
+        multiSigMintLimit = 1_000_000_000_000_000_000_000_000_000; // 1 B
+        emit MintLimitsChanged(
+            150_000_000_000_000_000_000_000_000,
+            300_000_000_000_000_000_000_000_000,
+            1_000_000_000_000_000_000_000_000_000
+        );        
     }
 
     /**
@@ -271,7 +273,7 @@ contract BscTokenController {
         uint256 _instant,
         uint256 _ratified,
         uint256 _multiSig
-    ) public onlyOwner {
+    ) external onlyOwner {
         require(_instant <= _ratified && _ratified <= _multiSig);
         instantMintThreshold = _instant;
         ratifiedMintThreshold = _ratified;
@@ -287,7 +289,7 @@ contract BscTokenController {
         uint256 _instant,
         uint256 _ratified,
         uint256 _multiSig
-    ) public onlyOwner {
+    ) external onlyOwner {
         require(_instant <= _ratified && _ratified <= _multiSig);
         instantMintLimit = _instant;
         if (instantMintPool > instantMintLimit) {
