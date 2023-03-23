@@ -6,7 +6,6 @@ import {IBEP20} from "./interface/IBEP20.sol";
 import {IRegistry} from "./interface/IRegistry.sol";
 import {IOwnedUpgradeabilityProxy} from "./interface/IOwnedUpgradeabilityProxy.sol";
 import {ITrueCurrency} from "./interface/ITrueCurrency.sol";
-import {IHasOwner} from "./interface/IHasOwner.sol";
 import {IProofOfReserveToken} from "./interface/IProofOfReserveToken.sol";
 
 /** @title TokenController
