@@ -192,6 +192,40 @@ contract BscTokenController {
     }
 
     /**
+     * @dev sets the original `owner` of the contract to the sender
+     * at construction. Must then be reinitialized
+     */
+    constructor() public {
+        owner = msg.sender;
+        emit OwnershipTransferred(address(0), owner);
+    }
+
+    function initialize() public {
+        require(!initialized, "already initialized");
+        initialized = true;
+
+        owner = msg.sender;
+        emit OwnershipTransferred(address(0), owner);
+
+        instantMintThreshold = 150_000_000_000_000_000_000_000_000; // 150 M
+        ratifiedMintThreshold = 300_000_000_000_000_000_000_000_000; // 300 M
+        multiSigMintThreshold = 1_000_000_000_000_000_000_000_000_000; // 1 B
+        emit MintThresholdChanged(
+            150_000_000_000_000_000_000_000_000,
+            300_000_000_000_000_000_000_000_000,
+            1_000_000_000_000_000_000_000_000_000
+        );
+        instantMintLimit = 150_000_000_000_000_000_000_000_000; // 150 M
+        ratifiedMintLimit = 300_000_000_000_000_000_000_000_000; // 300 M
+        multiSigMintLimit = 1_000_000_000_000_000_000_000_000_000; // 1 B
+        emit MintLimitsChanged(
+            150_000_000_000_000_000_000_000_000,
+            300_000_000_000_000_000_000_000_000,
+            1_000_000_000_000_000_000_000_000_000
+        );        
+    }
+
+    /**
      * @dev Allows the current owner to set the pendingOwner address.
      * @param newOwner The address to transfer ownership to.
      */

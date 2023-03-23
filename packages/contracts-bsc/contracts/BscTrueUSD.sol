@@ -12,6 +12,15 @@ contract BscTrueUSD is TrueCurrencyWithProofOfReserve {
     uint8 constant DECIMALS = 18;
     uint8 constant ROUNDING = 2;
 
+    function initialize() public {
+        require(!initialized, "already initialized");
+        initialized = true;
+        owner = msg.sender;
+        emit OwnershipTransferred(address(0), owner);
+        burnMin = 1_000_000_000_000_000_000_000; // 1 K
+        burnMax = 1_000_000_000_000_000_000_000_000_000; // 1 B
+    }
+
     function decimals() public pure override returns (uint8) {
         return DECIMALS;
     }
