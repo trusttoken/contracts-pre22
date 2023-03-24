@@ -82,6 +82,9 @@ contract BscTokenController {
     // pausing the contract upgrades the proxy to this implementation
     address public constant PAUSED_IMPLEMENTATION = 0x3c8984DCE8f68FCDEEEafD9E0eca3598562eD291;
 
+    uint32 constant MILLION = 1_000_000;
+    uint256 constant DECIMALS = 18;
+
     modifier onlyMintKeyOrOwner() {
         require(msg.sender == mintKey || msg.sender == owner, "must be mintKey or owner");
         _;
@@ -188,6 +191,36 @@ contract BscTokenController {
     }
 
     /**
+     * @dev sets the original `owner` of the contract to the sender
+     * at construction. Must then be reinitialized
+     */
+    constructor() public {
+        owner = address(0);
+        // prevent initialize being called.
+        initialized = true;
+    }
+
+    function initialize() public {
+        require(!initialized, "already initialized");
+        initialized = true;
+
+        owner = msg.sender;
+        emit OwnershipTransferred(address(0), owner);
+
+        setMintThresholds(
+            150 * MILLION * 10**DECIMALS,
+            300 * MILLION * 10**DECIMALS,
+            1_000 * MILLION * 10**DECIMALS
+        );
+
+        setMintLimits(
+            150 * MILLION * 10**DECIMALS,
+            300 * MILLION * 10**DECIMALS,
+            1_000 * MILLION * 10**DECIMALS
+        );   
+    }
+
+    /**
      * @dev Allows the current owner to set the pendingOwner address.
      * @param newOwner The address to transfer ownership to.
      */
@@ -238,7 +271,7 @@ contract BscTokenController {
         uint256 _instant,
         uint256 _ratified,
         uint256 _multiSig
-    ) external onlyOwner {
+    ) public onlyOwner {
         require(_instant <= _ratified && _ratified <= _multiSig);
         instantMintThreshold = _instant;
         ratifiedMintThreshold = _ratified;
@@ -254,7 +287,7 @@ contract BscTokenController {
         uint256 _instant,
         uint256 _ratified,
         uint256 _multiSig
-    ) external onlyOwner {
+    ) public onlyOwner {
         require(_instant <= _ratified && _ratified <= _multiSig);
         instantMintLimit = _instant;
         if (instantMintPool > instantMintLimit) {
