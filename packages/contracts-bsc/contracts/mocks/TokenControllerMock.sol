@@ -21,10 +21,9 @@ contract TokenControllerMock is BscTokenController {
     event TransferChild(address indexed child, address indexed newOwner);
 
     // initalize controller. useful for tests
-    function initialize() external {
-        require(!initialized, "already initialized");
+    function initialize_owner() public {
+        require(owner == address(0));
         owner = msg.sender;
-        initialized = true;
     }
 
     // initialize with paramaters. useful for tests
