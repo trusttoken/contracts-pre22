@@ -5,7 +5,7 @@ import {BurnableTokenWithBounds} from "./BurnableTokenWithBounds.sol";
 
 /**
  * @title TrueCurrency
- * @dev TrueCurrency is an ERC20 with blacklist & redemption addresses
+ * @dev TrueCurrency is an BEP20 with blacklist & redemption addresses
  *
  * TrueCurrency is a compliant stablecoin with blacklist and redemption
  * addresses. Only the owner can blacklist accounts. Redemption addresses
@@ -36,7 +36,7 @@ import {BurnableTokenWithBounds} from "./BurnableTokenWithBounds.sol";
  * - canBurn prevents tokens from being sent to the incorrect address
  *
  * Reclaimer Token
- * - ERC20 Tokens and Ether sent to this contract can be reclaimed by the owner
+ * - BEP20 Tokens and BNB sent to this contract can be reclaimed by the owner
  */
 abstract contract TrueCurrency is BurnableTokenWithBounds {
     uint256 constant CENT = 10**16;

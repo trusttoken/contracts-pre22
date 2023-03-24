@@ -71,6 +71,7 @@ contract BscTokenController {
     ITrueCurrency public token;
     IRegistry public registry;
 
+    // Proof Of Reserve
     address public proofOfReserveEnabler;
 
     // Registry attributes for admin keys
@@ -112,14 +113,13 @@ contract BscTokenController {
         }
         _;
     }
+
     /// @dev Emitted when ownership of controller was transferred
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     /// @dev Emitted when ownership of controller transfer procedure was started
     event NewOwnerPending(address indexed currentOwner, address indexed pendingOwner);
     /// @dev Emitted when new registry was set
     event SetRegistry(address indexed registry);
-    /// @dev Emitted when owner was transferred for child contract
-    // event TransferChild(address indexed child, address indexed newOwner);
     /// @dev Emitted when child ownership was claimed
     event RequestReclaimContract(address indexed other);
     /// @dev Emitted when child token was changed
@@ -254,6 +254,28 @@ contract BscTokenController {
 
     function upgradeTrueCurrencyProxyImplTo(address _implementation) external onlyOwner {
         IOwnedUpgradeabilityProxy(address(token)).upgradeTo(_implementation);
+    }
+
+    /*
+    ========================================
+    Impl functions
+    ========================================
+    */
+
+    /**
+     * @dev Claim ownership of token contract
+     */
+    function claimTrueCurrencyImplOwnership() external onlyOwner {
+        token.claimOwnership();
+    }
+
+    /**
+     * @dev Transfer ownership of token to _newOwner.
+     * Can be used e.g. to upgrade this TokenController contract.
+     * @param _newOwner new owner/pending owner of token
+     */
+    function transferTrueCurrencyImplOwnership(address _newOwner) external onlyOwner {
+        token.transferOwnership(_newOwner);
     }
 
     /*
@@ -562,26 +584,6 @@ contract BscTokenController {
     }
 
     /**
-     * @dev Claim ownership of an arbitrary HasOwner contract
-
-    function issueClaimOwnership(address _other) public onlyOwner {
-        HasOwner other = HasOwner(_other);
-        other.claimOwnership();
-    }
-
-    /**
-     * @dev Transfer ownership of _child to _newOwner.
-     * Can be used e.g. to upgrade this TokenController contract.
-     * @param _child contract that tokenController currently Owns
-     * @param _newOwner new owner/pending owner of _child
-
-    function transferChild(HasOwner _child, address _newOwner) external onlyOwner {
-        _child.transferOwnership(_newOwner);
-        emit TransferChild(address(_child), _newOwner);
-    }
-    */
-
-    /**
      * @dev send all ether in token address to the owner of tokenController
      */
     function requestReclaimEther() external onlyOwner {
@@ -623,7 +625,7 @@ contract BscTokenController {
     }
 
     /**
-     * @dev Owner can send erc20 token balance in contract address
+     * @dev Owner can send bep20 token balance in contract address
      * @param _token address of the token to send
      * @param _to address to which the funds will be send to
      */
