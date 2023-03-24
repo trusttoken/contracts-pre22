@@ -2,8 +2,9 @@
 pragma solidity 0.6.10;
 
 import {IBEP20} from "./IBEP20.sol";
+import {IClaimableOwnable} from "./IClaimableOwnable.sol";
 
-interface ITrueCurrency {
+interface ITrueCurrency is IClaimableOwnable {
     function mint(address account, uint256 amount) external;
 
     function burn(uint256 amount) external;
