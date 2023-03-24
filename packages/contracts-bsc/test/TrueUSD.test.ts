@@ -8,8 +8,8 @@ import { timeTravel } from 'utils/timeTravel'
 import {
   MockV3Aggregator,
   MockV3Aggregator__factory,
-  TrueUSD,
-  TrueUSD__factory,
+  BscTrueUSD as TrueUSD,
+  BscTrueUSD__factory as TrueUSD__factory,
 } from 'contracts'
 
 use(waffle.solidity)

@@ -6,7 +6,7 @@ import {IRegistry as Registry} from "../interface/IRegistry.sol";
 
 import {ITrueCurrency as TrueCurrency} from "../interface/ITrueCurrency.sol";
 
-import {TokenControllerV3} from "../TokenControllerV3.sol";
+import {BscTokenController} from "../BscTokenController.sol";
 
 interface HasOwner {
     function claimOwnership() external;
@@ -17,7 +17,7 @@ interface HasOwner {
 /**
  * Token Controller with custom init function for testing
  */
-contract TokenControllerMock is TokenControllerV3 {
+contract TokenControllerMock is BscTokenController {
     event TransferChild(address indexed child, address indexed newOwner);
 
     // initalize controller. useful for tests
