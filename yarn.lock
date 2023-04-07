@@ -5564,6 +5564,23 @@ ethereum-mars@^0.1.7:
     ganache-core "^2.13.2"
     minimist "^1.2.5"
 
+ethereum-mars@^0.2.6-dev.eb75a27:
+  version "0.2.6-dev.eb75a27"
+  resolved "https://registry.yarnpkg.com/ethereum-mars/-/ethereum-mars-0.2.6-dev.eb75a27.tgz#0c44d16f2dc13a2720c7799eb527cc68645c0c50"
+  integrity sha512-4YyFqrlfNw72LqVrFB2zkCnrErxA9Hs5Wv3J3tGJre5/kBrnukVgFgMp0XA/891ojOmtJCy/CLUvx2heMKw7Qw==
+  dependencies:
+    "@gnosis.pm/safe-core-sdk" "1.0.0"
+    "@gnosis.pm/safe-service-client" "1.0.1"
+    "@resolver-engine/imports" "^0.3.3"
+    "@resolver-engine/imports-fs" "^0.3.3"
+    "@types/node-fetch" "^2.6.1"
+    argparse "^2.0.1"
+    axios "^0.21.0"
+    ethers "^5.6.2"
+    ganache "7.0.3"
+    minimist "^1.2.5"
+    node-fetch "^2.6.7"
+
 ethereum-waffle@^3.4.0:
   version "3.4.0"
   resolved "https://registry.yarnpkg.com/ethereum-waffle/-/ethereum-waffle-3.4.0.tgz#990b3c6c26db9c2dd943bf26750a496f60c04720"
