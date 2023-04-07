@@ -2,6 +2,7 @@
 pragma solidity 0.6.10;
 
 import {BurnableTokenWithBounds} from "./common/BurnableTokenWithBounds.sol";
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 /**
  * @title TrueCurrency
@@ -39,6 +40,8 @@ import {BurnableTokenWithBounds} from "./common/BurnableTokenWithBounds.sol";
  * - ERC20 Tokens and Ether sent to this contract can be reclaimed by the owner
  */
 abstract contract TrueCurrency is BurnableTokenWithBounds {
+    using SafeMath for uint256;
+
     uint256 constant CENT = 10**16;
     uint256 constant REDEMPTION_ADDRESS_COUNT = 0x100000;
 
@@ -54,10 +57,11 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
      */
     event Mint(address indexed to, uint256 value);
 
-    function initialize() external {
+    function initialize(address _nativeToken) external {
         require(!initialized, "already initialized");
-        owner = msg.sender;
         initialized = true;
+        owner = msg.sender;
+        nativeToken = _nativeToken;
     }
 
     /**
@@ -126,8 +130,9 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
         require(!isBlacklisted[recipient], "TrueCurrency: recipient is blacklisted");
 
         if (isRedemptionAddress(recipient)) {
-            super._transfer(sender, recipient, amount.sub(amount.mod(CENT)));
-            _burn(recipient, amount.sub(amount.mod(CENT)));
+            uint256 _amount = amount.sub(amount.mod(CENT));
+            super._transfer(sender, recipient, _amount);
+            _burn(recipient, _amount);
         } else {
             super._transfer(sender, recipient, amount);
         }

@@ -90,7 +90,7 @@ contract TokenControllerV3 {
 
     // paused version of TrueCurrency in Production
     // pausing the contract upgrades the proxy to this implementation
-    address public constant PAUSED_IMPLEMENTATION = 0x3c8984DCE8f68FCDEEEafD9E0eca3598562eD291;
+    address public pausedImplementation;
 
     modifier onlyMintKeyOrOwner() {
         require(msg.sender == mintKey || msg.sender == owner, "must be mintKey or owner");
@@ -189,10 +189,11 @@ contract TokenControllerV3 {
         _;
     }
 
-    function initialize() external {
+    function initialize(address _pausedImplementation) external {
         require(!initialized, "already initialized");
-        owner = msg.sender;
         initialized = true;
+        pausedImplementation = _pausedImplementation;
+        owner = msg.sender;
     }
 
     /**
@@ -597,7 +598,7 @@ contract TokenControllerV3 {
      * @dev pause all pausable actions on TrueCurrency, mints/burn/transfer/approve
      */
     function pauseToken() external virtual onlyOwner {
-        IOwnedUpgradeabilityProxy(address(token)).upgradeTo(PAUSED_IMPLEMENTATION);
+        IOwnedUpgradeabilityProxy(address(token)).upgradeTo(pausedImplementation);
     }
 
     /**
