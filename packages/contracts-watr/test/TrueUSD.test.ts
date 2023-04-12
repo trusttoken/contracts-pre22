@@ -93,7 +93,7 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
     expect(await token.balanceOf(owner.address)).to.equal(balanceBefore.add(AMOUNT_TO_MINT))
   })
 
-  it('should mint successfully when feed decimals < TrueCurrency decimals', async () => {
+  it('should revert mint when feed decimals < TrueCurrency decimals', async () => {
     const currentTusdSupply = await token.totalSupply()
     const validReserve = currentTusdSupply.div(exp(1, 12)).add(AMOUNT_TO_MINT)
 
@@ -107,14 +107,14 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
 
     // Mint TUSD
     const balanceBefore = await token.balanceOf(owner.address)
-    await token.mint(owner.address, AMOUNT_TO_MINT, { gasLimit: 200_000 })
-    expect(await token.balanceOf(owner.address)).to.equal(balanceBefore.add(AMOUNT_TO_MINT))
+    await expect(token.mint(owner.address, AMOUNT_TO_MINT)).to.be.revertedWith('TrueCurrency: Unexpected decimals of PoR feed')
+    expect(await token.balanceOf(owner.address)).to.equal(balanceBefore)
   })
 
-  it('should mint successfully when feed decimals > TrueCurrency decimals', async () => {
+  it('should revert mint when feed decimals > TrueCurrency decimals', async () => {
     // Re-deploy a mock aggregator with more decimals
     const currentTusdSupply = await token.totalSupply()
-    const validReserve = currentTusdSupply.mul(exp(1, 2)).add(AMOUNT_TO_MINT)
+    const validReserve = currentTusdSupply.div(exp(1, 12)).add(AMOUNT_TO_MINT)
 
     const mockV3AggregatorWith20Decimals = await new MockV3Aggregator__factory(owner).deploy('20', validReserve)
     // Set feed and heartbeat on newly-deployed aggregator
@@ -125,8 +125,8 @@ describe('TrueCurrency with Proof-of-reserves check', () => {
 
     // Mint TUSD
     const balanceBefore = await token.balanceOf(owner.address)
-    await token.mint(owner.address, AMOUNT_TO_MINT, { gasLimit: 200_000 })
-    expect(await token.balanceOf(owner.address)).to.equal(balanceBefore.add(AMOUNT_TO_MINT))
+    await expect(token.mint(owner.address, AMOUNT_TO_MINT)).to.be.revertedWith('TrueCurrency: Unexpected decimals of PoR feed')
+    expect(await token.balanceOf(owner.address)).to.equal(balanceBefore)
   })
 
   it('should mint successfully when TrueCurrency supply == proof-of-reserves', async () => {
