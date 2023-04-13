@@ -32,4 +32,5 @@ export function setupMintThresholds(controller: ReturnType<typeof deployTokenCon
   controller.refillMultiSigMintPool()
   controller.refillRatifiedMintPool()
   controller.refillInstantMintPool()
+  controller.setBurnBounds(parseEther('1000'), parseEther('1000000000'))
 }
