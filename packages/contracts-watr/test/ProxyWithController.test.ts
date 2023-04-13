@@ -20,6 +20,8 @@ import { trueUSDDecimals } from 'utils'
 
 use(solidity)
 
+const pausedImplementationAddress = '0x3c8984DCE8f68FCDEEEafD9E0eca3598562eD291'
+
 describe('ProxyWithController', () => {
   let owner: Wallet
   let otherWallet: Wallet
@@ -62,14 +64,14 @@ describe('ProxyWithController', () => {
     await controllerProxy.upgradeTo(controllerImplementation.address)
     controller = new TokenControllerV3__factory(owner).attach(controllerProxy.address)
 
-    await controller.initialize('0x3c8984DCE8f68FCDEEEafD9E0eca3598562eD291')
+    await controller.initialize(pausedImplementationAddress)
     await controller.setToken(token.address)
     await controller.transferMintKey(mintKey.address)
   })
 
   describe('Set up proxy', () => {
     it('controller cannot be reinitialized', async () => {
-      await expect(controller.initialize('0x3c8984DCE8f68FCDEEEafD9E0eca3598562eD291'))
+      await expect(controller.initialize(pausedImplementationAddress))
         .to.be.reverted
     })
 

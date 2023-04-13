@@ -21,6 +21,8 @@ import { trueUSDDecimals } from 'utils'
 
 use(solidity)
 
+const pausedImplementationAddress = '0x3c8984DCE8f68FCDEEEafD9E0eca3598562eD291'
+
 describe('TokenController', () => {
   let provider: MockProvider
 
@@ -62,7 +64,7 @@ describe('TokenController', () => {
     await token.initialize(xc20.address)
 
     await token.transferOwnership(controller.address)
-    await controller.initialize('0x3c8984DCE8f68FCDEEEafD9E0eca3598562eD291')
+    await controller.initialize(pausedImplementationAddress)
     await controller.setRegistry(registry.address)
     await controller.setToken(token.address)
     await controller.claimTrueCurrencyOwnership()
@@ -478,7 +480,7 @@ describe('TokenController', () => {
 
   describe('initialization', function () {
     it('controller cannot be re-initialized', async function () {
-      await expect(controller.initialize('0x3c8984DCE8f68FCDEEEafD9E0eca3598562eD291'))
+      await expect(controller.initialize(pausedImplementationAddress))
         .to.be.reverted
     })
   })
@@ -516,7 +518,7 @@ describe('TokenController', () => {
       await token.connect(thirdWallet).transfer(mintKey.address, parseEther('10'))
       await controller.pauseToken()
       expect(await tokenProxy.implementation())
-        .to.equal('0x3c8984DCE8f68FCDEEEafD9E0eca3598562eD291')
+        .to.equal(pausedImplementationAddress)
     })
 
     it('non pauser cannot pause TrueUSD ', async function () {
