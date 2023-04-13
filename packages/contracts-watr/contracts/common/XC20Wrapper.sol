@@ -21,7 +21,7 @@ abstract contract XC20Wrapper is IERC20, ClaimableOwnable, Context {
     }
 
     function transfer(address recipient, uint256 amount) external virtual override returns (bool) {
-        _transfer(msg.sender, recipient, amount);
+        _transfer(_msgSender(), recipient, amount);
         return true;
     }
 
@@ -30,16 +30,16 @@ abstract contract XC20Wrapper is IERC20, ClaimableOwnable, Context {
     }
 
     function approve(address spender, uint256 amount) external virtual override returns (bool) {
-        _approve(msg.sender, spender, amount);
+        _approve(_msgSender(), spender, amount);
         return true;
     }
 
     function decreaseAllowance(address spender, uint256 amount) external virtual {
-        _approve(msg.sender, spender, _allowances[msg.sender][spender].sub(amount, "XC20: decreased allowance below zero"));
+        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].sub(amount, "XC20: decreased allowance below zero"));
     }
 
     function increaseAllowance(address spender, uint256 amount) external virtual {
-        _approve(msg.sender, spender, _allowances[msg.sender][spender].add(amount));
+        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].add(amount));
     }
 
     function transferFrom(
@@ -48,7 +48,7 @@ abstract contract XC20Wrapper is IERC20, ClaimableOwnable, Context {
         uint256 amount
     ) external override virtual returns (bool) {
         require(sender != address(0), "XC20: transfer from the zero address");
-        _approve(sender, msg.sender, _allowances[sender][msg.sender].sub(amount, "XC20: amount exceeds allowance"));
+        _approve(sender, _msgSender(), _allowances[sender][_msgSender()].sub(amount, "XC20: amount exceeds allowance"));
         _transfer(sender, recipient, amount);
         return true;
     }
