@@ -9,6 +9,9 @@ import { contract } from 'ethereum-mars'
 
 export function baseDeployment() {
   const tokenId = parseInt(process.env['TRUE_USD_ASSET_ID'])
+  if (isNaN(tokenId)) {
+    throw new Error('TRUE_USD_ASSET_ID not provided or invalid')
+  }
 
   const pausedImplementation = contract(PausedTrueUSD)
   const {
