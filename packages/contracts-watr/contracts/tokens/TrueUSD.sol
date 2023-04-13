@@ -9,12 +9,7 @@ import {TrueCurrencyWithProofOfReserve} from "../TrueCurrencyWithProofOfReserve.
  * inherited - see the documentation on the corresponding contracts.
  */
 contract TrueUSD is TrueCurrencyWithProofOfReserve {
-    uint8 constant DECIMALS = 18;
     uint8 constant ROUNDING = 2;
-
-    function decimals() public view override returns (uint8) {
-        return DECIMALS;
-    }
 
     function rounding() public pure returns (uint8) {
         return ROUNDING;
