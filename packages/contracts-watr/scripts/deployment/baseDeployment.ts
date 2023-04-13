@@ -8,13 +8,15 @@ import { deployRegistry } from './deployRegistry'
 import { contract } from 'ethereum-mars'
 
 export function baseDeployment() {
+  const tokenId = parseInt(process.env['TRUE_USD_ASSET_ID'])
+
   const pausedImplementation = contract(PausedTrueUSD)
   const {
     implementation: tokenControllerImplementation,
     proxy: tokenControllerProxy,
   } = deployTokenController(pausedImplementation)
 
-  const { implementation: trueUSDImplementation, proxy: trueUSDProxy } = deployToken(TrueUSD, tokenControllerProxy)
+  const { implementation: trueUSDImplementation, proxy: trueUSDProxy } = deployToken(TrueUSD, tokenControllerProxy, tokenId)
 
   const {
     implementation: registryImplementation,

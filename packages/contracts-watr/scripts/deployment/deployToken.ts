@@ -8,14 +8,14 @@ type Token = NoParams & {
   transferOwnership(newOwner: AddressLike, options?: TransactionOverrides): Transaction,
 }
 
-export function deployToken<T extends Token>(tokenArtifact: ArtifactFrom<T>, controller: AddressLike) {
+export function deployToken<T extends Token>(tokenArtifact: ArtifactFrom<T>, controller: AddressLike, assetId: number) {
   const implementation = contract(tokenArtifact)
   const tokenProxy = createProxy(OwnedUpgradeabilityProxy, (proxy) => {
     proxy.upgradeTo(implementation)
     proxy.transferProxyOwnership(controller)
   })
   const proxy = tokenProxy(implementation, (token) => {
-    token.initialize(generatePrecompileAddress(1983))
+    token.initialize(generatePrecompileAddress(assetId))
     token.transferOwnership(controller)
   })
 

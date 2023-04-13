@@ -87,7 +87,7 @@ fi
 timestamp_log="-$(date +%s)"
 
 yarn mars
-ts-node ${DEPLOY_SCRIPT} \
+dotenv -e .env.deploy -- ts-node ${DEPLOY_SCRIPT} \
   --waffle-config ./.waffle.json \
   --network "$network" \
   --out-file "deployments-${network_name}.json" \
