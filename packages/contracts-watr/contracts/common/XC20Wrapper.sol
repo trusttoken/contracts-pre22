@@ -57,13 +57,9 @@ abstract contract XC20Wrapper is IERC20, ClaimableOwnable, Context {
         return IERC20Plus(nativeToken).decimals();
     }
 
-    function name() public pure virtual returns (string memory) {
-        return "";
-    }
+    function name() public pure virtual returns (string memory);
 
-    function symbol() public pure virtual returns (string memory) {
-        return "";
-    }
+    function symbol() public pure virtual returns (string memory);
 
     function _mint(address account, uint256 amount) internal virtual {
         require(account != address(0), "XC20: mint to the zero address");
