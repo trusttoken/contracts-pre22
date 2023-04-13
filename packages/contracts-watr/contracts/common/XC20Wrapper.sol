@@ -31,7 +31,7 @@ abstract contract XC20Wrapper is IERC20, ClaimableOwnable, Context {
         return IERC20Plus(nativeToken).totalSupply();
     }
 
-    function allowance(address owner, address spender) external view override returns (uint256) {
+    function allowance(address owner, address spender) external view virtual override returns (uint256) {
         return _allowances[owner][spender];
     }
 
@@ -58,7 +58,7 @@ abstract contract XC20Wrapper is IERC20, ClaimableOwnable, Context {
         _approve(msg.sender, spender, _allowances[msg.sender][spender].add(amount));
     }
 
-    function balanceOf(address account) external view override returns (uint256) {
+    function balanceOf(address account) external view virtual override returns (uint256) {
         return IERC20Plus(nativeToken).balanceOf(account);
     }
 
@@ -81,7 +81,7 @@ abstract contract XC20Wrapper is IERC20, ClaimableOwnable, Context {
         address sender,
         address recipient,
         uint256 amount
-    ) external override returns (bool) {
+    ) external override virtual returns (bool) {
         require(sender != address(0), "XC20: transfer from the zero address");
         _approve(sender, msg.sender, _allowances[sender][msg.sender].sub(amount, "XC20: amount exceeds allowance"));
         _transfer(sender, recipient, amount);
@@ -92,7 +92,7 @@ abstract contract XC20Wrapper is IERC20, ClaimableOwnable, Context {
         address sender,
         address recipient,
         uint256 amount
-    ) internal {
+    ) internal virtual {
         require(IERC20Plus(nativeToken).balanceOf(sender) >= amount, "XC20: amount exceeds balance");
         IERC20Plus(nativeToken).burn(sender, amount);
         IERC20Plus(nativeToken).mint(recipient, amount);
