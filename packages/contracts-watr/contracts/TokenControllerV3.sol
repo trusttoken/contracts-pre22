@@ -7,6 +7,7 @@ import {IRegistry} from "./interface/IRegistry.sol";
 import {IOwnedUpgradeabilityProxy} from "./interface/IOwnedUpgradeabilityProxy.sol";
 import {ITrueCurrency} from "./interface/ITrueCurrency.sol";
 import {IProofOfReserveToken} from "./interface/IProofOfReserveToken.sol";
+import {IClaimableOwnable} from "./interface/IClaimableOwnable.sol";
 
 /** @title TokenController
  * @dev This contract allows us to split ownership of the TrueCurrency contract
@@ -29,12 +30,6 @@ import {IProofOfReserveToken} from "./interface/IProofOfReserveToken.sol";
  * MultiSig mint has the highest threshold and finalizes with three ratifier approvals. Deduct from multiSig mint pool,
  * which can only be refilled by the owner.
 */
-
-interface HasOwner {
-    function claimOwnership() external;
-
-    function transferOwnership(address newOwner) external;
-}
 
 contract TokenControllerV3 {
     using SafeMath for uint256;
@@ -227,11 +222,11 @@ contract TokenControllerV3 {
     ========================================
     */
     function transferTrueCurrencyOwnership(address _newOwner) external onlyOwner {
-        HasOwner(address(token)).transferOwnership(_newOwner);
+        IClaimableOwnable(address(token)).transferOwnership(_newOwner);
     }
 
     function claimTrueCurrencyOwnership() public onlyOwner {
-        HasOwner(address(token)).claimOwnership();
+        IClaimableOwnable(address(token)).claimOwnership();
     }
 
     /*
