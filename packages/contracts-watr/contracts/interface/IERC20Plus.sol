@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.10;
 
+// IERC20 and IERC20Plus interfaces from
+// https://github.com/AstarNetwork/astar-frame/blob/polkadot-v0.9.39/precompiles/assets-erc20/ERC20.sol
+
 interface IERC20 {
     /**
      * @dev Returns the name of the token.
