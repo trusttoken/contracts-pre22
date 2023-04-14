@@ -7,8 +7,6 @@ import { parseEther } from '@ethersproject/units'
 import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 
 import {
-  TokenControllerMock__factory,
-  TokenControllerMock,
   RegistryMock,
   RegistryMock__factory,
   OwnedUpgradeabilityProxy,
@@ -17,9 +15,13 @@ import {
   MockTrueCurrency,
   ForceEther,
   ForceEther__factory,
+  MockXC20__factory, TokenControllerV3__factory, TokenControllerV3,
 } from 'contracts'
+import { trueUSDDecimals } from 'utils'
 
 use(solidity)
+
+const pausedImplementationAddress = '0x3c8984DCE8f68FCDEEEafD9E0eca3598562eD291'
 
 describe('TokenController', () => {
   let provider: MockProvider
@@ -36,7 +38,7 @@ describe('TokenController', () => {
   let token: MockTrueCurrency
   let tokenImplementation: MockTrueCurrency
   let tokenProxy: OwnedUpgradeabilityProxy
-  let controller: TokenControllerMock
+  let controller: TokenControllerV3
   let registry: RegistryMock
 
   const notes = formatBytes32String('notes')
@@ -51,20 +53,21 @@ describe('TokenController', () => {
     provider = _provider
 
     registry = await new RegistryMock__factory(owner).deploy()
-    controller = await new TokenControllerMock__factory(owner).deploy()
+    controller = await new TokenControllerV3__factory(owner).deploy()
 
     tokenProxy = await new OwnedUpgradeabilityProxy__factory(owner).deploy()
     tokenImplementation = await new MockTrueCurrency__factory(owner).deploy()
     await tokenProxy.upgradeTo(tokenImplementation.address)
 
+    const xc20 = await new MockXC20__factory(owner).deploy(trueUSDDecimals)
     token = new MockTrueCurrency__factory(owner).attach(tokenProxy.address)
-    await token.initialize()
+    await token.initialize(xc20.address)
 
     await token.transferOwnership(controller.address)
-    await controller.initialize()
-    await controller.issueClaimOwnership(token.address)
+    await controller.initialize(pausedImplementationAddress)
     await controller.setRegistry(registry.address)
     await controller.setToken(token.address)
+    await controller.claimTrueCurrencyOwnership()
     await controller.transferMintKey(mintKey.address)
     await tokenProxy.transferProxyOwnership(controller.address)
     await controller.claimTrueCurrencyProxyOwnership()
@@ -477,14 +480,14 @@ describe('TokenController', () => {
 
   describe('initialization', function () {
     it('controller cannot be re-initialized', async function () {
-      await expect(controller.initialize())
+      await expect(controller.initialize(pausedImplementationAddress))
         .to.be.reverted
     })
   })
 
   describe('transfer child', function () {
     it('can transfer trueUSD ownership to another address', async function () {
-      await controller.transferChild(token.address, owner.address)
+      await controller.transferTrueCurrencyOwnership(owner.address)
       expect(await token.pendingOwner()).to.equal(owner.address)
     })
   })
@@ -515,7 +518,7 @@ describe('TokenController', () => {
       await token.connect(thirdWallet).transfer(mintKey.address, parseEther('10'))
       await controller.pauseToken()
       expect(await tokenProxy.implementation())
-        .to.equal('0x3c8984DCE8f68FCDEEEafD9E0eca3598562eD291')
+        .to.equal(pausedImplementationAddress)
     })
 
     it('non pauser cannot pause TrueUSD ', async function () {

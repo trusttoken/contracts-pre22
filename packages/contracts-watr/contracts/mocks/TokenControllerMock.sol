@@ -74,8 +74,6 @@ contract TokenControllerMock is TokenControllerV3 {
 }
 
 contract TokenControllerPauseMock is TokenControllerMock {
-    address public pausedImplementation;
-
     function setPausedImplementation(address _pausedToken) external {
         pausedImplementation = _pausedToken;
     }

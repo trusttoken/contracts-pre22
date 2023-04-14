@@ -2,3 +2,6 @@
 /build
 /cache
 /flattened_contracts
+deployments-watr_local.json
+.env.test
+.env.deploy
