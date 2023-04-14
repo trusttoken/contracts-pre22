@@ -13,12 +13,13 @@
     "prebuild": "yarn clean",
     "build:hardhat": "hardhat compile",
     "build:typechain": "typechain --target ethers-v5 --out-dir build/types 'build/*.json'",
-    "build": "yarn build:hardhat && yarn build:typechain && mars",
+    "build:canary": "git log --pretty=format:'%H' -n 1 > ./build/canary.hash",
+    "build": "yarn build:hardhat && yarn build:typechain && mars && yarn build:canary",
     "preflatten": "rm -rf custom_flatten",
     "flatten": "waffle flatten .waffle.json",
     "test": "mocha 'test/**/*.test.ts'",
     "checks": "yarn lint && yarn test",
-    "deploy": "./utils/bash/marsDeploy.sh"
+    "deploy": "./utils/bash/marsDeploy.sh scripts/deployment/deploy.ts"
   },
   "dependencies": {
     "ethereum-mars": "^0.2.6-dev.eb75a27",

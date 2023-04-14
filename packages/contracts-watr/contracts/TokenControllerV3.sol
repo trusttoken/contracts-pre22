@@ -7,6 +7,7 @@ import {IRegistry} from "./interface/IRegistry.sol";
 import {IOwnedUpgradeabilityProxy} from "./interface/IOwnedUpgradeabilityProxy.sol";
 import {ITrueCurrency} from "./interface/ITrueCurrency.sol";
 import {IProofOfReserveToken} from "./interface/IProofOfReserveToken.sol";
+import {IClaimableOwnable} from "./interface/IClaimableOwnable.sol";
 
 /** @title TokenController
  * @dev This contract allows us to split ownership of the TrueCurrency contract
@@ -183,6 +184,12 @@ contract TokenControllerV3 {
         _;
     }
 
+    function initialize() external {
+        require(!initialized, "already initialized");
+        owner = msg.sender;
+        initialized = true;
+    }
+
     /**
      * @dev Modifier throws if called by any account other than proofOfReserveEnabler or owner.
      */
@@ -207,6 +214,19 @@ contract TokenControllerV3 {
         emit OwnershipTransferred(address(owner), address(pendingOwner));
         owner = pendingOwner;
         pendingOwner = address(0);
+    }
+
+    /*
+    ========================================
+    token ownership
+    ========================================
+    */
+    function transferTrueCurrencyOwnership(address _newOwner) external onlyOwner {
+        IClaimableOwnable(address(token)).transferOwnership(_newOwner);
+    }
+
+    function claimTrueCurrencyOwnership() public onlyOwner {
+        IClaimableOwnable(address(token)).claimOwnership();
     }
 
     /*

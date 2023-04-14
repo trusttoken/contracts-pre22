@@ -36,6 +36,12 @@ contract Registry {
     event StartSubscription(bytes32 indexed attribute, RegistryClone indexed subscriber);
     event StopSubscription(bytes32 indexed attribute, RegistryClone indexed subscriber);
 
+    function initialize() external {
+        require(!initialized, "already initialized");
+        owner = msg.sender;
+        initialized = true;
+    }
+
     // Allows a write if either a) the writer is that Registry's owner, or
     // b) the writer is writing to attribute foo and that writer already has
     // the canWriteTo-foo attribute set (in that same Registry)
