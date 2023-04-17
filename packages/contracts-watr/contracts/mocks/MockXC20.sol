@@ -27,11 +27,15 @@ contract MockXC20 {
         return true;
     }
 
-    function freeze(address account) public {
+    function freeze(address account) public returns (bool) {
         frozen[account] = true;
+
+        return true;
     }
 
-    function thaw(address account) public {
+    function thaw(address account) public returns (bool) {
         frozen[account] = false;
+
+        return true;
     }
 }
