@@ -114,10 +114,6 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
         canBurn[account] = _canBurn;
     }
 
-    function pauseNative() external override onlyOwner {
-        _freezeAsset();
-    }
-
     /**
      * @dev Check if neither account is blacklisted before performing transfer
      * If transfer recipient is a redemption address, burns tokens

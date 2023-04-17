@@ -7,7 +7,6 @@ contract MockXC20 {
     uint8 public decimals;
 
     mapping(address => bool) public frozen;
-    bool public assetFrozen;
 
     constructor(uint8 _decimals) public {
         decimals = _decimals;
@@ -28,23 +27,11 @@ contract MockXC20 {
         return true;
     }
 
-    function freeze(address account) public returns (bool) {
+    function freeze(address account) public {
         frozen[account] = true;
-        return true;
     }
 
-    function thaw(address account) public returns (bool) {
+    function thaw(address account) public {
         frozen[account] = false;
-        return true;
-    }
-
-    function freezeAsset() public returns (bool) {
-        assetFrozen = true;
-        return true;
-    }
-
-    function thawAsset() public returns (bool) {
-        assetFrozen = false;
-        return true;
     }
 }

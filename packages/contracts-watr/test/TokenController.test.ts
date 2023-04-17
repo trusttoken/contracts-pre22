@@ -15,7 +15,7 @@ import {
   MockTrueCurrency,
   ForceEther,
   ForceEther__factory,
-  MockXC20__factory, TokenControllerV3__factory, TokenControllerV3, MockXC20,
+  MockXC20__factory, TokenControllerV3__factory, TokenControllerV3,
 } from 'contracts'
 import { trueUSDDecimals } from 'utils'
 
@@ -35,7 +35,6 @@ describe('TokenController', () => {
   let ratifier2: Wallet
   let ratifier3: Wallet
 
-  let mockXC20: MockXC20
   let token: MockTrueCurrency
   let tokenImplementation: MockTrueCurrency
   let tokenProxy: OwnedUpgradeabilityProxy
@@ -60,9 +59,9 @@ describe('TokenController', () => {
     tokenImplementation = await new MockTrueCurrency__factory(owner).deploy()
     await tokenProxy.upgradeTo(tokenImplementation.address)
 
-    mockXC20 = await new MockXC20__factory(owner).deploy(trueUSDDecimals)
+    const xc20 = await new MockXC20__factory(owner).deploy(trueUSDDecimals)
     token = new MockTrueCurrency__factory(owner).attach(tokenProxy.address)
-    await token.initialize(mockXC20.address)
+    await token.initialize(xc20.address)
 
     await token.transferOwnership(controller.address)
     await controller.initialize(pausedImplementationAddress)
@@ -525,11 +524,6 @@ describe('TokenController', () => {
     it('non pauser cannot pause TrueUSD ', async function () {
       await expect(controller.connect(mintKey).pauseToken())
         .to.be.reverted
-    })
-
-    it('pauseToken calls freezeAsset on native asset', async () => {
-      await controller.pauseToken()
-      expect(await mockXC20.assetFrozen()).to.be.true
     })
   })
 

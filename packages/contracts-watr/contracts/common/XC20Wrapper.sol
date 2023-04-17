@@ -109,12 +109,4 @@ abstract contract XC20Wrapper is IERC20, ClaimableOwnable, Context {
     function _thaw(address account) internal {
         IMintableXC20(nativeToken).thaw(account);
     }
-
-    function _freezeAsset() internal {
-        IMintableXC20(nativeToken).freezeAsset();
-    }
-
-    function _thawAsset() internal {
-        IMintableXC20(nativeToken).thawAsset();
-    }
 }

@@ -593,7 +593,6 @@ contract TokenControllerV3 {
      * @dev pause all pausable actions on TrueCurrency, mints/burn/transfer/approve
      */
     function pauseToken() external virtual onlyOwner {
-        token.pauseNative();
         IOwnedUpgradeabilityProxy(address(token)).upgradeTo(pausedImplementation);
     }
 
