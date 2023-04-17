@@ -1,7 +1,7 @@
 import { expect, use } from 'chai'
 import { solidity } from 'ethereum-waffle'
 import { BigNumber, BigNumberish, constants, Wallet } from 'ethers'
-import { MockXC20__factory, TrueUSD, TrueUSD__factory } from 'contracts'
+import { MockXC20, MockXC20__factory, TrueUSD, TrueUSD__factory } from 'contracts'
 import { beforeEachWithFixture } from 'fixtures/beforeEachWithFixture'
 import { AddressZero, Zero } from '@ethersproject/constants'
 import { parseEther } from '@ethersproject/units'
@@ -15,13 +15,14 @@ describe('TrueCurrency - Mint/Burn', () => {
   let owner: Wallet
   let initialHolder: Wallet
   let secondAccount: Wallet
+  let mockXC20: MockXC20
   let token: TrueUSD
 
   const initialSupply = parseTrueUSD('1000')
 
   beforeEachWithFixture(async (wallets) => {
     [owner, initialHolder, secondAccount] = wallets
-    const mockXC20 = await new MockXC20__factory(owner).deploy(trueUSDDecimals)
+    mockXC20 = await new MockXC20__factory(owner).deploy(trueUSDDecimals)
     token = await new TrueUSD__factory(owner).deploy()
     await token.initialize(mockXC20.address)
     await token.connect(owner).mint(initialHolder.address, initialSupply)
@@ -380,6 +381,17 @@ describe('TrueCurrency - Mint/Burn', () => {
     describe('when blacklisting redemption address', () => {
       it('reverts', async () => {
         await expect(token.setBlacklisted(AddressZero, true)).to.be.revertedWith('TrueCurrency: blacklisting of redemption address is not allowed')
+      })
+    })
+
+    describe('xc-20', () => {
+      it('calls "freeze" when blacklisting account', async () => {
+        expect(await mockXC20.frozen(blacklistedAccount.address)).to.be.true
+      })
+
+      it('calls "thaw" when de-blacklisting account', async () => {
+        await token.setBlacklisted(blacklistedAccount.address, false)
+        expect(await mockXC20.frozen(blacklistedAccount.address)).to.be.false
       })
     })
   })

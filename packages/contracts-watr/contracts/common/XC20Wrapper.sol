@@ -7,17 +7,17 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
 import {ClaimableOwnable} from "./ClaimableOwnable.sol";
-import {IERC20Plus} from "../interface/IERC20Plus.sol";
+import {IMintableXC20} from "../interface/IMintableXC20.sol";
 
 abstract contract XC20Wrapper is IERC20, ClaimableOwnable, Context {
     using SafeMath for uint256;
 
     function totalSupply() public view virtual override returns (uint256) {
-        return IERC20Plus(nativeToken).totalSupply();
+        return IMintableXC20(nativeToken).totalSupply();
     }
 
     function balanceOf(address account) external view virtual override returns (uint256) {
-        return IERC20Plus(nativeToken).balanceOf(account);
+        return IMintableXC20(nativeToken).balanceOf(account);
     }
 
     function transfer(address recipient, uint256 amount) external virtual override returns (bool) {
@@ -54,7 +54,7 @@ abstract contract XC20Wrapper is IERC20, ClaimableOwnable, Context {
     }
 
     function decimals() public view virtual returns (uint8) {
-        return IERC20Plus(nativeToken).decimals();
+        return IMintableXC20(nativeToken).decimals();
     }
 
     function name() public pure virtual returns (string memory);
@@ -63,12 +63,12 @@ abstract contract XC20Wrapper is IERC20, ClaimableOwnable, Context {
 
     function _mint(address account, uint256 amount) internal virtual {
         require(account != address(0), "XC20: mint to the zero address");
-        IERC20Plus(nativeToken).mint(account, amount);
+        IMintableXC20(nativeToken).mint(account, amount);
         emit Transfer(address(0), account, amount);
     }
 
     function _burn(address account, uint256 amount) internal virtual {
-        IERC20Plus(nativeToken).burn(account, amount);
+        IMintableXC20(nativeToken).burn(account, amount);
         emit Transfer(account, address(0), amount);
     }
 
@@ -97,8 +97,16 @@ abstract contract XC20Wrapper is IERC20, ClaimableOwnable, Context {
         address recipient,
         uint256 amount
     ) internal virtual {
-        require(IERC20Plus(nativeToken).balanceOf(sender) >= amount, "XC20: amount exceeds balance");
-        IERC20Plus(nativeToken).burn(sender, amount);
-        IERC20Plus(nativeToken).mint(recipient, amount);
+        require(IMintableXC20(nativeToken).balanceOf(sender) >= amount, "XC20: amount exceeds balance");
+        IMintableXC20(nativeToken).burn(sender, amount);
+        IMintableXC20(nativeToken).mint(recipient, amount);
+    }
+
+    function _freeze(address account) internal {
+        IMintableXC20(nativeToken).freeze(account);
+    }
+
+    function _thaw(address account) internal {
+        IMintableXC20(nativeToken).thaw(account);
     }
 }
