@@ -17,4 +17,6 @@ interface ITrueCurrency {
     function reclaimToken(IERC20 token, address _to) external;
 
     function setBlacklisted(address account, bool isBlacklisted) external;
+
+    function pauseNative() external;
 }
