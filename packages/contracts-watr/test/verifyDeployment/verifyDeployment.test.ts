@@ -71,6 +71,14 @@ describe('verify deployment', () => {
 
     await expect(tx).to.changeTokenBalances(token, [deployer, toAccount(otherAddress)], [parseEther('-0.5'), parseEther('0.5')])
   }).timeout(100000)
+
+  it('can blacklist', async () => {
+    const deployer = new ethers.Wallet(process.env['PRIVATE_KEY_DEPLOYER'], provider)
+    const tokenController = TokenControllerV3__factory.connect(deployments.tokenControllerV3_proxy.address, deployer)
+    const otherAddress = '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984'
+
+    await waitFor(tokenController.setBlacklisted(otherAddress, true))
+  })
 })
 
 async function waitFor<T>(tx: Promise<{ wait: () => Promise<T> }>) {
