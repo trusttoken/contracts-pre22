@@ -1,0 +1,39 @@
+{
+  "unknown": {
+    "pausedTrueUSD": {
+      "txHash": "0x0d9194f40ea5982565cb499faf6dd7b792dcdae60b96bf57c09e601396c24f6d",
+      "address": "0x5014a961801de9a52548068bDac853CE337221e7",
+      "multisig": false
+    },
+    "tokenControllerV3": {
+      "txHash": "0x7e7dce7e950940a73119c614a0a3fb224524c73d1d2e6eb6e2f1ff7d9d84deae",
+      "address": "0x32Caf123F6f574035f51532E597125062C0Aa8EE",
+      "multisig": false
+    },
+    "tokenControllerV3_proxy": {
+      "txHash": "0x8ce0fdd33fcae155d67ee20c7c2e62dc54341e2eca23e8e9e1c176c5da062323",
+      "address": "0x85da1a7602C2b557020413cB0Df6456188027948",
+      "multisig": false
+    },
+    "trueUSD": {
+      "txHash": "0xb137804e1e444c65e27de41e863214fe9de6c194df420c771e0fe3d653f5c20d",
+      "address": "0x361bb027e4B639B400850e98A85Cdc1B0a80e9ba",
+      "multisig": false
+    },
+    "trueUSD_proxy": {
+      "txHash": "0x027ea3740e12e1ac007ad352a45a3bf1d7c9af04056e7584a2467b2a8e2a7f1c",
+      "address": "0xB01E27E914cF947b66424Fcf4f1A1C7828a8fd99",
+      "multisig": false
+    },
+    "registry": {
+      "txHash": "0xa6e80ecb049c24eef4f84192c03b46ea701f1a4b7414fdd86543fa9287c90f46",
+      "address": "0xc62059Ff82A0352F2D090aAe7bB59D592B932DE6",
+      "multisig": false
+    },
+    "registry_proxy": {
+      "txHash": "0x8408de1c3e6ccebc8e840954601d0f4c2a5a02983f923db568d722b48d8fb27b",
+      "address": "0x86b2FBd508c1CC3E847A734a95fe7511280BA247",
+      "multisig": false
+    }
+  }
+}
