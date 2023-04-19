@@ -23,6 +23,9 @@ while [[ "$@" ]]; do
         if [[ "$2" == 'local' ]]; then
           network_name='watr_local'
           network='http://127.0.0.1:8822'
+        elif [[ "$2" == 'devnet' ]]; then
+          network_name='watr_devnet'
+          network='https://rpc.dev.watr.org'
         else
           echo "Error: invalid network parameter: '$2'"
           exit 1
