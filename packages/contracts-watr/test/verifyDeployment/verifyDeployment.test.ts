@@ -84,14 +84,14 @@ describe('verify deployment', () => {
 
   it('cannot transfer directly with precompile', async () => {
     const deployer = new ethers.Wallet(process.env['PRIVATE_KEY_DEPLOYER'], provider)
-    const wallet = ethers.Wallet.createRandom()
+    const wallet = ethers.Wallet.createRandom().connect(provider)
     const tokenController = TokenControllerV3__factory.connect(deployments.tokenControllerV3_proxy.address, deployer)
 
     await waitFor(tokenController.instantMint(wallet.address, parseTrueUSD('10')))
 
     const xc20 = IERC20__factory.connect(generatePrecompileAddress(2018), wallet)
 
-    expect(xc20.transfer(deployer.address, parseTrueUSD('5'))).to.be.reverted
+    await expect(xc20.transfer(deployer.address, parseTrueUSD('5'))).to.be.reverted
   })
 })
 
