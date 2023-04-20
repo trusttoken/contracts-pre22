@@ -8,7 +8,7 @@
     "lint": "yarn lint:sol && yarn lint:ts",
     "typecheck": "tsc --noEmit",
     "lint:sol": "solhint 'contracts/**/*.sol' && prettylint 'contracts/**/*.sol'",
-    "lint:ts": "eslint '{test,scripts}/**/*.ts' -c .eslintrc.typescript.js",
+    "lint:ts": "eslint '{test,scripts,utils}/**/*.ts' -c .eslintrc.typescript.js",
     "lint:fix": "prettier 'contracts/**/*.sol' --write --loglevel error && yarn lint:ts --fix",
     "prebuild": "yarn clean",
     "build:hardhat": "hardhat compile",

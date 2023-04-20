@@ -2,11 +2,11 @@ import { Contract, ethers } from 'ethers'
 import { JsonRpcProvider } from '@ethersproject/providers'
 import { expect, use } from 'chai'
 import { unknown as deployments } from '../../deployments-watr_local.json'
-import {IERC20__factory, TokenControllerV3__factory, TrueUSD__factory} from 'contracts'
+import { IERC20__factory, TokenControllerV3__factory, TrueUSD__factory } from 'contracts'
 import { parseEther } from '@ethersproject/units'
 import { solidity } from 'ethereum-waffle'
-import {generatePrecompileAddress} from "../../utils/generatePrecompileAddress";
-import {parseTrueUSD} from "utils";
+import { generatePrecompileAddress } from '../../utils/generatePrecompileAddress'
+import { parseTrueUSD } from 'utils'
 
 use(solidity)
 

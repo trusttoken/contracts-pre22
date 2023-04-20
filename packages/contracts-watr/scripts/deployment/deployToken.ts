@@ -1,7 +1,7 @@
 import { AddressLike, ArtifactFrom, contract, createProxy, Transaction, TransactionOverrides } from 'ethereum-mars'
 import { OwnedUpgradeabilityProxy } from '../../build/artifacts'
 import { NoParams } from 'ethereum-mars/build/src/syntax/contract'
-import {generatePrecompileAddress} from "../../utils/generatePrecompileAddress";
+import { generatePrecompileAddress } from '../../utils/generatePrecompileAddress'
 
 type Token = NoParams & {
   initialize(nativeToken: AddressLike, options?: TransactionOverrides): Transaction,
