@@ -2,9 +2,11 @@ import { Contract, ethers } from 'ethers'
 import { JsonRpcProvider } from '@ethersproject/providers'
 import { expect, use } from 'chai'
 import { unknown as deployments } from '../../deployments-watr_local.json'
-import { TokenControllerV3__factory, TrueUSD__factory } from 'contracts'
+import { IERC20__factory, TokenControllerV3__factory, TrueUSD__factory } from 'contracts'
 import { parseEther } from '@ethersproject/units'
 import { solidity } from 'ethereum-waffle'
+import { generatePrecompileAddress } from '../../utils/generatePrecompileAddress'
+import { parseTrueUSD } from 'utils'
 
 use(solidity)
 
@@ -71,6 +73,26 @@ describe('verify deployment', () => {
 
     await expect(tx).to.changeTokenBalances(token, [deployer, toAccount(otherAddress)], [parseEther('-0.5'), parseEther('0.5')])
   }).timeout(100000)
+
+  it('token has the right precompile address', async () => {
+    const deployer = new ethers.Wallet(process.env['PRIVATE_KEY_DEPLOYER'], provider)
+    const token = TrueUSD__factory.connect(deployments.trueUSD_proxy.address, deployer)
+    const precompile = await token.nativeToken()
+
+    expect(precompile).to.eq(generatePrecompileAddress(2018))
+  })
+
+  it('cannot transfer directly with precompile', async () => {
+    const deployer = new ethers.Wallet(process.env['PRIVATE_KEY_DEPLOYER'], provider)
+    const wallet = ethers.Wallet.createRandom().connect(provider)
+    const tokenController = TokenControllerV3__factory.connect(deployments.tokenControllerV3_proxy.address, deployer)
+
+    await waitFor(tokenController.instantMint(wallet.address, parseTrueUSD('10')))
+
+    const xc20 = IERC20__factory.connect(generatePrecompileAddress(2018), wallet)
+
+    await expect(xc20.transfer(deployer.address, parseTrueUSD('5'))).to.be.reverted
+  })
 })
 
 async function waitFor<T>(tx: Promise<{ wait: () => Promise<T> }>) {
