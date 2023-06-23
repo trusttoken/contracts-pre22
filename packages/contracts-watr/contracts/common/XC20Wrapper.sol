@@ -48,8 +48,8 @@ abstract contract XC20Wrapper is IERC20, ClaimableOwnable, Context {
         uint256 amount
     ) external virtual override returns (bool) {
         require(sender != address(0), "XC20: transfer from the zero address");
-        _approve(sender, _msgSender(), _allowances[sender][_msgSender()].sub(amount, "XC20: amount exceeds allowance"));
         _transfer(sender, recipient, amount);
+        _approve(sender, _msgSender(), _allowances[sender][_msgSender()].sub(amount, "XC20: amount exceeds allowance"));
         return true;
     }
 
