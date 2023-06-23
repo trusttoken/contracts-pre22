@@ -97,6 +97,7 @@ abstract contract XC20Wrapper is IERC20, ClaimableOwnable, Context {
         address recipient,
         uint256 amount
     ) internal virtual {
+        require(IMintableXC20(nativeToken).balanceOf(sender) >= amount, "XC20: amount exceeds balance");
         IMintableXC20(nativeToken).forceTransfer(sender, recipient, amount);
     }
 
