@@ -39,11 +39,15 @@ contract MockXC20 {
         return true;
     }
 
-    function forceTransfer(address sender, address recipient, uint256 amount) public returns (bool) {
+    function forceTransfer(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) public returns (bool) {
         require(balanceOf[sender] >= amount, "XC20: amount exceeds balance");
         balanceOf[sender] -= amount;
         balanceOf[recipient] += amount;
-        
+
         return true;
     }
 }
