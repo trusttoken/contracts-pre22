@@ -11,4 +11,6 @@ interface IMintableXC20 is IERC20Plus {
     function freezeAsset() external returns (bool);
 
     function thawAsset() external returns (bool);
+
+    function forceTransfer(address sender, address recipient, uint256 amount) external returns (bool);
 }
