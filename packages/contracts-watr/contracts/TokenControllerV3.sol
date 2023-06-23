@@ -71,16 +71,12 @@ contract TokenControllerV3 {
 
     ITrueCurrency public token;
     IRegistry public registry;
-    address public fastPause; // deprecated
-    address public trueRewardManager; // deprecated
 
     address public proofOfReserveEnabler;
 
     // Registry attributes for admin keys
     bytes32 public constant IS_MINT_PAUSER = "isTUSDMintPausers";
     bytes32 public constant IS_MINT_RATIFIER = "isTUSDMintRatifier";
-    // bytes32 public constant IS_REDEMPTION_ADMIN = "isTUSDRedemptionAdmin"; // deprecated
-    // bytes32 public constant IS_GAS_REFUNDER = "isGasRefunder"; // deprecated
     bytes32 public constant IS_REGISTRY_ADMIN = "isRegistryAdmin";
 
     // paused version of TrueCurrency in Production

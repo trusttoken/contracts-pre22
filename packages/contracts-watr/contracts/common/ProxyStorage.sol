@@ -15,43 +15,13 @@ contract ProxyStorage {
 
     bool initialized;
 
-    address balances_Deprecated;
-    address allowances_Deprecated;
-
     uint256 _totalSupply;
-
-    bool private paused_Deprecated = false;
-    address private globalPause_Deprecated;
 
     uint256 public burnMin = 0;
     uint256 public burnMax = 0;
 
-    address registry_Deprecated;
-
-    string name_Deprecated;
-    string symbol_Deprecated;
-
-    uint256[] gasRefundPool_Deprecated;
-    uint256 private redemptionAddressCount_Deprecated;
-    uint256 minimumGasPriceForFutureRefunds_Deprecated;
-
     mapping(address => uint256) _balances;
     mapping(address => mapping(address => uint256)) _allowances;
-    mapping(bytes32 => mapping(address => uint256)) attributes_Deprecated;
-
-    // reward token storage
-    mapping(address => address) finOps_Deprecated;
-    mapping(address => mapping(address => uint256)) finOpBalances_Deprecated;
-    mapping(address => uint256) finOpSupply_Deprecated;
-
-    // true reward allocation
-    // proportion: 1000 = 100%
-    struct RewardAllocation {
-        uint256 proportion;
-        address finOp;
-    }
-    mapping(address => RewardAllocation[]) _rewardDistribution_Deprecated;
-    uint256 maxRewardProportion_Deprecated = 1000;
 
     mapping(address => bool) isBlacklisted;
     mapping(address => bool) public canBurn;
@@ -76,7 +46,6 @@ contract ProxyStorage {
      ** 19         "trueXXX.proxy.owner"                                         Proxy Owner
      ** 27         "trueXXX.pending.proxy.owner"                                 Pending Proxy Owner
      ** 28         "trueXXX.proxy.implementation"                                Proxy Implementation
-     ** 32         uint256(11)                                                   gasRefundPool_Deprecated
      ** 64         uint256(address),uint256(14)                                  balanceOf
      ** 64         uint256(address),keccak256(uint256(address),uint256(15))      allowance
      ** 64         uint256(address),keccak256(bytes32,uint256(16))               attributes
