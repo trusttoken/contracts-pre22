@@ -6,6 +6,8 @@ contract MockXC20 {
     mapping(address => uint256) public balanceOf;
     uint8 public decimals;
 
+    mapping(address => bool) public frozen;
+
     constructor(uint8 _decimals) public {
         decimals = _decimals;
     }
@@ -21,6 +23,18 @@ contract MockXC20 {
         require(balanceOf[account] >= amount, "XC20: amount exceeds balance");
         balanceOf[account] -= amount;
         totalSupply -= amount;
+
+        return true;
+    }
+
+    function freeze(address account) public returns (bool) {
+        frozen[account] = true;
+
+        return true;
+    }
+
+    function thaw(address account) public returns (bool) {
+        frozen[account] = false;
 
         return true;
     }
