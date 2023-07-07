@@ -81,6 +81,11 @@ describe('SAFU', () => {
 
   describe('liquidate', () => {
     describe('reverts if', () => {
+      it('caller is not owner', async () => {
+        await expect(safu.connect(borrower).liquidate(loan.address))
+          .to.be.revertedWith('Ownable: caller is not the owner')
+      })
+
       it('loan is not defaulted', async () => {
         await expect(safu.liquidate(loan.address))
           .to.be.revertedWith('SAFU: Loan is not defaulted')

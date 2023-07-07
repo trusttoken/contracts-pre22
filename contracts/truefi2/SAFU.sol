@@ -93,7 +93,7 @@ contract SAFU is ISAFU, UpgradeableClaimable {
      * to compensate TrueFiPool. Deficit is saved to be redeemed later
      * @param loan Loan to be liquidated
      */
-    function liquidate(ILoanToken2 loan) external {
+    function liquidate(ILoanToken2 loan) external onlyOwner {
         require(loanFactory.isLoanToken(address(loan)), "SAFU: Unknown loan");
         require(loan.status() == ILoanToken2.Status.Defaulted, "SAFU: Loan is not defaulted");
 
