@@ -81,7 +81,7 @@ contract BscTokenController {
 
     // paused version of TrueCurrency in Production
     // pausing the contract upgrades the proxy to this implementation
-    address public constant PAUSED_IMPLEMENTATION = 0x3c8984DCE8f68FCDEEEafD9E0eca3598562eD291;
+    address public constant PAUSED_IMPLEMENTATION = 0xccd19a52768342fc5F00b1B206D60333C3A9ABA2;
 
     uint32 constant MILLION = 1_000_000;
     uint256 constant DECIMALS = 18;
