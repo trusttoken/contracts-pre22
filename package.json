@@ -65,7 +65,7 @@
     "ethereum-waffle": "^3.4.0",
     "hardhat-abi-exporter": "^2.2.1",
     "mocha": "^8.2.1",
-    "node-fetch": "^2.6.1",
+    "node-fetch": "^2.6.7",
     "patch-package": "^6.2.2",
     "postinstall-postinstall": "^2.1.0",
     "prettier": "^2.4.1",
