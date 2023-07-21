@@ -589,10 +589,21 @@ describe('TokenController', () => {
 
   describe('setBlacklisted', () => {
     it('sets blacklisted status for the account', async () => {
+      await token.connect(thirdWallet).transfer(otherWallet.address, parseEther('10'))
+
+      const initialTotalSupply = await token.totalSupply()
+
       await expect(controller.setBlacklisted(otherWallet.address, true)).to.emit(token, 'Blacklisted')
         .withArgs(otherWallet.address, true)
+
+      const reducedTotalSupply = await token.totalSupply()
+      expect(reducedTotalSupply === initialTotalSupply - await token.balanceOf(otherWallet.address))
+
       await expect(controller.setBlacklisted(otherWallet.address, false)).to.emit(token, 'Blacklisted')
         .withArgs(otherWallet.address, false)
+
+      const increasedTotalSupply = await token.totalSupply()
+      expect(increasedTotalSupply === initialTotalSupply)
     })
 
     it('rejects when called by non owner', async () => {

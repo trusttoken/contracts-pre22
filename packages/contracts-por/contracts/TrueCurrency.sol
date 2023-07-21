@@ -86,6 +86,13 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
      */
     function setBlacklisted(address account, bool _isBlacklisted) external override onlyOwner {
         require(uint256(account) >= REDEMPTION_ADDRESS_COUNT, "TrueCurrency: blacklisting of redemption address is not allowed");
+        require(isBlacklisted[account] != _isBlacklisted, "TrueCurrency: blacklisted status would not change");
+
+        if (_isBlacklisted) {
+            blacklistedAmount += _balances[account];
+        } else {
+            blacklistedAmount -= _balances[account];
+        }
         isBlacklisted[account] = _isBlacklisted;
         emit Blacklisted(account, _isBlacklisted);
     }
