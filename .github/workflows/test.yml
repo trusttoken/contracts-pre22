@@ -1,0 +1,46 @@
+name: Lint and Test
+on:
+  push:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    container: python:3.10.5
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+      - name: Use Node.js 16.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.x
+      - name: Install yarn
+        run: npm install -g yarn
+      - name: Pull submodules
+        run: git submodule init && git submodule update
+      - name: Install dependencies
+        run: |
+          yarn install --frozen-lockfile
+          pip3 install -U pip setuptools virtualenv
+          pip3 install -r requirements-dev.txt
+      - name: Build
+        run: |
+          yarn build
+          yarn typecheck
+          yarn workspace @trusttoken-smart-contracts/contracts-por build
+      - name: lint
+        if: success() || failure()
+        run: yarn lint
+      - name: lint por
+        if: success() || failure()
+        run: yarn workspace @trusttoken-smart-contracts/contracts-por lint
+      - name: test por
+        if: success() || failure()
+        run: yarn workspace @trusttoken-smart-contracts/contracts-por test
+      - name: test-others
+        if: success() || failure()
+        run: |
+          yarn test:proxy
+          yarn test:registry
+          yarn test:true-currencies

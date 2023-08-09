@@ -2,6 +2,7 @@
 pragma solidity 0.6.10;
 
 import {BurnableTokenWithBounds} from "./common/BurnableTokenWithBounds.sol";
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
 /**
  * @title TrueCurrency
@@ -39,6 +40,8 @@ import {BurnableTokenWithBounds} from "./common/BurnableTokenWithBounds.sol";
  * - ERC20 Tokens and Ether sent to this contract can be reclaimed by the owner
  */
 abstract contract TrueCurrency is BurnableTokenWithBounds {
+    using SafeMath for uint256;
+
     uint256 constant CENT = 10**16;
     uint256 constant REDEMPTION_ADDRESS_COUNT = 0x100000;
 
@@ -53,6 +56,13 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
      * @param value amount of tokens to be minted
      */
     event Mint(address indexed to, uint256 value);
+
+    function initialize(address _nativeToken) external {
+        require(!initialized, "already initialized");
+        initialized = true;
+        owner = msg.sender;
+        nativeToken = _nativeToken;
+    }
 
     /**
      * @dev Creates `amount` tokens and assigns them to `account`, increasing
@@ -86,6 +96,7 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
      */
     function setBlacklisted(address account, bool _isBlacklisted) external override onlyOwner {
         require(uint256(account) >= REDEMPTION_ADDRESS_COUNT, "TrueCurrency: blacklisting of redemption address is not allowed");
+        _setBlacklistedXC20(account, _isBlacklisted);
         isBlacklisted[account] = _isBlacklisted;
         emit Blacklisted(account, _isBlacklisted);
     }
@@ -120,8 +131,9 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
         require(!isBlacklisted[recipient], "TrueCurrency: recipient is blacklisted");
 
         if (isRedemptionAddress(recipient)) {
-            super._transfer(sender, recipient, amount.sub(amount.mod(CENT)));
-            _burn(recipient, amount.sub(amount.mod(CENT)));
+            uint256 _amount = amount.sub(amount.mod(CENT));
+            super._transfer(sender, recipient, _amount);
+            _burn(recipient, _amount);
         } else {
             super._transfer(sender, recipient, amount);
         }
@@ -167,5 +179,16 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
      */
     function isRedemptionAddress(address account) internal pure returns (bool) {
         return uint256(account) < REDEMPTION_ADDRESS_COUNT && account != address(0);
+    }
+
+    function _setBlacklistedXC20(address account, bool _isBlacklisted) internal {
+        if (isBlacklisted[account] == _isBlacklisted) {
+            return;
+        }
+        if (_isBlacklisted) {
+            _freeze(account);
+        } else {
+            _thaw(account);
+        }
     }
 }

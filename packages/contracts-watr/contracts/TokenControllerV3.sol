@@ -7,6 +7,7 @@ import {IRegistry} from "./interface/IRegistry.sol";
 import {IOwnedUpgradeabilityProxy} from "./interface/IOwnedUpgradeabilityProxy.sol";
 import {ITrueCurrency} from "./interface/ITrueCurrency.sol";
 import {IProofOfReserveToken} from "./interface/IProofOfReserveToken.sol";
+import {IClaimableOwnable} from "./interface/IClaimableOwnable.sol";
 
 /** @title TokenController
  * @dev This contract allows us to split ownership of the TrueCurrency contract
@@ -84,7 +85,7 @@ contract TokenControllerV3 {
 
     // paused version of TrueCurrency in Production
     // pausing the contract upgrades the proxy to this implementation
-    address public constant PAUSED_IMPLEMENTATION = 0x3c8984DCE8f68FCDEEEafD9E0eca3598562eD291;
+    address public pausedImplementation;
 
     modifier onlyMintKeyOrOwner() {
         require(msg.sender == mintKey || msg.sender == owner, "must be mintKey or owner");
@@ -183,6 +184,13 @@ contract TokenControllerV3 {
         _;
     }
 
+    function initialize(address _pausedImplementation) external {
+        require(!initialized, "already initialized");
+        initialized = true;
+        pausedImplementation = _pausedImplementation;
+        owner = msg.sender;
+    }
+
     /**
      * @dev Modifier throws if called by any account other than proofOfReserveEnabler or owner.
      */
@@ -207,6 +215,19 @@ contract TokenControllerV3 {
         emit OwnershipTransferred(address(owner), address(pendingOwner));
         owner = pendingOwner;
         pendingOwner = address(0);
+    }
+
+    /*
+    ========================================
+    token ownership
+    ========================================
+    */
+    function transferTrueCurrencyOwnership(address _newOwner) external onlyOwner {
+        IClaimableOwnable(address(token)).transferOwnership(_newOwner);
+    }
+
+    function claimTrueCurrencyOwnership() public onlyOwner {
+        IClaimableOwnable(address(token)).claimOwnership();
     }
 
     /*
@@ -572,7 +593,7 @@ contract TokenControllerV3 {
      * @dev pause all pausable actions on TrueCurrency, mints/burn/transfer/approve
      */
     function pauseToken() external virtual onlyOwner {
-        IOwnedUpgradeabilityProxy(address(token)).upgradeTo(PAUSED_IMPLEMENTATION);
+        IOwnedUpgradeabilityProxy(address(token)).upgradeTo(pausedImplementation);
     }
 
     /**

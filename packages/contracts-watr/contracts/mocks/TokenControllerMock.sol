@@ -20,13 +20,6 @@ interface HasOwner {
 contract TokenControllerMock is TokenControllerV3 {
     event TransferChild(address indexed child, address indexed newOwner);
 
-    // initalize controller. useful for tests
-    function initialize() external {
-        require(!initialized, "already initialized");
-        owner = msg.sender;
-        initialized = true;
-    }
-
     // initialize with paramaters. useful for tests
     // sets initial paramaters on testnet
     function initializeWithParams(TrueCurrency _token, Registry _registry) external {
@@ -81,8 +74,6 @@ contract TokenControllerMock is TokenControllerV3 {
 }
 
 contract TokenControllerPauseMock is TokenControllerMock {
-    address public pausedImplementation;
-
     function setPausedImplementation(address _pausedToken) external {
         pausedImplementation = _pausedToken;
     }
