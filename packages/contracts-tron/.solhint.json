@@ -1,0 +1,17 @@
+{
+  "extends": "solhint:recommended",
+  "rules": {
+    "avoid-suicide": "error",
+    "compiler-version": ["error","0.6.0"],
+    "state-visibility": "off",
+    "func-name-mixedcase": "off",
+    "var-name-mixedcase": "off",
+    "no-empty-blocks": "off",
+    "no-inline-assembly": "off",
+    "not-rely-on-time": "off",
+    "max-states-count": "off",
+    "reason-string": "off",
+    "const-name-snakecase": "off",
+    "avoid-tx-origin": "off"
+  }
+}
