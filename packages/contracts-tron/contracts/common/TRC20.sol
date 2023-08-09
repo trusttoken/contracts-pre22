@@ -11,7 +11,7 @@
  */
 
 // SPDX-License-Identifier: MIT
-pragma solidity 0.6.0;
+pragma solidity ^0.6.0;
 
 import {ITRC20} from "../interface/ITRC20.sol";
 import {Context} from "@openzeppelin/contracts/GSN/Context.sol";
