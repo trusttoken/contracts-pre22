@@ -19,12 +19,6 @@ interface HasOwner {
  */
 contract TokenControllerMock is TokenController {
 
-    // initalize controller. useful for tests
-    function initialize_owner() public {
-        require(owner == address(0));
-        owner = msg.sender;
-    }
-
     // initialize with paramaters. useful for tests
     // sets initial paramaters on testnet
     function initializeWithParams(TrueCurrency _token, Registry _registry) external {
