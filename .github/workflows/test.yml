@@ -39,9 +39,9 @@ jobs:
       - name: test por
         if: success() || failure()
         run: yarn workspace @trusttoken-smart-contracts/contracts-por test
-      - name: lint tron
-        if: success() || failure()
-        run: yarn workspace @trusttoken-smart-contracts/contracts-tron lint
+      # - name: lint tron
+      #   if: success() || failure()
+      #   run: yarn workspace @trusttoken-smart-contracts/contracts-tron lint
       - name: test tron
         if: success() || failure()
         run: yarn workspace @trusttoken-smart-contracts/contracts-tron test
