@@ -21,7 +21,8 @@
   },
   "dependencies": {
     "ethereum-mars": "0.2.5",
-    "@openzeppelin/contracts": "3.4.2",
+    "@openzeppelin/contracts": "^4.4.2",
+    "@openzeppelin/contracts-upgradeable": "^4.5.1",
     "@chainlink/contracts": "0.1.6"
   },
   "devDependencies": {
