@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // solhint-disable const-name-snakecase
-pragma solidity 0.6.10;
+pragma solidity 0.8.0;
 
 /**
  * @title OwnedUpgradeabilityProxy

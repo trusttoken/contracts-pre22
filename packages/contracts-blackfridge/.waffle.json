@@ -1,5 +1,5 @@
 {
-    "compilerVersion": "v0.6.10+commit.00c0fcaf",
+    "compilerVersion": "v0.8.0",
     "compilerOptions": {
         "optimizer": {
           "enabled": true,

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.6.10;
+pragma solidity 0.8.0;
 
 import {IOwnedUpgradeabilityProxy as OwnedUpgradeabilityProxy} from "../interface/IOwnedUpgradeabilityProxy.sol";
 import {IRegistry as Registry} from "../interface/IRegistry.sol";

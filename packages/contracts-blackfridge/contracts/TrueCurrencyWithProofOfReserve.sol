@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.6.10;
+pragma solidity 0.8.0;
 
 import {TrueCurrency} from "./TrueCurrency.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.6/interfaces/AggregatorV3Interface.sol";
 import {IProofOfReserveToken} from "./interface/IProofOfReserveToken.sol";
-import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+import {SafeMath} from "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 /**
  * @title TrueCurrencyWithProofOfReserve
