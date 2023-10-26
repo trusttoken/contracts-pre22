@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.0;
+pragma solidity ^0.8.0;
 
 import {SafeMath} from "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -206,7 +206,7 @@ contract TokenControllerV3 {
     function claimOwnership() external onlyPendingOwner {
         emit OwnershipTransferred(address(owner), address(pendingOwner));
         owner = pendingOwner;
-        pendingOwner = address(0);
+        pendingOwner = payable(address(0));
     }
 
     /*
@@ -320,9 +320,15 @@ contract TokenControllerV3 {
      * @param _value the amount requested
      */
     function requestMint(address _to, uint256 _value) external mintNotPaused onlyMintKeyOrOwner {
-        MintOperation memory op = MintOperation(_to, _value, block.number, 0, false);
+        // MintOperation memory op = MintOperation(_to, _value, block.number, 0, false);
+        MintOperation storage op = mintOperations.push();
+        op.to = _to;
+        op.value = _value;
+        op.requestedBlock = block.number;
+        op.numberOfApproval = 0;
+        op.paused = false;
         emit RequestMint(_to, _value, mintOperations.length, msg.sender);
-        mintOperations.push(op);
+        // mintOperations.push(op);
     }
 
     /**
@@ -352,14 +358,14 @@ contract TokenControllerV3 {
         address _to,
         uint256 _value
     ) external mintNotPaused onlyMintRatifierOrOwner {
-        MintOperation memory op = mintOperations[_index];
+        MintOperation storage op = mintOperations[_index];
         require(op.to == _to, "to address does not match");
         require(op.value == _value, "amount does not match");
-        require(!mintOperations[_index].approved[msg.sender], "already approved");
-        mintOperations[_index].approved[msg.sender] = true;
-        mintOperations[_index].numberOfApproval = mintOperations[_index].numberOfApproval.add(1);
+        require(!op.approved[msg.sender], "already approved");
+        op.approved[msg.sender] = true;
+        op.numberOfApproval = op.numberOfApproval.add(1);
         emit MintRatified(_index, msg.sender);
-        if (hasEnoughApproval(mintOperations[_index].numberOfApproval, _value)) {
+        if (hasEnoughApproval(op.numberOfApproval, _value)) {
             finalizeMint(_index);
         }
     }
@@ -369,7 +375,7 @@ contract TokenControllerV3 {
      * @param _index of the request (visible in the RequestMint event accompanying the original request)
      */
     function finalizeMint(uint256 _index) public mintNotPaused {
-        MintOperation memory op = mintOperations[_index];
+        MintOperation storage op = mintOperations[_index];
         address to = op.to;
         uint256 value = op.value;
         if (msg.sender != owner) {
@@ -417,7 +423,7 @@ contract TokenControllerV3 {
      * utility function for a front end
      */
     function canFinalize(uint256 _index) public view returns (bool) {
-        MintOperation memory op = mintOperations[_index];
+        MintOperation storage op = mintOperations[_index];
         require(op.requestedBlock > mintReqInvalidBeforeThisBlock, "this mint is invalid"); //also checks if request still exists
         require(!op.paused, "this mint is paused");
         require(hasEnoughApproval(op.numberOfApproval, op.value), "not enough approvals");

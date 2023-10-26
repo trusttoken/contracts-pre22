@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.0;
+pragma solidity ^0.8.0;
 
 import {IOwnedUpgradeabilityProxy as OwnedUpgradeabilityProxy} from "../interface/IOwnedUpgradeabilityProxy.sol";
 import {IRegistry as Registry} from "../interface/IRegistry.sol";
@@ -23,7 +23,7 @@ contract TokenControllerMock is TokenControllerV3 {
     // initalize controller. useful for tests
     function initialize() external {
         require(!initialized, "already initialized");
-        owner = msg.sender;
+        owner = payable(msg.sender);
         initialized = true;
     }
 
@@ -31,7 +31,7 @@ contract TokenControllerMock is TokenControllerV3 {
     // sets initial paramaters on testnet
     function initializeWithParams(TrueCurrency _token, Registry _registry) external {
         require(!initialized, "already initialized");
-        owner = msg.sender;
+        owner = payable(msg.sender);
         initialized = true;
         token = _token;
         emit SetToken(_token);
@@ -91,6 +91,6 @@ contract TokenControllerPauseMock is TokenControllerMock {
      * @dev pause all pausable actions on TrueUSD, mints/burn/transfer/approve
      */
     function pauseToken() external override onlyOwner {
-        OwnedUpgradeabilityProxy(uint160(address(token))).upgradeTo(pausedImplementation);
+        OwnedUpgradeabilityProxy(address(token)).upgradeTo(pausedImplementation);
     }
 }

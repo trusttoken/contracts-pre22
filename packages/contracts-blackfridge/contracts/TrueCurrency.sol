@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.0;
+pragma solidity ^0.8.0;
 
 import {BurnableTokenWithBounds} from "./common/BurnableTokenWithBounds.sol";
+import {SafeMath} from "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 /**
  * @title TrueCurrency
@@ -39,6 +40,8 @@ import {BurnableTokenWithBounds} from "./common/BurnableTokenWithBounds.sol";
  * - ERC20 Tokens and Ether sent to this contract can be reclaimed by the owner
  */
 abstract contract TrueCurrency is BurnableTokenWithBounds {
+    using SafeMath for uint256;
+
     uint256 constant CENT = 10**16;
     uint256 constant REDEMPTION_ADDRESS_COUNT = 0x100000;
 
@@ -85,7 +88,7 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
      * - `msg.sender` should be owner.
      */
     function setBlacklisted(address account, bool _isBlacklisted) external override onlyOwner {
-        require(uint256(account) >= REDEMPTION_ADDRESS_COUNT, "TrueCurrency: blacklisting of redemption address is not allowed");
+        require(uint256(uint160(account)) >= REDEMPTION_ADDRESS_COUNT, "TrueCurrency: blacklisting of redemption address is not allowed");
         isBlacklisted[account] = _isBlacklisted;
         emit Blacklisted(account, _isBlacklisted);
     }
@@ -166,6 +169,6 @@ abstract contract TrueCurrency is BurnableTokenWithBounds {
      * @return is `account` a redemption address
      */
     function isRedemptionAddress(address account) internal pure returns (bool) {
-        return uint256(account) < REDEMPTION_ADDRESS_COUNT && account != address(0);
+        return uint256(uint160(account)) < REDEMPTION_ADDRESS_COUNT && account != address(0);
     }
 }

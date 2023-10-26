@@ -1,5 +1,5 @@
 {
-    "compilerVersion": "v0.8.0",
+    "compilerVersion": "v0.8.2",
     "compilerOptions": {
         "optimizer": {
           "enabled": true,
