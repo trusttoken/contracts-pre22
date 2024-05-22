@@ -121,7 +121,7 @@ describe('TrueFi', () => {
 
   it('LinearDistributor', async () => {
     await upgradeSuite(TEST_STATE_BLOCK_NUMBER, LinearTrueDistributor__factory, '0xfB8d918428373f766B352564b70d1DcC1e3b6383', [
-      'trustToken',
+      'asset',
       'distributionStart',
       'duration',
       'totalAmount',
