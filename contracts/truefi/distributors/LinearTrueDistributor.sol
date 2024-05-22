@@ -27,7 +27,7 @@ contract LinearTrueDistributor is ITrueDistributor, Ownable {
     // REMOVAL OR REORDER OF VARIABLES WILL RESULT
     // ========= IN STORAGE CORRUPTION ===========
 
-    IERC20 public override trustToken;
+    IERC20 public override asset;
     uint256 public distributionStart;
     uint256 public duration;
     uint256 public totalAmount;
@@ -67,20 +67,20 @@ contract LinearTrueDistributor is ITrueDistributor, Ownable {
      * @param _distributionStart Start time for distribution
      * @param _duration Length of distribution
      * @param _amount Amount to distribute
-     * @param _trustToken TRU address
+     * @param _asset TRU address
      */
     function initialize(
         uint256 _distributionStart,
         uint256 _duration,
         uint256 _amount,
-        IERC20 _trustToken
+        IERC20 _asset
     ) public initializer {
         Ownable.initialize();
         distributionStart = _distributionStart;
         lastDistribution = _distributionStart;
         duration = _duration;
         totalAmount = _amount;
-        trustToken = _trustToken;
+        asset = _asset;
     }
 
     /**
@@ -109,7 +109,7 @@ contract LinearTrueDistributor is ITrueDistributor, Ownable {
         // transfer tokens & update state
         lastDistribution = block.timestamp;
         distributed = distributed.add(amount);
-        trustToken.safeTransfer(farm, amount);
+        asset.safeTransfer(farm, amount);
 
         emit Distributed(amount);
     }
@@ -141,7 +141,7 @@ contract LinearTrueDistributor is ITrueDistributor, Ownable {
         distribute();
         distributed = 0;
         totalAmount = 0;
-        trustToken.safeTransfer(msg.sender, trustToken.balanceOf(address(this)));
+        asset.safeTransfer(msg.sender, asset.balanceOf(address(this)));
     }
 
     /**
