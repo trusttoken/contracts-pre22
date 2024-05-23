@@ -120,8 +120,8 @@ describe('TrueFi', () => {
   })
 
   it('LinearDistributor', async () => {
-    await upgradeSuite(TEST_STATE_BLOCK_NUMBER, LinearTrueDistributor__factory, '0xfB8d918428373f766B352564b70d1DcC1e3b6383', [
-      'asset',
+    const contract = await upgradeSuite(TEST_STATE_BLOCK_NUMBER, LinearTrueDistributor__factory, '0xfB8d918428373f766B352564b70d1DcC1e3b6383', [
+      // 'trustToken', renamed to `asset`
       'distributionStart',
       'duration',
       'totalAmount',
@@ -129,6 +129,7 @@ describe('TrueFi', () => {
       'distributed',
       'farm',
     ])
+    expect(await contract.asset()).to.eq('0x4C19596f5aAfF459fA38B0f7eD92F11AE6543784')
   })
 
   it('RatingAgencyV2Distributor', async () => {
