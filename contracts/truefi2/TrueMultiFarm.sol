@@ -120,7 +120,7 @@ contract TrueMultiFarm is ITrueMultiFarm, UpgradeableClaimable {
     function initialize(ITrueDistributor _trueDistributor, IStkTruToken _stkTru) public initializer {
         UpgradeableClaimable.initialize(msg.sender);
         trueDistributor = _trueDistributor;
-        tru = _trueDistributor.trustToken();
+        tru = _trueDistributor.asset();
         stkTru = _stkTru;
         require(trueDistributor.farm() == address(this), "TrueMultiFarm: Distributor farm is not set");
     }
