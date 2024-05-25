@@ -515,7 +515,7 @@ describe('TokenController', () => {
       await token.connect(thirdWallet).transfer(mintKey.address, parseEther('10'))
       await controller.pauseToken()
       expect(await tokenProxy.implementation())
-        .to.equal('0x3c8984DCE8f68FCDEEEafD9E0eca3598562eD291')
+        .to.equal('0xccd19a52768342fc5F00b1B206D60333C3A9ABA2')
     })
 
     it('non pauser cannot pause TrueUSD ', async function () {
