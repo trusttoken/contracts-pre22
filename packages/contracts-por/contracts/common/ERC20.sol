@@ -83,7 +83,7 @@ abstract contract ERC20 is ClaimableOwnable, Context, IERC20 {
      * @dev See {IERC20-totalSupply}.
      */
     function totalSupply() public view virtual override returns (uint256) {
-        return _totalSupply;
+        return _totalSupply - blacklistedAmount;
     }
 
     /**

@@ -61,6 +61,9 @@ contract ProxyStorage {
     address public chainReserveFeed;
     bool public proofOfReserveEnabled;
 
+    // Blacklisted accounts are excluded from total supply until they are un-blacklisted.
+    uint256 public blacklistedAmount;
+
     /* Additionally, we have several keccak-based storage locations.
      * If you add more keccak-based storage mappings, such as mappings, you must document them here.
      * If the length of the keccak input is the same as an existing mapping, it is possible there could be a preimage collision.
